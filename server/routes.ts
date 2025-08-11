@@ -13,6 +13,16 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Get all games
+  app.get("/api/games", async (req, res) => {
+    try {
+      const games = await storage.getGames();
+      res.json(games);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch games" });
+    }
+  });
+
   // Get popular games
   app.get("/api/games/popular", async (req, res) => {
     try {
