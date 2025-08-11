@@ -43,13 +43,10 @@ export default function GameDetails() {
   };
 
   const handlePackageChange = (packageName: string) => {
-    if (!game?.packages || !game?.packagePrices) return;
+    if (!game) return;
     
-    const packageIndex = game.packages.indexOf(packageName);
-    if (packageIndex !== -1) {
-      setSelectedPackage(packageName);
-      setSelectedPrice(parseInt(game.packagePrices[packageIndex]));
-    }
+    setSelectedPackage(packageName);
+    setSelectedPrice(parseFloat(game.price));
   };
 
   if (!match) return null;
@@ -134,54 +131,44 @@ export default function GameDetails() {
                 </span>
               </div>
               
-              {game.packages && game.packagePrices && (
-                <div className="space-y-3 max-h-96 overflow-y-auto custom-scrollbar">
-                  {game.packages.map((packageName, index) => {
-                    const price = parseInt(game.packagePrices![index]);
-                    const isSelected = selectedPackage === packageName;
-                    
-                    return (
-                      <button
-                        key={packageName}
-                        onClick={() => handlePackageChange(packageName)}
-                        className={`w-full p-4 rounded-xl border-2 transition-all duration-200 text-left group hover:scale-[1.02] ${
-                          isSelected 
-                            ? 'border-gold-primary bg-gold-primary/10 shadow-lg' 
-                            : 'border-border hover:border-gold-primary/50 hover:bg-card/50'
-                        }`}
-                      >
-                        <div className="flex justify-between items-center">
-                          <div className="flex-1">
-                            <div className="flex items-center space-x-3">
-                              <div className={`w-4 h-4 rounded-full border-2 transition-all ${
-                                isSelected 
-                                  ? 'border-gold-primary bg-gold-primary' 
-                                  : 'border-gray-400 group-hover:border-gold-primary'
-                              }`}>
-                                {isSelected && <div className="w-full h-full rounded-full bg-white transform scale-50"></div>}
-                              </div>
-                              <div>
-                                <h4 className="font-semibold text-lg">{packageName}</h4>
-                                <p className="text-muted-foreground text-sm">
-                                  Instant delivery • No fees • Safe & Secure
-                                </p>
-                              </div>
-                            </div>
-                          </div>
-                          <div className="text-right">
-                            <div className="text-2xl font-bold text-gold-primary">
-                              {price} جنيه
-                            </div>
-                            <div className="text-xs text-muted-foreground">
-                              ~${(price / 50).toFixed(2)} USD
-                            </div>
-                          </div>
+              <div className="space-y-3">
+                <button
+                  onClick={() => handlePackageChange("Standard Package")}
+                  className={`w-full p-4 rounded-xl border-2 transition-all duration-200 text-left group hover:scale-[1.02] ${
+                    selectedPackage 
+                      ? 'border-gold-primary bg-gold-primary/10 shadow-lg' 
+                      : 'border-border hover:border-gold-primary/50 hover:bg-card/50'
+                  }`}
+                >
+                  <div className="flex justify-between items-center">
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-3">
+                        <div className={`w-4 h-4 rounded-full border-2 transition-all ${
+                          selectedPackage 
+                            ? 'border-gold-primary bg-gold-primary' 
+                            : 'border-gray-400 group-hover:border-gold-primary'
+                        }`}>
+                          {selectedPackage && <div className="w-full h-full rounded-full bg-white transform scale-50"></div>}
                         </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
+                        <div>
+                          <h4 className="font-semibold text-lg">Standard Package</h4>
+                          <p className="text-muted-foreground text-sm">
+                            Instant delivery • No fees • Safe & Secure
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-2xl font-bold text-gold-primary">
+                        ${game.price}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        {game.currency}
+                      </div>
+                    </div>
+                  </div>
+                </button>
+              </div>
 
               <Button
                 onClick={handleAddToCart}
@@ -190,7 +177,7 @@ export default function GameDetails() {
                 size="lg"
               >
                 <ShoppingCart className="mr-2 h-5 w-5" />
-                {addingToCart ? "Added to Cart!" : `Add to Cart - ${selectedPrice} جنيه`}
+                {addingToCart ? "Added to Cart!" : `Add to Cart - $${game.price}`}
               </Button>
             </div>
 

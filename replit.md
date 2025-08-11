@@ -1,6 +1,8 @@
 # Overview
 
-Cheetos Gaming is a premium gaming e-commerce store built as a full-stack web application. The platform specializes in selling digital gaming products including game currencies, gift cards, and digital vouchers with fast delivery and secure payments. The application features a modern gaming-themed UI with dark mode design, animated components, and a responsive layout optimized for both desktop and mobile devices.
+Cheetos Gaming is a clean and simple gaming e-commerce store built as a full-stack web application. The platform specializes in selling digital gaming products including game currencies, gift cards, and digital vouchers with fast delivery and secure payments. The application features a modern gaming-themed UI with dark mode design and a responsive layout optimized for both desktop and mobile devices.
+
+**Note: Simplified version - All complex features (recommendations, social sharing, interactive animations, loading games) have been removed for a clean, error-free experience suitable for deployment.**
 
 # User Preferences
 
@@ -29,9 +31,9 @@ Preferred communication style: Simple, everyday language.
 - **Database**: PostgreSQL (configured via DATABASE_URL environment variable)
 - **Schema**: Shared schema definition between client and server
 - **Migration**: Drizzle Kit for database migrations with automatic schema pushing
-- **Storage Architecture**: DatabaseStorage implementation with comprehensive user tracking, recommendation engine, and achievement system
-- **Session Management**: PostgreSQL-based session storage with automatic user creation and activity tracking
-- **Seeding**: Automated database seeding with games, categories, and initial achievements
+- **Storage Architecture**: Simple DatabaseStorage implementation with basic CRUD operations for games and categories only
+- **Session Management**: No session management in simplified version
+- **Seeding**: Automated database seeding with games and categories
 
 ## Database Schema
 ### Core Tables
@@ -39,12 +41,9 @@ Preferred communication style: Simple, everyday language.
 - **Categories Table**: Product categories with id, name, slug, description, image, gradient colors, and icons
 - **Sessions Table**: Express session storage for user tracking
 
-### Advanced Features Tables
-- **Users Table**: User profiles with session ID, preferences, creation/activity timestamps
-- **User Game History Table**: Tracks user interactions (viewed, added_to_cart, purchased) with metadata and timestamps
-- **Achievements Table**: Gamification system with achievement definitions, categories, thresholds, and point values
-- **User Achievements Table**: Progress tracking for individual user achievements with completion status
-- **Social Shares Table**: Social media sharing activity tracking for achievements and analytics
+### Simplified Schema
+- **Only two core tables**: Games and Categories for basic e-commerce functionality
+- **No user tracking, achievements, or social features** to maintain simplicity
 
 ### Validation
 - **Zod Schemas**: Type-safe data validation with insert/select schema separation
@@ -60,13 +59,8 @@ Preferred communication style: Simple, everyday language.
 - **Checkout Flow**: WhatsApp-based ordering system for direct communication with sellers
 - **Payment Integration**: Multiple payment method display (PayPal, cards, mobile payments, bank transfers)
 - **Responsive Design**: Mobile-first design with adaptive layouts
-- **User Tracking & Analytics**: PostgreSQL-based user behavior tracking with session management
-- **AI-Powered Recommendations**: Smart game recommendations based on user play history and preferences
-- **Achievement System**: Gamified experience with unlockable achievements and progress tracking
-- **Social Sharing**: Social media integration with achievement progress for sharing game discoveries
-- **Animated Game Cards**: Advanced hover effects with particle animations and varied grid layouts
-- **Interactive Loading Screens**: Mini-game loading experience with click-to-earn mechanics
-- **Personalized Dashboard**: Dedicated user dashboard with recommendations, achievements, and statistics
+- **Simple Game Cards**: Clean hover effects and basic animations
+- **Standard Loading States**: Simple loading indicators without interactive elements
 
 ## UI Components
 - **Design System**: Custom gaming theme with gold/yellow primary colors and neon pink secondary
