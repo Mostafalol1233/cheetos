@@ -19,7 +19,7 @@ export async function seedDatabase() {
         name: 'Action Games',
         slug: 'action',
         description: 'Fast-paced action and adventure games',
-        image: 'https://images.unsplash.com/photo-1511512578047-dfb367046420?w=400&h=300&fit=crop',
+        image: 'https://wallpaperaccess.com/full/267733.jpg',
         gradient: 'from-red-500 to-orange-500',
         icon: 'Zap'
       },
@@ -28,7 +28,7 @@ export async function seedDatabase() {
         name: 'Adventure',
         slug: 'adventure',
         description: 'Epic story-driven adventures',
-        image: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=300&fit=crop',
+        image: 'https://wallpaperaccess.com/full/267685.jpg',
         gradient: 'from-green-500 to-teal-500',
         icon: 'Map'
       },
@@ -37,7 +37,7 @@ export async function seedDatabase() {
         name: 'Strategy',
         slug: 'strategy',
         description: 'Think and plan your way to victory',
-        image: 'https://images.unsplash.com/photo-1606092195730-5d7b9af1efc5?w=400&h=300&fit=crop',
+        image: 'https://wallpaperaccess.com/full/267656.jpg',
         gradient: 'from-blue-500 to-purple-500',
         icon: 'Brain'
       },
@@ -46,7 +46,7 @@ export async function seedDatabase() {
         name: 'Simulation',
         slug: 'simulation',
         description: 'Real-world simulation experiences',
-        image: 'https://images.unsplash.com/photo-1551698618-1dfe5d97d256?w=400&h=300&fit=crop',
+        image: 'https://wallpaperaccess.com/full/267678.jpg',
         gradient: 'from-purple-500 to-pink-500',
         icon: 'Settings'
       }
@@ -54,8 +54,20 @@ export async function seedDatabase() {
 
     await db.insert(categories).values(categoryData);
 
-    // Seed Games
+    // Seed Games with actual gaming images
     const gameData = [
+      {
+        id: 'gta-v',
+        name: 'Grand Theft Auto V',
+        slug: 'gta-v',
+        description: 'The biggest, most dynamic and most diverse open world ever',
+        price: '29.99',
+        currency: 'USD',
+        image: 'https://cdn.cloudflare.steamstatic.com/steam/apps/271590/header.jpg',
+        category: 'action',
+        isPopular: true,
+        stock: randomStock()
+      },
       {
         id: 'cyberpunk-2077',
         name: 'Cyberpunk 2077',
@@ -63,7 +75,7 @@ export async function seedDatabase() {
         description: 'Open-world action-adventure story set in Night City',
         price: '59.99',
         currency: 'USD',
-        image: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=400&h=300&fit=crop',
+        image: 'https://cdn.cloudflare.steamstatic.com/steam/apps/1091500/header.jpg',
         category: 'action',
         isPopular: true,
         stock: randomStock()
@@ -75,7 +87,127 @@ export async function seedDatabase() {
         description: 'Story-driven open world RPG set in a fantasy universe',
         price: '39.99',
         currency: 'USD',
-        image: 'https://images.unsplash.com/photo-1493711662062-fa541adb3fc8?w=400&h=300&fit=crop',
+        image: 'https://cdn.cloudflare.steamstatic.com/steam/apps/292030/header.jpg',
+        category: 'adventure',
+        isPopular: true,
+        stock: randomStock()
+      },
+      {
+        id: 'red-dead-2',
+        name: 'Red Dead Redemption 2',
+        slug: 'red-dead-2',
+        description: 'Epic tale of life in Americas unforgiving heartland',
+        price: '59.99',
+        currency: 'USD',
+        image: 'https://cdn.cloudflare.steamstatic.com/steam/apps/1174180/header.jpg',
+        category: 'action',
+        isPopular: true,
+        stock: randomStock()
+      },
+      {
+        id: 'call-of-duty',
+        name: 'Call of Duty: Modern Warfare II',
+        slug: 'call-of-duty',
+        description: 'Experience the global campaign in stunning detail',
+        price: '69.99',
+        currency: 'USD',
+        image: 'https://cdn.cloudflare.steamstatic.com/steam/apps/1938090/header.jpg',
+        category: 'action',
+        isPopular: true,
+        stock: randomStock()
+      },
+      {
+        id: 'minecraft',
+        name: 'Minecraft',
+        slug: 'minecraft',
+        description: 'Build anything you can imagine with blocks',
+        price: '26.95',
+        currency: 'USD',
+        image: 'https://www.minecraft.net/content/dam/games/minecraft/key-art/Minecraft-Star-Wars_TLM-16x9.jpg',
+        category: 'simulation',
+        isPopular: true,
+        stock: randomStock()
+      },
+      {
+        id: 'fifa-24',
+        name: 'EA Sports FC 24',
+        slug: 'fifa-24',
+        description: 'Experience the worlds game with 19,000+ players',
+        price: '59.99',
+        currency: 'USD',
+        image: 'https://cdn.cloudflare.steamstatic.com/steam/apps/2195250/header.jpg',
+        category: 'action',
+        isPopular: true,
+        stock: randomStock()
+      },
+      {
+        id: 'valorant',
+        name: 'VALORANT',
+        slug: 'valorant',
+        description: '5v5 character-based tactical FPS',
+        price: '0.00',
+        currency: 'USD',
+        image: 'https://images.contentstack.io/v3/assets/bltb6530b271fddd0b1/blt5df1238dd44f1d90/5eb26f0ed7090c6e2e8efcbb/V_AGENTS_587x900_Sage.jpg',
+        category: 'action',
+        isPopular: true,
+        stock: randomStock()
+      },
+      {
+        id: 'apex-legends',
+        name: 'Apex Legends',
+        slug: 'apex-legends',
+        description: 'Choose from a diverse cast of Legends',
+        price: '0.00',
+        currency: 'USD',
+        image: 'https://cdn.cloudflare.steamstatic.com/steam/apps/1172470/header.jpg',
+        category: 'action',
+        isPopular: true,
+        stock: randomStock()
+      },
+      {
+        id: 'fortnite',
+        name: 'Fortnite',
+        slug: 'fortnite',
+        description: 'Battle Royale with building mechanics',
+        price: '0.00',
+        currency: 'USD',
+        image: 'https://cdn2.unrealengine.com/fortnite-chapter-4-season-4-battle-royale-1920x1080-7c2cd4b80c53.jpg',
+        category: 'action',
+        isPopular: true,
+        stock: randomStock()
+      },
+      {
+        id: 'assassins-creed',
+        name: 'Assassins Creed Mirage',
+        slug: 'assassins-creed',
+        description: 'Experience the story of Basim in 9th-century Baghdad',
+        price: '49.99',
+        currency: 'USD',
+        image: 'https://cdn.cloudflare.steamstatic.com/steam/apps/2369390/header.jpg',
+        category: 'adventure',
+        isPopular: false,
+        stock: randomStock()
+      },
+      {
+        id: 'elden-ring',
+        name: 'Elden Ring',
+        slug: 'elden-ring',
+        description: 'Rise, Tarnished, and be guided by grace',
+        price: '59.99',
+        currency: 'USD',
+        image: 'https://cdn.cloudflare.steamstatic.com/steam/apps/1245620/header.jpg',
+        category: 'adventure',
+        isPopular: true,
+        stock: randomStock()
+      },
+      {
+        id: 'horizon-zero',
+        name: 'Horizon Zero Dawn',
+        slug: 'horizon-zero',
+        description: 'Experience Aloys legendary quest in a world of machines',
+        price: '39.99',
+        currency: 'USD',
+        image: 'https://cdn.cloudflare.steamstatic.com/steam/apps/1151640/header.jpg',
         category: 'adventure',
         isPopular: true,
         stock: randomStock()
@@ -87,45 +219,9 @@ export async function seedDatabase() {
         description: 'Build an empire to stand the test of time',
         price: '49.99',
         currency: 'USD',
-        image: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=300&fit=crop',
+        image: 'https://cdn.cloudflare.steamstatic.com/steam/apps/289070/header.jpg',
         category: 'strategy',
         isPopular: true,
-        stock: randomStock()
-      },
-      {
-        id: 'cities-skylines',
-        name: 'Cities: Skylines',
-        slug: 'cities-skylines',
-        description: 'Modern city building simulation',
-        price: '29.99',
-        currency: 'USD',
-        image: 'https://images.unsplash.com/photo-1480714378408-67cf0d13bc1f?w=400&h=300&fit=crop',
-        category: 'simulation',
-        isPopular: true,
-        stock: randomStock()
-      },
-      {
-        id: 'red-dead-2',
-        name: 'Red Dead Redemption 2',
-        slug: 'red-dead-2',
-        description: 'Epic tale of life in Americas unforgiving heartland',
-        price: '59.99',
-        currency: 'USD',
-        image: 'https://images.unsplash.com/photo-1511512578047-dfb367046420?w=400&h=300&fit=crop',
-        category: 'action',
-        isPopular: true,
-        stock: randomStock()
-      },
-      {
-        id: 'assassins-creed',
-        name: 'Assassins Creed Valhalla',
-        slug: 'assassins-creed',
-        description: 'Become a legendary Viking warrior',
-        price: '49.99',
-        currency: 'USD',
-        image: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=400&h=300&fit=crop',
-        category: 'adventure',
-        isPopular: false,
         stock: randomStock()
       },
       {
@@ -135,9 +231,21 @@ export async function seedDatabase() {
         description: 'The cataclysmic conclusion to the Total War trilogy',
         price: '59.99',
         currency: 'USD',
-        image: 'https://images.unsplash.com/photo-1606092195730-5d7b9af1efc5?w=400&h=300&fit=crop',
+        image: 'https://cdn.cloudflare.steamstatic.com/steam/apps/1142710/header.jpg',
         category: 'strategy',
         isPopular: false,
+        stock: randomStock()
+      },
+      {
+        id: 'cities-skylines',
+        name: 'Cities: Skylines',
+        slug: 'cities-skylines',
+        description: 'Modern city building simulation',
+        price: '29.99',
+        currency: 'USD',
+        image: 'https://cdn.cloudflare.steamstatic.com/steam/apps/255710/header.jpg',
+        category: 'simulation',
+        isPopular: true,
         stock: randomStock()
       },
       {
@@ -147,57 +255,21 @@ export async function seedDatabase() {
         description: 'Experience the joy of flying with authentic aircraft',
         price: '69.99',
         currency: 'USD',
-        image: 'https://images.unsplash.com/photo-1551698618-1dfe5d97d256?w=400&h=300&fit=crop',
+        image: 'https://cdn.cloudflare.steamstatic.com/steam/apps/1250410/header.jpg',
         category: 'simulation',
         isPopular: false,
         stock: randomStock()
       },
       {
-        id: 'call-of-duty',
-        name: 'Call of Duty: Modern Warfare II',
-        slug: 'call-of-duty',
-        description: 'Experience the global campaign in stunning detail',
-        price: '69.99',
-        currency: 'USD',
-        image: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=400&h=300&fit=crop',
-        category: 'action',
-        isPopular: true,
-        stock: randomStock()
-      },
-      {
-        id: 'horizon-zero',
-        name: 'Horizon Zero Dawn',
-        slug: 'horizon-zero',
-        description: 'Experience Aloys entire legendary quest',
-        price: '39.99',
-        currency: 'USD',
-        image: 'https://images.unsplash.com/photo-1493711662062-fa541adb3fc8?w=400&h=300&fit=crop',
-        category: 'adventure',
-        isPopular: true,
-        stock: randomStock()
-      },
-      {
-        id: 'starcraft-2',
-        name: 'StarCraft II',
-        slug: 'starcraft-2',
-        description: 'The ultimate real-time strategy experience',
+        id: 'the-sims-4',
+        name: 'The Sims 4',
+        slug: 'the-sims-4',
+        description: 'Create unique Sims and control their lives',
         price: '19.99',
         currency: 'USD',
-        image: 'https://images.unsplash.com/photo-1606092195730-5d7b9af1efc5?w=400&h=300&fit=crop',
-        category: 'strategy',
-        isPopular: false,
-        stock: randomStock()
-      },
-      {
-        id: 'euro-truck',
-        name: 'Euro Truck Simulator 2',
-        slug: 'euro-truck',
-        description: 'Travel across Europe as king of the road',
-        price: '24.99',
-        currency: 'USD',
-        image: 'https://images.unsplash.com/photo-1551698618-1dfe5d97d256?w=400&h=300&fit=crop',
+        image: 'https://cdn.cloudflare.steamstatic.com/steam/apps/1222670/header.jpg',
         category: 'simulation',
-        isPopular: false,
+        isPopular: true,
         stock: randomStock()
       }
     ];
