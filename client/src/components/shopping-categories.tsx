@@ -1,13 +1,14 @@
 import { useQuery } from "@tanstack/react-query";
 import { Category } from "@shared/schema";
-import { Flame, Globe, Smartphone, Gift } from "lucide-react";
+import { Flame, Globe, Smartphone, Gift, Clock } from "lucide-react";
 import { Link } from "wouter";
 
 const iconMap = {
   fire: Flame,
   globe: Globe,
   smartphone: Smartphone,
-  gift: Gift
+  gift: Gift,
+  clock: Clock
 };
 
 export function ShoppingCategories() {

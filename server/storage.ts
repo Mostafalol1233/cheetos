@@ -30,12 +30,12 @@ export class MemStorage implements IStorage {
     const categories: Category[] = [
       {
         id: "hot-deals",
-        name: "HOT DEALS",
+        name: "العروض الخاصة",
         slug: "hot-deals",
-        description: "Exclusive offers and limited-time deals",
+        description: "غير متاح حالياً - قريباً عروض حصرية",
         image: "https://images.unsplash.com/photo-1607083206869-4c7672e72a8a?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=600",
-        gradient: "from-amber-600 to-orange-700",
-        icon: "fire"
+        gradient: "from-gray-600 to-gray-700",
+        icon: "clock"
       },
       {
         id: "online-games",
@@ -178,7 +178,7 @@ export class MemStorage implements IStorage {
         price: 120,
         currency: "EGP", 
         image: "/attached_assets/onXjRgoXMhxQ.jpg",
-        category: "online-games",
+        category: "gift-cards",
         isPopular: true,
         stock: 9999,
         packages: ["Nitro 1 Month", "Nitro 3 Months"],
