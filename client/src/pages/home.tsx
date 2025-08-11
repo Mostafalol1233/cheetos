@@ -5,6 +5,9 @@ import { Button } from "@/components/ui/button";
 import { StarfieldBackground } from "@/components/starfield-background";
 import { ShoppingCategories } from "@/components/shopping-categories";
 import { PopularGames } from "@/components/popular-games";
+import { GameRecommendations } from "@/components/game-recommendations";
+import { Link } from "wouter";
+import { User, TrendingUp } from "lucide-react";
 import { PaymentCarousel } from "@/components/payment-carousel";
 import PaymentMethods from "@/components/payment-methods";
 import { CartSidebar } from "@/components/cart-sidebar";
@@ -74,8 +77,32 @@ export default function Home() {
       {/* Shopping Categories */}
       <ShoppingCategories />
 
+      {/* Dashboard Link */}
+      <section className="container mx-auto px-4 py-8">
+        <div className="bg-gradient-to-br from-gold-primary/10 to-neon-pink/10 p-6 rounded-2xl border border-gold-primary/20 text-center">
+          <div className="flex items-center justify-center mb-4">
+            <div className="w-12 h-12 bg-gradient-to-br from-gold-primary to-neon-pink rounded-full flex items-center justify-center mr-3">
+              <User className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h3 className="text-xl font-bold text-foreground">Personalized Gaming Experience</h3>
+              <p className="text-muted-foreground text-sm">Get AI-powered recommendations and track achievements</p>
+            </div>
+          </div>
+          <Link href="/dashboard">
+            <Button className="bg-gradient-to-r from-gold-primary to-neon-pink hover:from-gold-secondary hover:to-neon-pink text-white">
+              <TrendingUp className="w-4 h-4 mr-2" />
+              View Your Dashboard
+            </Button>
+          </Link>
+        </div>
+      </section>
+
       {/* Most Popular Games */}
       <PopularGames />
+
+      {/* Personalized Recommendations */}
+      <GameRecommendations />
 
       {/* Features Section */}
       <section className="container mx-auto px-4 py-16">
