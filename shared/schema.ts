@@ -9,12 +9,13 @@ export const games = pgTable("games", {
   slug: text("slug").notNull().unique(),
   description: text("description").notNull(),
   price: decimal("price", { precision: 10, scale: 2 }).notNull(),
-  currency: varchar("currency", { length: 10 }).notNull().default("USD"),
+  currency: varchar("currency", { length: 10 }).notNull().default("EGP"),
   image: text("image").notNull(),
   category: text("category").notNull(),
   isPopular: boolean("is_popular").notNull().default(false),
-  stock: integer("stock").notNull().default(1000),
-  packages: text("packages") // JSON string for package variations
+  stock: integer("stock").notNull().default(50),
+  packages: text("packages").array(),
+  packagePrices: text("package_prices").array()
 });
 
 // Categories table

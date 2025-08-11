@@ -78,20 +78,7 @@ export function InteractiveGamePreview({ game, onGameSelect }: InteractiveGamePr
               </div>
             )}
 
-            {/* Preview Play Button */}
-            <div className="absolute inset-0 flex items-center justify-center">
-              <Button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handlePlayPreview();
-                }}
-                className={`bg-gold-primary/90 hover:bg-gold-primary text-black rounded-full p-4 transform transition-all duration-300 ${
-                  isHovered ? 'scale-100 opacity-100' : 'scale-75 opacity-0'
-                }`}
-              >
-                <Play className={`w-6 h-6 ${isPlaying ? 'animate-spin' : ''}`} />
-              </Button>
-            </div>
+
 
             {/* Quick Actions */}
             <div className={`absolute top-4 right-4 flex gap-2 transform transition-all duration-300 ${
@@ -128,7 +115,7 @@ export function InteractiveGamePreview({ game, onGameSelect }: InteractiveGamePr
         <div className="p-4">
           <div className="flex items-center justify-between mb-2">
             <h3 className="font-bold text-lg text-gold-primary truncate">{game.name}</h3>
-            <span className="text-neon-pink font-bold">${game.price}</span>
+            <span className="text-neon-pink font-bold">{game.price} L.E</span>
           </div>
           
           <p className="text-muted-foreground text-sm mb-3 line-clamp-2">
@@ -141,7 +128,7 @@ export function InteractiveGamePreview({ game, onGameSelect }: InteractiveGamePr
           }`}>
             <div className="flex items-center gap-1">
               <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-              <span>In Stock</span>
+              <span>Stock: {game.stock}</span>
             </div>
             <div className="flex items-center gap-1">
               <Star className="w-3 h-3 text-yellow-500" />
