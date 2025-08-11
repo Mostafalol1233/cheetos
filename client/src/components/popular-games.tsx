@@ -82,27 +82,42 @@ export function PopularGames() {
           
           return (
             <div key={game.id} className={getCardClasses(index)}>
-              <Link href={`/game/${game.slug}`} className="block">
-                <img
-                  src={game.image}
-                  alt={`${game.name} game`}
-                  className={`w-full ${imageHeight} object-cover`}
-                />
+              <Link href={`/game/${game.slug}`} className="block group">
+                <div className="relative overflow-hidden rounded-t-xl">
+                  <img
+                    src={game.image}
+                    alt={`${game.name} game`}
+                    className={`w-full ${imageHeight} object-contain bg-white dark:bg-gray-900 group-hover:scale-110 transition-transform duration-300`}
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                </div>
                 <div className="p-2 sm:p-3">
-                  <h3 className="text-sm sm:text-base font-semibold mb-1 text-foreground dark:text-white line-clamp-1">
+                  <h3 className="text-sm sm:text-base font-semibold mb-1 text-foreground line-clamp-1 group-hover:text-gold-primary transition-colors">
                     {game.name}
                   </h3>
                   <p className="text-muted-foreground text-xs mb-2 line-clamp-1">
                     {game.description}
                   </p>
-                  <div className="flex flex-col gap-2">
+                  <div className="flex items-center justify-between mb-2">
                     <span className="text-gold-primary font-bold text-xs sm:text-sm">
                       من {game.price} جنيه
+                    </span>
+                    <span className="bg-green-500/20 text-green-400 px-2 py-0.5 rounded-full text-xs font-medium">
+                      ✓ متوفر
                     </span>
                   </div>
                 </div>
               </Link>
-              <div className="p-2 pt-0">
+              <div className="p-2 pt-0 space-y-1">
+                <Link href={`/game/${game.slug}`}>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full text-xs h-6 hover:scale-105 transition-all border-gold-primary/30 text-gold-primary hover:bg-gold-primary hover:text-background"
+                  >
+                    View All Packages
+                  </Button>
+                </Link>
                 <Button
                   onClick={() => handleAddToCart(game)}
                   disabled={isAdding}
@@ -111,9 +126,9 @@ export function PopularGames() {
                     isAdding 
                       ? "bg-green-600 hover:bg-green-600" 
                       : "bg-gradient-to-r from-gold-primary to-neon-pink hover:from-gold-secondary hover:to-neon-pink"
-                  } text-white dark:text-darker-bg font-medium`}
+                  } text-white font-medium`}
                 >
-                  {isAdding ? "Added!" : "Add to Cart"}
+                  {isAdding ? "Added!" : "Quick Add"}
                 </Button>
               </div>
             </div>

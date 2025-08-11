@@ -103,12 +103,15 @@ export default function GameDetails() {
 
         <div className="grid md:grid-cols-2 gap-8">
           {/* Game Image */}
-          <div>
+          <div className="relative">
             <img
               src={game.image}
               alt={game.name}
-              className="w-full h-64 md:h-80 object-cover rounded-2xl shadow-lg"
+              className="w-full h-64 md:h-80 object-contain bg-white dark:bg-gray-900 rounded-2xl shadow-lg p-4"
             />
+            <div className="absolute top-4 right-4 bg-gold-primary text-background px-3 py-1 rounded-full text-sm font-bold">
+              Popular ⭐
+            </div>
           </div>
 
           {/* Game Details */}
@@ -124,10 +127,15 @@ export default function GameDetails() {
 
             {/* Package Selection */}
             <div className="space-y-4">
-              <h3 className="text-xl font-semibold">Choose Package</h3>
+              <div className="flex items-center justify-between">
+                <h3 className="text-xl font-semibold">All Available Packages</h3>
+                <span className="bg-green-500/20 text-green-400 px-2 py-1 rounded-full text-xs font-medium">
+                  ✓ In Stock
+                </span>
+              </div>
               
               {game.packages && game.packagePrices && (
-                <div className="grid gap-3">
+                <div className="space-y-3 max-h-96 overflow-y-auto custom-scrollbar">
                   {game.packages.map((packageName, index) => {
                     const price = parseInt(game.packagePrices![index]);
                     const isSelected = selectedPackage === packageName;
@@ -136,28 +144,37 @@ export default function GameDetails() {
                       <button
                         key={packageName}
                         onClick={() => handlePackageChange(packageName)}
-                        className={`p-4 rounded-xl border-2 transition-all duration-200 text-left ${
+                        className={`w-full p-4 rounded-xl border-2 transition-all duration-200 text-left group hover:scale-[1.02] ${
                           isSelected 
-                            ? 'border-gold-primary bg-gold-primary/10' 
-                            : 'border-border hover:border-gold-primary/50'
+                            ? 'border-gold-primary bg-gold-primary/10 shadow-lg' 
+                            : 'border-border hover:border-gold-primary/50 hover:bg-card/50'
                         }`}
                       >
                         <div className="flex justify-between items-center">
-                          <div>
-                            <h4 className="font-semibold">{packageName}</h4>
-                            <p className="text-muted-foreground text-sm">
-                              Best value for gaming
-                            </p>
+                          <div className="flex-1">
+                            <div className="flex items-center space-x-3">
+                              <div className={`w-4 h-4 rounded-full border-2 transition-all ${
+                                isSelected 
+                                  ? 'border-gold-primary bg-gold-primary' 
+                                  : 'border-gray-400 group-hover:border-gold-primary'
+                              }`}>
+                                {isSelected && <div className="w-full h-full rounded-full bg-white transform scale-50"></div>}
+                              </div>
+                              <div>
+                                <h4 className="font-semibold text-lg">{packageName}</h4>
+                                <p className="text-muted-foreground text-sm">
+                                  Instant delivery • No fees • Safe & Secure
+                                </p>
+                              </div>
+                            </div>
                           </div>
                           <div className="text-right">
-                            <div className="text-xl font-bold text-gold-primary">
+                            <div className="text-2xl font-bold text-gold-primary">
                               {price} جنيه
                             </div>
-                            {isSelected && (
-                              <div className="text-xs text-green-500 font-medium">
-                                Selected ✓
-                              </div>
-                            )}
+                            <div className="text-xs text-muted-foreground">
+                              ~${(price / 50).toFixed(2)} USD
+                            </div>
                           </div>
                         </div>
                       </button>
