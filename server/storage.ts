@@ -1,4 +1,31 @@
-import { type Game, type InsertGame, type Category, type InsertCategory } from "@shared/schema";
+import { 
+  type Game, 
+  type InsertGame, 
+  type Category, 
+  type InsertCategory,
+  type User,
+  type InsertUser,
+  type UserGameHistory,
+  type InsertUserGameHistory,
+  type Achievement,
+  type InsertAchievement,
+  type UserAchievement,
+  type InsertUserAchievement,
+  type SocialShare,
+  type InsertSocialShare,
+  type GameRecommendation
+} from "@shared/schema";
+import { db } from "./db";
+import { 
+  games,
+  categories,
+  users,
+  userGameHistory,
+  achievements,
+  userAchievements,
+  socialShares
+} from "@shared/schema";
+import { eq, desc, and, count, sql, inArray, like } from "drizzle-orm";
 
 export interface IStorage {
   // Games
@@ -13,6 +40,21 @@ export interface IStorage {
   getCategories(): Promise<Category[]>;
   getCategoryById(id: string): Promise<Category | undefined>;
   createCategory(category: InsertCategory): Promise<Category>;
+
+  // Users & Tracking
+  getOrCreateUser(sessionId: string): Promise<User>;
+  trackUserAction(userId: string, gameId: string, action: string, metadata?: any): Promise<UserGameHistory>;
+  
+  // Recommendations
+  getRecommendationsForUser(userId: string): Promise<GameRecommendation[]>;
+  
+  // Achievements
+  getAchievements(): Promise<Achievement[]>;
+  getUserAchievements(userId: string): Promise<UserAchievement[]>;
+  updateAchievementProgress(userId: string, achievementId: string, progress: number): Promise<UserAchievement>;
+  
+  // Social
+  trackSocialShare(userId: string, gameId: string, platform: string): Promise<SocialShare>;
 }
 
 export class MemStorage implements IStorage {
@@ -351,6 +393,356 @@ export class MemStorage implements IStorage {
     this.categories.set(category.id, category);
     return category;
   }
+
+  // Stub implementations for new methods (MemStorage fallback)
+  async getOrCreateUser(sessionId: string): Promise<User> {
+    throw new Error("User tracking not available in memory storage");
+  }
+
+  async trackUserAction(userId: string, gameId: string, action: string, metadata?: any): Promise<UserGameHistory> {
+    throw new Error("User tracking not available in memory storage");
+  }
+
+  async getRecommendationsForUser(userId: string): Promise<GameRecommendation[]> {
+    // Return random popular games as fallback
+    const popularGames = await this.getPopularGames();
+    return popularGames.slice(0, 4).map(game => ({
+      game,
+      score: Math.random(),
+      reason: "Popular game"
+    }));
+  }
+
+  async getAchievements(): Promise<Achievement[]> {
+    return [];
+  }
+
+  async getUserAchievements(userId: string): Promise<UserAchievement[]> {
+    return [];
+  }
+
+  async updateAchievementProgress(userId: string, achievementId: string, progress: number): Promise<UserAchievement> {
+    throw new Error("Achievements not available in memory storage");
+  }
+
+  async trackSocialShare(userId: string, gameId: string, platform: string): Promise<SocialShare> {
+    throw new Error("Social tracking not available in memory storage");
+  }
 }
 
-export const storage = new MemStorage();
+// Database Storage Implementation with Advanced Features
+export class DatabaseStorage implements IStorage {
+  constructor() {
+    this.seedInitialData();
+  }
+
+  private async seedInitialData() {
+    // Seed achievements
+    const achievementData: InsertAchievement[] = [
+      {
+        id: "explorer-1",
+        name: "Window Shopper",
+        description: "View 5 different games",
+        icon: "eye",
+        category: "explorer",
+        threshold: 5,
+        points: 100
+      },
+      {
+        id: "explorer-2", 
+        name: "Gaming Enthusiast",
+        description: "View 20 different games",
+        icon: "binoculars",
+        category: "explorer",
+        threshold: 20,
+        points: 250
+      },
+      {
+        id: "collector-1",
+        name: "First Purchase",
+        description: "Add your first game to cart",
+        icon: "shopping-cart",
+        category: "collector",
+        threshold: 1,
+        points: 200
+      },
+      {
+        id: "collector-2",
+        name: "Cart Master",
+        description: "Add 10 games to cart",
+        icon: "shopping-bag",
+        category: "collector",
+        threshold: 10,
+        points: 500
+      },
+      {
+        id: "social-1",
+        name: "Share the Joy",
+        description: "Share your first game discovery",
+        icon: "share-2",
+        category: "social", 
+        threshold: 1,
+        points: 150
+      },
+      {
+        id: "social-2",
+        name: "Social Butterfly",
+        description: "Share 5 game discoveries",
+        icon: "users",
+        category: "social",
+        threshold: 5,
+        points: 350
+      }
+    ];
+
+    try {
+      await db.insert(achievements).values(achievementData).onConflictDoNothing();
+    } catch (error) {
+      // Achievements already exist, no problem
+    }
+  }
+
+  // Games Implementation
+  async getGames(): Promise<Game[]> {
+    return await db.select().from(games);
+  }
+
+  async getGameById(id: string): Promise<Game | undefined> {
+    const [game] = await db.select().from(games).where(eq(games.id, id));
+    return game;
+  }
+
+  async getGameBySlug(slug: string): Promise<Game | undefined> {
+    const [game] = await db.select().from(games).where(eq(games.slug, slug));
+    return game;
+  }
+
+  async getGamesByCategory(category: string): Promise<Game[]> {
+    return await db.select().from(games).where(eq(games.category, category));
+  }
+
+  async getPopularGames(): Promise<Game[]> {
+    return await db.select().from(games).where(eq(games.isPopular, true));
+  }
+
+  async createGame(insertGame: InsertGame): Promise<Game> {
+    const [game] = await db.insert(games).values(insertGame).returning();
+    return game;
+  }
+
+  // Categories Implementation
+  async getCategories(): Promise<Category[]> {
+    return await db.select().from(categories);
+  }
+
+  async getCategoryById(id: string): Promise<Category | undefined> {
+    const [category] = await db.select().from(categories).where(eq(categories.id, id));
+    return category;
+  }
+
+  async createCategory(insertCategory: InsertCategory): Promise<Category> {
+    const [category] = await db.insert(categories).values(insertCategory).returning();
+    return category;
+  }
+
+  // User & Tracking Implementation
+  async getOrCreateUser(sessionId: string): Promise<User> {
+    let [user] = await db.select().from(users).where(eq(users.sessionId, sessionId));
+    
+    if (!user) {
+      [user] = await db.insert(users).values({
+        sessionId,
+        preferences: {},
+      }).returning();
+    } else {
+      // Update last active
+      [user] = await db.update(users)
+        .set({ lastActive: new Date() })
+        .where(eq(users.id, user.id))
+        .returning();
+    }
+    
+    return user;
+  }
+
+  async trackUserAction(userId: string, gameId: string, action: string, metadata: any = {}): Promise<UserGameHistory> {
+    const [history] = await db.insert(userGameHistory).values({
+      userId,
+      gameId,
+      action,
+      metadata
+    }).returning();
+
+    // Update achievement progress
+    await this.updateAchievementProgressForAction(userId, action);
+    
+    return history;
+  }
+
+  private async updateAchievementProgressForAction(userId: string, action: string) {
+    // Get relevant achievements based on action
+    const relevantAchievements = await db.select().from(achievements)
+      .where(action === 'viewed' ? eq(achievements.category, 'explorer') : eq(achievements.category, 'collector'));
+
+    for (const achievement of relevantAchievements) {
+      // Count user's progress for this type of action
+      const [progressCount] = await db.select({ count: count() })
+        .from(userGameHistory)
+        .where(and(
+          eq(userGameHistory.userId, userId),
+          eq(userGameHistory.action, action)
+        ));
+
+      await this.updateAchievementProgress(userId, achievement.id, progressCount.count);
+    }
+  }
+
+  // Recommendation Engine
+  async getRecommendationsForUser(userId: string): Promise<GameRecommendation[]> {
+    // Get user's game history
+    const userHistory = await db.select({
+      gameId: userGameHistory.gameId,
+      action: userGameHistory.action,
+      game: games
+    })
+    .from(userGameHistory)
+    .innerJoin(games, eq(userGameHistory.gameId, games.id))
+    .where(eq(userGameHistory.userId, userId))
+    .orderBy(desc(userGameHistory.timestamp));
+
+    // Get user's viewed/purchased games
+    const viewedGames = new Set(userHistory.map(h => h.gameId));
+    const purchasedGames = new Set(
+      userHistory.filter(h => h.action === 'added_to_cart').map(h => h.gameId)
+    );
+
+    // Get user's preferred categories
+    const categoryPreferences = new Map<string, number>();
+    userHistory.forEach(h => {
+      const category = h.game.category;
+      categoryPreferences.set(category, (categoryPreferences.get(category) || 0) + 1);
+    });
+
+    // Get all games not yet viewed
+    const allGames = await this.getGames();
+    const candidateGames = allGames.filter(game => !viewedGames.has(game.id));
+
+    // Score recommendations
+    const recommendations: GameRecommendation[] = candidateGames.map(game => {
+      let score = 0;
+      let reason = "Recommended for you";
+
+      // Category preference score
+      const categoryScore = categoryPreferences.get(game.category) || 0;
+      score += categoryScore * 0.4;
+
+      // Popular games boost
+      if (game.isPopular) {
+        score += 0.3;
+        reason = "Popular game in your interests";
+      }
+
+      // Price similarity to purchased games
+      if (purchasedGames.size > 0) {
+        const avgPurchasePrice = userHistory
+          .filter(h => h.action === 'added_to_cart')
+          .reduce((sum, h) => sum + h.game.price, 0) / purchasedGames.size;
+        
+        const priceDiff = Math.abs(game.price - avgPurchasePrice) / avgPurchasePrice;
+        score += (1 - priceDiff) * 0.2;
+      }
+
+      // Category-based reasons
+      if (categoryScore > 0) {
+        reason = `Similar to your ${game.category.replace('-', ' ')} preferences`;
+      }
+
+      return { game, score, reason };
+    });
+
+    // Sort by score and return top recommendations
+    return recommendations
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 6);
+  }
+
+  // Achievements Implementation
+  async getAchievements(): Promise<Achievement[]> {
+    return await db.select().from(achievements);
+  }
+
+  async getUserAchievements(userId: string): Promise<UserAchievement[]> {
+    return await db.select({
+      id: userAchievements.id,
+      userId: userAchievements.userId,
+      achievementId: userAchievements.achievementId,
+      progress: userAchievements.progress,
+      completed: userAchievements.completed,
+      completedAt: userAchievements.completedAt
+    })
+    .from(userAchievements)
+    .where(eq(userAchievements.userId, userId));
+  }
+
+  async updateAchievementProgress(userId: string, achievementId: string, progress: number): Promise<UserAchievement> {
+    // Get achievement details
+    const [achievement] = await db.select().from(achievements).where(eq(achievements.id, achievementId));
+    if (!achievement) throw new Error("Achievement not found");
+
+    // Get or create user achievement record
+    let [userAchievement] = await db.select().from(userAchievements)
+      .where(and(
+        eq(userAchievements.userId, userId),
+        eq(userAchievements.achievementId, achievementId)
+      ));
+
+    const isCompleted = progress >= achievement.threshold;
+    const completedAt = isCompleted && !userAchievement?.completed ? new Date() : userAchievement?.completedAt;
+
+    if (!userAchievement) {
+      [userAchievement] = await db.insert(userAchievements).values({
+        userId,
+        achievementId,
+        progress,
+        completed: isCompleted,
+        completedAt
+      }).returning();
+    } else {
+      [userAchievement] = await db.update(userAchievements)
+        .set({
+          progress,
+          completed: isCompleted,
+          completedAt
+        })
+        .where(eq(userAchievements.id, userAchievement.id))
+        .returning();
+    }
+
+    return userAchievement;
+  }
+
+  // Social Sharing
+  async trackSocialShare(userId: string, gameId: string, platform: string): Promise<SocialShare> {
+    const [share] = await db.insert(socialShares).values({
+      userId,
+      gameId,
+      platform
+    }).returning();
+
+    // Update social achievement progress
+    const shareCount = await db.select({ count: count() })
+      .from(socialShares)
+      .where(eq(socialShares.userId, userId));
+
+    const socialAchievements = await db.select().from(achievements)
+      .where(eq(achievements.category, 'social'));
+
+    for (const achievement of socialAchievements) {
+      await this.updateAchievementProgress(userId, achievement.id, shareCount[0].count);
+    }
+
+    return share;
+  }
+}
+
+export const storage = new DatabaseStorage();
