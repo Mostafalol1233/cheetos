@@ -79,6 +79,34 @@ Preferred communication style: Simple, everyday language.
 - **Loading Experience**: Interactive mini-game during loading screens with score tracking
 - **Recommendation Engine UI**: Personalized game suggestions with reasoning displays and confidence scores
 
+# Production Deployment
+
+## Vercel Deployment Setup
+- **Platform**: Vercel for hosting and serverless functions
+- **Database**: Neon PostgreSQL for production database
+- **Static Assets**: Public folder for images and static files
+- **Environment Variables**: DATABASE_URL configured in Vercel dashboard
+- **Build Configuration**: Custom build process with client/server separation
+
+## Deployment Files Created
+- `vercel.json`: Vercel configuration for routing and builds
+- `deploy-guide.md`: Step-by-step deployment instructions
+- `README.md`: Comprehensive project documentation
+- `.gitignore`: Git ignore rules for clean repository
+- `.vercelignore`: Vercel deployment ignore rules
+
+## Database Production Setup
+- **Provider**: Neon (neon.tech) for serverless PostgreSQL
+- **Schema Management**: Drizzle Kit for migrations and schema sync
+- **Data Seeding**: Automated seeding script for initial data
+- **Connection**: Pooled connections via @neondatabase/serverless
+
+## Asset Management
+- **Development**: attached_assets folder for local development
+- **Production**: public/assets folder for Vercel static serving
+- **Images**: Professional game card images and category graphics
+- **Optimization**: All images copied to public folder for production deployment
+
 # External Dependencies
 
 ## Core Dependencies
