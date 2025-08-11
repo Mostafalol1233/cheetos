@@ -78,7 +78,9 @@ export async function seedDatabase() {
         image: "/attached_assets/FREE_FIRE.jpg",
         category: "mobile-games",
         isPopular: true,
-        stock: randomStock()
+        stock: randomStock(),
+        packages: ["100 Diamonds", "210 Diamonds", "530+53 Diamonds", "1080+108 Diamonds", "2200+220 Diamonds"],
+        packagePrices: ["90.00", "200.00", "399.00", "799.00", "1599.00"]
       },
       {
         id: "pubg",
@@ -90,7 +92,9 @@ export async function seedDatabase() {
         image: "/attached_assets/PUBG_MOBILE.jpg",
         category: "mobile-games",
         isPopular: true,
-        stock: randomStock()
+        stock: randomStock(),
+        packages: ["60 UC", "300+25 UC", "600+60 UC", "1500+300 UC", "3000+850 UC", "8100 UC"],
+        packagePrices: ["29.99", "149.99", "284.99", "759.99", "1499.99", "2849.99"]
       },
       {
         id: "roblox",
@@ -102,7 +106,9 @@ export async function seedDatabase() {
         image: "/attached_assets/ROBLOX.png",
         category: "online-games",
         isPopular: true,
-        stock: randomStock()
+        stock: randomStock(),
+        packages: ["400 Robux", "800 Robux", "1700 Robux", "4500 Robux", "10000 Robux"],
+        packagePrices: ["250.00", "500.00", "999.00", "2499.00", "4999.00"]
       },
       {
         id: "lol",
@@ -114,7 +120,9 @@ export async function seedDatabase() {
         image: "/attached_assets/LEAGUE_OF_LEGENDS.png",
         category: "online-games",
         isPopular: true,
-        stock: randomStock()
+        stock: randomStock(),
+        packages: ["650 RP", "1380 RP", "2800 RP", "5000 RP", "7200 RP"],
+        packagePrices: ["125.00", "250.00", "500.00", "875.00", "1250.00"]
       },
       {
         id: "callofduty",
@@ -126,7 +134,9 @@ export async function seedDatabase() {
         image: "/attached_assets/CALL_OF_DUTY.png",
         category: "online-games",
         isPopular: true,
-        stock: randomStock()
+        stock: randomStock(),
+        packages: ["1000 COD Points", "2400 COD Points", "5000 COD Points", "10000 COD Points"],
+        packagePrices: ["250.00", "599.00", "1199.00", "2399.00"]
       },
       {
         id: "valorant",
@@ -138,7 +148,9 @@ export async function seedDatabase() {
         image: "/attached_assets/VALORANT.jpg",
         category: "online-games",
         isPopular: true,
-        stock: randomStock()
+        stock: randomStock(),
+        packages: ["475 VP", "1000 VP", "2050 VP", "3650 VP", "5350 VP"],
+        packagePrices: ["200.00", "400.00", "800.00", "1400.00", "2000.00"]
       },
       {
         id: "cod-mobile",
