@@ -29,11 +29,11 @@ export default function Home() {
             {/* Logo */}
             <div className="flex items-center space-x-4">
               <div className="relative">
-                <div className="w-16 h-16 bg-gradient-to-br from-gold-primary to-gold-secondary rounded-xl flex items-center justify-center animate-glow overflow-hidden">
+                <div className="w-16 h-16 rounded-xl flex items-center justify-center overflow-hidden">
                   <img 
                     src="/attached_assets/image_1754878695368.png" 
                     alt="Cheetos Gaming Logo"
-                    className="w-12 h-12 object-cover rounded-lg"
+                    className="w-16 h-16 object-cover rounded-xl"
                   />
                 </div>
               </div>
