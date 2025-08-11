@@ -171,15 +171,21 @@
 
 @keyframes scroll-rtl {
   0% {
-    transform: translateX(100%);
+    transform: translateX(0);
   }
   100% {
-    transform: translateX(-100%);
+    transform: translateX(-50%);
   }
 }
 
 .animate-scroll-rtl {
-  animation: scroll-rtl 20s linear infinite;
+  animation: scroll-rtl 15s linear infinite;
+  will-change: transform;
+}
+
+/* Ensure smooth scrolling without pauses */
+.animate-scroll-rtl:hover {
+  animation-play-state: running;
 }
 
 @keyframes glow {
