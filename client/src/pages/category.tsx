@@ -120,7 +120,7 @@ export default function CategoryPage() {
                     )}
                   </div>
                   <CardContent className="p-4">
-                    <h3 className="font-bold text-lg mb-2 text-gray-900 dark:text-white line-clamp-1">{game.name}</h3>
+                    <h3 className="font-bold text-lg mb-2 text-gray-900 dark:text-white">{game.name}</h3>
                     <p className="text-gray-600 dark:text-gray-300 text-sm mb-3 line-clamp-2">{game.description}</p>
                     <div className="flex items-center justify-between">
                       <span className="text-xl font-bold text-blue-600 dark:text-blue-400">

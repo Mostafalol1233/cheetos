@@ -120,7 +120,7 @@ export function PopularGames() {
                   </div>
                   
                   <div className="p-2 sm:p-3">
-                    <h3 className="text-sm sm:text-base font-semibold mb-1 text-foreground line-clamp-1 group-hover:text-gold-primary transition-colors">
+                    <h3 className="text-sm sm:text-base font-semibold mb-1 text-foreground group-hover:text-gold-primary transition-colors">
                       {game.name}
                     </h3>
                     <p className="text-muted-foreground text-xs mb-2 line-clamp-1">
