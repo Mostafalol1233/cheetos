@@ -34,7 +34,7 @@ export default function Home() {
               <div className="relative">
                 <div className="w-16 h-16 rounded-xl flex items-center justify-center overflow-hidden">
                   <img 
-                    src="@assets/image_1754931426972.png" 
+                    src="/attached_assets/image_1754931426972.png" 
                     alt="Cheetos Gaming Logo"
                     className="w-16 h-16 object-cover rounded-xl"
                   />
