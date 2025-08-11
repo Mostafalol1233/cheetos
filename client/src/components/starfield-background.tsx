@@ -1,15 +1,13 @@
 import { useEffect, useRef } from "react";
-import { useTheme } from "./theme-provider";
 
 export function StarfieldBackground() {
   const containerRef = useRef<HTMLDivElement>(null);
-  const { isNight } = useTheme();
 
   useEffect(() => {
     if (!containerRef.current) return;
 
     const container = containerRef.current;
-    const starCount = isNight ? 100 : 30; // More stars at night
+    const starCount = 150; // Always show stars
 
     // Clear existing stars
     container.innerHTML = "";
@@ -17,31 +15,29 @@ export function StarfieldBackground() {
     // Create stars
     for (let i = 0; i < starCount; i++) {
       const star = document.createElement("div");
-      star.className = isNight ? "star star-night" : "star star-day";
+      star.className = "star star-night";
       
       // Random position
       star.style.left = Math.random() * 100 + "%";
       star.style.top = Math.random() * 100 + "%";
       
-      // Random size (1-4px for night, 1-2px for day)
-      const size = isNight ? Math.random() * 3 + 1 : Math.random() * 1 + 0.5;
+      // Random size (1-4px)
+      const size = Math.random() * 3 + 1;
       star.style.width = size + "px";
       star.style.height = size + "px";
       
       // Random animation delay
       star.style.animationDelay = Math.random() * 3 + "s";
       
-      // Random colors for night stars
-      if (isNight) {
-        const colors = ['#ffffff', '#ffd700', '#ff69b4', '#00bfff'];
-        star.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
-      }
+      // Random colors for stars
+      const colors = ['#ffffff', '#ffd700', '#ff69b4', '#00bfff', '#90EE90'];
+      star.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
       
       container.appendChild(star);
     }
 
-    // Add mouse interaction for night mode
-    if (isNight) {
+    // Add mouse interaction
+    {
       const handleMouseMove = (e: MouseEvent) => {
         const rect = container.getBoundingClientRect();
         const x = e.clientX - rect.left;
@@ -72,7 +68,7 @@ export function StarfieldBackground() {
     return () => {
       container.innerHTML = "";
     };
-  }, [isNight]);
+  }, []);
 
   return (
     <div
