@@ -1,10 +1,20 @@
 import express, { type Request, Response, NextFunction } from "express";
+import path from "path";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+
+// Serve attached assets statically
+app.use('/attached_assets', express.static(path.join(process.cwd(), 'attached_assets')));
+
+// Add logging for static file requests to debug
+app.use('/attached_assets', (req, res, next) => {
+  log(`Static file request: ${req.path}`);
+  next();
+});
 
 app.use((req, res, next) => {
   const start = Date.now();
