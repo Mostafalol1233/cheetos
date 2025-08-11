@@ -56,30 +56,18 @@ export function PopularGames() {
           <h2 className="text-2xl font-bold text-foreground">Most Popular Games</h2>
         </div>
         
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 max-w-7xl mx-auto auto-rows-max">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 max-w-6xl mx-auto auto-rows-max">
           {games.map((game, index) => {
             const isAdding = addingItems.includes(game.id);
             const isHovered = hoveredGame === game.id;
             
-            // Different sizes for variety like in the image
+            // Consistent card layout for better image display
             const getCardClasses = (index: number) => {
-              const baseClasses = "bg-card-bg dark:bg-card-bg rounded-xl overflow-hidden game-card transition-all duration-300 cursor-pointer relative group";
-              
-              // Create varied layouts: some take 2 columns, some are taller
-              if (index % 5 === 0) return `${baseClasses} col-span-2 row-span-2`; // Large square
-              if (index % 7 === 0) return `${baseClasses} col-span-2`; // Wide rectangle
-              if (index % 11 === 0) return `${baseClasses} row-span-2`; // Tall rectangle
-              return baseClasses; // Regular size
+              return "bg-card-bg dark:bg-card-bg rounded-xl overflow-hidden game-card transition-all duration-300 cursor-pointer relative group hover:shadow-lg hover:scale-105";
             };
 
-            const getImageHeight = (index: number) => {
-              if (index % 5 === 0) return "h-48 sm:h-64";
-              if (index % 7 === 0) return "h-24 sm:h-32";
-              if (index % 11 === 0) return "h-48 sm:h-64";
-              return "h-24 sm:h-32";
-            };
-
-            const imageHeight = getImageHeight(index);
+            // Fixed aspect ratio for all images
+            const imageHeight = "h-40 sm:h-48";
 
             return (
               <motion.div
@@ -105,11 +93,11 @@ export function PopularGames() {
                 </div>
 
                 <Link href={`/game/${game.slug}`} onClick={() => handleGameView(game.id)} className="block group">
-                  <div className="relative overflow-hidden rounded-t-xl">
+                  <div className="relative aspect-[4/3] overflow-hidden rounded-t-xl">
                     <img
                       src={game.image}
                       alt={`${game.name} game`}
-                      className={`w-full ${imageHeight} object-cover group-hover:scale-110 transition-transform duration-500`}
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                     />
                     
                     {/* Overlay effects */}

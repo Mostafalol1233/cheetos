@@ -103,25 +103,25 @@ export default function CategoryPage() {
               </div>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
               {games.map((game) => (
-                <Card key={game.id} className="overflow-hidden hover:shadow-lg transition-shadow duration-300">
-                  <div className="aspect-video relative">
+                <Card key={game.id} className="overflow-hidden hover:shadow-lg hover:scale-105 transition-all duration-300">
+                  <div className="aspect-[4/3] relative overflow-hidden">
                     <img
                       src={game.image}
                       alt={game.name}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-cover hover:scale-110 transition-transform duration-500"
                     />
                     {game.isPopular && (
-                      <div className="absolute top-2 right-2 bg-yellow-500 text-white px-2 py-1 rounded-full text-xs font-bold flex items-center">
+                      <div className="absolute top-2 right-2 bg-gradient-to-r from-yellow-500 to-orange-500 text-white px-2 py-1 rounded-full text-xs font-bold flex items-center shadow-lg">
                         <Star className="w-3 h-3 mr-1" />
                         Popular
                       </div>
                     )}
                   </div>
                   <CardContent className="p-4">
-                    <h3 className="font-bold text-lg mb-2 text-gray-900 dark:text-white">{game.name}</h3>
-                    <p className="text-gray-600 dark:text-gray-300 text-sm mb-3">{game.description}</p>
+                    <h3 className="font-bold text-lg mb-2 text-gray-900 dark:text-white line-clamp-1">{game.name}</h3>
+                    <p className="text-gray-600 dark:text-gray-300 text-sm mb-3 line-clamp-2">{game.description}</p>
                     <div className="flex items-center justify-between">
                       <span className="text-xl font-bold text-blue-600 dark:text-blue-400">
                         {game.price} {game.currency}
@@ -132,7 +132,7 @@ export default function CategoryPage() {
                             View
                           </Button>
                         </Link>
-                        <Button size="sm" className="flex items-center">
+                        <Button size="sm" className="flex items-center bg-blue-600 hover:bg-blue-700">
                           <ShoppingCart className="w-4 h-4 mr-1" />
                           Buy
                         </Button>
