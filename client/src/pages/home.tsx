@@ -6,6 +6,7 @@ import { StarfieldBackground } from "@/components/starfield-background";
 import { ShoppingCategories } from "@/components/shopping-categories";
 import { PopularGames } from "@/components/popular-games";
 import { PaymentCarousel } from "@/components/payment-carousel";
+import PaymentMethods from "@/components/payment-methods";
 import { CartSidebar } from "@/components/cart-sidebar";
 import { CheckoutModal } from "@/components/checkout-modal";
 import { useCart } from "@/lib/cart-context";
@@ -109,8 +110,10 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Payment Methods Carousel */}
-      <PaymentCarousel />
+      {/* Payment Methods */}
+      <section className="container mx-auto px-4 py-8">
+        <PaymentMethods />
+      </section>
 
       {/* Footer */}
       <footer className="bg-darker-bg border-t border-gray-800 py-8">
