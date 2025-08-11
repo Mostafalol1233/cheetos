@@ -66,7 +66,9 @@ export async function seedDatabase() {
         image: "/attached_assets/CROSSFIRE.png",
         category: "online-games",
         isPopular: true,
-        stock: randomStock()
+        stock: randomStock(),
+        packages: ["1000 ZP", "5000 ZP", "10000 ZP", "25000 ZP", "50000 ZP", "100000 ZP"],
+        packagePrices: ["50.00", "240.00", "480.00", "1200.00", "2400.00", "4800.00"]
       },
       {
         id: "freefire",
@@ -162,7 +164,9 @@ export async function seedDatabase() {
         image: "/attached_assets/COD_MOBILE.png",
         category: "mobile-games",
         isPopular: true,
-        stock: randomStock()
+        stock: randomStock(),
+        packages: ["320 CP", "800 CP", "1600 CP", "4000 CP", "8000 CP"],
+        packagePrices: ["150.00", "350.00", "700.00", "1750.00", "3500.00"]
       },
       {
         id: "apex",
@@ -174,7 +178,9 @@ export async function seedDatabase() {
         image: "/attached_assets/APEX_LEGENDS.png",
         category: "online-games",
         isPopular: true,
-        stock: randomStock()
+        stock: randomStock(),
+        packages: ["1000 Apex Coins", "2150 Apex Coins", "4350 Apex Coins", "6700 Apex Coins", "11500 Apex Coins"],
+        packagePrices: ["280.00", "600.00", "1200.00", "1800.00", "3000.00"]
       },
       {
         id: "clash-royale",
@@ -186,7 +192,9 @@ export async function seedDatabase() {
         image: "/attached_assets/CLASH_ROYALE.jpg",
         category: "mobile-games",
         isPopular: true,
-        stock: randomStock()
+        stock: randomStock(),
+        packages: ["80 Gems", "500 Gems", "1200 Gems", "2500 Gems", "6500 Gems", "14000 Gems"],
+        packagePrices: ["40.00", "200.00", "480.00", "1000.00", "2600.00", "5600.00"]
       },
       {
         id: "clash-clans",
@@ -198,7 +206,9 @@ export async function seedDatabase() {
         image: "/attached_assets/CLASH_OF_CLANS.webp",
         category: "mobile-games",
         isPopular: true,
-        stock: randomStock()
+        stock: randomStock(),
+        packages: ["80 Gems", "500 Gems", "1200 Gems", "2500 Gems", "6500 Gems", "14000 Gems"],
+        packagePrices: ["40.00", "200.00", "480.00", "1000.00", "2600.00", "5600.00"]
       },
       {
         id: "fortnite",
@@ -210,7 +220,9 @@ export async function seedDatabase() {
         image: "/attached_assets/FORTNITE.jpg",
         category: "online-games",
         isPopular: false,
-        stock: randomStock()
+        stock: randomStock(),
+        packages: ["1000 V-Bucks", "2800 V-Bucks", "5000 V-Bucks", "13500 V-Bucks"],
+        packagePrices: ["200.00", "500.00", "900.00", "2400.00"]
       },
       {
         id: "minecraft",
@@ -222,7 +234,9 @@ export async function seedDatabase() {
         image: "/attached_assets/MINECRAFT.png",
         category: "online-games",
         isPopular: false,
-        stock: randomStock()
+        stock: randomStock(),
+        packages: ["320 Minecoins", "840 Minecoins", "1720 Minecoins", "3500 Minecoins"],
+        packagePrices: ["100.00", "250.00", "500.00", "1000.00"]
       },
       {
         id: "gta5",
@@ -231,10 +245,12 @@ export async function seedDatabase() {
         description: "Shark Cards & Premium",
         price: "300.00",
         currency: "EGP",
-        image: "/attached_assets/GTA_V.jpg",
+        image: "/attached_assets/OIP_1754946009491.jpg",
         category: "online-games",
-        isPopular: false,
-        stock: randomStock()
+        isPopular: true,
+        stock: randomStock(),
+        packages: ["$100,000 Red Shark Card", "$500,000 Tiger Shark Card", "$1,250,000 Bull Shark Card", "$3,500,000 Great White Shark Card", "$8,000,000 Megalodon Shark Card"],
+        packagePrices: ["300.00", "1250.00", "3000.00", "8400.00", "19200.00"]
       },
       {
         id: "steam",
@@ -279,10 +295,12 @@ export async function seedDatabase() {
         description: "Netflix Subscription Cards",
         price: "200.00",
         currency: "EGP",
-        image: "/attached_assets/NETFLIX.png",
-        category: "gift-cards",
-        isPopular: false,
-        stock: randomStock()
+        image: "/attached_assets/OIP_1754945924514.jpg",
+        category: "online-games",
+        isPopular: true,
+        stock: randomStock(),
+        packages: ["1 Month Subscription", "3 Months Subscription", "6 Months Subscription", "12 Months Subscription"],
+        packagePrices: ["200.00", "570.00", "1080.00", "2040.00"]
       }
     ];
 
