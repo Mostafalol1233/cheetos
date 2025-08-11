@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { X } from "lucide-react";
 import { SiWhatsapp } from "react-icons/si";
 
@@ -19,7 +20,7 @@ export function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
   const [countryCode, setCountryCode] = useState("+20");
   const [paymentMethod, setPaymentMethod] = useState("Orange Cash");
 
-  const SELLER_WHATSAPP = import.meta.env.VITE_SELLER_WHATSAPP || "+201234567890";
+  const SELLER_WHATSAPP = "+201234567890"; // Default number
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,7 +53,7 @@ ${orderSummary}
     // Open WhatsApp
     window.open(whatsappUrl, '_blank');
 
-    // Clear cart and close modals
+    // Clear cart and close modal
     clearCart();
     onClose();
     
@@ -66,104 +67,94 @@ ${orderSummary}
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-60 flex items-center justify-center p-4">
-      <div className="bg-card-bg rounded-2xl p-6 w-full max-w-md relative">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={onClose}
-          className="absolute right-4 top-4 text-gray-400 hover:text-white"
-        >
-          <X className="h-5 w-5" />
-        </Button>
-        
-        <h2 className="text-xl font-bold text-white mb-6 text-center">
-          Complete Your Order
-        </h2>
-        
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <SiWhatsapp className="text-green-500" />
+            Complete Your Order
+          </DialogTitle>
+        </DialogHeader>
+
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Order Summary */}
+          <div className="bg-muted/50 rounded-lg p-4">
+            <h4 className="font-medium mb-2">Order Summary:</h4>
+            {cart.map(item => (
+              <div key={item.id} className="flex justify-between text-sm">
+                <span>{item.name} x{item.quantity}</span>
+                <span>{(item.price * item.quantity).toFixed(2)} EGP</span>
+              </div>
+            ))}
+            <div className="border-t mt-2 pt-2 font-bold">
+              Total: {getTotalPrice()} EGP
+            </div>
+          </div>
+
+          {/* Customer Information */}
           <div>
-            <Label htmlFor="customerName" className="text-white text-sm font-medium">
-              Full Name *
-            </Label>
+            <Label htmlFor="name">Full Name *</Label>
             <Input
-              id="customerName"
-              type="text"
-              required
+              id="name"
               value={customerName}
               onChange={(e) => setCustomerName(e.target.value)}
-              className="mt-2 bg-darker-bg text-white border-gray-600 focus:border-gold-primary"
               placeholder="Enter your full name"
+              required
             />
           </div>
-          
-          <div>
-            <Label htmlFor="customerPhone" className="text-white text-sm font-medium">
-              Phone Number *
-            </Label>
-            <div className="flex mt-2">
+
+          <div className="flex gap-2">
+            <div className="w-24">
+              <Label>Country</Label>
               <Select value={countryCode} onValueChange={setCountryCode}>
-                <SelectTrigger className="w-24 bg-darker-bg text-white border-gray-600 focus:border-gold-primary rounded-r-none">
+                <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="+20">🇪🇬 +20</SelectItem>
                   <SelectItem value="+966">🇸🇦 +966</SelectItem>
                   <SelectItem value="+971">🇦🇪 +971</SelectItem>
-                  <SelectItem value="+1">🇺🇸 +1</SelectItem>
                 </SelectContent>
               </Select>
-              
+            </div>
+            <div className="flex-1">
+              <Label htmlFor="phone">Phone Number *</Label>
               <Input
-                id="customerPhone"
-                type="tel"
-                required
+                id="phone"
                 value={customerPhone}
                 onChange={(e) => setCustomerPhone(e.target.value)}
-                className="flex-1 bg-darker-bg text-white border-gray-600 border-l-0 focus:border-gold-primary rounded-l-none"
                 placeholder="1234567890"
+                required
               />
             </div>
           </div>
-          
+
           <div>
-            <Label htmlFor="paymentMethod" className="text-white text-sm font-medium">
-              Payment Method
-            </Label>
+            <Label>Payment Method</Label>
             <Select value={paymentMethod} onValueChange={setPaymentMethod}>
-              <SelectTrigger className="mt-2 bg-darker-bg text-white border-gray-600 focus:border-gold-primary">
+              <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="Orange Cash">Orange Cash</SelectItem>
                 <SelectItem value="Vodafone Cash">Vodafone Cash</SelectItem>
-                <SelectItem value="Bank Transfer">Bank Transfer</SelectItem>
-                <SelectItem value="Cash in Hand">Cash in Hand</SelectItem>
+                <SelectItem value="Etisalat Cash">Etisalat Cash</SelectItem>
+                <SelectItem value="WE Pay">WE Pay</SelectItem>
                 <SelectItem value="InstaPay">InstaPay</SelectItem>
-                <SelectItem value="We Pay">We Pay</SelectItem>
+                <SelectItem value="Bank Transfer">Bank Transfer</SelectItem>
               </SelectContent>
             </Select>
           </div>
-          
-          <div className="flex space-x-3 mt-6">
-            <Button
-              type="button"
-              onClick={onClose}
-              variant="outline"
-              className="flex-1 bg-gray-600 hover:bg-gray-700 text-white border-gray-500"
-            >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              className="flex-1 bg-gradient-to-r from-gold-primary to-neon-pink hover:from-gold-secondary hover:to-neon-pink text-darker-bg font-semibold hover:scale-105 transition-transform"
-            >
-              Send to WhatsApp
-              <SiWhatsapp className="ml-2 h-4 w-4" />
-            </Button>
-          </div>
+
+          <Button 
+            type="submit" 
+            className="w-full bg-green-600 hover:bg-green-700 text-white"
+          >
+            <SiWhatsapp className="mr-2" />
+            Send Order via WhatsApp
+          </Button>
         </form>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }
