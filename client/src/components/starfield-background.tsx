@@ -77,9 +77,8 @@ export function StarfieldBackground() {
   return (
     <div
       ref={containerRef}
-      className={`starfield fixed inset-0 w-full h-full pointer-events-none z-0 ${
-        isNight ? 'dark:block' : 'block dark:hidden'
-      }`}
+      className="starfield fixed inset-0 w-full h-full pointer-events-none"
+      style={{ zIndex: -1 }}
     />
   );
 }

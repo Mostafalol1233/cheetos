@@ -224,6 +224,46 @@
   animation-delay: 1.5s;
 }
 
+/* Starfield Background Styles */
+.star {
+  position: absolute;
+  border-radius: 50%;
+  animation: twinkle 3s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.star-day {
+  background-color: rgba(255, 204, 51, 0.6);
+  box-shadow: 0 0 6px rgba(255, 204, 51, 0.4);
+}
+
+.star-night {
+  background-color: #ffffff;
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
+}
+
+.star-glow {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 204, 51, 0.6) 0%, transparent 70%);
+  pointer-events: none;
+  animation: glow-fade 1s ease-out forwards;
+  transform: translate(-50%, -50%);
+}
+
+@keyframes glow-fade {
+  0% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(2);
+  }
+}
+
 /* Starfield */
 .starfield {
   position: fixed;
@@ -232,44 +272,7 @@
   width: 100%;
   height: 100%;
   z-index: -1;
-}
-
-.star {
-  position: absolute;
-  background: white;
-  border-radius: 50%;
-  animation: twinkle 3s ease-in-out infinite;
-}
-
-.star-night {
-  box-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
-}
-
-.star-day {
-  background: rgba(255, 204, 51, 0.6);
-  opacity: 0.3;
-}
-
-.star-glow {
-  position: absolute;
-  width: 20px;
-  height: 20px;
-  background: radial-gradient(circle, rgba(255, 204, 51, 0.8) 0%, transparent 70%);
-  border-radius: 50%;
-  animation: glow-fade 1s ease-out forwards;
   pointer-events: none;
-  transform: translate(-50%, -50%);
-}
-
-@keyframes glow-fade {
-  0% {
-    opacity: 1;
-    transform: translate(-50%, -50%) scale(0.1);
-  }
-  100% {
-    opacity: 0;
-    transform: translate(-50%, -50%) scale(1);
-  }
 }
 
 /* Card hover effects */
