@@ -169,6 +169,19 @@
   }
 }
 
+@keyframes scroll-rtl {
+  0% {
+    transform: translateX(100%);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
+}
+
+.animate-scroll-rtl {
+  animation: scroll-rtl 20s linear infinite;
+}
+
 @keyframes glow {
   from { 
     box-shadow: 0 0 20px rgba(255, 204, 51, 0.5); 
