@@ -5,9 +5,11 @@ import { Button } from "@/components/ui/button";
 
 import { ShoppingCategories } from "@/components/shopping-categories";
 import { PopularGames } from "@/components/popular-games";
+import { GameRecommendationEngine } from "@/components/game-recommendation-engine";
+import { DynamicLoadingProgress } from "@/components/dynamic-loading-progress";
+import { AccessibilityToolbar } from "@/components/accessibility-mode";
 
 import { Link } from "wouter";
-
 
 import PaymentMethods from "@/components/payment-methods";
 import { CartSidebar } from "@/components/cart-sidebar";
@@ -53,6 +55,7 @@ export default function Home() {
               <nav className="hidden md:flex space-x-6">
                 <Link href="/" className="text-foreground hover:text-gold-primary transition-colors font-medium">Home</Link>
                 <Link href="/games" className="text-foreground hover:text-gold-primary transition-colors font-medium">Games</Link>
+                <AccessibilityToolbar />
                 <Link href="/support" className="text-foreground hover:text-gold-primary transition-colors font-medium">Support</Link>
               </nav>
               
@@ -115,6 +118,16 @@ export default function Home() {
             <p className="text-gray-400 text-sm">Discover unbeatable prices.</p>
           </div>
         </div>
+      </section>
+
+      {/* AI Recommendations Section */}
+      <section className="container mx-auto px-4 py-16">
+        <GameRecommendationEngine />
+      </section>
+
+      {/* Popular Games Section */}
+      <section className="container mx-auto px-4 py-16">
+        <PopularGames />
       </section>
 
       {/* Payment Methods */}

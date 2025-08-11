@@ -331,3 +331,47 @@
   background: linear-gradient(135deg, #f59e0b, #d97706);
   background-clip: content-box;
 }
+
+/* Accessibility Styles */
+.accessibility-high-contrast {
+  --background: 0 0% 0%;
+  --foreground: 0 0% 100%;
+  --card: 0 0% 5%;
+  --card-foreground: 0 0% 100%;
+  --primary: 45 100% 70%;
+  --primary-foreground: 0 0% 0%;
+  --secondary: 0 0% 15%;
+  --secondary-foreground: 0 0% 100%;
+  --muted: 0 0% 10%;
+  --muted-foreground: 0 0% 90%;
+  --accent: 0 0% 15%;
+  --accent-foreground: 0 0% 100%;
+  --destructive: 0 84% 65%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 0 0% 20%;
+  --input: 0 0% 20%;
+  --ring: 45 100% 70%;
+}
+
+.text-small { font-size: 14px; }
+.text-medium { font-size: 16px; }
+.text-large { font-size: 18px; }
+.text-xl { font-size: 20px; }
+
+.reduce-motion *,
+.reduce-motion *::before,
+.reduce-motion *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+}
+
+.enhanced-focus *:focus {
+  outline: 3px solid var(--gold-primary) !important;
+  outline-offset: 2px !important;
+}
+
+.colorblind-friendly {
+  --gold-primary: 45 100% 50%;
+  --neon-pink: 280 100% 70%;
+}

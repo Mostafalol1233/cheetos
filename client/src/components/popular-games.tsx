@@ -4,7 +4,10 @@ import { useCart } from "@/lib/cart-context";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
-import { ShoppingBag, Star, Flame } from "lucide-react";
+import { ShoppingBag, Star, Flame, Share2, Play } from "lucide-react";
+import { InteractiveGamePreview } from "./interactive-game-preview";
+import { SocialSharing } from "./social-sharing";
+import { DynamicLoadingProgress } from "./dynamic-loading-progress";
 
 export function PopularGames() {
   const { data: games = [], isLoading } = useQuery({
@@ -21,7 +24,7 @@ export function PopularGames() {
     addToCart({
       id: game.id,
       name: game.name,
-      price: game.price,
+      price: parseFloat(game.price.toString()),
       image: game.image
     });
 
@@ -32,23 +35,11 @@ export function PopularGames() {
   };
 
   if (isLoading) {
-    return (
-      <section className="container mx-auto px-4 py-12">
-        <div className="flex items-center mb-8">
-          <div className="w-6 h-6 bg-gold-primary rounded-full animate-pulse mr-3"></div>
-          <div className="h-6 bg-gray-300 rounded w-48 animate-pulse"></div>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {[1, 2, 3, 4].map(i => (
-            <div key={i} className="bg-card-bg rounded-xl h-64 animate-pulse"></div>
-          ))}
-        </div>
-      </section>
-    );
+    return <DynamicLoadingProgress isLoading={true} loadingText="Loading popular games..." />;
   }
 
   return (
-    <section className="container mx-auto px-4 py-12">
+    <section className="py-12">
       <div className="flex items-center mb-8">
         <div className="w-6 h-6 bg-gold-primary rounded-full flex items-center justify-center mr-3">
           <Flame className="w-3 h-3 text-background" />
@@ -61,60 +52,33 @@ export function PopularGames() {
           const isAdding = addingItems.includes(game.id);
           
           return (
-            <div
-              key={game.id}
-              className="bg-card-bg rounded-xl overflow-hidden transition-all duration-300 hover:shadow-lg hover:scale-105"
-            >
-              {/* Popular badge */}
-              <div className="absolute top-2 left-2 z-10 bg-gradient-to-r from-gold-primary to-neon-pink text-background px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1">
-                <Star className="w-3 h-3" />
-                Popular
+            <div key={game.id} className="relative">
+              <InteractiveGamePreview 
+                game={game} 
+                onGameSelect={(selectedGame) => {
+                  window.location.href = `/game/${selectedGame.slug}`;
+                }}
+              />
+              
+              <div className="mt-3 flex justify-between items-center">
+                <SocialSharing game={game} />
+                <Button
+                  onClick={() => handleAddToCart(game)}
+                  disabled={isAdding}
+                  variant="outline"
+                  size="sm"
+                  className="gap-2"
+                >
+                  {isAdding ? (
+                    <span className="animate-pulse">Added!</span>
+                  ) : (
+                    <>
+                      <ShoppingBag className="w-4 h-4" />
+                      Quick Add
+                    </>
+                  )}
+                </Button>
               </div>
-
-              <Link href={`/game/${game.slug}`} className="block">
-                <div className="relative aspect-[4/3] overflow-hidden">
-                  <img
-                    src={game.image}
-                    alt={`${game.name} game`}
-                    className="w-full h-full object-cover hover:scale-110 transition-transform duration-500"
-                  />
-                </div>
-                
-                <div className="p-3">
-                  <h3 className="text-base font-semibold mb-1 text-foreground hover:text-gold-primary transition-colors">
-                    {game.name}
-                  </h3>
-                  <p className="text-muted-foreground text-sm mb-2 line-clamp-2">
-                    {game.description}
-                  </p>
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="text-lg font-bold text-gold-primary">
-                      ${game.price.toFixed(2)}
-                    </span>
-                    <span className="text-sm text-muted-foreground">
-                      {game.currency}
-                    </span>
-                  </div>
-                  
-                  <Button
-                    onClick={(e) => {
-                      e.preventDefault();
-                      handleAddToCart(game);
-                    }}
-                    disabled={isAdding}
-                    className="w-full bg-gradient-to-r from-gold-primary to-gold-secondary hover:from-gold-secondary hover:to-gold-primary text-background"
-                  >
-                    {isAdding ? (
-                      <span className="animate-pulse">Added!</span>
-                    ) : (
-                      <>
-                        <ShoppingBag className="mr-2 h-4 w-4" />
-                        Add to Cart
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </Link>
             </div>
           );
         })}
