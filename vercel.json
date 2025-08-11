@@ -12,19 +12,5 @@
       "source": "/api/(.*)",
       "destination": "/api/$1"
     }
-  ],
-  "routes": [
-    {
-      "src": "/attached_assets/(.*)",
-      "dest": "/attached_assets/$1"
-    },
-    {
-      "src": "/api/(.*)",
-      "dest": "/api/$1"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/$1"
-    }
   ]
 }
