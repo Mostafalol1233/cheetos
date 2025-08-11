@@ -22,8 +22,8 @@ export default function Home() {
   const itemCount = getItemCount();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-foreground font-gaming overflow-x-hidden custom-cursor">
-      <StarfieldBackground />
+    <div className="min-h-screen bg-background text-foreground font-gaming overflow-x-hidden custom-cursor">
+
       
       {/* Header */}
       <header className="relative z-50 bg-card/90 backdrop-blur-md border-b border-gold-primary/20">
@@ -32,8 +32,12 @@ export default function Home() {
             {/* Logo */}
             <div className="flex items-center space-x-4">
               <div className="relative">
-                <div className="w-16 h-16 rounded-xl flex items-center justify-center overflow-hidden bg-gradient-to-br from-gold-primary to-neon-pink">
-                  <Gamepad2 className="w-10 h-10 text-background" />
+                <div className="w-16 h-16 rounded-xl flex items-center justify-center overflow-hidden">
+                  <img 
+                    src="@assets/image_1754931426972.png" 
+                    alt="Cheetos Gaming Logo"
+                    className="w-16 h-16 object-cover rounded-xl"
+                  />
                 </div>
               </div>
               <div>
