@@ -125,10 +125,7 @@ export default function Home() {
         <GameRecommendationEngine />
       </section>
 
-      {/* Popular Games Section */}
-      <section className="container mx-auto px-4 py-16">
-        <PopularGames />
-      </section>
+
 
       {/* Payment Methods */}
       <section className="container mx-auto px-4 py-8">
