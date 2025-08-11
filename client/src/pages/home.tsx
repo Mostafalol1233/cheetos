@@ -32,12 +32,8 @@ export default function Home() {
             {/* Logo */}
             <div className="flex items-center space-x-4">
               <div className="relative">
-                <div className="w-16 h-16 rounded-xl flex items-center justify-center overflow-hidden">
-                  <img 
-                    src="/attached_assets/image_1754878695368.png" 
-                    alt="Cheetos Gaming Logo"
-                    className="w-16 h-16 object-cover rounded-xl"
-                  />
+                <div className="w-16 h-16 rounded-xl flex items-center justify-center overflow-hidden bg-gradient-to-br from-gold-primary to-neon-pink">
+                  <Gamepad2 className="w-10 h-10 text-background" />
                 </div>
               </div>
               <div>
@@ -51,9 +47,9 @@ export default function Home() {
             {/* Navigation & Cart */}
             <div className="flex items-center space-x-6">
               <nav className="hidden md:flex space-x-6">
-                <a href="#" className="text-foreground hover:text-gold-primary transition-colors">Home</a>
-                <a href="#" className="text-foreground hover:text-gold-primary transition-colors">Games</a>
-                <a href="#" className="text-foreground hover:text-gold-primary transition-colors">Support</a>
+                <Link href="/" className="text-foreground hover:text-gold-primary transition-colors font-medium">Home</Link>
+                <Link href="/games" className="text-foreground hover:text-gold-primary transition-colors font-medium">Games</Link>
+                <Link href="/support" className="text-foreground hover:text-gold-primary transition-colors font-medium">Support</Link>
               </nav>
               
               {/* Shopping Cart Button */}

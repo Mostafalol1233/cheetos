@@ -9,12 +9,16 @@ import Home from "./pages/home";
 import GameDetails from "./pages/game-details";
 import Dashboard from "./pages/dashboard";
 import CategoryPage from "./pages/category";
+import GamesPage from "./pages/games";
+import SupportPage from "./pages/support";
 import NotFound from "@/pages/not-found";
 
 function Router() {
   return (
     <Switch>
       <Route path="/" component={Home} />
+      <Route path="/games" component={GamesPage} />
+      <Route path="/support" component={SupportPage} />
       <Route path="/category/:slug" component={CategoryPage} />
       <Route path="/game/:slug" component={GameDetails} />
       <Route path="/dashboard" component={Dashboard} />
