@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
 import { ShoppingBag, Star, Flame, Share2, Play } from "lucide-react";
 import { InteractiveGamePreview } from "./interactive-game-preview";
-import { SocialSharing } from "./social-sharing";
+
 import { DynamicLoadingProgress } from "./dynamic-loading-progress";
 
 export function PopularGames() {
@@ -60,21 +60,20 @@ export function PopularGames() {
                 }}
               />
               
-              <div className="mt-3 flex justify-between items-center">
-                <SocialSharing game={game} />
+              <div className="mt-3 flex justify-center">
                 <Button
                   onClick={() => handleAddToCart(game)}
                   disabled={isAdding}
                   variant="outline"
                   size="sm"
-                  className="gap-2"
+                  className="gap-2 w-full"
                 >
                   {isAdding ? (
                     <span className="animate-pulse">Added!</span>
                   ) : (
                     <>
                       <ShoppingBag className="w-4 h-4" />
-                      Quick Add
+                      Add to Cart
                     </>
                   )}
                 </Button>
