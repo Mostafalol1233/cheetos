@@ -29,8 +29,12 @@ export default function Home() {
             {/* Logo */}
             <div className="flex items-center space-x-4">
               <div className="relative">
-                <div className="w-16 h-16 bg-gradient-to-br from-gold-primary to-gold-secondary rounded-xl flex items-center justify-center animate-glow">
-                  <Gamepad2 className="text-2xl text-background" />
+                <div className="w-16 h-16 bg-gradient-to-br from-gold-primary to-gold-secondary rounded-xl flex items-center justify-center animate-glow overflow-hidden">
+                  <img 
+                    src="/attached_assets/wGWSvv3eoYT6.png" 
+                    alt="Cheetos Gaming Logo"
+                    className="w-12 h-12 object-contain"
+                  />
                 </div>
               </div>
               <div>
