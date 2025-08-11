@@ -1,8 +1,5 @@
 
-import { config } from 'dotenv';
-
-// Load environment variables
-config();
+// Use process.env directly (Replit loads environment variables automatically)
 
 console.log('🔍 معلومات قاعدة البيانات:');
 console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
