@@ -36,15 +36,15 @@ export default function Home() {
               <div className="relative">
                 <div className="w-16 h-16 rounded-xl flex items-center justify-center overflow-hidden">
                   <img 
-                    src="/attached_assets/image_1754931426972.png" 
-                    alt="Cheetos Gaming Logo"
+                    src="/attached_assets/image_1766183664655.png" 
+                    alt="Diaa Eldeen Logo"
                     className="w-16 h-16 object-cover rounded-xl"
                   />
                 </div>
               </div>
               <div>
                 <h1 className="text-2xl font-bold bg-gradient-to-r from-gold-primary to-neon-pink bg-clip-text text-transparent">
-                  Cheetos Gaming
+                  Diaa Eldeen
                 </h1>
                 <p className="text-sm text-muted-foreground">Premium Game Store</p>
               </div>
@@ -153,7 +153,7 @@ export default function Home() {
               <SiTelegram />
             </a>
             <a
-              href="https://tiktok.com/@cheetos_gaming1"
+              href="https://tiktok.com/@diaa_eldeen"
               target="_blank"
               rel="noopener noreferrer"
               className="text-pink-500 hover:text-pink-400 text-2xl transition-colors"
@@ -169,7 +169,7 @@ export default function Home() {
               <SiYoutube />
             </a>
           </div>
-          <p className="text-gray-400">© 2024 Cheetos Gaming. All rights reserved.</p>
+          <p className="text-gray-400">© 2024 Diaa Eldeen. All rights reserved.</p>
           <p className="text-gray-500 text-sm mt-2">Premium Game Store - منشئ محتوى ألعاب فيديو</p>
         </div>
       </footer>
