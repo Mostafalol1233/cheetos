@@ -1,14 +1,15 @@
-import { useParams } from "wouter";
+import { useParams, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ShoppingCart, Star, Package } from "lucide-react";
+import { ShoppingCart, Star, Package, ArrowLeft } from "lucide-react";
 import { useCart } from "@/lib/cart-context";
 import { useState } from "react";
 
 export default function GamePage() {
   const { slug } = useParams();
   const { addToCart } = useCart();
+  const [, setLocation] = useLocation();
   const [selectedPackage, setSelectedPackage] = useState<number>(0);
 
   const { data: game, isLoading } = useQuery({
@@ -54,6 +55,16 @@ export default function GamePage() {
 
   return (
     <div className="container mx-auto px-4 py-8">
+      {/* Back Button */}
+      <Button
+        onClick={() => setLocation("/")}
+        variant="ghost"
+        className="mb-6 text-foreground hover:text-gold-primary"
+      >
+        <ArrowLeft className="w-4 h-4 mr-2" />
+        Back
+      </Button>
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Game Image */}
         <div className="relative">
@@ -61,7 +72,7 @@ export default function GamePage() {
             <img
               src={game.image}
               alt={game.name}
-              className="w-full h-full object-cover"
+              className="w-full h-full object-contain"
             />
             {game.isPopular && (
               <div className="absolute top-4 right-4 bg-gradient-to-r from-yellow-500 to-orange-500 text-white px-3 py-1 rounded-full text-sm font-bold flex items-center shadow-lg">

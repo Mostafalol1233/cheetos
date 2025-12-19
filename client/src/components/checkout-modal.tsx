@@ -20,13 +20,20 @@ export function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
   const [countryCode, setCountryCode] = useState("+20");
   const [paymentMethod, setPaymentMethod] = useState("Orange Cash");
 
-  const SELLER_WHATSAPP = "+201234567890"; // Default number
+  const SELLER_WHATSAPP = import.meta.env.VITE_SELLER_WHATSAPP || "+201234567890";
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!customerName.trim() || !customerPhone.trim()) {
       alert("Please fill in all required fields");
+      return;
+    }
+
+    // Validate phone number format
+    const fullPhone = `${countryCode}${customerPhone}`;
+    if (!/^\+\d{1,3}\d{7,15}$/.test(fullPhone.replace(/\s/g, ''))) {
+      alert("Please enter a valid phone number");
       return;
     }
 
