@@ -12,9 +12,9 @@
   --card-foreground: hsl(224, 71%, 4%);
   --popover: hsl(0, 0%, 95%);
   --popover-foreground: hsl(224, 71%, 4%);
-  --primary: hsl(45, 100%, 50%);
+  --primary: hsl(210, 100%, 50%);
   --primary-foreground: hsl(0, 0%, 98%);
-  --secondary: hsl(348, 100%, 56%);
+  --secondary: hsl(180, 100%, 50%);
   --secondary-foreground: hsl(0, 0%, 98%);
   --muted: hsl(210, 40%, 90%);
   --muted-foreground: hsl(215, 16%, 47%);
@@ -24,8 +24,8 @@
   --destructive-foreground: hsl(210, 40%, 98%);
   --border: hsl(214, 32%, 91%);
   --input: hsl(214, 32%, 91%);
-  --ring: hsl(45, 100%, 50%);
-  --chart-1: hsl(45, 100%, 50%);
+  --ring: hsl(210, 100%, 50%);
+  --chart-1: hsl(210, 100%, 50%);
   --chart-2: hsl(160, 60%, 45%);
   --chart-3: hsl(30, 80%, 55%);
   --chart-4: hsl(280, 65%, 60%);
@@ -44,9 +44,9 @@
   --radius: 1rem;
   
   /* Gaming Theme Colors - Light */
-  --gold-primary: hsl(45, 100%, 50%);
-  --gold-secondary: hsl(45, 100%, 40%);
-  --neon-pink: hsl(348, 100%, 56%);
+  --gold-primary: hsl(210, 100%, 50%);
+  --gold-secondary: hsl(210, 100%, 40%);
+  --neon-pink: hsl(180, 100%, 50%);
   --dark-bg: hsl(0, 0%, 98%);
   --darker-bg: hsl(0, 0%, 95%);
   --card-bg: hsl(0, 0%, 93%);
@@ -61,9 +61,9 @@
   --card-foreground: hsl(200, 7%, 91%);
   --popover: hsl(215, 25%, 9%);
   --popover-foreground: hsl(200, 7%, 91%);
-  --primary: hsl(45, 100%, 60%);
+  --primary: hsl(210, 100%, 60%);
   --primary-foreground: hsl(220, 13%, 9%);
-  --secondary: hsl(348, 100%, 66%);
+  --secondary: hsl(180, 100%, 60%);
   --secondary-foreground: hsl(220, 13%, 9%);
   --muted: hsl(217, 33%, 17%);
   --muted-foreground: hsl(215, 20%, 65%);
@@ -73,25 +73,25 @@
   --destructive-foreground: hsl(200, 7%, 91%);
   --border: hsl(215, 16%, 20%);
   --input: hsl(215, 16%, 20%);
-  --ring: hsl(45, 100%, 60%);
-  --chart-1: hsl(45, 100%, 60%);
-  --chart-2: hsl(160, 60%, 45%);
-  --chart-3: hsl(30, 80%, 55%);
-  --chart-4: hsl(280, 65%, 60%);
-  --chart-5: hsl(340, 75%, 55%);
+  --ring: hsl(210, 100%, 60%);
+  --chart-1: hsl(210, 100%, 60%);
+  --chart-2: hsl(180, 60%, 45%);
+  --chart-3: hsl(200, 80%, 55%);
+  --chart-4: hsl(200, 65%, 60%);
+  --chart-5: hsl(180, 75%, 55%);
   --sidebar: hsl(215, 25%, 9%);
   --sidebar-foreground: hsl(200, 7%, 91%);
-  --sidebar-primary: hsl(45, 100%, 60%);
+  --sidebar-primary: hsl(210, 100%, 60%);
   --sidebar-primary-foreground: hsl(220, 13%, 9%);
   --sidebar-accent: hsl(217, 33%, 17%);
   --sidebar-accent-foreground: hsl(200, 7%, 91%);
   --sidebar-border: hsl(215, 16%, 20%);
-  --sidebar-ring: hsl(45, 100%, 60%);
+  --sidebar-ring: hsl(210, 100%, 60%);
   
   /* Gaming Theme Colors - Dark */
-  --gold-primary: hsl(45, 100%, 60%);
-  --gold-secondary: hsl(45, 100%, 50%);
-  --neon-pink: hsl(348, 100%, 66%);
+  --gold-primary: hsl(210, 100%, 60%);
+  --gold-secondary: hsl(210, 100%, 50%);
+  --neon-pink: hsl(180, 100%, 60%);
   --dark-bg: hsl(224, 71%, 4%);
   --darker-bg: hsl(220, 13%, 9%);
   --card-bg: hsl(215, 25%, 9%);
