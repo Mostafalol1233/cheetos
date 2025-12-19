@@ -91,6 +91,52 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Admin endpoints
+  // Delete game
+  app.delete("/api/admin/games/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const success = await storage.deleteGame(id);
+      if (success) {
+        res.json({ message: "Game deleted successfully" });
+      } else {
+        res.status(404).json({ message: "Game not found" });
+      }
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete game" });
+    }
+  });
+
+  // Update game
+  app.put("/api/admin/games/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const updates = req.body;
+      const updated = await storage.updateGame(id, updates);
+      if (updated) {
+        res.json(updated);
+      } else {
+        res.status(404).json({ message: "Game not found" });
+      }
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update game" });
+    }
+  });
+
+  // Create game
+  app.post("/api/admin/games", async (req, res) => {
+    try {
+      const gameData = req.body;
+      const newGame = await storage.createGame({
+        ...gameData,
+        id: gameData.id || `game_${Date.now()}`
+      });
+      res.json(newGame);
+    } catch (error) {
+      res.status(400).json({ message: "Failed to create game" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

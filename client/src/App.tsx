@@ -8,7 +8,7 @@ import { AccessibilityProvider } from "./components/accessibility-mode";
 import { ThemeProvider } from "./components/theme-provider";
 import Home from "./pages/home";
 import GamePage from "./pages/game";
-
+import AdminDashboard from "./pages/admin";
 import CategoryPage from "./pages/category";
 import GamesPage from "./pages/games";
 import SupportPage from "./pages/support";
@@ -20,6 +20,7 @@ function Router() {
       <Route path="/" component={Home} />
       <Route path="/games" component={GamesPage} />
       <Route path="/support" component={SupportPage} />
+      <Route path="/admin" component={AdminDashboard} />
       <Route path="/category/:slug" component={CategoryPage} />
       <Route path="/game/:slug" component={GamePage} />
 
