@@ -63,12 +63,12 @@ export function PopularGames() {
           
           return (
             <div key={game.id} className="relative group">
-              <div className="relative rounded-2xl overflow-hidden border-2 border-cyan-400/30 bg-gradient-to-b from-gray-900 to-black p-4 h-80 flex flex-col justify-between shadow-lg hover:shadow-2xl hover:shadow-cyan-500/50 transition-all duration-300 hover:border-cyan-400/60 group-hover:glow-cyan">
+              <div className="relative rounded-2xl overflow-hidden border-2 border-cyan-400/30 bg-gradient-to-b from-gray-900 to-black p-4 h-full flex flex-col justify-between shadow-lg hover:shadow-2xl hover:shadow-cyan-500/50 transition-all duration-300 hover:border-cyan-400/60 group-hover:glow-cyan">
                 {/* Card glow effect */}
                 <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/0 via-cyan-500/0 to-cyan-500/0 group-hover:from-cyan-500/10 group-hover:via-cyan-500/5 group-hover:to-cyan-500/10 transition-all duration-300 pointer-events-none"></div>
                 
                 {/* Game Image */}
-                <div className="relative rounded-lg overflow-hidden border border-cyan-400/20 bg-gray-800 flex-1 mb-3 flex items-center justify-center aspect-video">
+                <div className="relative rounded-lg overflow-hidden border border-cyan-400/20 bg-gray-800 flex-1 mb-3 flex items-center justify-center h-56">
                   <img
                     src={game.image}
                     alt={game.name}
