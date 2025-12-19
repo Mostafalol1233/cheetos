@@ -313,7 +313,7 @@ export async function seedDatabase() {
 
   } catch (error) {
     console.error('❌ Error seeding database:', error);
-    throw error;
+    console.log('⚠️  Continuing without database seed - app will still run');
   }
 }
 

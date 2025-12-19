@@ -12,7 +12,7 @@ const iconMap = {
 };
 
 export function ShoppingCategories() {
-  const { data: categories = [], isLoading } = useQuery({
+  const { data: categories = [], isLoading, isError } = useQuery({
     queryKey: ["/api/categories"],
     queryFn: () => fetch("/api/categories").then(res => res.json()) as Promise<Category[]>
   });
@@ -33,6 +33,10 @@ export function ShoppingCategories() {
     );
   }
 
+  if (isError || !Array.isArray(categories) || categories.length === 0) {
+    return null;
+  }
+
   return (
     <section className="container mx-auto px-4 py-12">
       <div className="flex items-center mb-8">
@@ -43,7 +47,7 @@ export function ShoppingCategories() {
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-6xl mx-auto">
-        {categories.map((category) => {
+        {Array.isArray(categories) && categories.map((category) => {
           const IconComponent = iconMap[category.icon as keyof typeof iconMap] || Gift;
           
           return (
