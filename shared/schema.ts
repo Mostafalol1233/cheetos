@@ -39,3 +39,24 @@ export type Game = z.infer<typeof selectGameSchema>;
 export type InsertGame = z.infer<typeof insertGameSchema>;
 export type Category = z.infer<typeof selectCategorySchema>;
 export type InsertCategory = z.infer<typeof insertCategorySchema>;
+
+// Chat Messages table
+export interface ChatMessage {
+  id: string;
+  sender: "user" | "support";
+  message: string;
+  timestamp: number;
+  sessionId: string;
+}
+
+export const chatMessageSchema = z.object({
+  id: z.string(),
+  sender: z.enum(["user", "support"]),
+  message: z.string().min(1),
+  timestamp: z.number(),
+  sessionId: z.string()
+});
+
+export const insertChatMessageSchema = chatMessageSchema.omit({ id: true, timestamp: true });
+
+export type InsertChatMessage = z.infer<typeof insertChatMessageSchema>;
