@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { ShoppingCart, Gamepad2, Zap, Headphones, Shield, Tag } from "lucide-react";
-import { SiTelegram, SiTiktok, SiYoutube, SiFacebook } from "react-icons/si";
+import { ShoppingCart, Gamepad2, Zap, Headphones, Shield, Tag, Flame, Gift } from "lucide-react";
+import { SiTelegram, SiTiktok, SiYoutube, SiFacebook, SiWhatsapp } from "react-icons/si";
 import { Button } from "@/components/ui/button";
 
 import { ShoppingCategories } from "@/components/shopping-categories";
@@ -120,9 +120,47 @@ export default function Home() {
         </div>
       </section>
 
-      {/* AI Recommendations Section */}
+      {/* Flash Sale & Promotions Section */}
       <section className="container mx-auto px-4 py-16">
-        <GameRecommendationEngine />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          {/* Flash Sale Banner */}
+          <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-red-900 via-red-800 to-orange-900 p-8 flex flex-col justify-between min-h-[400px] group">
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent to-orange-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            <div className="relative z-10">
+              <div className="flex items-center gap-2 mb-4">
+                <Flame className="w-6 h-6 text-yellow-300 animate-bounce" />
+                <span className="text-yellow-300 font-bold text-sm">FLASH SALE</span>
+              </div>
+              <h3 className="text-4xl font-bold text-white mb-2">50% OFF</h3>
+              <p className="text-gray-100 text-lg mb-4">On Selected Games</p>
+              <p className="text-gray-200 text-sm">Limited Time Only - Grab Your Favorite Games Now!</p>
+            </div>
+            <Link href="/games" className="relative z-10">
+              <button className="bg-white text-red-900 font-bold py-3 px-8 rounded-xl hover:bg-yellow-300 transition-all duration-300 transform hover:scale-105">
+                Shop Now
+              </button>
+            </Link>
+          </div>
+
+          {/* Gift Cards Spotlight */}
+          <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-purple-900 via-indigo-900 to-blue-900 p-8 flex flex-col justify-between min-h-[400px] group">
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent to-purple-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            <div className="relative z-10">
+              <div className="flex items-center gap-2 mb-4">
+                <Gift className="w-6 h-6 text-pink-300 animate-bounce" />
+                <span className="text-pink-300 font-bold text-sm">GIFT CARDS</span>
+              </div>
+              <h3 className="text-4xl font-bold text-white mb-2">Perfect Gifts</h3>
+              <p className="text-gray-100 text-lg mb-4">For Every Gamer</p>
+              <p className="text-gray-200 text-sm">Send digital gift cards to your friends instantly!</p>
+            </div>
+            <Link href="/games" className="relative z-10">
+              <button className="bg-white text-purple-900 font-bold py-3 px-8 rounded-xl hover:bg-pink-300 transition-all duration-300 transform hover:scale-105">
+                Explore
+              </button>
+            </Link>
+          </div>
+        </div>
       </section>
 
 
@@ -146,44 +184,31 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Contact Information */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8 text-center">
-            <div>
-              <h3 className="text-gold-primary font-bold mb-2">Telegram</h3>
-              <a href="https://t.me/+7iivzambZno1NzBk" className="text-gray-400 hover:text-gold-primary transition-colors">
-                @DiaElDeen
-              </a>
-            </div>
-            <div>
-              <h3 className="text-gold-primary font-bold mb-2">Instapay</h3>
-              <a href="https://instapay.eg/" className="text-gray-400 hover:text-gold-primary transition-colors">
-                Instapay Payment
-              </a>
-            </div>
-            <div>
-              <h3 className="text-gold-primary font-bold mb-2">Facebook</h3>
-              <a href="https://www.facebook.com/DiaElDeenSadek" className="text-gray-400 hover:text-gold-primary transition-colors">
-                Dia El Deen Sadek
-              </a>
-            </div>
-          </div>
-
           {/* Social Links */}
-          <div className="flex justify-center space-x-6 mb-6">
+          <div className="flex justify-center space-x-8 mb-8">
             <a
               href="https://t.me/+7iivzambZno1NzBk"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-blue-500 hover:text-blue-400 text-2xl transition-colors"
+              className="text-blue-500 hover:text-blue-400 text-3xl transition-all duration-300 hover:scale-125"
               title="Telegram"
             >
               <SiTelegram />
             </a>
             <a
+              href="https://wa.me/201234567890"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-green-500 hover:text-green-400 text-3xl transition-all duration-300 hover:scale-125"
+              title="WhatsApp"
+            >
+              <SiWhatsapp />
+            </a>
+            <a
               href="https://www.facebook.com/DiaElDeenSadek"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-blue-600 hover:text-blue-500 text-2xl transition-colors"
+              className="text-blue-600 hover:text-blue-500 text-3xl transition-all duration-300 hover:scale-125"
               title="Facebook"
             >
               <SiFacebook />
@@ -192,7 +217,7 @@ export default function Home() {
               href="https://tiktok.com/@diaa_eldeen"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-pink-500 hover:text-pink-400 text-2xl transition-colors"
+              className="text-pink-500 hover:text-pink-400 text-3xl transition-all duration-300 hover:scale-125"
               title="TikTok"
             >
               <SiTiktok />
@@ -201,7 +226,7 @@ export default function Home() {
               href="https://youtube.com/channel/UCTMMrq_QBRQOCmqWdyp-Ttw"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-red-500 hover:text-red-400 text-2xl transition-colors"
+              className="text-red-500 hover:text-red-400 text-3xl transition-all duration-300 hover:scale-125"
               title="YouTube"
             >
               <SiYoutube />
