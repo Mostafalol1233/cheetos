@@ -2,6 +2,7 @@ import { useState } from "react";
 import { ShoppingCart, Gamepad2, Zap, Headphones, Shield, Tag, Instagram, Phone } from "lucide-react";
 import { SiWhatsapp, SiTelegram, SiTiktok, SiYoutube, SiFacebook } from "react-icons/si";
 import { Button } from "@/components/ui/button";
+import fireBackgroundImg from "@assets/generated_images/cinematic_fire_background_with_neon_blue_edges.png";
 
 import { ShoppingCategories } from "@/components/shopping-categories";
 import { PopularGames } from "@/components/popular-games";
@@ -24,7 +25,7 @@ export default function Home() {
   const itemCount = getItemCount();
 
   return (
-    <div className="min-h-screen bg-background text-foreground font-gaming overflow-x-hidden custom-cursor">
+    <div className="min-h-screen text-foreground font-gaming overflow-x-hidden custom-cursor" style={{backgroundImage: `url(${fireBackgroundImg})`, backgroundAttachment: 'fixed', backgroundSize: 'cover', backgroundPosition: 'center'}}>
 
       
       {/* Header */}
