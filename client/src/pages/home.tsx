@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { ShoppingCart, Gamepad2, Zap, Headphones, Shield, Tag } from "lucide-react";
-import { SiWhatsapp, SiTelegram, SiTiktok, SiYoutube } from "react-icons/si";
+import { ShoppingCart, Gamepad2, Zap, Headphones, Shield, Tag, Instagram, Phone } from "lucide-react";
+import { SiWhatsapp, SiTelegram, SiTiktok, SiYoutube, SiFacebook } from "react-icons/si";
 import { Button } from "@/components/ui/button";
 
 import { ShoppingCategories } from "@/components/shopping-categories";
@@ -36,7 +36,7 @@ export default function Home() {
               <div className="relative">
                 <div className="w-16 h-16 rounded-xl flex items-center justify-center overflow-hidden">
                   <img 
-                    src="/attached_assets/image_1766183664655.png" 
+                    src="/attached_assets/image_(5)_1766184169669.png" 
                     alt="Diaa Eldeen Logo"
                     className="w-16 h-16 object-cover rounded-xl"
                   />
@@ -133,14 +133,49 @@ export default function Home() {
       </section>
 
       {/* Footer */}
-      <footer className="bg-darker-bg border-t border-gray-800 py-8">
-        <div className="container mx-auto px-4 text-center">
+      <footer className="bg-darker-bg border-t border-gray-800 py-12">
+        <div className="container mx-auto px-4">
+          {/* Character Showcase */}
+          <div className="text-center mb-12">
+            <div className="inline-block mb-4">
+              <img 
+                src="/attached_assets/image_(5)_1766184169669.png" 
+                alt="Crossfire Character"
+                className="h-48 object-contain"
+              />
+            </div>
+          </div>
+
+          {/* Contact Information */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8 text-center">
+            <div>
+              <h3 className="text-gold-primary font-bold mb-2">WhatsApp</h3>
+              <a href="https://wa.me/201029870810" className="text-gray-400 hover:text-gold-primary transition-colors">
+                01029870810
+              </a>
+            </div>
+            <div>
+              <h3 className="text-gold-primary font-bold mb-2">Instagram</h3>
+              <a href="https://instagram.com/" className="text-gray-400 hover:text-gold-primary transition-colors">
+                01011696196
+              </a>
+            </div>
+            <div>
+              <h3 className="text-gold-primary font-bold mb-2">Facebook</h3>
+              <a href="https://www.facebook.com/DiaElDeenSadek" className="text-gray-400 hover:text-gold-primary transition-colors">
+                Dia El Deen Sadek
+              </a>
+            </div>
+          </div>
+
+          {/* Social Links */}
           <div className="flex justify-center space-x-6 mb-6">
             <a
-              href="https://whatsapp.com/channel/0029VapyTOs9MF8vWPdZ9z3R"
+              href="https://wa.me/201029870810"
               target="_blank"
               rel="noopener noreferrer"
               className="text-green-500 hover:text-green-400 text-2xl transition-colors"
+              title="WhatsApp"
             >
               <SiWhatsapp />
             </a>
@@ -149,14 +184,25 @@ export default function Home() {
               target="_blank"
               rel="noopener noreferrer"
               className="text-blue-500 hover:text-blue-400 text-2xl transition-colors"
+              title="Telegram"
             >
               <SiTelegram />
+            </a>
+            <a
+              href="https://www.facebook.com/DiaElDeenSadek"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-600 hover:text-blue-500 text-2xl transition-colors"
+              title="Facebook"
+            >
+              <SiFacebook />
             </a>
             <a
               href="https://tiktok.com/@diaa_eldeen"
               target="_blank"
               rel="noopener noreferrer"
               className="text-pink-500 hover:text-pink-400 text-2xl transition-colors"
+              title="TikTok"
             >
               <SiTiktok />
             </a>
@@ -165,12 +211,13 @@ export default function Home() {
               target="_blank"
               rel="noopener noreferrer"
               className="text-red-500 hover:text-red-400 text-2xl transition-colors"
+              title="YouTube"
             >
               <SiYoutube />
             </a>
           </div>
-          <p className="text-gray-400">© 2024 Diaa Eldeen. All rights reserved.</p>
-          <p className="text-gray-500 text-sm mt-2">Premium Game Store - منشئ محتوى ألعاب فيديو</p>
+          <p className="text-gray-400 text-center">© 2024 Diaa Eldeen. All rights reserved.</p>
+          <p className="text-gray-500 text-sm mt-2 text-center">Premium Game Store - منشئ محتوى ألعاب فيديو</p>
         </div>
       </footer>
 
