@@ -46,7 +46,7 @@ export function ShoppingCategories() {
         <h2 className="text-2xl font-bold text-white">Shopping Categories</h2>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-6xl mx-auto">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
         {Array.isArray(categories) && categories.map((category) => {
           const IconComponent = iconMap[category.icon as keyof typeof iconMap] || Gift;
           
@@ -56,22 +56,24 @@ export function ShoppingCategories() {
               href={`/category/${category.slug}`}
               className="block"
             >
-              <div className={`relative overflow-hidden rounded-3xl bg-gradient-to-br ${category.gradient} p-8 card-hover transition-all duration-500 cursor-pointer group`}>
-                <div className="absolute inset-0 bg-black/20"></div>
+              <div className={`relative overflow-hidden rounded-2xl bg-gradient-to-br ${category.gradient} p-6 h-64 card-hover transition-all duration-500 cursor-pointer group`}>
+                <div className="absolute inset-0 bg-black/30 group-hover:bg-black/20 transition-all"></div>
                 <img
                   src={category.image}
                   alt={`${category.name} category`}
-                  className="absolute inset-0 w-full h-full object-cover opacity-70"
+                  className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                 />
-                <div className="relative z-10">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-2xl font-bold text-white">{category.name}</h3>
-                    <IconComponent className="w-8 h-8 text-white animate-pulse" />
+                <div className="relative z-10 h-full flex flex-col justify-between">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-bold text-white drop-shadow-lg">{category.name}</h3>
+                    <IconComponent className="w-6 h-6 text-white animate-pulse drop-shadow" />
                   </div>
-                  <p className="text-white/90 mb-6">{category.description}</p>
-                  <div className="flex items-center text-white/80">
-                    <div className="w-2 h-2 bg-white rounded-full mr-2"></div>
-                    <span>Explore Now</span>
+                  <div>
+                    <p className="text-white/90 mb-3 text-sm drop-shadow">{category.description}</p>
+                    <div className="flex items-center text-white/90 group-hover:text-white transition-colors">
+                      <div className="w-2 h-2 bg-white rounded-full mr-2"></div>
+                      <span className="text-sm">Explore Now</span>
+                    </div>
                   </div>
                 </div>
               </div>
