@@ -5,12 +5,14 @@ import { useCart } from "@/lib/cart-context";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, ShoppingCart } from "lucide-react";
+import { ArrowLeft, ShoppingCart, Check } from "lucide-react";
 import { Link } from "wouter";
+import { useToast } from "@/hooks/use-toast";
 
 export default function GameDetails() {
   const [match, params] = useRoute("/game/:slug");
   const { addToCart } = useCart();
+  const { toast } = useToast();
   const [selectedPackage, setSelectedPackage] = useState<string>("");
   const [selectedPrice, setSelectedPrice] = useState<number>(0);
   const [addingToCart, setAddingToCart] = useState(false);
@@ -35,6 +37,12 @@ export default function GameDetails() {
       name: `${game.name} - ${selectedPackage}`,
       price: selectedPrice,
       image: game.image
+    });
+
+    toast({
+      title: "Success! ✅",
+      description: `${game.name} - ${selectedPackage} added to cart`,
+      duration: 2000,
     });
 
     setTimeout(() => {

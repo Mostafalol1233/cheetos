@@ -1,17 +1,22 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, Search, Filter, Star, ShoppingCart } from "lucide-react";
+import { ArrowLeft, Search, Filter, Star, ShoppingCart, Check } from "lucide-react";
 import { Link } from "wouter";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useCart } from "@/lib/cart-context";
+import { useToast } from "@/hooks/use-toast";
 import type { Game, Category } from "@shared/schema";
 
 export default function GamesPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [addingItems, setAddingItems] = useState<string[]>([]);
+  const { addToCart } = useCart();
+  const { toast } = useToast();
 
   const { data: categories = [] } = useQuery({
     queryKey: ["/api/categories"],
@@ -22,6 +27,24 @@ export default function GamesPage() {
     queryKey: ["/api/games"],
     queryFn: () => fetch("/api/games").then(res => res.json()) as Promise<Game[]>
   });
+
+  const handleAddToCart = (game: Game) => {
+    setAddingItems(prev => [...prev, game.id]);
+    addToCart({
+      id: game.id,
+      name: game.name,
+      price: parseFloat(game.price.toString()),
+      image: game.image
+    });
+    toast({
+      title: "Success! ✅",
+      description: `${game.name} added to cart`,
+      duration: 2000,
+    });
+    setTimeout(() => {
+      setAddingItems(prev => prev.filter(id => id !== game.id));
+    }, 1000);
+  };
 
   // Filter games based on search and category
   const filteredGames = allGames.filter(game => {
@@ -106,48 +129,72 @@ export default function GamesPage() {
         {/* Games Grid */}
         {filteredGames.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {filteredGames.map((game) => (
-              <Card key={game.id} className="overflow-hidden hover:shadow-lg hover:scale-105 transition-all duration-300">
-                <div className="aspect-[4/3] relative overflow-hidden">
-                  <img
-                    src={game.image}
-                    alt={game.name}
-                    className="w-full h-full object-cover hover:scale-110 transition-transform duration-500"
-                  />
-                  {game.isPopular && (
-                    <div className="absolute top-2 right-2 bg-gradient-to-r from-yellow-500 to-orange-500 text-white px-2 py-1 rounded-full text-xs font-bold flex items-center shadow-lg">
-                      <Star className="w-3 h-3 mr-1" />
-                      Popular
+            {filteredGames.map((game) => {
+              const isAdding = addingItems.includes(game.id);
+              return (
+                <div key={game.id} className="relative group">
+                  <div className="relative rounded-2xl overflow-hidden border-2 border-cyan-400/30 bg-gradient-to-b from-gray-900 to-black p-4 h-80 flex flex-col justify-between shadow-lg hover:shadow-2xl hover:shadow-cyan-500/50 transition-all duration-300 hover:border-cyan-400/60">
+                    {/* Card glow effect */}
+                    <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/0 via-cyan-500/0 to-cyan-500/0 group-hover:from-cyan-500/10 group-hover:via-cyan-500/5 group-hover:to-cyan-500/10 transition-all duration-300 pointer-events-none"></div>
+                    
+                    {/* Game Image */}
+                    <div className="relative rounded-lg overflow-hidden border border-cyan-400/20 bg-gray-800 flex-1 mb-3">
+                      <img
+                        src={game.image}
+                        alt={game.name}
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                      />
+                      {game.isPopular && (
+                        <div className="absolute top-2 right-2 bg-gradient-to-r from-cyan-400 to-blue-500 text-black px-2 py-1 rounded-full text-xs font-bold flex items-center shadow-lg">
+                          <Star className="w-3 h-3 mr-1" />
+                          Popular
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
-                <CardContent className="p-4">
-                  <h3 className="font-bold text-lg mb-2 text-gray-900 dark:text-white line-clamp-1">{game.name}</h3>
-                  <p className="text-gray-600 dark:text-gray-300 text-sm mb-3 line-clamp-2">{game.description}</p>
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xl font-bold text-blue-600 dark:text-blue-400">
-                        {game.price} L.E
-                      </span>
-                      <span className="text-sm text-green-600 dark:text-green-400 font-medium">
-                        Stock: {game.stock}
-                      </span>
+
+                    {/* Game Info */}
+                    <div className="relative z-10">
+                      <h3 className="font-bold text-white mb-1 text-lg line-clamp-1">{game.name}</h3>
+                      <div className="flex items-center justify-between mb-3">
+                        <span className="text-cyan-400 font-bold text-lg">{game.price} EGP</span>
+                        <span className="text-xs text-cyan-300/70 bg-cyan-400/10 px-2 py-1 rounded">Stock: {game.stock}</span>
+                      </div>
                     </div>
-                    <div className="flex gap-2">
-                      <Link href={`/game/${game.slug}`}>
-                        <Button variant="outline" size="sm" className="flex-1">
-                          View Packages
+
+                    {/* Action Buttons */}
+                    <div className="relative z-10 flex gap-2">
+                      <Link href={`/game/${game.slug}`} className="flex-1">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-full border-cyan-400/50 text-cyan-400 hover:bg-cyan-400/10 hover:text-cyan-300"
+                        >
+                          View
                         </Button>
                       </Link>
-                      <Button size="sm" className="flex items-center bg-blue-600 hover:bg-blue-700">
-                        <ShoppingCart className="w-4 h-4 mr-1" />
-                        Buy
+                      <Button
+                        onClick={() => handleAddToCart(game)}
+                        disabled={isAdding}
+                        size="sm"
+                        className="flex-1 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-black font-semibold gap-1"
+                      >
+                        {isAdding ? (
+                          <>
+                            <Check className="w-4 h-4" />
+                            Added!
+                          </>
+                        ) : (
+                          <>
+                            <ShoppingCart className="w-4 h-4" />
+                            Add
+                          </>
+                        )}
                       </Button>
                     </div>
                   </div>
-                </CardContent>
-              </Card>
-            ))}
+                </div>
+              );
+            })}
           </div>
         ) : (
           <div className="text-center py-12">
