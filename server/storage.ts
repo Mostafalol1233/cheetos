@@ -12,6 +12,8 @@ export interface IStorage {
   getGamesByCategory(category: string): Promise<Game[]>;
   getPopularGames(): Promise<Game[]>;
   createGame(game: InsertGame): Promise<Game>;
+  updateGame(id: string, game: Partial<Game>): Promise<Game | undefined>;
+  deleteGame(id: string): Promise<boolean>;
   getCategories(): Promise<Category[]>;
   getCategoryById(id: string): Promise<Category | undefined>;
   createCategory(category: InsertCategory): Promise<Category>;
