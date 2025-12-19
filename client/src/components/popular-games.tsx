@@ -10,7 +10,7 @@ import { InteractiveGamePreview } from "./interactive-game-preview";
 import { DynamicLoadingProgress } from "./dynamic-loading-progress";
 
 export function PopularGames() {
-  const { data: games = [], isLoading } = useQuery({
+  const { data: games = [], isLoading, isError } = useQuery({
     queryKey: ["/api/games/popular"],
     queryFn: () => fetch("/api/games/popular").then(res => res.json()) as Promise<Game[]>
   });
@@ -28,7 +28,6 @@ export function PopularGames() {
       image: game.image
     });
 
-    // Show success feedback
     setTimeout(() => {
       setAddingItems(prev => prev.filter(id => id !== game.id));
     }, 1000);
@@ -36,6 +35,10 @@ export function PopularGames() {
 
   if (isLoading) {
     return <DynamicLoadingProgress isLoading={true} loadingText="Loading popular games..." />;
+  }
+
+  if (isError || !Array.isArray(games) || games.length === 0) {
+    return null;
   }
 
   return (
@@ -48,7 +51,7 @@ export function PopularGames() {
       </div>
       
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-        {games.map((game) => {
+        {Array.isArray(games) && games.map((game) => {
           const isAdding = addingItems.includes(game.id);
           
           return (
