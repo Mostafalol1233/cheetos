@@ -52,12 +52,13 @@ export default function Home() {
 
             {/* Navigation & Cart */}
             <div className="flex items-center space-x-6">
-              <nav className="hidden md:flex space-x-6">
+              <nav className="hidden md:flex space-x-8 items-center">
                 <Link href="/" className="text-foreground hover:text-gold-primary transition-colors font-medium">Home</Link>
                 <Link href="/games" className="text-foreground hover:text-gold-primary transition-colors font-medium">Games</Link>
-                <AccessibilityToolbar />
                 <Link href="/support" className="text-foreground hover:text-gold-primary transition-colors font-medium">Support</Link>
               </nav>
+
+              <AccessibilityToolbar />
               
               {/* Shopping Cart Button */}
               <Button
