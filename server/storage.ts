@@ -2,7 +2,9 @@ import {
   type Game, 
   type InsertGame, 
   type Category, 
-  type InsertCategory
+  type InsertCategory,
+  type ChatMessage,
+  type InsertChatMessage
 } from "@shared/schema";
 
 export interface IStorage {
@@ -17,6 +19,9 @@ export interface IStorage {
   getCategories(): Promise<Category[]>;
   getCategoryById(id: string): Promise<Category | undefined>;
   createCategory(category: InsertCategory): Promise<Category>;
+  getChatMessages(sessionId: string): Promise<ChatMessage[]>;
+  createChatMessage(message: InsertChatMessage): Promise<ChatMessage>;
+  getAllChats(): Promise<ChatMessage[]>;
 }
 
 const randomStock = () => Math.floor(Math.random() * 71) + 30;
@@ -24,6 +29,7 @@ const randomStock = () => Math.floor(Math.random() * 71) + 30;
 export class MemStorage implements IStorage {
   private games: Map<string, Game> = new Map();
   private categories: Map<string, Category> = new Map();
+  private chatMessages: Map<string, ChatMessage> = new Map();
 
   constructor() {
     this.initialize();
@@ -113,6 +119,28 @@ export class MemStorage implements IStorage {
     const category: Category = insertCategory as Category;
     this.categories.set(category.id, category);
     return category;
+  }
+
+  async getChatMessages(sessionId: string): Promise<ChatMessage[]> {
+    return Array.from(this.chatMessages.values())
+      .filter(msg => msg.sessionId === sessionId)
+      .sort((a, b) => a.timestamp - b.timestamp);
+  }
+
+  async createChatMessage(message: InsertChatMessage): Promise<ChatMessage> {
+    const id = `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const chatMessage: ChatMessage = {
+      id,
+      ...message,
+      timestamp: Date.now()
+    };
+    this.chatMessages.set(id, chatMessage);
+    return chatMessage;
+  }
+
+  async getAllChats(): Promise<ChatMessage[]> {
+    return Array.from(this.chatMessages.values())
+      .sort((a, b) => b.timestamp - a.timestamp);
   }
 }
 

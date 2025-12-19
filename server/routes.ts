@@ -1,6 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
+import { insertChatMessageSchema } from "@shared/schema";
 
 export function registerRoutes(app: Express): Server {
   // Get all categories
@@ -55,6 +56,38 @@ export function registerRoutes(app: Express): Server {
       res.json(game);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch game" });
+    }
+  });
+
+  // Chat endpoints
+  app.get("/api/chat/:sessionId", async (req, res) => {
+    try {
+      const { sessionId } = req.params;
+      const messages = await storage.getChatMessages(sessionId);
+      res.json(messages);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch chat messages" });
+    }
+  });
+
+  app.post("/api/chat/message", async (req, res) => {
+    try {
+      const { sender, message, sessionId } = req.body;
+      
+      const validated = insertChatMessageSchema.parse({ sender, message, sessionId });
+      const chatMessage = await storage.createChatMessage(validated);
+      res.json(chatMessage);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid message data" });
+    }
+  });
+
+  app.get("/api/chat/all", async (req, res) => {
+    try {
+      const messages = await storage.getAllChats();
+      res.json(messages);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch chats" });
     }
   });
 

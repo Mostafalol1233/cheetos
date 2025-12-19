@@ -5,9 +5,9 @@ import { Button } from "@/components/ui/button";
 
 import { ShoppingCategories } from "@/components/shopping-categories";
 import { PopularGames } from "@/components/popular-games";
-import { GameRecommendationEngine } from "@/components/game-recommendation-engine";
 import { DynamicLoadingProgress } from "@/components/dynamic-loading-progress";
 import { AccessibilityToolbar } from "@/components/accessibility-mode";
+import { LiveChatWidget } from "@/components/live-chat-widget";
 
 import { Link } from "wouter";
 
@@ -296,6 +296,9 @@ export default function Home() {
         isOpen={isCheckoutOpen}
         onClose={() => setIsCheckoutOpen(false)}
       />
+
+      {/* Live Chat Widget */}
+      <LiveChatWidget />
     </div>
   );
 }
