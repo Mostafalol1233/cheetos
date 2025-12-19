@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { ShoppingCart, Gamepad2, Zap, Headphones, Shield, Tag, Instagram, Phone } from "lucide-react";
-import { SiWhatsapp, SiTelegram, SiTiktok, SiYoutube, SiFacebook } from "react-icons/si";
+import { ShoppingCart, Gamepad2, Zap, Headphones, Shield, Tag } from "lucide-react";
+import { SiTelegram, SiTiktok, SiYoutube, SiFacebook } from "react-icons/si";
 import { Button } from "@/components/ui/button";
 
 import { ShoppingCategories } from "@/components/shopping-categories";
@@ -34,11 +34,11 @@ export default function Home() {
             {/* Logo */}
             <div className="flex items-center space-x-4">
               <div className="relative">
-                <div className="w-16 h-16 rounded-xl flex items-center justify-center overflow-hidden">
+                <div className="w-16 h-16 rounded-xl flex items-center justify-center overflow-hidden bg-black">
                   <img 
-                    src="/attached_assets/image_(5)_1766184169669.png" 
+                    src="/attached_assets/ninja-gaming-logo.png" 
                     alt="Diaa Eldeen Logo"
-                    className="w-16 h-16 object-cover rounded-xl"
+                    className="w-14 h-14 object-contain"
                   />
                 </div>
               </div>
@@ -149,15 +149,15 @@ export default function Home() {
           {/* Contact Information */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8 text-center">
             <div>
-              <h3 className="text-gold-primary font-bold mb-2">WhatsApp</h3>
-              <a href="https://wa.me/201029870810" className="text-gray-400 hover:text-gold-primary transition-colors">
-                01029870810
+              <h3 className="text-gold-primary font-bold mb-2">Telegram</h3>
+              <a href="https://t.me/+7iivzambZno1NzBk" className="text-gray-400 hover:text-gold-primary transition-colors">
+                @DiaElDeen
               </a>
             </div>
             <div>
-              <h3 className="text-gold-primary font-bold mb-2">Instagram</h3>
-              <a href="https://instagram.com/" className="text-gray-400 hover:text-gold-primary transition-colors">
-                01011696196
+              <h3 className="text-gold-primary font-bold mb-2">Instapay</h3>
+              <a href="https://instapay.eg/" className="text-gray-400 hover:text-gold-primary transition-colors">
+                Instapay Payment
               </a>
             </div>
             <div>
@@ -170,15 +170,6 @@ export default function Home() {
 
           {/* Social Links */}
           <div className="flex justify-center space-x-6 mb-6">
-            <a
-              href="https://wa.me/201029870810"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-green-500 hover:text-green-400 text-2xl transition-colors"
-              title="WhatsApp"
-            >
-              <SiWhatsapp />
-            </a>
             <a
               href="https://t.me/+7iivzambZno1NzBk"
               target="_blank"
