@@ -66,7 +66,7 @@ async function updateImagePaths() {
 }
 
 // تشغيل التحديث
-if (require.main === module) {
+if (import.meta.url === `file://${process.argv[1]}`) {
   updateImagePaths()
     .then(() => {
       console.log('تم الانتهاء من التحديث بنجاح');
