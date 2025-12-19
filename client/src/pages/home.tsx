@@ -120,45 +120,89 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Flash Sale & Promotions Section */}
+      {/* About Diaa Section */}
       <section className="container mx-auto px-4 py-16">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          {/* Flash Sale Banner */}
-          <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-red-900 via-red-800 to-orange-900 p-8 flex flex-col justify-between min-h-[400px] group">
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent to-orange-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-            <div className="relative z-10">
-              <div className="flex items-center gap-2 mb-4">
-                <Flame className="w-6 h-6 text-yellow-300 animate-bounce" />
-                <span className="text-yellow-300 font-bold text-sm">FLASH SALE</span>
+        <div className="bg-gradient-to-r from-gray-900 to-black rounded-3xl p-8 md:p-12 border border-gold-primary/30">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+            {/* Text Content */}
+            <div>
+              <h2 className="text-3xl font-bold text-gold-primary mb-4">About Diaa Eldeen</h2>
+              <p className="text-gray-300 text-lg mb-4">
+                Welcome to Diaa Eldeen - Your trusted gaming partner since day one. We specialize in providing premium digital gaming products with fast delivery and exceptional customer service.
+              </p>
+              <p className="text-gray-300 text-lg mb-6">
+                Our mission is to make gaming accessible and affordable for everyone. Whether you're looking for game currencies, gift cards, or digital vouchers, we've got you covered with the best prices and fastest delivery in the market.
+              </p>
+              <div className="flex gap-4">
+                <div className="text-center">
+                  <p className="text-3xl font-bold text-gold-primary">1K+</p>
+                  <p className="text-gray-400 text-sm">Happy Customers</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-3xl font-bold text-gold-primary">5K+</p>
+                  <p className="text-gray-400 text-sm">Orders Completed</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-3xl font-bold text-gold-primary">24/7</p>
+                  <p className="text-gray-400 text-sm">Customer Support</p>
+                </div>
               </div>
-              <h3 className="text-4xl font-bold text-white mb-2">50% OFF</h3>
-              <p className="text-gray-100 text-lg mb-4">On Selected Games</p>
-              <p className="text-gray-200 text-sm">Limited Time Only - Grab Your Favorite Games Now!</p>
             </div>
-            <Link href="/games" className="relative z-10">
-              <button className="bg-white text-red-900 font-bold py-3 px-8 rounded-xl hover:bg-yellow-300 transition-all duration-300 transform hover:scale-105">
-                Shop Now
-              </button>
-            </Link>
+
+            {/* Image */}
+            <div className="rounded-2xl overflow-hidden">
+              <img
+                src="/attached_assets/image_(5)_1766184169669.png"
+                alt="Diaa Eldeen"
+                className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
+              />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Customer Reviews Section */}
+      <section className="container mx-auto px-4 py-16">
+        <div className="text-center mb-12">
+          <h2 className="text-3xl font-bold text-foreground mb-2">What Our Customers Say</h2>
+          <p className="text-gray-400">Real testimonials from real gamers</p>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Review 1 */}
+          <div className="bg-card/50 backdrop-blur border border-gold-primary/20 rounded-2xl p-6 hover:border-gold-primary/50 transition-colors">
+            <div className="flex items-center mb-4">
+              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-gold-primary to-gold-secondary flex items-center justify-center text-white font-bold">A</div>
+              <div className="ml-4">
+                <p className="font-bold text-white">Ahmed Hassan</p>
+                <p className="text-sm text-gold-primary">⭐⭐⭐⭐⭐</p>
+              </div>
+            </div>
+            <p className="text-gray-300">"Fast delivery and great prices! I got my game currency instantly. Highly recommended!"</p>
           </div>
 
-          {/* Gift Cards Spotlight */}
-          <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-purple-900 via-indigo-900 to-blue-900 p-8 flex flex-col justify-between min-h-[400px] group">
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent to-purple-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-            <div className="relative z-10">
-              <div className="flex items-center gap-2 mb-4">
-                <Gift className="w-6 h-6 text-pink-300 animate-bounce" />
-                <span className="text-pink-300 font-bold text-sm">GIFT CARDS</span>
+          {/* Review 2 */}
+          <div className="bg-card/50 backdrop-blur border border-gold-primary/20 rounded-2xl p-6 hover:border-gold-primary/50 transition-colors">
+            <div className="flex items-center mb-4">
+              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-gold-primary to-gold-secondary flex items-center justify-center text-white font-bold">M</div>
+              <div className="ml-4">
+                <p className="font-bold text-white">Mona Ali</p>
+                <p className="text-sm text-gold-primary">⭐⭐⭐⭐⭐</p>
               </div>
-              <h3 className="text-4xl font-bold text-white mb-2">Perfect Gifts</h3>
-              <p className="text-gray-100 text-lg mb-4">For Every Gamer</p>
-              <p className="text-gray-200 text-sm">Send digital gift cards to your friends instantly!</p>
             </div>
-            <Link href="/games" className="relative z-10">
-              <button className="bg-white text-purple-900 font-bold py-3 px-8 rounded-xl hover:bg-pink-300 transition-all duration-300 transform hover:scale-105">
-                Explore
-              </button>
-            </Link>
+            <p className="text-gray-300">"Best gaming store ever! The support team is super helpful and responsive. 10/10"</p>
+          </div>
+
+          {/* Review 3 */}
+          <div className="bg-card/50 backdrop-blur border border-gold-primary/20 rounded-2xl p-6 hover:border-gold-primary/50 transition-colors">
+            <div className="flex items-center mb-4">
+              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-gold-primary to-gold-secondary flex items-center justify-center text-white font-bold">K</div>
+              <div className="ml-4">
+                <p className="font-bold text-white">Karim Mohamed</p>
+                <p className="text-sm text-gold-primary">⭐⭐⭐⭐⭐</p>
+              </div>
+            </div>
+            <p className="text-gray-300">"Competitive prices and instant delivery. This is my go-to store for all gaming needs!"</p>
           </div>
         </div>
       </section>
