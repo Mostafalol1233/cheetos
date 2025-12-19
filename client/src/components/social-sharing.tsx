@@ -20,8 +20,8 @@ export function SocialSharing({ game }: SocialSharingProps) {
   const [sharedPlatforms, setSharedPlatforms] = useState<string[]>([]);
 
   const gameUrl = `${window.location.origin}/game/${game.slug}`;
-  const shareText = `Check out ${game.name} - ${game.description}`;
-  const hashtags = '#Gaming #CheetosGaming #GameDeals';
+  const shareText = `Check out ${game.name} - ${game.description} from Diaa Eldeen`;
+  const hashtags = '#Gaming #DiaElDeen #GameDeals';
 
   const socialPlatforms = [
     {

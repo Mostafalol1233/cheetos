@@ -43,17 +43,17 @@ export function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
       .join('\n');
 
     const message = `مرحبًا 👋
-أريد شراء من Cheetos Gaming 🎮
+*🎮 طلب من Diaa Eldeen*
 
-🛒 ملخص الطلب:
+🛒 *ملخص الطلب:*
 ${orderSummary}
 
-💰 الإجمالي: ${getTotalPrice()} جنيه
-💳 طريقة الدفع: ${paymentMethod}
-📱 الاسم: ${customerName}
-📞 رقم الهاتف: ${countryCode}${customerPhone}
+💰 *الإجمالي:* ${getTotalPrice()} جنيه
+💳 *طريقة الدفع:* ${paymentMethod}
+👤 *الاسم:* ${customerName}
+📱 *رقم الهاتف:* ${countryCode}${customerPhone}
 
-شكراً لك! 🔥🎮💎`;
+شكراً لك! 🔥 يسعدنا خدمتك 💎`;
 
     const whatsappUrl = `https://wa.me/${SELLER_WHATSAPP.replace('+', '')}?text=${encodeURIComponent(message)}`;
 

@@ -89,6 +89,18 @@ export class MemStorage implements IStorage {
     return game;
   }
 
+  async updateGame(id: string, updates: Partial<Game>): Promise<Game | undefined> {
+    const game = this.games.get(id);
+    if (!game) return undefined;
+    const updated = { ...game, ...updates };
+    this.games.set(id, updated);
+    return updated;
+  }
+
+  async deleteGame(id: string): Promise<boolean> {
+    return this.games.delete(id);
+  }
+
   async getCategories(): Promise<Category[]> {
     return Array.from(this.categories.values());
   }
