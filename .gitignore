@@ -1,0 +1,15 @@
+﻿# runtime logs
+backend/logs/*.log
+
+# ignore seeders if they cause permission issues / are generated
+seeders/
+node_modules
+backend/
+/.env*
+*.env
+.env
+client/.env*
+dist/
+build/
+*.log
+*.tmp
