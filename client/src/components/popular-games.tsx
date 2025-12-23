@@ -51,8 +51,8 @@ export function PopularGames() {
   return (
     <section className="py-12">
       <div className="flex items-center mb-8">
-        <div className="w-6 h-6 bg-gold-primary rounded-full flex items-center justify-center mr-3">
-          <Flame className="w-3 h-3 text-background" />
+        <div className="w-6 h-6 bg-gold-primary rounded-full flex items-center justify-center mr-3 shadow-[0_0_10px_rgba(255,204,51,0.5)]">
+          <Flame className="w-3 h-3 text-black" />
         </div>
         <h2 className="text-2xl font-bold text-foreground">Most Popular Games</h2>
       </div>

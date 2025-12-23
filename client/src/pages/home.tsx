@@ -11,6 +11,8 @@ import PaymentMethods from "@/components/payment-methods";
 import { CartSidebar } from "@/components/cart-sidebar";
 import { CheckoutModal } from "@/components/checkout-modal";
 
+import { Footer } from "@/components/footer";
+
 export default function Home() {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
@@ -21,8 +23,45 @@ export default function Home() {
       {/* Header */}
       <Header onCartClick={() => setIsCartOpen(true)} />
 
+      {/* Hero Section */}
+      <section className="relative w-full h-[500px] flex items-center justify-center overflow-hidden">
+        {/* Background Image/Gradient */}
+        <div className="absolute inset-0 bg-gradient-to-r from-darker-bg via-purple-900/40 to-darker-bg z-0"></div>
+        <div className="absolute inset-0 bg-[url('/attached_assets/large-image-logo.png')] bg-cover bg-center opacity-20 mix-blend-overlay animate-pulse"></div>
+        
+        {/* Content */}
+        <div className="relative z-10 text-center px-4 max-w-4xl mx-auto">
+          <h1 className="text-4xl md:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-gold-primary via-white to-neon-pink mb-6 drop-shadow-[0_0_15px_rgba(255,204,51,0.5)] animate-fade-in">
+            LEVEL UP YOUR GAME
+          </h1>
+          <p className="text-xl md:text-2xl text-gray-300 mb-8 font-light tracking-wide animate-fade-in animation-delay-500">
+            Premium Currencies, Gift Cards & Instant Delivery
+          </p>
+          <div className="flex justify-center gap-4 animate-fade-in animation-delay-1000">
+            <button 
+              onClick={() => document.getElementById('categories')?.scrollIntoView({ behavior: 'smooth' })}
+              className="px-8 py-3 bg-gradient-to-r from-gold-primary to-gold-secondary text-black font-bold rounded-full hover:scale-105 transition-transform shadow-[0_0_20px_rgba(255,204,51,0.4)]"
+            >
+              Shop Now
+            </button>
+            <button 
+              onClick={() => window.location.href='/games'}
+              className="px-8 py-3 border border-neon-pink/50 text-neon-pink font-bold rounded-full hover:bg-neon-pink/10 transition-colors backdrop-blur-sm"
+            >
+              View All Games
+            </button>
+          </div>
+        </div>
+
+        {/* Decorative Particles */}
+        <div className="absolute top-1/4 left-1/4 w-2 h-2 bg-gold-primary rounded-full animate-float"></div>
+        <div className="absolute bottom-1/3 right-1/3 w-3 h-3 bg-neon-pink rounded-full animate-float animation-delay-1000"></div>
+      </section>
+
       {/* Shopping Categories */}
-      <ShoppingCategories />
+      <div id="categories">
+        <ShoppingCategories />
+      </div>
 
       {/* Most Popular Games */}
       <PopularGames />
@@ -168,77 +207,7 @@ export default function Home() {
       </section>
 
       {/* Footer */}
-      <footer className="bg-gradient-to-br from-darker-bg via-gray-900 to-black border-t border-gold-primary/20 py-12">
-        <div className="container mx-auto px-4">
-          {/* Character Showcase */}
-          <div className="text-center mb-12">
-            <div className="inline-block mb-4 relative">
-              {/* Placeholder gaming character display */}
-              <div className="w-48 h-48 rounded-2xl bg-gradient-to-br from-gold-primary/20 to-neon-pink/20 border border-gold-primary/30 flex items-center justify-center overflow-hidden group">
-                <div className="absolute inset-0 bg-gradient-to-r from-gold-primary/10 via-transparent to-neon-pink/10 animate-pulse"></div>
-                <div className="relative z-10 flex flex-col items-center">
-                  <Flame className="w-16 h-16 text-gold-primary mb-2 animate-float" />
-                  <p className="text-gold-primary font-bold text-sm">Gaming Character</p>
-                  <p className="text-xs text-gray-400 mt-1">Diaa Eldeen Store</p>
-                </div>
-                <div className="absolute -top-12 -right-12 w-32 h-32 bg-gradient-to-br from-gold-primary to-transparent rounded-full opacity-20 blur-3xl"></div>
-                <div className="absolute -bottom-12 -left-12 w-32 h-32 bg-gradient-to-tr from-neon-pink to-transparent rounded-full opacity-20 blur-3xl"></div>
-              </div>
-            </div>
-          </div>
-
-          {/* Social Links */}
-          <div className="flex justify-center space-x-8 mb-8">
-            <a
-              href="https://t.me/diaaeldeen"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue-500 hover:text-blue-400 text-3xl transition-all duration-300 hover:scale-125"
-              title="Telegram"
-            >
-              <SiTelegram />
-            </a>
-            <a
-              href="https://wa.me/201234567890"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-green-500 hover:text-green-400 text-3xl transition-all duration-300 hover:scale-125"
-              title="WhatsApp"
-            >
-              <SiWhatsapp />
-            </a>
-            <a
-              href="https://www.facebook.com/DiaElDeenSadek"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue-600 hover:text-blue-500 text-3xl transition-all duration-300 hover:scale-125"
-              title="Facebook"
-            >
-              <SiFacebook />
-            </a>
-            <a
-              href="https://tiktok.com/@diaa_eldeen"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-pink-500 hover:text-pink-400 text-3xl transition-all duration-300 hover:scale-125"
-              title="TikTok"
-            >
-              <SiTiktok />
-            </a>
-            <a
-              href="https://www.youtube.com/@bemora-site"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-red-500 hover:text-red-400 text-3xl transition-all duration-300 hover:scale-125"
-              title="YouTube"
-            >
-              <SiYoutube />
-            </a>
-          </div>
-          <p className="text-gray-400 text-center">© 2024 Diaa Eldeen. All rights reserved.</p>
-          <p className="text-gray-500 text-sm mt-2 text-center">Premium Game Store - منشئ محتوى ألعاب فيديو</p>
-        </div>
-      </footer>
+      <Footer />
 
       {/* Cart Sidebar */}
       <CartSidebar
