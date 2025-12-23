@@ -22,7 +22,7 @@ export function Header({ onCartClick }: HeaderProps) {
               <div className="relative">
                 <div className="w-16 h-16 rounded-xl flex items-center justify-center overflow-hidden bg-black transition-transform transform group-hover:scale-105 duration-300 border border-gold-primary/10">
                   <img 
-                    src="/attached_assets/ninja-gaming-logo.png" 
+                    src="/attached_assets/small-image-logo.png" 
                     alt="Diaa Eldeen | Premium Game Store Logo"
                     className="w-14 h-14 object-contain"
                     width="56"

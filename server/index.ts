@@ -1,6 +1,7 @@
 import "dotenv/config";
 import express, { type Request, Response, NextFunction } from "express";
 import path from "path";
+import fs from "fs";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 
@@ -37,6 +38,23 @@ app.use('/attached_assets', (req, res, next) => {
 
 // Serve attached assets statically
 app.use('/attached_assets', express.static(path.join(process.cwd(), 'attached_assets')));
+
+// Serve web manifest explicitly with correct MIME
+app.get('/manifest.webmanifest', (req, res) => {
+  const candidates = [
+    path.join(process.cwd(), 'client', 'manifest.webmanifest'),
+    path.join(process.cwd(), 'public', 'manifest.webmanifest'),
+    path.join(process.cwd(), 'dist', 'public', 'manifest.webmanifest'),
+  ];
+  const file = candidates.find(p => {
+    try { return fs.existsSync(p); } catch { return false; }
+  });
+  if (!file) {
+    return res.status(404).json({ message: 'manifest not found' });
+  }
+  res.type('application/manifest+json');
+  res.sendFile(file);
+});
 
 app.use((req, res, next) => {
   const start = Date.now();

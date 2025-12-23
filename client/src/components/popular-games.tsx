@@ -84,10 +84,27 @@ export function PopularGames() {
                     )}
                   </div>
                   {/* Back face with extra details */}
-                  <div className="absolute inset-0 rounded-lg overflow-hidden p-4 bg-gradient-to-b from-black to-gray-900 text-cyan-200 flex flex-col justify-center items-center gap-2 flip-card-back">
-                    <p className="text-sm">Category: {game.category}</p>
-                    <p className="text-sm">Packages: {Array.isArray(game.packages) ? game.packages.join(', ') : '—'}</p>
-                    <p className="text-xs opacity-70">Stock: {game.stock}</p>
+                  <div className="absolute inset-0 rounded-lg overflow-hidden p-4 bg-gradient-to-b from-black via-gray-900 to-black border border-cyan-500/30 text-cyan-100 flex flex-col justify-center items-center gap-3 flip-card-back shadow-[inset_0_0_20px_rgba(0,255,255,0.1)]">
+                    <div className="text-center">
+                      <p className="text-xs text-cyan-400 uppercase tracking-wider font-bold mb-1">Category</p>
+                      <p className="text-sm font-medium text-white capitalize">{game.category}</p>
+                    </div>
+                    
+                    <div className="w-full h-px bg-cyan-500/30 my-1"></div>
+                    
+                    <div className="text-center w-full">
+                      <p className="text-xs text-cyan-400 uppercase tracking-wider font-bold mb-1">Packages</p>
+                      <p className="text-xs text-gray-300 line-clamp-3 leading-relaxed px-2">
+                        {Array.isArray(game.packages) && game.packages.length > 0 
+                          ? game.packages.join(' • ') 
+                          : 'Standard Package Available'}
+                      </p>
+                    </div>
+                    
+                    <div className="mt-auto pt-2 flex items-center gap-2 text-xs text-green-400 font-mono bg-green-950/30 px-3 py-1 rounded-full border border-green-500/20">
+                      <Check className="w-3 h-3" />
+                      <span>In Stock: {game.stock}</span>
+                    </div>
                   </div>
                 </div>
 

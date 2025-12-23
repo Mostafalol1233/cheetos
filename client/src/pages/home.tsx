@@ -16,7 +16,7 @@ export default function Home() {
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
 
   return (
-    <div className="min-h-screen text-foreground font-gaming overflow-x-hidden custom-cursor bg-gradient-to-b from-darker-bg via-gray-900 to-black">
+    <div className="min-h-screen text-foreground font-gaming overflow-x-hidden custom-cursor bg-gradient-to-b from-darker-bg via-gray-900 to-black animate-fade-in">
 
       {/* Header */}
       <Header onCartClick={() => setIsCartOpen(true)} />

@@ -215,6 +215,20 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Alias route for slug for compatibility
+  app.get("/api/games/slug/:slug", async (req, res) => {
+    try {
+      const { slug } = req.params;
+      const game = await storage.getGameBySlug(slug);
+      if (!game) {
+        return res.status(404).json({ message: "Game not found" });
+      }
+      res.json(game);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch game" });
+    }
+  });
+
   // Chat endpoints
   app.get("/api/chat/:sessionId", async (req, res) => {
     try {

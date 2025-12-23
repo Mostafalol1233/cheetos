@@ -139,49 +139,69 @@ export default function GameDetails() {
             {/* Package Selection */}
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <h3 className="text-xl font-semibold">All Available Packages</h3>
+                <h3 className="text-xl font-semibold">Select Package</h3>
                 <span className="bg-green-500/20 text-green-400 px-2 py-1 rounded-full text-xs font-medium">
                   ✓ In Stock
                 </span>
               </div>
               
-              <div className="space-y-3">
-                <button
-                  onClick={() => handlePackageChange("Standard Package")}
-                  className={`w-full p-4 rounded-xl border-2 transition-all duration-200 text-left group hover:scale-[1.02] ${
-                    selectedPackage 
-                      ? 'border-gold-primary bg-gold-primary/10 shadow-lg' 
-                      : 'border-border hover:border-gold-primary/50 hover:bg-card/50'
-                  }`}
-                >
-                  <div className="flex justify-between items-center">
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-3">
-                        <div className={`w-4 h-4 rounded-full border-2 transition-all ${
-                          selectedPackage 
-                            ? 'border-gold-primary bg-gold-primary' 
-                            : 'border-gray-400 group-hover:border-gold-primary'
-                        }`}>
-                          {selectedPackage && <div className="w-full h-full rounded-full bg-white transform scale-50"></div>}
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {game.packages && game.packages.length > 0 ? (
+                  game.packages.map((pkg: string, index: number) => {
+                    const price = game.packagePrices && game.packagePrices[index] ? game.packagePrices[index] : game.price;
+                    const isSelected = selectedPackage === pkg;
+                    
+                    return (
+                      <button
+                        key={index}
+                        onClick={() => {
+                           setSelectedPackage(pkg);
+                           setSelectedPrice(parseFloat(price));
+                        }}
+                        className={`relative p-3 rounded-xl border-2 transition-all duration-200 flex flex-col items-center justify-center text-center h-28 group ${
+                          isSelected 
+                            ? 'border-gold-primary bg-gold-primary/10 shadow-lg scale-105 z-10' 
+                            : 'border-border hover:border-gold-primary/50 hover:bg-card/50'
+                        }`}
+                      >
+                        <h4 className="font-bold text-sm mb-1 line-clamp-2">{pkg}</h4>
+                        <div className="text-gold-primary font-bold mt-auto">
+                           {price} {game.currency}
                         </div>
-                        <div>
-                          <h4 className="font-semibold text-lg">Standard Package</h4>
-                          <p className="text-muted-foreground text-sm">
-                            Instant delivery • No fees • Safe & Secure
-                          </p>
+                        {isSelected && (
+                          <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-gold-primary shadow-[0_0_8px_rgba(255,215,0,0.8)] animate-pulse"></div>
+                        )}
+                      </button>
+                    );
+                  })
+                ) : (
+                  // Fallback for games without specific packages
+                  <button
+                    onClick={() => handlePackageChange("Standard Package")}
+                    className={`col-span-full p-4 rounded-xl border-2 transition-all duration-200 text-left group hover:scale-[1.02] ${
+                      selectedPackage 
+                        ? 'border-gold-primary bg-gold-primary/10 shadow-lg' 
+                        : 'border-border hover:border-gold-primary/50 hover:bg-card/50'
+                    }`}
+                  >
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <h4 className="font-semibold text-lg">Standard Package</h4>
+                        <p className="text-muted-foreground text-sm">
+                          Instant delivery • No fees
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-2xl font-bold text-gold-primary">
+                          {game.price}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {game.currency}
                         </div>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <div className="text-2xl font-bold text-gold-primary">
-                        ${game.price}
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        {game.currency}
-                      </div>
-                    </div>
-                  </div>
-                </button>
+                  </button>
+                )}
               </div>
 
               <Button
