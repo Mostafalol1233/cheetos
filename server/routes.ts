@@ -36,6 +36,7 @@ export function registerRoutes(app: Express): Server {
       const hashedPassword = hashPassword(password);
       
       await storage.createUser({
+        id: crypto.randomBytes(12).toString("hex"),
         username,
         password: hashedPassword,
         email,
@@ -306,7 +307,7 @@ export function registerRoutes(app: Express): Server {
       await storage.createTransaction({
         id,
         userId: userId || null,
-        totalAmount: total,
+        totalAmount: total.toFixed(2),
         status: 'pending',
         items: JSON.stringify(items),
         paymentMethod,

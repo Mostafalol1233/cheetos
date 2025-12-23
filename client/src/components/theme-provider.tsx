@@ -5,12 +5,16 @@ type Theme = "light" | "dark";
 interface ThemeContextType {
   theme: Theme;
   isNight: boolean;
+  setTheme: (t: Theme) => void;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setTheme] = useState<Theme>("dark");
+  const [theme, setTheme] = useState<Theme>(() => {
+    const saved = typeof window !== 'undefined' ? (localStorage.getItem('theme') as Theme | null) : null;
+    return saved ?? "dark";
+  });
   const [isNight, setIsNight] = useState(true);
 
   useEffect(() => {
@@ -23,10 +27,12 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       const nightTime = hour >= 18 || hour < 6;
       
       setIsNight(nightTime);
-      setTheme(nightTime ? "dark" : "light");
+      // Respect manual override if present
+      const saved = typeof window !== 'undefined' ? (localStorage.getItem('theme') as Theme | null) : null;
+      const nextTheme = saved ?? (nightTime ? "dark" : "light");
+      setTheme(nextTheme);
       
-      // Apply theme to document
-      if (nightTime) {
+      if (nextTheme === "dark") {
         document.documentElement.classList.add("dark");
       } else {
         document.documentElement.classList.remove("dark");
@@ -42,9 +48,21 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     return () => clearInterval(interval);
   }, []);
 
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('theme', theme);
+    }
+    if (theme === "dark") {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+  }, [theme]);
+
   const value: ThemeContextType = {
     theme,
-    isNight
+    isNight,
+    setTheme
   };
 
   return (

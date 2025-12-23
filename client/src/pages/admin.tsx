@@ -14,6 +14,7 @@ import { Label } from '@/components/ui/label';
 interface Game {
   id: string;
   name: string;
+  slug?: string;
   price: string;
   stock: number;
   category: string;

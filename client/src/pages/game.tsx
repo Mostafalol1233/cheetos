@@ -116,26 +116,37 @@ export default function GamePage() {
                   <Package className="w-5 h-5 mr-2" />
                   Available Packages
                 </h3>
-                <div className="space-y-3">
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                   {packages.map((pkg, index) => (
-                    <div
+                    <button
                       key={index}
-                      className={`p-4 rounded-lg border-2 cursor-pointer transition-all duration-200 ${
+                      type="button"
+                      aria-selected={selectedPackage === index}
+                      className={`group relative p-4 rounded-xl border-2 text-left transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                         selectedPackage === index
-                          ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
-                          : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+                          ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 shadow-md'
+                          : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 hover:shadow'
                       }`}
                       onClick={() => setSelectedPackage(index)}
                     >
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <span className="font-medium text-gray-900 dark:text-white">{pkg}</span>
+                      <div className="flex items-center gap-3">
+                        <div className="shrink-0 w-12 h-12 rounded-lg bg-muted/40 flex items-center justify-center ring-1 ring-border overflow-hidden">
+                          <img
+                            src={game.image}
+                            alt={game.name}
+                            className="w-10 h-10 object-contain group-hover:scale-105 transition-transform"
+                          />
                         </div>
-                        <span className="font-bold text-blue-600 dark:text-blue-400">
-                          {packagePrices[index]} L.E
-                        </span>
+                        <div className="flex-1">
+                          <div className="font-semibold text-foreground">{pkg}</div>
+                          <div className="text-sm text-muted-foreground">Package</div>
+                        </div>
+                        <div className="text-right">
+                          <div className="font-bold text-blue-600 dark:text-blue-400">{packagePrices[index]} L.E</div>
+                          <div className="text-xs text-muted-foreground">Includes taxes</div>
+                        </div>
                       </div>
-                    </div>
+                    </button>
                   ))}
                 </div>
               </CardContent>

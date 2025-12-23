@@ -106,11 +106,29 @@ export default function GameDetails() {
           </Button>
         </Link>
 
-        {structuredData && (
-          <script type="application/ld+json">
-            {JSON.stringify(structuredData)}
-          </script>
-        )}
+        {(() => {
+          const structuredData = {
+            '@context': 'https://schema.org',
+            '@type': 'Product',
+            name: game.name,
+            image: [game.image],
+            description: game.description,
+            sku: game.id,
+            brand: { '@type': 'Brand', name: 'Diaa Eldeen' },
+            offers: {
+              '@type': 'Offer',
+              url: typeof window !== 'undefined' ? window.location.href : `https://diaa-eldeen.example/game/${game.slug}`,
+              priceCurrency: game.currency,
+              price: String(selectedPrice || parseFloat(game.price)),
+              availability: 'https://schema.org/InStock'
+            }
+          };
+          return (
+            <script type="application/ld+json">
+              {JSON.stringify(structuredData)}
+            </script>
+          );
+        })()}
 
         <div className="grid md:grid-cols-2 gap-8">
           {/* Game Image */}
