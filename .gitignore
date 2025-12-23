@@ -4,12 +4,26 @@ backend/logs/*.log
 # ignore seeders if they cause permission issues / are generated
 seeders/
 node_modules
-backend/
+
+# backend sensitive/runtime directories
+backend/baileys_auth_info/
+backend/uploads/
+backend/logs/
+
+# environment files
 /.env*
 *.env
 .env
 client/.env*
+backend/.env*
+
+# archives and large binaries
+backend/*.rar
+
+# build outputs
 dist/
 build/
+
+# logs and temp files
 *.log
 *.tmp

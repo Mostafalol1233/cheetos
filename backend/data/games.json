@@ -1,0 +1,386 @@
+[
+  {
+    "id": "game_1",
+    "name": "Valorant",
+    "slug": "valorant",
+    "description": "Tactical 5v5 team-based competitive shooter",
+    "price": "0",
+    "currency": "EGP",
+    "image": "/attached_assets/VALORANT.jpg",
+    "category": "shooters",
+    "isPopular": true,
+    "stock": 100,
+    "packages": [
+      "285 VP",
+      "575 VP",
+      "1150 VP",
+      "2350 VP",
+      "4800 VP",
+      "9800 VP"
+    ],
+    "packagePrices": [
+      "160",
+      "310",
+      "610",
+      "1200",
+      "2400",
+      "4800"
+    ]
+  },
+  {
+    "id": "game_2",
+    "name": "CS:GO",
+    "slug": "csgo",
+    "description": "Counter-Strike: Global Offensive - legendary FPS",
+    "price": "0",
+    "currency": "EGP",
+    "image": "/attached_assets/CALL_OF_DUTY.png",
+    "category": "shooters",
+    "isPopular": true,
+    "stock": 100,
+    "packages": [
+      "Prime Status",
+      "10 Keys",
+      "20 Keys"
+    ],
+    "packagePrices": [
+      "450",
+      "800",
+      "1500"
+    ]
+  },
+  {
+    "id": "game_3",
+    "name": "Crossfire",
+    "slug": "crossfire",
+    "description": "CrossFire tends to have a wide range of ZP packages that allow players to purchase weapons, characters, and other items in the game.",
+    "price": "0",
+    "currency": "EGP",
+    "image": "/attached_assets/CROSSFIRE.png",
+    "category": "shooters",
+    "isPopular": true,
+    "stock": 100,
+    "packages": [
+      "1,000 ZP",
+      "5,000 ZP",
+      "10,000 ZP",
+      "20,000 ZP",
+      "50,000 ZP",
+      "100,000 ZP"
+    ],
+    "packagePrices": [
+      "45",
+      "230",
+      "450",
+      "900",
+      "2250",
+      "4500"
+    ]
+  },
+  {
+    "id": "game_4",
+    "name": "Roblox",
+    "slug": "roblox",
+    "description": "Roblox uses Robux for purchasing in-game items, avatar accessories, and access to specific game passes within Roblox games.",
+    "price": "0",
+    "currency": "EGP",
+    "image": "/attached_assets/ROBLOX.png",
+    "category": "casual",
+    "isPopular": true,
+    "stock": 100,
+    "packages": [
+      "80 Robux",
+      "400 Robux",
+      "800 Robux",
+      "1,700 Robux",
+      "4,500 Robux",
+      "10,000 Robux",
+      "22,500 Robux"
+    ],
+    "packagePrices": [
+      "28",
+      "140",
+      "280",
+      "600",
+      "1580",
+      "3500",
+      "7880"
+    ]
+  },
+  {
+    "id": "game_5",
+    "name": "PUBG Mobile",
+    "slug": "pubg-mobile",
+    "description": "UC is the in-game currency used in PUBG Mobile for purchasing skins, crates, and other cosmetics.",
+    "price": "0",
+    "currency": "EGP",
+    "image": "/attached_assets/PUBG_MOBILE.jpg",
+    "category": "shooters",
+    "isPopular": true,
+    "stock": 100,
+    "packages": [
+      "100 UC",
+      "300 UC",
+      "600 UC",
+      "1,200 UC",
+      "3,000 UC",
+      "6,000 UC",
+      "10,000 UC",
+      "30,000 UC"
+    ],
+    "packagePrices": [
+      "50",
+      "150",
+      "300",
+      "600",
+      "1500",
+      "3000",
+      "5000",
+      "15000"
+    ]
+  },
+  {
+    "id": "game_6",
+    "name": "Free Fire",
+    "slug": "free-fire",
+    "description": "Diamonds in Free Fire are used for unlocking skins, outfits, and premium events.",
+    "price": "0",
+    "currency": "EGP",
+    "image": "/attached_assets/FREE_FIRE.jpg",
+    "category": "shooters",
+    "isPopular": true,
+    "stock": 100,
+    "packages": [
+      "10 Diamonds",
+      "100 Diamonds",
+      "500 Diamonds",
+      "1,000 Diamonds",
+      "3,000 Diamonds",
+      "5,000 Diamonds",
+      "10,000 Diamonds"
+    ],
+    "packagePrices": [
+      "4",
+      "34",
+      "170",
+      "340",
+      "1030",
+      "1710",
+      "3410"
+    ]
+  },
+  {
+    "id": "game_7",
+    "name": "Minecraft",
+    "slug": "minecraft",
+    "description": "Minecoins are the currency used in Minecraft to buy skins, texture packs, and other in-game items.",
+    "price": "0",
+    "currency": "EGP",
+    "image": "/attached_assets/MINECRAFT.png",
+    "category": "casual",
+    "isPopular": true,
+    "stock": 100,
+    "packages": [
+      "320 Minecoins",
+      "1,000 Minecoins",
+      "2,500 Minecoins",
+      "5,000 Minecoins"
+    ],
+    "packagePrices": [
+      "56",
+      "180",
+      "440",
+      "880"
+    ]
+  },
+  {
+    "id": "game_1766467677924_bg0j3",
+    "name": "Fortnite",
+    "slug": "fortnite",
+    "description": "Fortnite's currency, V-Bucks, is used to buy skins, emotes, and other cosmetics.",
+    "price": "0",
+    "currency": "EGP",
+    "image": "/attached_assets/FORTNITE.jpg",
+    "category": "shooters",
+    "isPopular": true,
+    "stock": 100,
+    "packages": [
+      "1,000 V-Bucks",
+      "2,800 V-Bucks",
+      "5,000 V-Bucks",
+      "13,500 V-Bucks"
+    ],
+    "packagePrices": [
+      "450",
+      "1260",
+      "2250",
+      "6080"
+    ]
+  },
+  {
+    "id": "game_1766467677945_pieag",
+    "name": "League of Legends",
+    "slug": "league-of-legends",
+    "description": "In League of Legends, RP (Riot Points) is used for purchasing skins, champions, and other premium content.",
+    "price": "0",
+    "currency": "EGP",
+    "image": "/attached_assets/LEAGUE_OF_LEGENDS.png",
+    "category": "casual",
+    "isPopular": true,
+    "stock": 100,
+    "packages": [
+      "650 RP",
+      "1,300 RP",
+      "3,250 RP",
+      "5,200 RP",
+      "13,500 RP"
+    ],
+    "packagePrices": [
+      "330",
+      "650",
+      "1630",
+      "2600",
+      "6750"
+    ]
+  },
+  {
+    "id": "game_1766467677973_fny99",
+    "name": "Clash of Clans",
+    "slug": "clash-of-clans",
+    "description": "Gems are used to speed up upgrades and buy special items in Clash of Clans.",
+    "price": "0",
+    "currency": "EGP",
+    "image": "/attached_assets/CLASH_OF_CLANS.webp",
+    "category": "casual",
+    "isPopular": true,
+    "stock": 100,
+    "packages": [
+      "20 Gems",
+      "100 Gems",
+      "500 Gems",
+      "1,000 Gems",
+      "2,000 Gems",
+      "5,000 Gems",
+      "10,000 Gems"
+    ],
+    "packagePrices": [
+      "10",
+      "50",
+      "250",
+      "500",
+      "1000",
+      "2500",
+      "5000"
+    ]
+  },
+  {
+    "id": "game_1766467677979_07xxk",
+    "name": "Apex Legends",
+    "slug": "apex-legends",
+    "description": "Apex Coins are used for skins, battle passes, and other cosmetic items in Apex Legends.",
+    "price": "0",
+    "currency": "EGP",
+    "image": "/attached_assets/APEX_LEGENDS.png",
+    "category": "shooters",
+    "isPopular": true,
+    "stock": 100,
+    "packages": [
+      "100 Apex Coins",
+      "200 Apex Coins",
+      "500 Apex Coins",
+      "1,000 Apex Coins",
+      "2,000 Apex Coins",
+      "4,000 Apex Coins"
+    ],
+    "packagePrices": [
+      "50",
+      "100",
+      "250",
+      "500",
+      "1000",
+      "2000"
+    ]
+  },
+  {
+    "id": "game_1766468555293_m10pk",
+    "name": "Call of Duty Mobile",
+    "slug": "call-of-duty-mobile",
+    "description": "CP (Call of Duty Points) is used for purchasing in-game items like skins, blueprints, and other premium content.",
+    "price": "0",
+    "currency": "EGP",
+    "image": "/attached_assets/CALL_OF_DUTY_MOBILE.png",
+    "category": "shooters",
+    "isPopular": true,
+    "stock": 100,
+    "packages": [
+      "80 CP",
+      "200 CP",
+      "520 CP",
+      "1,200 CP",
+      "2,400 CP",
+      "5,000 CP"
+    ],
+    "packagePrices": [
+      "40",
+      "100",
+      "260",
+      "600",
+      "1200",
+      "2500"
+    ]
+  },
+  {
+    "id": "game_1766468555321_lmwsa",
+    "name": "Genshin Impact",
+    "slug": "genshin-impact",
+    "description": "Primogems are the main currency in Genshin Impact for wishing on banners and purchasing items.",
+    "price": "0",
+    "currency": "EGP",
+    "image": "/attached_assets/GENSHIN_IMPACT.jpg",
+    "category": "casual",
+    "isPopular": true,
+    "stock": 100,
+    "packages": [
+      "50 Primogems",
+      "300 Primogems",
+      "980 Primogems",
+      "1,600 Primogems",
+      "3,200 Primogems",
+      "6,400 Primogems"
+    ],
+    "packagePrices": [
+      "25",
+      "150",
+      "490",
+      "800",
+      "1600",
+      "3200"
+    ]
+  },
+  {
+    "id": "game_1766468555324_bqa5x",
+    "name": "Garena",
+    "slug": "garena",
+    "description": "Garena typically has different games with Diamonds as the universal currency (mainly used for Free Fire).",
+    "price": "0",
+    "currency": "EGP",
+    "image": "/attached_assets/GARENA.jpg",
+    "category": "casual",
+    "isPopular": true,
+    "stock": 100,
+    "packages": [
+      "100 Diamonds",
+      "300 Diamonds",
+      "1,000 Diamonds",
+      "2,500 Diamonds",
+      "5,000 Diamonds"
+    ],
+    "packagePrices": [
+      "34",
+      "110",
+      "340",
+      "860",
+      "1710"
+    ]
+  }
+]

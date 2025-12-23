@@ -1,0 +1,29 @@
+[
+  {
+    "id": "cat_1",
+    "name": "Shooters",
+    "slug": "shooters",
+    "description": "First-person and third-person shooter games",
+    "image": "/CALL_OF_DUTY.png",
+    "gradient": "from-red-600 to-orange-600",
+    "icon": "Crosshair"
+  },
+  {
+    "id": "cat_2",
+    "name": "RPG",
+    "slug": "rpg",
+    "description": "Role-playing games with rich stories",
+    "image": "/LEAGUE_OF_LEGENDS.png",
+    "gradient": "from-purple-600 to-pink-600",
+    "icon": "Wand2"
+  },
+  {
+    "id": "cat_3",
+    "name": "Casual",
+    "slug": "casual",
+    "description": "Casual and indie games",
+    "image": "/CLASH_ROYALE.jpg",
+    "gradient": "from-yellow-500 to-green-500",
+    "icon": "Smile"
+  }
+]
