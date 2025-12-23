@@ -1,0 +1,39 @@
+
+The above error occurred in the <PaymentMethods> component:
+
+PaymentMethods@https://6da38022-7f51-4324-bf4c-5ebaeb41d21c-00-1uqy8r6aivbab.janeway.replit.dev/src/components/payment-methods.tsx:37:30
+section
+div
+Home@https://6da38022-7f51-4324-bf4c-5ebaeb41d21c-00-1uqy8r6aivbab.janeway.replit.dev/src/pages/home.tsx:33:28
+Route@https://6da38022-7f51-4324-bf4c-5ebaeb41d21c-00-1uqy8r6aivbab.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=9d5e05aa:323:13
+Switch@https://6da38022-7f51-4324-bf4c-5ebaeb41d21c-00-1uqy8r6aivbab.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=9d5e05aa:379:14
+Router
+CartProvider@https://6da38022-7f51-4324-bf4c-5ebaeb41d21c-00-1uqy8r6aivbab.janeway.replit.dev/src/lib/cart-context.tsx:20:29
+Provider@https://6da38022-7f51-4324-bf4c-5ebaeb41d21c-00-1uqy8r6aivbab.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-AYA4YRRK.js?v=9d5e05aa:42:47
+TooltipProvider@https://6da38022-7f51-4324-bf4c-5ebaeb41d21c-00-1uqy8r6aivbab.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-tooltip.js?v=9d5e05aa:59:7
+AccessibilityProvider@https://6da38022-7f51-4324-bf4c-5ebaeb41d21c-00-1uqy8r6aivbab.janeway.replit.dev/src/components/accessibility-mode.tsx:37:38
+ThemeProvider@https://6da38022-7f51-4324-bf4c-5ebaeb41d21c-00-1uqy8r6aivbab.janeway.replit.dev/src/components/theme-provider.tsx:20:30
+QueryClientProvider@https://6da38022-7f51-4324-bf4c-5ebaeb41d21c-00-1uqy8r6aivbab.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=9d5e05aa:2804:27
+App
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries.
+The above error occurred in the <CheckoutModal> component:
+
+CheckoutModal@https://6da38022-7f51-4324-bf4c-5ebaeb41d21c-00-1uqy8r6aivbab.janeway.replit.dev/src/components/checkout-modal.tsx:26:30
+div
+Home@https://6da38022-7f51-4324-bf4c-5ebaeb41d21c-00-1uqy8r6aivbab.janeway.replit.dev/src/pages/home.tsx:33:28
+Route@https://6da38022-7f51-4324-bf4c-5ebaeb41d21c-00-1uqy8r6aivbab.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=9d5e05aa:323:13
+Switch@https://6da38022-7f51-4324-bf4c-5ebaeb41d21c-00-1uqy8r6aivbab.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=9d5e05aa:379:14
+Router
+CartProvider@https://6da38022-7f51-4324-bf4c-5ebaeb41d21c-00-1uqy8r6aivbab.janeway.replit.dev/src/lib/cart-context.tsx:20:29
+Provider@https://6da38022-7f51-4324-bf4c-5ebaeb41d21c-00-1uqy8r6aivbab.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-AYA4YRRK.js?v=9d5e05aa:42:47
+TooltipProvider@https://6da38022-7f51-4324-bf4c-5ebaeb41d21c-00-1uqy8r6aivbab.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-tooltip.js?v=9d5e05aa:59:7
+AccessibilityProvider@https://6da38022-7f51-4324-bf4c-5ebaeb41d21c-00-1uqy8r6aivbab.janeway.replit.dev/src/components/accessibility-mode.tsx:37:38
+ThemeProvider@https://6da38022-7f51-4324-bf4c-5ebaeb41d21c-00-1uqy8r6aivbab.janeway.replit.dev/src/components/theme-provider.tsx:20:30
+QueryClientProvider@https://6da38022-7f51-4324-bf4c-5ebaeb41d21c-00-1uqy8r6aivbab.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=9d5e05aa:2804:27
+App
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries.
+can't access property "useMemo", dispatcher is null
