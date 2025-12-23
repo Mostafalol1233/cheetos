@@ -1,0 +1,1739 @@
+[2025-12-22T14:02:52.767Z] [info] using WA v2.3000.1027934701, isLatest: true
+[2025-12-22T14:02:54.403Z] [info] New QR Code generated
+[2025-12-22T14:03:54.405Z] [info] New QR Code generated
+[2025-12-22T14:04:14.406Z] [info] New QR Code generated
+[2025-12-22T14:04:34.408Z] [info] New QR Code generated
+[2025-12-22T14:04:54.409Z] [info] New QR Code generated
+[2025-12-22T14:05:14.411Z] [info] New QR Code generated
+[2025-12-22T14:05:34.416Z] [warn] Connection closed. Status code: 408, Error: QR refs attempts ended
+[2025-12-22T14:05:34.417Z] [info] Reconnecting...
+[2025-12-22T14:05:39.799Z] [info] using WA v2.3000.1027934701, isLatest: true
+[2025-12-22T14:05:41.457Z] [info] New QR Code generated
+[2025-12-22T14:06:41.459Z] [info] New QR Code generated
+[2025-12-22T14:07:01.460Z] [info] New QR Code generated
+[2025-12-22T14:07:21.463Z] [info] New QR Code generated
+[2025-12-22T14:07:41.466Z] [info] New QR Code generated
+[2025-12-22T14:08:01.467Z] [info] New QR Code generated
+[2025-12-22T14:08:21.471Z] [warn] Connection closed. Status code: 408, Error: QR refs attempts ended
+[2025-12-22T14:08:21.471Z] [info] Reconnecting...
+[2025-12-22T14:08:27.241Z] [info] using WA v2.3000.1027934701, isLatest: true
+[2025-12-22T14:08:28.458Z] [info] New QR Code generated
+[2025-12-22T14:09:28.461Z] [info] New QR Code generated
+[2025-12-22T14:09:48.461Z] [info] New QR Code generated
+[2025-12-22T14:10:08.464Z] [info] New QR Code generated
+[2025-12-22T14:10:28.465Z] [info] New QR Code generated
+[2025-12-22T14:10:48.466Z] [info] New QR Code generated
+[2025-12-22T14:11:08.468Z] [warn] Connection closed. Status code: 408, Error: QR refs attempts ended
+[2025-12-22T14:11:08.469Z] [info] Reconnecting...
+[2025-12-22T14:11:14.942Z] [info] using WA v2.3000.1027934701, isLatest: true
+[2025-12-22T14:11:16.056Z] [info] New QR Code generated
+[2025-12-22T14:12:16.057Z] [info] New QR Code generated
+[2025-12-22T14:12:36.057Z] [info] New QR Code generated
+[2025-12-22T14:12:52.801Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T14:12:56.059Z] [info] New QR Code generated
+[2025-12-22T14:13:16.060Z] [info] New QR Code generated
+[2025-12-22T14:13:36.061Z] [info] New QR Code generated
+[2025-12-22T14:13:56.063Z] [warn] Connection closed. Status code: 408, Error: QR refs attempts ended
+[2025-12-22T14:13:56.066Z] [info] Reconnecting...
+[2025-12-22T14:14:02.145Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T14:14:03.867Z] [warn] Connection closed. Status code: 405, Error: Connection Failure
+[2025-12-22T14:14:03.867Z] [info] Reconnecting...
+[2025-12-22T14:14:09.260Z] [info] using WA v2.3000.1027934701, isLatest: true
+[2025-12-22T14:14:10.623Z] [info] New QR Code generated
+[2025-12-22T14:15:10.625Z] [info] New QR Code generated
+[2025-12-22T14:15:30.626Z] [info] New QR Code generated
+[2025-12-22T14:15:39.810Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T14:15:50.627Z] [info] New QR Code generated
+[2025-12-22T14:16:10.628Z] [info] New QR Code generated
+[2025-12-22T14:16:30.629Z] [info] New QR Code generated
+[2025-12-22T14:16:50.636Z] [warn] Connection closed. Status code: 408, Error: QR refs attempts ended
+[2025-12-22T14:16:50.637Z] [info] Reconnecting...
+[2025-12-22T14:16:55.840Z] [info] using WA v2.3000.1027934701, isLatest: true
+[2025-12-22T14:16:56.487Z] [info] New QR Code generated
+[2025-12-22T14:17:56.488Z] [info] New QR Code generated
+[2025-12-22T14:18:16.489Z] [info] New QR Code generated
+[2025-12-22T14:18:27.248Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T14:18:36.493Z] [info] New QR Code generated
+[2025-12-22T14:18:56.497Z] [info] New QR Code generated
+[2025-12-22T14:19:16.500Z] [info] New QR Code generated
+[2025-12-22T14:19:36.504Z] [warn] Connection closed. Status code: 408, Error: QR refs attempts ended
+[2025-12-22T14:19:36.505Z] [info] Reconnecting...
+[2025-12-22T14:19:41.867Z] [info] using WA v2.3000.1027934701, isLatest: true
+[2025-12-22T14:19:44.188Z] [info] New QR Code generated
+[2025-12-22T14:20:44.190Z] [info] New QR Code generated
+[2025-12-22T14:21:04.192Z] [info] New QR Code generated
+[2025-12-22T14:21:14.951Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T14:21:24.193Z] [info] New QR Code generated
+[2025-12-22T14:21:44.196Z] [info] New QR Code generated
+[2025-12-22T14:22:04.197Z] [info] New QR Code generated
+[2025-12-22T14:22:24.198Z] [warn] Connection closed. Status code: 408, Error: QR refs attempts ended
+[2025-12-22T14:22:24.200Z] [info] Reconnecting...
+[2025-12-22T14:22:29.673Z] [info] using WA v2.3000.1027934701, isLatest: true
+[2025-12-22T14:22:30.727Z] [info] New QR Code generated
+[2025-12-22T14:22:52.803Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T14:23:30.728Z] [info] New QR Code generated
+[2025-12-22T14:23:50.733Z] [info] New QR Code generated
+[2025-12-22T14:24:02.158Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T14:24:09.270Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T14:24:10.733Z] [info] New QR Code generated
+[2025-12-22T14:24:30.737Z] [info] New QR Code generated
+[2025-12-22T14:24:50.739Z] [info] New QR Code generated
+[2025-12-22T14:25:10.740Z] [warn] Connection closed. Status code: 408, Error: QR refs attempts ended
+[2025-12-22T14:25:10.741Z] [info] Reconnecting...
+[2025-12-22T14:25:15.938Z] [info] using WA v2.3000.1027934701, isLatest: true
+[2025-12-22T14:25:16.540Z] [info] New QR Code generated
+[2025-12-22T14:25:39.812Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T14:26:16.542Z] [info] New QR Code generated
+[2025-12-22T14:26:36.543Z] [info] New QR Code generated
+[2025-12-22T14:26:55.848Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T14:26:56.546Z] [info] New QR Code generated
+[2025-12-22T14:27:16.549Z] [info] New QR Code generated
+[2025-12-22T14:27:36.550Z] [info] New QR Code generated
+[2025-12-22T14:27:56.553Z] [warn] Connection closed. Status code: 408, Error: QR refs attempts ended
+[2025-12-22T14:27:56.555Z] [info] Reconnecting...
+[2025-12-22T14:28:02.705Z] [info] using WA v2.3000.1027934701, isLatest: true
+[2025-12-22T14:28:03.085Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T14:28:03.086Z] [info] Reconnecting...
+[2025-12-22T14:28:09.133Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T14:28:09.399Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T14:28:09.400Z] [info] Reconnecting...
+[2025-12-22T14:28:15.442Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T14:28:15.703Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T14:28:15.704Z] [info] Reconnecting...
+[2025-12-22T14:28:21.742Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T14:28:22.006Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T14:28:22.007Z] [info] Reconnecting...
+[2025-12-22T14:28:27.250Z] [info] Status: disconnected, Connected: false
+[2025-12-22T14:28:28.091Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T14:28:28.354Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T14:28:28.355Z] [info] Reconnecting...
+[2025-12-22T14:28:34.398Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T14:28:36.185Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T14:28:36.188Z] [info] Reconnecting...
+[2025-12-22T14:28:42.571Z] [info] using WA v2.3000.1027934701, isLatest: true
+[2025-12-22T14:28:42.835Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T14:28:42.836Z] [info] Reconnecting...
+[2025-12-22T14:28:48.924Z] [info] using WA v2.3000.1027934701, isLatest: true
+[2025-12-22T14:28:49.189Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T14:28:49.190Z] [info] Reconnecting...
+[2025-12-22T14:28:54.464Z] [info] using WA v2.3000.1027934701, isLatest: true
+[2025-12-22T14:28:55.162Z] [info] New QR Code generated
+[2025-12-22T14:29:41.875Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T14:29:55.163Z] [info] New QR Code generated
+[2025-12-22T14:30:15.164Z] [info] New QR Code generated
+[2025-12-22T14:30:35.167Z] [info] New QR Code generated
+[2025-12-22T14:30:55.169Z] [info] New QR Code generated
+[2025-12-22T14:31:14.951Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T14:31:15.171Z] [info] New QR Code generated
+[2025-12-22T14:31:35.172Z] [warn] Connection closed. Status code: 408, Error: QR refs attempts ended
+[2025-12-22T14:31:35.173Z] [info] Reconnecting...
+[2025-12-22T14:31:40.401Z] [info] using WA v2.3000.1027934701, isLatest: true
+[2025-12-22T14:31:40.891Z] [info] New QR Code generated
+[2025-12-22T14:32:29.681Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T14:32:40.891Z] [info] New QR Code generated
+[2025-12-22T14:32:52.803Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T14:33:00.893Z] [info] New QR Code generated
+[2025-12-22T14:33:20.893Z] [info] New QR Code generated
+[2025-12-22T14:33:40.896Z] [info] New QR Code generated
+[2025-12-22T14:34:00.897Z] [info] New QR Code generated
+[2025-12-22T14:34:02.159Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T14:34:09.271Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T14:34:20.901Z] [warn] Connection closed. Status code: 408, Error: QR refs attempts ended
+[2025-12-22T14:34:20.904Z] [info] Reconnecting...
+[2025-12-22T14:34:26.194Z] [info] using WA v2.3000.1027934701, isLatest: true
+[2025-12-22T14:34:26.823Z] [info] New QR Code generated
+[2025-12-22T14:35:15.952Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T14:35:26.824Z] [info] New QR Code generated
+[2025-12-22T14:35:39.813Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T14:35:46.825Z] [info] New QR Code generated
+[2025-12-22T14:36:06.830Z] [info] New QR Code generated
+[2025-12-22T14:36:26.831Z] [info] New QR Code generated
+[2025-12-22T14:36:46.832Z] [info] New QR Code generated
+[2025-12-22T14:36:55.849Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T14:37:06.836Z] [warn] Connection closed. Status code: 408, Error: QR refs attempts ended
+[2025-12-22T14:37:06.837Z] [info] Reconnecting...
+[2025-12-22T14:37:12.881Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T14:37:16.402Z] [warn] Connection closed. Status code: 405, Error: Connection Failure
+[2025-12-22T14:37:16.403Z] [info] Reconnecting...
+[2025-12-22T14:37:22.476Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T14:37:22.736Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T14:37:22.737Z] [info] Reconnecting...
+[2025-12-22T14:37:30.132Z] [info] using WA v2.3000.1027934701, isLatest: true
+[2025-12-22T14:37:31.304Z] [info] New QR Code generated
+[2025-12-22T14:38:02.714Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T14:38:09.147Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T14:38:15.450Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T14:38:21.755Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T14:38:27.250Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T14:38:28.099Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T14:38:31.306Z] [info] New QR Code generated
+[2025-12-22T14:38:34.411Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T14:38:42.579Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T14:38:48.932Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T14:38:51.307Z] [info] New QR Code generated
+[2025-12-22T14:38:54.472Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T14:39:11.308Z] [info] New QR Code generated
+[2025-12-22T14:39:31.309Z] [info] New QR Code generated
+[2025-12-22T14:39:41.875Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T14:39:51.311Z] [info] New QR Code generated
+[2025-12-22T14:40:11.314Z] [warn] Connection closed. Status code: 408, Error: QR refs attempts ended
+[2025-12-22T14:40:11.315Z] [info] Reconnecting...
+[2025-12-22T14:40:16.838Z] [info] using WA v2.3000.1027934701, isLatest: true
+[2025-12-22T14:40:17.525Z] [info] New QR Code generated
+[2025-12-22T14:41:14.952Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T14:41:17.527Z] [info] New QR Code generated
+[2025-12-22T14:41:37.528Z] [info] New QR Code generated
+[2025-12-22T14:41:40.410Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T14:41:57.530Z] [info] New QR Code generated
+[2025-12-22T14:42:17.532Z] [info] New QR Code generated
+[2025-12-22T14:42:29.682Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T14:42:37.533Z] [info] New QR Code generated
+[2025-12-22T14:42:52.804Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T14:42:57.538Z] [warn] Connection closed. Status code: 408, Error: QR refs attempts ended
+[2025-12-22T14:42:57.541Z] [info] Reconnecting...
+[2025-12-22T14:43:02.788Z] [info] using WA v2.3000.1027934701, isLatest: true
+[2025-12-22T14:43:03.265Z] [info] New QR Code generated
+[2025-12-22T14:44:02.160Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T14:44:03.267Z] [info] New QR Code generated
+[2025-12-22T14:44:09.271Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T14:44:23.267Z] [info] New QR Code generated
+[2025-12-22T14:44:26.203Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T14:44:43.269Z] [info] New QR Code generated
+[2025-12-22T14:45:03.270Z] [info] New QR Code generated
+[2025-12-22T14:45:15.953Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T14:45:23.271Z] [info] New QR Code generated
+[2025-12-22T14:45:39.813Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T14:45:43.272Z] [warn] Connection closed. Status code: 408, Error: QR refs attempts ended
+[2025-12-22T14:45:43.275Z] [info] Reconnecting...
+[2025-12-22T14:45:48.520Z] [info] using WA v2.3000.1027934701, isLatest: true
+[2025-12-22T14:45:49.167Z] [info] New QR Code generated
+[2025-12-22T14:46:49.169Z] [info] New QR Code generated
+[2025-12-22T14:46:55.849Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T14:47:09.171Z] [info] New QR Code generated
+[2025-12-22T14:47:12.889Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T14:47:22.506Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T14:47:29.175Z] [info] New QR Code generated
+[2025-12-22T14:47:30.153Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T14:47:49.175Z] [info] New QR Code generated
+[2025-12-22T14:48:02.714Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T14:48:09.148Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T14:48:09.177Z] [info] New QR Code generated
+[2025-12-22T14:48:15.451Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T14:48:21.754Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T14:48:27.253Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T14:48:28.100Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T14:48:29.178Z] [warn] Connection closed. Status code: 408, Error: QR refs attempts ended
+[2025-12-22T14:48:29.181Z] [info] Reconnecting...
+[2025-12-22T14:48:34.410Z] [info] Status: disconnected, Connected: false
+[2025-12-22T14:48:35.123Z] [info] using WA v2.3000.1027934701, isLatest: true
+[2025-12-22T14:48:35.401Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T14:48:35.402Z] [info] Reconnecting...
+[2025-12-22T14:48:40.957Z] [info] using WA v2.3000.1027934701, isLatest: true
+[2025-12-22T14:48:41.220Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T14:48:41.220Z] [info] Reconnecting...
+[2025-12-22T14:48:42.579Z] [info] Status: disconnected, Connected: false
+[2025-12-22T14:48:46.461Z] [info] using WA v2.3000.1027934701, isLatest: true
+[2025-12-22T14:48:47.195Z] [info] New QR Code generated
+[2025-12-22T14:48:48.933Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T14:48:54.473Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T14:49:41.875Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T14:49:47.196Z] [info] New QR Code generated
+[2025-12-22T14:50:07.200Z] [info] New QR Code generated
+[2025-12-22T14:50:16.846Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T14:50:27.206Z] [info] New QR Code generated
+[2025-12-22T14:50:47.230Z] [info] New QR Code generated
+[2025-12-22T14:51:07.231Z] [info] New QR Code generated
+[2025-12-22T14:51:14.953Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T14:51:27.233Z] [warn] Connection closed. Status code: 408, Error: QR refs attempts ended
+[2025-12-22T14:51:27.233Z] [info] Reconnecting...
+[2025-12-22T14:51:40.410Z] [info] Status: disconnected, Connected: false
+[2025-12-22T14:51:41.494Z] [info] using WA v2.3000.1027934701, isLatest: true
+[2025-12-22T14:51:45.188Z] [info] New QR Code generated
+[2025-12-22T14:52:29.684Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T14:52:45.189Z] [info] New QR Code generated
+[2025-12-22T14:52:52.805Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T14:53:02.798Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T14:53:05.190Z] [info] New QR Code generated
+[2025-12-22T14:53:25.191Z] [info] New QR Code generated
+[2025-12-22T14:53:45.192Z] [info] New QR Code generated
+[2025-12-22T14:54:02.161Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T14:54:05.195Z] [info] New QR Code generated
+[2025-12-22T14:54:09.273Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T14:54:25.197Z] [warn] Connection closed. Status code: 408, Error: QR refs attempts ended
+[2025-12-22T14:54:25.198Z] [info] Reconnecting...
+[2025-12-22T14:54:26.203Z] [info] Status: disconnected, Connected: false
+[2025-12-22T14:54:32.888Z] [info] using WA v2.3000.1027934701, isLatest: true
+[2025-12-22T14:54:37.581Z] [info] New QR Code generated
+[2025-12-22T14:55:15.953Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T14:55:37.582Z] [info] New QR Code generated
+[2025-12-22T14:55:39.814Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T14:55:48.528Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T14:55:57.583Z] [info] New QR Code generated
+[2025-12-22T14:56:17.585Z] [info] New QR Code generated
+[2025-12-22T14:56:37.586Z] [info] New QR Code generated
+[2025-12-22T14:56:55.849Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T14:56:57.587Z] [info] New QR Code generated
+[2025-12-22T14:57:12.890Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T14:57:17.589Z] [warn] Connection closed. Status code: 408, Error: QR refs attempts ended
+[2025-12-22T14:57:17.589Z] [info] Reconnecting...
+[2025-12-22T14:57:22.506Z] [info] Status: disconnected, Connected: false
+[2025-12-22T14:57:23.381Z] [info] using WA v2.3000.1027934701, isLatest: true
+[2025-12-22T14:57:28.071Z] [info] New QR Code generated
+[2025-12-22T14:57:30.158Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T14:58:02.714Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T14:58:09.149Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T14:58:15.450Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T14:58:21.755Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T14:58:27.254Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T14:58:28.073Z] [info] New QR Code generated
+[2025-12-22T14:58:28.101Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T14:58:34.411Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T14:58:35.129Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T14:58:40.965Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T14:58:42.581Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T14:58:46.471Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T14:58:48.075Z] [info] New QR Code generated
+[2025-12-22T14:58:48.935Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T14:58:54.475Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T14:59:08.076Z] [info] New QR Code generated
+[2025-12-22T14:59:28.078Z] [info] New QR Code generated
+[2025-12-22T14:59:41.876Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T14:59:48.079Z] [info] New QR Code generated
+[2025-12-22T15:00:08.082Z] [warn] Connection closed. Status code: 408, Error: QR refs attempts ended
+[2025-12-22T15:00:08.083Z] [info] Reconnecting...
+[2025-12-22T15:00:14.134Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T15:00:16.665Z] [warn] Connection closed. Status code: 405, Error: Connection Failure
+[2025-12-22T15:00:16.665Z] [info] Reconnecting...
+[2025-12-22T15:00:16.847Z] [info] Status: disconnected, Connected: false
+[2025-12-22T15:00:22.732Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T15:00:22.995Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T15:00:22.996Z] [info] Reconnecting...
+[2025-12-22T15:00:28.833Z] [info] using WA v2.3000.1027934701, isLatest: true
+[2025-12-22T15:00:29.706Z] [info] New QR Code generated
+[2025-12-22T15:01:14.954Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:01:29.707Z] [info] New QR Code generated
+[2025-12-22T15:01:40.411Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:01:41.500Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:01:49.707Z] [info] New QR Code generated
+[2025-12-22T15:02:09.710Z] [info] New QR Code generated
+[2025-12-22T15:02:29.684Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:02:29.713Z] [info] New QR Code generated
+[2025-12-22T15:02:49.733Z] [info] New QR Code generated
+[2025-12-22T15:02:52.807Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:03:02.798Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:03:09.735Z] [warn] Connection closed. Status code: 408, Error: QR refs attempts ended
+[2025-12-22T15:03:09.735Z] [info] Reconnecting...
+[2025-12-22T15:03:15.587Z] [info] using WA v2.3000.1027934701, isLatest: true
+[2025-12-22T15:03:16.294Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T15:03:16.295Z] [info] Reconnecting...
+[2025-12-22T15:03:22.369Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T15:03:22.630Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T15:03:22.633Z] [info] Reconnecting...
+[2025-12-22T15:03:30.856Z] [info] using WA v2.3000.1027934701, isLatest: true
+[2025-12-22T15:03:32.312Z] [info] New QR Code generated
+[2025-12-22T15:04:02.161Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:04:09.273Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:04:26.204Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:04:32.312Z] [info] New QR Code generated
+[2025-12-22T15:04:32.895Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:04:52.315Z] [info] New QR Code generated
+[2025-12-22T15:05:12.316Z] [info] New QR Code generated
+[2025-12-22T15:05:15.959Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:05:32.317Z] [info] New QR Code generated
+[2025-12-22T15:05:39.813Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:05:48.528Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:05:52.319Z] [info] New QR Code generated
+[2025-12-22T15:06:12.320Z] [warn] Connection closed. Status code: 408, Error: QR refs attempts ended
+[2025-12-22T15:06:12.321Z] [info] Reconnecting...
+[2025-12-22T15:06:17.878Z] [info] using WA v2.3000.1027934701, isLatest: true
+[2025-12-22T15:06:18.480Z] [info] New QR Code generated
+[2025-12-22T15:06:55.850Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:07:12.890Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:07:18.482Z] [info] New QR Code generated
+[2025-12-22T15:07:22.506Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:07:23.387Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:07:30.158Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:07:38.483Z] [info] New QR Code generated
+[2025-12-22T15:07:58.484Z] [info] New QR Code generated
+[2025-12-22T15:08:02.715Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:08:09.149Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:08:15.452Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:08:18.487Z] [info] New QR Code generated
+[2025-12-22T15:08:21.755Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:08:27.254Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:08:28.101Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:08:34.411Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:08:35.130Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:08:38.488Z] [info] New QR Code generated
+[2025-12-22T15:08:40.966Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:08:42.581Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:08:46.472Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:08:48.935Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:08:54.476Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:08:58.494Z] [warn] Connection closed. Status code: 408, Error: QR refs attempts ended
+[2025-12-22T15:08:58.495Z] [info] Reconnecting...
+[2025-12-22T15:09:04.548Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T15:09:04.558Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error (getaddrinfo ENOTFOUND web.whatsapp.com)
+[2025-12-22T15:09:04.558Z] [info] Reconnecting...
+[2025-12-22T15:09:10.606Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T15:09:10.614Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error (getaddrinfo ENOTFOUND web.whatsapp.com)
+[2025-12-22T15:09:10.615Z] [info] Reconnecting...
+[2025-12-22T15:09:16.662Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T15:09:27.925Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error (getaddrinfo ENOTFOUND web.whatsapp.com)
+[2025-12-22T15:09:27.925Z] [info] Reconnecting...
+[2025-12-22T15:09:34.013Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T15:09:34.025Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error (getaddrinfo ENOTFOUND web.whatsapp.com)
+[2025-12-22T15:09:34.026Z] [info] Reconnecting...
+[2025-12-22T15:09:40.074Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T15:09:41.875Z] [info] Status: disconnected, Connected: false
+[2025-12-22T15:09:51.347Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error (getaddrinfo ENOTFOUND web.whatsapp.com)
+[2025-12-22T15:09:51.348Z] [info] Reconnecting...
+[2025-12-22T15:09:57.393Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T15:09:57.402Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error (getaddrinfo ENOTFOUND web.whatsapp.com)
+[2025-12-22T15:09:57.402Z] [info] Reconnecting...
+[2025-12-22T15:10:14.141Z] [info] Status: disconnected, Connected: false
+[2025-12-22T15:10:16.846Z] [info] Status: disconnected, Connected: false
+[2025-12-22T15:10:22.742Z] [info] Status: disconnected, Connected: false
+[2025-12-22T15:10:28.838Z] [info] Status: disconnected, Connected: false
+[2025-12-22T15:11:14.954Z] [info] Status: disconnected, Connected: false
+[2025-12-22T15:11:40.412Z] [info] Status: disconnected, Connected: false
+[2025-12-22T15:11:41.502Z] [info] Status: disconnected, Connected: false
+[2025-12-22T15:12:29.684Z] [info] Status: disconnected, Connected: false
+[2025-12-22T15:12:52.808Z] [info] Status: disconnected, Connected: false
+[2025-12-22T15:13:02.798Z] [info] Status: disconnected, Connected: false
+[2025-12-22T15:13:15.593Z] [info] Status: disconnected, Connected: false
+[2025-12-22T15:13:22.375Z] [info] Status: disconnected, Connected: false
+[2025-12-22T15:13:30.864Z] [info] Status: disconnected, Connected: false
+[2025-12-22T15:14:02.162Z] [info] Status: disconnected, Connected: false
+[2025-12-22T15:14:09.274Z] [info] Status: disconnected, Connected: false
+[2025-12-22T15:14:26.204Z] [info] Status: disconnected, Connected: false
+[2025-12-22T15:14:32.896Z] [info] Status: disconnected, Connected: false
+[2025-12-22T15:14:36.321Z] [info] using WA v2.3000.1027934701, isLatest: true
+[2025-12-22T15:14:36.669Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T15:14:36.670Z] [info] Reconnecting...
+[2025-12-22T15:14:42.350Z] [info] using WA v2.3000.1027934701, isLatest: true
+[2025-12-22T15:14:42.967Z] [info] New QR Code generated
+[2025-12-22T15:15:15.959Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:15:39.813Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:15:42.968Z] [info] New QR Code generated
+[2025-12-22T15:15:48.529Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:16:02.969Z] [info] New QR Code generated
+[2025-12-22T15:16:17.888Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:16:22.971Z] [info] New QR Code generated
+[2025-12-22T15:16:42.973Z] [info] New QR Code generated
+[2025-12-22T15:16:55.852Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:17:02.975Z] [info] New QR Code generated
+[2025-12-22T15:17:12.889Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:17:22.506Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:17:22.978Z] [warn] Connection closed. Status code: 408, Error: QR refs attempts ended
+[2025-12-22T15:17:22.978Z] [info] Reconnecting...
+[2025-12-22T15:17:23.389Z] [info] Status: disconnected, Connected: false
+[2025-12-22T15:17:29.028Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T15:17:30.159Z] [info] Status: disconnected, Connected: false
+[2025-12-22T15:17:35.163Z] [warn] Connection closed. Status code: 405, Error: Connection Failure
+[2025-12-22T15:17:35.164Z] [info] Reconnecting...
+[2025-12-22T15:17:41.212Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T15:17:41.473Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T15:17:41.473Z] [info] Reconnecting...
+[2025-12-22T15:17:47.546Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T15:17:48.125Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T15:17:48.273Z] [info] Reconnecting...
+[2025-12-22T15:17:54.601Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T15:17:54.863Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T15:17:54.864Z] [info] Reconnecting...
+[2025-12-22T15:18:00.909Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T15:18:02.715Z] [info] Status: disconnected, Connected: false
+[2025-12-22T15:18:09.149Z] [info] Status: disconnected, Connected: false
+[2025-12-22T15:18:15.453Z] [info] Status: disconnected, Connected: false
+[2025-12-22T15:18:21.755Z] [info] Status: disconnected, Connected: false
+[2025-12-22T15:18:27.253Z] [info] Status: disconnected, Connected: false
+[2025-12-22T15:18:28.103Z] [info] Status: disconnected, Connected: false
+[2025-12-22T15:18:33.285Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error (connect ETIMEDOUT 102.132.97.54:443)
+[2025-12-22T15:18:33.286Z] [info] Reconnecting...
+[2025-12-22T15:18:34.411Z] [info] Status: disconnected, Connected: false
+[2025-12-22T15:18:35.129Z] [info] Status: disconnected, Connected: false
+[2025-12-22T15:18:39.336Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T15:18:39.343Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error (getaddrinfo ENOTFOUND web.whatsapp.com)
+[2025-12-22T15:18:39.344Z] [info] Reconnecting...
+[2025-12-22T15:18:40.967Z] [info] Status: disconnected, Connected: false
+[2025-12-22T15:18:42.581Z] [info] Status: disconnected, Connected: false
+[2025-12-22T15:18:45.410Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T15:18:46.473Z] [info] Status: disconnected, Connected: false
+[2025-12-22T15:18:48.934Z] [info] Status: disconnected, Connected: false
+[2025-12-22T15:18:54.475Z] [info] Status: disconnected, Connected: false
+[2025-12-22T15:18:56.762Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error (getaddrinfo ENOTFOUND web.whatsapp.com)
+[2025-12-22T15:18:56.762Z] [info] Reconnecting...
+[2025-12-22T15:19:02.809Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T15:19:02.820Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error (getaddrinfo ENOTFOUND web.whatsapp.com)
+[2025-12-22T15:19:02.821Z] [info] Reconnecting...
+[2025-12-22T15:19:04.555Z] [info] Status: disconnected, Connected: false
+[2025-12-22T15:19:08.870Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T15:19:08.888Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error (getaddrinfo ENOTFOUND web.whatsapp.com)
+[2025-12-22T15:19:08.889Z] [info] Reconnecting...
+[2025-12-22T15:19:10.613Z] [info] Status: disconnected, Connected: false
+[2025-12-22T15:19:14.938Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T15:19:16.669Z] [info] Status: disconnected, Connected: false
+[2025-12-22T15:19:20.263Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error (getaddrinfo ENOTFOUND web.whatsapp.com)
+[2025-12-22T15:19:20.264Z] [info] Reconnecting...
+[2025-12-22T15:19:26.314Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T15:19:34.022Z] [info] Status: disconnected, Connected: false
+[2025-12-22T15:19:37.664Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error (getaddrinfo ENOTFOUND web.whatsapp.com)
+[2025-12-22T15:19:37.665Z] [info] Reconnecting...
+[2025-12-22T15:19:40.082Z] [info] Status: disconnected, Connected: false
+[2025-12-22T15:19:41.875Z] [info] Status: disconnected, Connected: false
+[2025-12-22T15:19:43.717Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T15:19:43.726Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error (getaddrinfo ENOTFOUND web.whatsapp.com)
+[2025-12-22T15:19:43.727Z] [info] Reconnecting...
+[2025-12-22T15:19:49.776Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T15:19:49.785Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error (getaddrinfo ENOTFOUND web.whatsapp.com)
+[2025-12-22T15:19:49.786Z] [info] Reconnecting...
+[2025-12-22T15:19:55.835Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T15:19:57.400Z] [info] Status: disconnected, Connected: false
+[2025-12-22T15:20:07.187Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error (getaddrinfo ENOTFOUND web.whatsapp.com)
+[2025-12-22T15:20:07.188Z] [info] Reconnecting...
+[2025-12-22T15:20:13.234Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T15:20:14.142Z] [info] Status: disconnected, Connected: false
+[2025-12-22T15:20:16.846Z] [info] Status: disconnected, Connected: false
+[2025-12-22T15:20:22.743Z] [info] Status: disconnected, Connected: false
+[2025-12-22T15:20:24.588Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error (getaddrinfo ENOTFOUND web.whatsapp.com)
+[2025-12-22T15:20:24.589Z] [info] Reconnecting...
+[2025-12-22T15:20:28.839Z] [info] Status: disconnected, Connected: false
+[2025-12-22T15:20:30.632Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T15:20:30.640Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error (getaddrinfo ENOTFOUND web.whatsapp.com)
+[2025-12-22T15:20:30.641Z] [info] Reconnecting...
+[2025-12-22T15:20:36.820Z] [info] using WA v2.3000.1027934701, isLatest: true
+[2025-12-22T15:20:37.405Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T15:20:37.406Z] [info] Reconnecting...
+[2025-12-22T15:20:44.310Z] [info] using WA v2.3000.1027934701, isLatest: true
+[2025-12-22T15:20:45.378Z] [info] New QR Code generated
+[2025-12-22T15:21:14.954Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:21:40.413Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:21:41.503Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:21:45.380Z] [info] New QR Code generated
+[2025-12-22T15:22:05.381Z] [info] New QR Code generated
+[2025-12-22T15:22:25.383Z] [info] New QR Code generated
+[2025-12-22T15:22:29.685Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:22:45.385Z] [info] New QR Code generated
+[2025-12-22T15:22:52.809Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:23:02.799Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:23:05.387Z] [info] New QR Code generated
+[2025-12-22T15:23:15.595Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:23:22.377Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:23:25.391Z] [warn] Connection closed. Status code: 408, Error: QR refs attempts ended
+[2025-12-22T15:23:25.392Z] [info] Reconnecting...
+[2025-12-22T15:23:30.865Z] [info] Status: disconnected, Connected: false
+[2025-12-22T15:23:32.424Z] [info] using WA v2.3000.1027934701, isLatest: true
+[2025-12-22T15:23:35.697Z] [info] New QR Code generated
+[2025-12-22T15:24:02.162Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:24:09.275Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:24:26.206Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:24:32.896Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:24:35.698Z] [info] New QR Code generated
+[2025-12-22T15:24:36.327Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:24:42.358Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:24:55.700Z] [info] New QR Code generated
+[2025-12-22T15:25:15.787Z] [info] New QR Code generated
+[2025-12-22T15:25:15.959Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:25:35.787Z] [info] New QR Code generated
+[2025-12-22T15:25:39.815Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:25:48.530Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:25:55.789Z] [info] New QR Code generated
+[2025-12-22T15:26:15.791Z] [warn] Connection closed. Status code: 408, Error: QR refs attempts ended
+[2025-12-22T15:26:15.791Z] [info] Reconnecting...
+[2025-12-22T15:26:17.889Z] [info] Status: disconnected, Connected: false
+[2025-12-22T15:26:21.708Z] [info] using WA v2.3000.1027934701, isLatest: true
+[2025-12-22T15:26:25.947Z] [info] New QR Code generated
+[2025-12-22T15:26:55.853Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:27:12.889Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:27:22.506Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:27:23.388Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:27:25.953Z] [info] New QR Code generated
+[2025-12-22T15:27:29.035Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:27:30.159Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:27:41.315Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:27:46.078Z] [info] New QR Code generated
+[2025-12-22T15:27:47.981Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:27:54.609Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:28:01.002Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:28:02.810Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:28:06.177Z] [info] New QR Code generated
+[2025-12-22T15:28:09.234Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:28:15.556Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:28:21.850Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:28:26.178Z] [info] New QR Code generated
+[2025-12-22T15:28:27.345Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:28:28.189Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:28:34.509Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:28:35.232Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:28:39.423Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:28:41.043Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:28:42.674Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:28:45.489Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:28:46.240Z] [info] New QR Code generated
+[2025-12-22T15:28:46.524Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:28:48.951Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:28:54.476Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:29:02.844Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:29:04.578Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:29:06.270Z] [warn] Connection closed. Status code: 408, Error: QR refs attempts ended
+[2025-12-22T15:29:06.270Z] [info] Reconnecting...
+[2025-12-22T15:29:08.887Z] [info] Status: disconnected, Connected: false
+[2025-12-22T15:29:10.639Z] [info] Status: disconnected, Connected: false
+[2025-12-22T15:29:12.529Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T15:29:14.951Z] [info] Status: disconnected, Connected: false
+[2025-12-22T15:29:16.684Z] [info] Status: disconnected, Connected: false
+[2025-12-22T15:29:20.412Z] [warn] Connection closed. Status code: 405, Error: Connection Failure
+[2025-12-22T15:29:20.413Z] [info] Reconnecting...
+[2025-12-22T15:29:26.334Z] [info] Status: disconnected, Connected: false
+[2025-12-22T15:29:26.337Z] [info] using WA v2.3000.1027934701, isLatest: true
+[2025-12-22T15:29:27.285Z] [info] New QR Code generated
+[2025-12-22T15:29:34.037Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:29:40.108Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:29:41.892Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:29:43.732Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:29:49.798Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:29:55.867Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:29:57.428Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:30:13.243Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:30:14.148Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:30:16.854Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:30:22.743Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:30:27.286Z] [info] New QR Code generated
+[2025-12-22T15:30:28.839Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:30:30.640Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:30:36.828Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:30:44.318Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:30:47.286Z] [info] New QR Code generated
+[2025-12-22T15:31:07.287Z] [info] New QR Code generated
+[2025-12-22T15:31:14.955Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:31:27.288Z] [info] New QR Code generated
+[2025-12-22T15:31:40.413Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:31:41.504Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:31:47.289Z] [info] New QR Code generated
+[2025-12-22T15:32:07.291Z] [warn] Connection closed. Status code: 408, Error: QR refs attempts ended
+[2025-12-22T15:32:07.292Z] [info] Reconnecting...
+[2025-12-22T15:32:12.584Z] [info] using WA v2.3000.1027934701, isLatest: true
+[2025-12-22T15:32:14.645Z] [info] New QR Code generated
+[2025-12-22T15:32:29.685Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:32:52.809Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:33:02.799Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:33:14.646Z] [info] New QR Code generated
+[2025-12-22T15:33:15.596Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:33:22.378Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:33:30.866Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:33:32.432Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:33:34.647Z] [info] New QR Code generated
+[2025-12-22T15:33:54.672Z] [info] New QR Code generated
+[2025-12-22T15:34:02.163Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:34:09.277Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:34:14.674Z] [info] New QR Code generated
+[2025-12-22T15:34:26.206Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:34:32.897Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:34:34.675Z] [info] New QR Code generated
+[2025-12-22T15:34:36.328Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:34:42.358Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:34:54.677Z] [warn] Connection closed. Status code: 408, Error: QR refs attempts ended
+[2025-12-22T15:34:54.678Z] [info] Reconnecting...
+[2025-12-22T15:35:01.453Z] [info] using WA v2.3000.1027934701, isLatest: true
+[2025-12-22T15:35:01.835Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T15:35:01.835Z] [info] Reconnecting...
+[2025-12-22T15:35:07.897Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T15:35:08.159Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T15:35:08.160Z] [info] Reconnecting...
+[2025-12-22T15:35:14.204Z] [info] using WA v2.3000.1027934701, isLatest: true
+[2025-12-22T15:35:15.881Z] [info] New QR Code generated
+[2025-12-22T15:35:15.960Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:35:39.815Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:35:48.530Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:36:15.882Z] [info] New QR Code generated
+[2025-12-22T15:36:17.889Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:36:21.716Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:36:35.883Z] [info] New QR Code generated
+[2025-12-22T15:36:55.855Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:36:55.885Z] [info] New QR Code generated
+[2025-12-22T15:37:12.890Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:37:15.887Z] [info] New QR Code generated
+[2025-12-22T15:37:22.507Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:37:23.390Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:37:29.035Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:37:30.158Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:37:35.887Z] [info] New QR Code generated
+[2025-12-22T15:37:41.315Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:37:47.983Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:37:54.610Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:37:55.892Z] [warn] Connection closed. Status code: 408, Error: QR refs attempts ended
+[2025-12-22T15:37:55.892Z] [info] Reconnecting...
+[2025-12-22T15:38:01.003Z] [info] Status: disconnected, Connected: false
+[2025-12-22T15:38:01.344Z] [info] using WA v2.3000.1027934701, isLatest: true
+[2025-12-22T15:38:02.810Z] [info] Status: disconnected, Connected: false
+[2025-12-22T15:38:03.155Z] [info] New QR Code generated
+[2025-12-22T15:38:09.234Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:38:15.556Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:38:21.850Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:38:27.345Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:38:28.189Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:38:34.510Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:38:35.231Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:38:39.424Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:38:41.044Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:38:42.677Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:38:45.491Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:38:46.524Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:38:48.952Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:38:54.475Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:39:02.846Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:39:03.157Z] [info] New QR Code generated
+[2025-12-22T15:39:04.580Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:39:08.888Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:39:10.639Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:39:12.540Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:39:14.951Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:39:16.684Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:39:23.159Z] [info] New QR Code generated
+[2025-12-22T15:39:26.334Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:39:26.347Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:39:34.038Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:39:40.108Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:39:41.893Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:39:43.167Z] [info] New QR Code generated
+[2025-12-22T15:39:43.732Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:39:49.798Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:39:55.868Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:39:57.427Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:40:03.171Z] [info] New QR Code generated
+[2025-12-22T15:40:13.244Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:40:14.149Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:40:16.856Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:40:22.744Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:40:23.171Z] [info] New QR Code generated
+[2025-12-22T15:40:28.839Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:40:30.640Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:40:36.828Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:40:43.173Z] [warn] Connection closed. Status code: 408, Error: QR refs attempts ended
+[2025-12-22T15:40:43.174Z] [info] Reconnecting...
+[2025-12-22T15:40:44.318Z] [info] Status: disconnected, Connected: false
+[2025-12-22T15:40:48.556Z] [info] using WA v2.3000.1027934701, isLatest: true
+[2025-12-22T15:40:50.916Z] [info] New QR Code generated
+[2025-12-22T15:41:14.956Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:41:40.413Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:41:41.503Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:41:50.918Z] [info] New QR Code generated
+[2025-12-22T15:42:10.919Z] [info] New QR Code generated
+[2025-12-22T15:42:12.593Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:42:29.686Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:42:30.921Z] [info] New QR Code generated
+[2025-12-22T15:42:50.922Z] [info] New QR Code generated
+[2025-12-22T15:42:52.808Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:43:02.799Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:43:10.923Z] [info] New QR Code generated
+[2025-12-22T15:43:15.597Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:43:22.378Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:43:30.866Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:43:30.924Z] [warn] Connection closed. Status code: 408, Error: QR refs attempts ended
+[2025-12-22T15:43:30.925Z] [info] Reconnecting...
+[2025-12-22T15:43:32.433Z] [info] Status: disconnected, Connected: false
+[2025-12-22T15:43:37.352Z] [info] using WA v2.3000.1027934701, isLatest: true
+[2025-12-22T15:43:41.638Z] [info] New QR Code generated
+[2025-12-22T15:44:02.163Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:44:09.276Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:44:26.207Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:44:32.896Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:44:36.328Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:44:41.640Z] [info] New QR Code generated
+[2025-12-22T15:44:42.357Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:45:01.474Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:45:01.641Z] [info] New QR Code generated
+[2025-12-22T15:45:07.906Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:45:14.209Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:45:15.960Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:45:21.644Z] [info] New QR Code generated
+[2025-12-22T15:45:39.815Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:45:41.647Z] [info] New QR Code generated
+[2025-12-22T15:45:48.531Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:46:01.648Z] [info] New QR Code generated
+[2025-12-22T15:46:17.888Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:46:21.649Z] [warn] Connection closed. Status code: 408, Error: QR refs attempts ended
+[2025-12-22T15:46:21.650Z] [info] Reconnecting...
+[2025-12-22T15:46:21.717Z] [info] Status: disconnected, Connected: false
+[2025-12-22T15:46:26.908Z] [info] using WA v2.3000.1027934701, isLatest: true
+[2025-12-22T15:46:27.510Z] [info] New QR Code generated
+[2025-12-22T15:46:55.856Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:47:12.891Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:47:22.507Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:47:23.389Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:47:27.512Z] [info] New QR Code generated
+[2025-12-22T15:47:29.035Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:47:30.159Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:47:41.314Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:47:47.513Z] [info] New QR Code generated
+[2025-12-22T15:47:47.982Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:47:54.610Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:48:01.002Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:48:01.351Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:48:02.810Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:48:07.516Z] [info] New QR Code generated
+[2025-12-22T15:48:09.234Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:48:15.558Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:48:21.850Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:48:27.345Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:48:27.517Z] [info] New QR Code generated
+[2025-12-22T15:48:28.190Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:48:34.509Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:48:35.233Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:48:39.423Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:48:41.045Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:48:42.677Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:48:45.491Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:48:46.524Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:48:47.517Z] [info] New QR Code generated
+[2025-12-22T15:48:48.952Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:48:54.477Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:49:02.847Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:49:04.580Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:49:07.521Z] [warn] Connection closed. Status code: 408, Error: QR refs attempts ended
+[2025-12-22T15:49:07.522Z] [info] Reconnecting...
+[2025-12-22T15:49:08.887Z] [info] Status: disconnected, Connected: false
+[2025-12-22T15:49:10.641Z] [info] Status: disconnected, Connected: false
+[2025-12-22T15:49:12.562Z] [info] Status: disconnected, Connected: false
+[2025-12-22T15:49:12.801Z] [info] using WA v2.3000.1027934701, isLatest: true
+[2025-12-22T15:49:14.062Z] [info] New QR Code generated
+[2025-12-22T15:49:14.952Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:49:16.685Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:49:26.334Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:49:26.347Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:49:34.038Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:49:40.110Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:49:41.893Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:49:43.733Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:49:49.799Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:49:55.869Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:49:57.428Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:50:13.245Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:50:14.063Z] [info] New QR Code generated
+[2025-12-22T15:50:14.151Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:50:16.856Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:50:22.744Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:50:28.839Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:50:30.641Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:50:34.064Z] [info] New QR Code generated
+[2025-12-22T15:50:36.828Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:50:44.319Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:50:48.563Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:50:54.065Z] [info] New QR Code generated
+[2025-12-22T15:51:14.066Z] [info] New QR Code generated
+[2025-12-22T15:51:14.957Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:51:34.067Z] [info] New QR Code generated
+[2025-12-22T15:51:40.416Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:51:41.505Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:51:54.069Z] [warn] Connection closed. Status code: 408, Error: QR refs attempts ended
+[2025-12-22T15:51:54.070Z] [info] Reconnecting...
+[2025-12-22T15:51:59.682Z] [info] using WA v2.3000.1027934701, isLatest: true
+[2025-12-22T15:52:01.625Z] [info] New QR Code generated
+[2025-12-22T15:52:12.593Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:52:29.686Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:52:52.809Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:53:01.626Z] [info] New QR Code generated
+[2025-12-22T15:53:02.801Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:53:15.596Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:53:21.627Z] [info] New QR Code generated
+[2025-12-22T15:53:22.406Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:53:30.867Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:53:32.434Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:53:37.359Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:53:41.463Z] [warn] Connection closed. Status code: 503, Error: Stream Errored (unknown)
+[2025-12-22T15:53:41.464Z] [info] Reconnecting...
+[2025-12-22T15:53:47.793Z] [info] using WA v2.3000.1027934701, isLatest: true
+[2025-12-22T15:53:50.541Z] [info] New QR Code generated
+[2025-12-22T15:54:02.163Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:54:09.278Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:54:26.207Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:54:32.897Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:54:36.327Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:54:42.358Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:54:50.541Z] [info] New QR Code generated
+[2025-12-22T15:55:01.475Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:55:07.906Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:55:10.543Z] [info] New QR Code generated
+[2025-12-22T15:55:14.210Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:55:15.959Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:55:30.547Z] [info] New QR Code generated
+[2025-12-22T15:55:39.816Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:55:48.531Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:55:50.548Z] [info] New QR Code generated
+[2025-12-22T15:56:10.548Z] [info] New QR Code generated
+[2025-12-22T15:56:17.888Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:56:21.717Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:56:26.916Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:56:30.550Z] [warn] Connection closed. Status code: 408, Error: QR refs attempts ended
+[2025-12-22T15:56:30.551Z] [info] Reconnecting...
+[2025-12-22T15:56:36.613Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T15:56:38.098Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T15:56:38.098Z] [info] Reconnecting...
+[2025-12-22T15:56:44.851Z] [info] using WA v2.3000.1027934701, isLatest: true
+[2025-12-22T15:56:45.834Z] [info] New QR Code generated
+[2025-12-22T15:56:55.856Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:57:12.891Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:57:22.507Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:57:23.389Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:57:29.036Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:57:30.158Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:57:41.315Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:57:45.835Z] [info] New QR Code generated
+[2025-12-22T15:57:47.983Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:57:54.610Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:58:01.003Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:58:01.350Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:58:02.812Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:58:05.836Z] [info] New QR Code generated
+[2025-12-22T15:58:09.235Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:58:15.558Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:58:21.850Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:58:25.837Z] [info] New QR Code generated
+[2025-12-22T15:58:27.345Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:58:28.190Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:58:34.510Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:58:35.236Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:58:39.423Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:58:41.045Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:58:42.678Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:58:45.490Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:58:45.839Z] [info] New QR Code generated
+[2025-12-22T15:58:46.524Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:58:48.952Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:58:54.478Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:59:02.847Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:59:04.581Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:59:05.841Z] [info] New QR Code generated
+[2025-12-22T15:59:08.888Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:59:10.643Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:59:12.562Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:59:12.809Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:59:14.953Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:59:16.687Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:59:25.844Z] [warn] Connection closed. Status code: 408, Error: QR refs attempts ended
+[2025-12-22T15:59:25.845Z] [info] Reconnecting...
+[2025-12-22T15:59:26.335Z] [info] Status: disconnected, Connected: false
+[2025-12-22T15:59:26.347Z] [info] Status: disconnected, Connected: false
+[2025-12-22T15:59:31.199Z] [info] using WA v2.3000.1027934701, isLatest: true
+[2025-12-22T15:59:33.433Z] [info] New QR Code generated
+[2025-12-22T15:59:34.038Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:59:40.109Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:59:41.899Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:59:43.733Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:59:49.799Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:59:55.870Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T15:59:57.428Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T16:00:13.245Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T16:00:14.152Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T16:00:16.857Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T16:00:22.746Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T16:00:28.839Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T16:00:30.642Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T16:00:33.434Z] [info] New QR Code generated
+[2025-12-22T16:00:36.830Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T16:00:44.318Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T16:00:48.563Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T16:00:53.434Z] [info] New QR Code generated
+[2025-12-22T16:01:13.437Z] [info] New QR Code generated
+[2025-12-22T16:01:14.957Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T16:01:33.438Z] [info] New QR Code generated
+[2025-12-22T16:01:40.419Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T16:01:41.505Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T16:01:53.438Z] [info] New QR Code generated
+[2025-12-22T16:01:59.690Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T16:02:12.593Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T16:02:13.440Z] [warn] Connection closed. Status code: 408, Error: QR refs attempts ended
+[2025-12-22T16:02:13.441Z] [info] Reconnecting...
+[2025-12-22T16:02:18.818Z] [info] using WA v2.3000.1027934701, isLatest: true
+[2025-12-22T16:02:19.710Z] [info] New QR Code generated
+[2025-12-22T16:02:29.686Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T16:02:52.808Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T16:03:02.801Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T16:03:15.596Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T16:03:19.712Z] [info] New QR Code generated
+[2025-12-22T16:03:22.407Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T16:03:30.866Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T16:03:32.433Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T16:03:37.360Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T16:03:39.712Z] [info] New QR Code generated
+[2025-12-22T16:03:47.798Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T16:03:59.715Z] [info] New QR Code generated
+[2025-12-22T16:04:02.163Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T16:04:09.278Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T16:04:19.716Z] [info] New QR Code generated
+[2025-12-22T16:04:26.207Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T16:04:32.896Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T16:04:36.329Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T16:04:39.717Z] [info] New QR Code generated
+[2025-12-22T16:04:42.357Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T16:04:59.719Z] [warn] Connection closed. Status code: 408, Error: QR refs attempts ended
+[2025-12-22T16:04:59.720Z] [info] Reconnecting...
+[2025-12-22T16:05:01.475Z] [info] Status: disconnected, Connected: false
+[2025-12-22T16:05:05.391Z] [info] using WA v2.3000.1027934701, isLatest: true
+[2025-12-22T16:05:07.498Z] [info] New QR Code generated
+[2025-12-22T16:05:07.905Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T16:05:14.209Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T16:05:15.959Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T16:05:39.817Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T16:05:48.533Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T16:06:07.499Z] [info] New QR Code generated
+[2025-12-22T16:06:17.889Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T16:06:21.718Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T16:06:26.917Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T16:06:27.501Z] [info] New QR Code generated
+[2025-12-22T16:06:36.620Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T16:06:44.857Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T16:06:47.502Z] [info] New QR Code generated
+[2025-12-22T16:06:55.857Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T16:07:07.503Z] [info] New QR Code generated
+[2025-12-22T16:07:12.908Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T16:07:22.508Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T16:07:23.411Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T16:07:27.504Z] [info] New QR Code generated
+[2025-12-22T16:07:29.036Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T16:07:30.159Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T16:07:41.315Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T16:07:47.505Z] [warn] Connection closed. Status code: 408, Error: QR refs attempts ended
+[2025-12-22T16:07:47.506Z] [info] Reconnecting...
+[2025-12-22T16:07:47.984Z] [info] Status: disconnected, Connected: false
+[2025-12-22T16:07:53.141Z] [info] using WA v2.3000.1027934701, isLatest: true
+[2025-12-22T16:07:54.612Z] [info] Status: disconnected, Connected: false
+[2025-12-22T16:07:56.042Z] [info] New QR Code generated
+[2025-12-22T16:08:01.004Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T16:08:01.350Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T16:08:02.813Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T16:08:09.236Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T16:08:15.558Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T16:08:21.849Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T16:08:27.345Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T16:08:28.191Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T16:08:34.511Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T16:08:35.237Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T16:08:39.424Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T16:08:41.044Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T16:08:42.678Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T16:08:45.490Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T16:08:46.524Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T16:08:48.952Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T16:08:54.479Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T16:08:56.043Z] [info] New QR Code generated
+[2025-12-22T16:09:02.849Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T16:09:04.604Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T16:09:08.888Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T16:09:10.643Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T16:09:12.563Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T16:09:12.809Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T16:09:14.953Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T16:09:16.044Z] [info] New QR Code generated
+                                                                    [2025-12-22T22:38:53.188Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T22:38:55.232Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T22:38:55.233Z] [info] Reconnecting...
+[2025-12-22T22:39:01.299Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T22:39:01.560Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T22:39:01.561Z] [info] Reconnecting...
+[2025-12-22T22:39:07.615Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T22:39:07.886Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T22:39:07.887Z] [info] Reconnecting...
+[2025-12-22T22:39:13.942Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T22:39:14.204Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T22:39:14.204Z] [info] Reconnecting...
+[2025-12-22T22:39:20.261Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T22:39:20.528Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T22:39:20.529Z] [info] Reconnecting...
+[2025-12-22T22:39:26.584Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T22:39:26.848Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T22:39:26.848Z] [info] Reconnecting...
+[2025-12-22T22:39:32.902Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T22:39:35.034Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T22:39:35.037Z] [info] Reconnecting...
+[2025-12-22T22:39:41.151Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T22:39:41.414Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T22:39:41.415Z] [info] Reconnecting...
+[2025-12-22T22:39:47.458Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T22:39:47.730Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T22:39:47.731Z] [info] Reconnecting...
+[2025-12-22T22:39:53.796Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T22:39:54.062Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T22:39:54.063Z] [info] Reconnecting...
+[2025-12-22T22:40:00.111Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T22:40:00.376Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T22:40:00.380Z] [info] Reconnecting...
+[2025-12-22T22:40:06.450Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T22:40:06.721Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T22:40:06.722Z] [info] Reconnecting...
+[2025-12-22T22:40:12.803Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T22:40:13.067Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T22:40:13.068Z] [info] Reconnecting...
+[2025-12-22T22:40:19.121Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T22:40:19.386Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T22:40:19.386Z] [info] Reconnecting...
+[2025-12-22T22:40:25.448Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T22:40:25.712Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T22:40:25.715Z] [info] Reconnecting...
+[2025-12-22T22:40:31.756Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T22:40:35.905Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T22:40:35.905Z] [info] Reconnecting...
+[2025-12-22T22:40:41.955Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T22:40:42.217Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T22:40:42.237Z] [info] Reconnecting...
+[2025-12-22T22:40:48.285Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T22:40:48.555Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T22:40:48.556Z] [info] Reconnecting...
+[2025-12-22T22:40:54.649Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T22:40:54.914Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T22:40:54.915Z] [info] Reconnecting...
+[2025-12-22T22:41:01.032Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T22:41:01.314Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T22:41:01.318Z] [info] Reconnecting...
+[2025-12-22T22:41:07.385Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T22:41:07.655Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T22:41:07.656Z] [info] Reconnecting...
+[2025-12-22T22:41:13.722Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T22:41:13.986Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T22:41:13.987Z] [info] Reconnecting...
+[2025-12-22T22:41:20.029Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T22:41:20.300Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T22:41:20.301Z] [info] Reconnecting...
+[2025-12-22T22:41:26.368Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T22:41:28.722Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T22:41:28.722Z] [info] Reconnecting...
+[2025-12-22T22:41:34.780Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T22:41:35.041Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T22:41:35.042Z] [info] Reconnecting...
+[2025-12-22T22:41:41.098Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T22:41:41.362Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T22:41:41.363Z] [info] Reconnecting...
+[2025-12-22T22:41:47.408Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T22:41:47.670Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T22:41:47.670Z] [info] Reconnecting...
+[2025-12-22T22:41:53.509Z] [info] using WA v2.3000.1027934701, isLatest: true
+[2025-12-22T22:41:54.449Z] [info] New QR Code generated
+[2025-12-22T22:42:54.452Z] [info] New QR Code generated
+[2025-12-22T22:43:14.487Z] [info] New QR Code generated
+[2025-12-22T22:43:34.500Z] [info] New QR Code generated
+[2025-12-22T22:43:54.503Z] [info] New QR Code generated
+[2025-12-22T22:44:14.504Z] [info] New QR Code generated
+[2025-12-22T22:44:34.513Z] [warn] Connection closed. Status code: 408, Error: QR refs attempts ended
+[2025-12-22T22:44:34.514Z] [info] Reconnecting...
+[2025-12-22T22:44:40.085Z] [info] using WA v2.3000.1027934701, isLatest: true
+[2025-12-22T22:44:40.813Z] [info] New QR Code generated
+[2025-12-22T22:45:40.814Z] [info] New QR Code generated
+[2025-12-22T22:46:00.815Z] [info] New QR Code generated
+[2025-12-22T22:46:20.818Z] [info] New QR Code generated
+[2025-12-22T22:46:40.820Z] [info] New QR Code generated
+[2025-12-22T22:47:00.821Z] [info] New QR Code generated
+[2025-12-22T22:47:20.824Z] [warn] Connection closed. Status code: 408, Error: QR refs attempts ended
+[2025-12-22T22:47:20.825Z] [info] Reconnecting...
+[2025-12-22T22:47:26.879Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T22:47:30.763Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T22:47:30.766Z] [info] Reconnecting...
+[2025-12-22T22:47:36.825Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T22:47:37.085Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T22:47:37.086Z] [info] Reconnecting...
+[2025-12-22T22:47:43.129Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T22:47:43.398Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T22:47:43.399Z] [info] Reconnecting...
+[2025-12-22T22:47:49.453Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T22:47:49.717Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T22:47:49.717Z] [info] Reconnecting...
+[2025-12-22T22:47:55.789Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T22:48:01.647Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T22:48:01.647Z] [info] Reconnecting...
+[2025-12-22T22:48:07.697Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T22:48:07.961Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T22:48:07.962Z] [info] Reconnecting...
+[2025-12-22T22:48:14.020Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T22:48:14.285Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T22:48:14.285Z] [info] Reconnecting...
+[2025-12-22T22:48:20.388Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T22:48:20.658Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T22:48:20.658Z] [info] Reconnecting...
+[2025-12-22T22:48:26.721Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T22:48:26.992Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T22:48:26.993Z] [info] Reconnecting...
+[2025-12-22T22:48:33.074Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T22:48:33.348Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T22:48:33.349Z] [info] Reconnecting...
+[2025-12-22T22:48:39.419Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T22:48:39.686Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T22:48:39.687Z] [info] Reconnecting...
+[2025-12-22T22:48:45.822Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T22:48:46.130Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T22:48:46.131Z] [info] Reconnecting...
+[2025-12-22T22:48:52.193Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T22:48:53.272Z] [info] Status: disconnected, Connected: false
+[2025-12-22T22:48:53.325Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T22:48:53.326Z] [info] Reconnecting...
+[2025-12-22T22:48:59.405Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T22:49:01.048Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T22:49:01.049Z] [info] Reconnecting...
+[2025-12-22T22:49:01.309Z] [info] Status: disconnected, Connected: false
+[2025-12-22T22:49:07.129Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T22:49:07.392Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T22:49:07.393Z] [info] Reconnecting...
+[2025-12-22T22:49:07.633Z] [info] Status: disconnected, Connected: false
+[2025-12-22T22:49:13.462Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T22:49:13.725Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T22:49:13.726Z] [info] Reconnecting...
+[2025-12-22T22:49:13.951Z] [info] Status: disconnected, Connected: false
+[2025-12-22T22:49:19.815Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T22:49:20.269Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T22:49:20.293Z] [info] Reconnecting...
+[2025-12-22T22:49:20.297Z] [info] Status: disconnected, Connected: false
+[2025-12-22T22:49:26.348Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T22:49:26.596Z] [info] Status: disconnected, Connected: false
+[2025-12-22T22:49:26.612Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T22:49:26.612Z] [info] Reconnecting...
+[2025-12-22T22:49:32.668Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T22:49:32.915Z] [info] Status: disconnected, Connected: false
+[2025-12-22T22:49:32.931Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T22:49:32.932Z] [info] Reconnecting...
+[2025-12-22T22:49:38.997Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T22:49:39.265Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T22:49:39.288Z] [info] Reconnecting...
+[2025-12-22T22:49:41.159Z] [info] Status: disconnected, Connected: false
+[2025-12-22T22:49:45.356Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T22:49:46.116Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T22:49:46.122Z] [info] Reconnecting...
+[2025-12-22T22:49:47.477Z] [info] Status: disconnected, Connected: false
+[2025-12-22T22:49:53.550Z] [info] using WA v2.3000.1027934701, isLatest: true
+[2025-12-22T22:49:53.808Z] [info] Status: disconnected, Connected: false
+[2025-12-22T22:49:55.259Z] [info] New QR Code generated
+[2025-12-22T22:50:00.122Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T22:50:06.466Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T22:50:12.814Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T22:50:18.714Z] [info] using WA v2.3000.1027934701, isLatest: true
+[2025-12-22T22:50:19.073Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T22:50:19.074Z] [info] Reconnecting...
+[2025-12-22T22:50:19.131Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T22:50:25.185Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T22:50:25.458Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T22:50:27.682Z] [warn] Connection closed. Status code: 405, Error: Connection Failure
+[2025-12-22T22:50:27.683Z] [info] Reconnecting...
+[2025-12-22T22:50:31.765Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T22:50:33.257Z] [info] using WA v2.3000.1027934701, isLatest: true
+[2025-12-22T22:50:33.520Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T22:50:33.521Z] [info] Reconnecting...
+[2025-12-22T22:50:39.571Z] [info] using WA v2.3000.1027934701, isLatest: true
+[2025-12-22T22:50:39.836Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T22:50:39.836Z] [info] Reconnecting...
+[2025-12-22T22:50:41.963Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T22:50:46.367Z] [info] using WA v2.3000.1027934701, isLatest: true
+[2025-12-22T22:50:47.744Z] [info] New QR Code generated
+[2025-12-22T22:50:48.293Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T22:50:54.662Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T22:50:55.262Z] [info] New QR Code generated
+[2025-12-22T22:51:01.052Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T22:51:07.408Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T22:51:22.775Z] [info] using WA v2.3000.1027934701, isLatest: true
+[2025-12-22T22:51:23.374Z] [info] New QR Code generated
+[2025-12-22T22:51:47.745Z] [info] New QR Code generated
+[2025-12-22T22:52:07.747Z] [info] New QR Code generated
+[2025-12-22T22:52:23.375Z] [info] New QR Code generated
+[2025-12-22T22:52:27.750Z] [info] New QR Code generated
+[2025-12-22T22:52:43.376Z] [info] New QR Code generated
+[2025-12-22T22:52:47.752Z] [info] New QR Code generated
+[2025-12-22T22:53:03.378Z] [info] New QR Code generated
+[2025-12-22T22:53:07.753Z] [info] New QR Code generated
+[2025-12-22T22:53:23.381Z] [info] New QR Code generated
+[2025-12-22T22:53:27.755Z] [warn] Connection closed. Status code: 408, Error: QR refs attempts ended
+[2025-12-22T22:53:27.755Z] [info] Reconnecting...
+[2025-12-22T22:53:33.831Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T22:53:37.326Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T22:53:37.327Z] [info] Reconnecting...
+[2025-12-22T22:53:43.382Z] [info] New QR Code generated
+[2025-12-22T22:53:43.447Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T22:53:43.713Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T22:53:43.714Z] [info] Reconnecting...
+[2025-12-22T22:53:49.812Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T22:53:50.102Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T22:53:50.102Z] [info] Reconnecting...
+[2025-12-22T22:53:56.175Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T22:53:56.459Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T22:53:56.459Z] [info] Reconnecting...
+[2025-12-22T22:54:02.555Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T22:54:02.823Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T22:54:02.824Z] [info] Reconnecting...
+[2025-12-22T22:54:03.386Z] [warn] Connection closed. Status code: 408, Error: QR refs attempts ended
+[2025-12-22T22:54:03.387Z] [info] Reconnecting...
+[2025-12-22T22:54:08.954Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T22:54:09.217Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T22:54:09.218Z] [info] Reconnecting...
+[2025-12-22T22:54:09.480Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T22:54:09.763Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T22:54:09.765Z] [info] Reconnecting...
+[2025-12-22T22:54:15.269Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T22:54:15.534Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T22:54:15.534Z] [info] Reconnecting...
+[2025-12-22T22:54:15.860Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T22:54:16.135Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T22:54:16.136Z] [info] Reconnecting...
+[2025-12-22T22:54:21.587Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T22:54:21.862Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T22:54:21.863Z] [info] Reconnecting...
+[2025-12-22T22:54:22.203Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T22:54:22.467Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T22:54:22.468Z] [info] Reconnecting...
+[2025-12-22T22:54:27.932Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T22:54:28.535Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T22:54:31.777Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T22:54:31.780Z] [info] Reconnecting...
+[2025-12-22T22:54:31.777Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T22:54:31.781Z] [info] Reconnecting...
+[2025-12-22T22:54:37.867Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T22:54:37.878Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T22:54:42.714Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T22:54:42.714Z] [info] Reconnecting...
+[2025-12-22T22:54:42.714Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T22:54:42.715Z] [info] Reconnecting...
+[2025-12-22T22:54:48.796Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T22:54:48.798Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T22:54:49.062Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T22:54:49.062Z] [info] Reconnecting...
+[2025-12-22T22:54:49.066Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T22:54:49.067Z] [info] Reconnecting...
+[2025-12-22T22:54:55.262Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T22:54:55.513Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T22:54:55.538Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T22:54:55.539Z] [info] Reconnecting...
+[2025-12-22T22:54:55.791Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T22:54:55.792Z] [info] Reconnecting...
+[2025-12-22T22:55:01.618Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T22:55:01.915Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T22:55:01.916Z] [info] Reconnecting...
+[2025-12-22T22:55:01.952Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T22:55:02.222Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T22:55:02.222Z] [info] Reconnecting...
+[2025-12-22T22:55:08.024Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T22:55:08.299Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T22:55:08.300Z] [info] Reconnecting...
+[2025-12-22T22:55:08.308Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T22:55:08.570Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T22:55:08.571Z] [info] Reconnecting...
+[2025-12-22T22:55:16.961Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T22:55:16.963Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T22:55:17.248Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T22:55:17.249Z] [info] Reconnecting...
+[2025-12-22T22:55:17.251Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T22:55:17.253Z] [info] Reconnecting...
+[2025-12-22T22:55:23.362Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T22:55:23.499Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T22:55:23.627Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T22:55:23.629Z] [info] Reconnecting...
+[2025-12-22T22:55:23.794Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T22:55:23.795Z] [info] Reconnecting...
+[2025-12-22T22:55:29.764Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T22:55:29.890Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T22:55:33.231Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T22:55:33.232Z] [info] Reconnecting...
+[2025-12-22T22:55:33.236Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T22:55:33.237Z] [info] Reconnecting...
+[2025-12-22T22:55:39.392Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T22:55:39.489Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T22:55:39.659Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T22:55:39.661Z] [info] Reconnecting...
+[2025-12-22T22:55:39.754Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T22:55:39.755Z] [info] Reconnecting...
+[2025-12-22T22:55:45.740Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T22:55:45.845Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T22:55:46.016Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T22:55:46.019Z] [info] Reconnecting...
+[2025-12-22T22:55:46.112Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T22:55:46.114Z] [info] Reconnecting...
+[2025-12-22T22:55:52.159Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T22:55:52.270Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T22:55:52.438Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T22:55:52.439Z] [info] Reconnecting...
+[2025-12-22T22:55:52.535Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T22:55:52.535Z] [info] Reconnecting...
+[2025-12-22T22:55:58.588Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T22:55:58.637Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T22:55:58.856Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T22:55:58.857Z] [info] Reconnecting...
+[2025-12-22T22:55:58.899Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T22:55:58.901Z] [info] Reconnecting...
+[2025-12-22T22:56:04.987Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T22:56:05.016Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T22:56:05.253Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T22:56:05.254Z] [info] Reconnecting...
+[2025-12-22T22:56:05.280Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T22:56:05.281Z] [info] Reconnecting...
+[2025-12-22T22:56:11.329Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T22:56:11.349Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T22:56:11.596Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T22:56:11.597Z] [info] Reconnecting...
+[2025-12-22T22:56:11.611Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T22:56:11.612Z] [info] Reconnecting...
+[2025-12-22T22:56:17.651Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T22:56:17.671Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T22:56:23.066Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T22:56:23.066Z] [info] Reconnecting...
+[2025-12-22T22:56:23.069Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T22:56:23.070Z] [info] Reconnecting...
+[2025-12-22T22:56:29.223Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T22:56:29.227Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T22:56:32.481Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T22:56:32.482Z] [info] Reconnecting...
+[2025-12-22T22:56:32.482Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T22:56:32.487Z] [info] Reconnecting...
+[2025-12-22T22:56:38.585Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T22:56:38.595Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T22:56:38.856Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T22:56:38.865Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T22:56:38.903Z] [info] Reconnecting...
+[2025-12-22T22:56:38.904Z] [info] Reconnecting...
+[2025-12-22T22:56:44.993Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T22:56:45.002Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T22:56:45.260Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T22:56:45.261Z] [info] Reconnecting...
+[2025-12-22T22:56:45.266Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T22:56:45.267Z] [info] Reconnecting...
+[2025-12-22T22:56:51.328Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T22:56:51.347Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T22:56:51.592Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T22:56:51.593Z] [info] Reconnecting...
+[2025-12-22T22:56:51.611Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T22:56:51.611Z] [info] Reconnecting...
+[2025-12-22T22:56:57.690Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T22:56:57.731Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T22:56:57.955Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T22:56:57.956Z] [info] Reconnecting...
+[2025-12-22T22:56:57.992Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T22:56:57.993Z] [info] Reconnecting...
+[2025-12-22T22:57:04.007Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T22:57:04.060Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T22:57:04.268Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T22:57:04.269Z] [info] Reconnecting...
+[2025-12-22T22:57:04.323Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T22:57:04.324Z] [info] Reconnecting...
+[2025-12-22T22:57:10.343Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T22:57:10.383Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T22:57:10.618Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T22:57:10.620Z] [info] Reconnecting...
+[2025-12-22T22:57:10.655Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T22:57:10.657Z] [info] Reconnecting...
+[2025-12-22T22:57:16.721Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T22:57:16.745Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T22:57:16.983Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T22:57:16.984Z] [info] Reconnecting...
+[2025-12-22T22:57:17.011Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T22:57:17.012Z] [info] Reconnecting...
+[2025-12-22T22:57:23.051Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T22:57:23.074Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T22:57:25.749Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T22:57:25.750Z] [info] Reconnecting...
+[2025-12-22T22:57:25.749Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T22:57:25.754Z] [info] Reconnecting...
+[2025-12-22T22:57:31.926Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T22:57:31.930Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T22:57:32.192Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T22:57:32.193Z] [info] Reconnecting...
+[2025-12-22T22:57:32.197Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T22:57:32.198Z] [info] Reconnecting...
+[2025-12-22T22:57:38.305Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T22:57:38.310Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T22:57:38.592Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T22:57:38.596Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T22:57:38.598Z] [info] Reconnecting...
+[2025-12-22T22:57:38.598Z] [info] Reconnecting...
+[2025-12-22T22:57:44.665Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T22:57:44.670Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T22:57:44.936Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T22:57:44.938Z] [info] Reconnecting...
+[2025-12-22T22:57:44.940Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T22:57:44.941Z] [info] Reconnecting...
+[2025-12-22T22:57:51.011Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T22:57:51.014Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T22:57:51.274Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T22:57:51.275Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T22:57:51.276Z] [info] Reconnecting...
+[2025-12-22T22:57:51.275Z] [info] Reconnecting...
+[2025-12-22T22:57:57.331Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T22:57:57.337Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T22:57:57.598Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T22:57:57.600Z] [info] Reconnecting...
+[2025-12-22T22:57:57.604Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T22:57:57.605Z] [info] Reconnecting...
+[2025-12-22T22:58:03.665Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T22:58:03.710Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T22:58:03.951Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T22:58:03.952Z] [info] Reconnecting...
+[2025-12-22T22:58:03.995Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T22:58:03.996Z] [info] Reconnecting...
+[2025-12-22T22:58:09.338Z] [info] using WA v2.3000.1027934701, isLatest: true
+[2025-12-22T22:58:09.408Z] [info] using WA v2.3000.1027934701, isLatest: true
+[2025-12-22T22:58:10.143Z] [info] New QR Code generated
+[2025-12-22T22:58:10.254Z] [info] New QR Code generated
+[2025-12-22T22:59:10.144Z] [info] New QR Code generated
+[2025-12-22T22:59:10.256Z] [info] New QR Code generated
+[2025-12-22T22:59:30.145Z] [info] New QR Code generated
+[2025-12-22T22:59:30.257Z] [info] New QR Code generated
+[2025-12-22T22:59:50.146Z] [info] New QR Code generated
+[2025-12-22T22:59:50.259Z] [info] New QR Code generated
+[2025-12-22T23:00:10.147Z] [info] New QR Code generated
+[2025-12-22T23:00:10.260Z] [info] New QR Code generated
+[2025-12-22T23:00:18.795Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:00:25.203Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:00:30.148Z] [info] New QR Code generated
+[2025-12-22T23:00:30.261Z] [info] New QR Code generated
+[2025-12-22T23:00:33.267Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:00:39.594Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:00:46.387Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:00:50.152Z] [warn] Connection closed. Status code: 408, Error: QR refs attempts ended
+[2025-12-22T23:00:50.153Z] [info] Reconnecting...
+[2025-12-22T23:00:50.279Z] [warn] Connection closed. Status code: 408, Error: QR refs attempts ended
+[2025-12-22T23:00:50.279Z] [info] Reconnecting...
+[2025-12-22T23:00:55.699Z] [info] using WA v2.3000.1027934701, isLatest: true
+[2025-12-22T23:00:55.701Z] [info] using WA v2.3000.1027934701, isLatest: true
+[2025-12-22T23:00:56.296Z] [info] New QR Code generated
+[2025-12-22T23:00:56.418Z] [info] New QR Code generated
+[2025-12-22T23:01:22.815Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:01:56.297Z] [info] New QR Code generated
+[2025-12-22T23:01:56.421Z] [info] New QR Code generated
+[2025-12-22T23:02:16.423Z] [info] New QR Code generated
+[2025-12-22T23:02:16.467Z] [info] New QR Code generated
+[2025-12-22T23:02:36.425Z] [info] New QR Code generated
+[2025-12-22T23:02:36.485Z] [info] New QR Code generated
+[2025-12-22T23:02:56.428Z] [info] New QR Code generated
+[2025-12-22T23:02:56.486Z] [info] New QR Code generated
+[2025-12-22T23:03:16.429Z] [info] New QR Code generated
+[2025-12-22T23:03:16.489Z] [info] New QR Code generated
+[2025-12-22T23:03:33.847Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:03:36.433Z] [warn] Connection closed. Status code: 408, Error: QR refs attempts ended
+[2025-12-22T23:03:36.434Z] [info] Reconnecting...
+[2025-12-22T23:03:36.491Z] [warn] Connection closed. Status code: 408, Error: QR refs attempts ended
+[2025-12-22T23:03:36.492Z] [info] Reconnecting...
+[2025-12-22T23:03:41.921Z] [info] using WA v2.3000.1027934701, isLatest: true
+[2025-12-22T23:03:42.050Z] [info] using WA v2.3000.1027934701, isLatest: true
+[2025-12-22T23:03:42.200Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T23:03:42.201Z] [info] Reconnecting...
+[2025-12-22T23:03:42.314Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T23:03:42.315Z] [info] Reconnecting...
+[2025-12-22T23:03:43.457Z] [info] Status: disconnected, Connected: false
+[2025-12-22T23:03:47.481Z] [info] using WA v2.3000.1027934701, isLatest: true
+[2025-12-22T23:03:47.854Z] [info] using WA v2.3000.1027934701, isLatest: true
+[2025-12-22T23:03:48.524Z] [info] New QR Code generated
+[2025-12-22T23:03:48.859Z] [info] New QR Code generated
+[2025-12-22T23:03:49.848Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:03:56.192Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:04:02.570Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:04:08.965Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:04:09.496Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:04:15.280Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:04:15.870Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:04:21.603Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:04:22.214Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:04:27.950Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:04:28.574Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:04:37.879Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:04:37.887Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:04:48.525Z] [info] New QR Code generated
+[2025-12-22T23:04:48.807Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:04:48.810Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:04:48.862Z] [info] New QR Code generated
+[2025-12-22T23:04:55.272Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:04:55.533Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:05:01.661Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:05:01.966Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:05:08.041Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:05:08.318Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:05:08.527Z] [info] New QR Code generated
+[2025-12-22T23:05:08.863Z] [info] New QR Code generated
+[2025-12-22T23:05:16.978Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:05:16.980Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:05:23.374Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:05:23.532Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:05:28.528Z] [info] New QR Code generated
+[2025-12-22T23:05:28.863Z] [info] New QR Code generated
+[2025-12-22T23:05:29.775Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:05:29.910Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:05:39.406Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:05:39.499Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:05:45.760Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:05:45.859Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:05:48.535Z] [info] New QR Code generated
+[2025-12-22T23:05:48.874Z] [info] New QR Code generated
+[2025-12-22T23:05:52.168Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:05:52.324Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:05:58.602Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:05:58.664Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:06:05.000Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:06:05.027Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:06:08.536Z] [info] New QR Code generated
+[2025-12-22T23:06:08.875Z] [info] New QR Code generated
+[2025-12-22T23:06:11.339Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:06:11.424Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:06:17.659Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:06:17.683Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:06:28.538Z] [warn] Connection closed. Status code: 408, Error: QR refs attempts ended
+[2025-12-22T23:06:28.544Z] [info] Reconnecting...
+[2025-12-22T23:06:28.877Z] [warn] Connection closed. Status code: 408, Error: QR refs attempts ended
+[2025-12-22T23:06:28.878Z] [info] Reconnecting...
+[2025-12-22T23:06:29.234Z] [info] Status: disconnected, Connected: false
+[2025-12-22T23:06:29.237Z] [info] Status: disconnected, Connected: false
+[2025-12-22T23:06:33.810Z] [info] using WA v2.3000.1027934701, isLatest: true
+[2025-12-22T23:06:34.110Z] [info] using WA v2.3000.1027934701, isLatest: true
+[2025-12-22T23:06:34.745Z] [info] New QR Code generated
+[2025-12-22T23:06:34.783Z] [info] New QR Code generated
+[2025-12-22T23:06:38.597Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:06:38.610Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:06:45.006Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:06:45.014Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:06:51.339Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:06:51.356Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:06:57.703Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:06:57.739Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:07:04.018Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:07:04.068Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:07:10.363Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:07:10.396Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:07:16.728Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:07:16.755Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:07:23.063Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:07:23.084Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:07:31.938Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:07:31.938Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:07:34.751Z] [info] New QR Code generated
+[2025-12-22T23:07:34.789Z] [info] New QR Code generated
+[2025-12-22T23:07:38.316Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:07:38.318Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:07:44.682Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:07:44.683Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:07:51.020Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:07:51.022Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:07:54.752Z] [info] New QR Code generated
+[2025-12-22T23:07:54.790Z] [info] New QR Code generated
+[2025-12-22T23:07:57.344Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:07:57.348Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:08:03.673Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:08:03.740Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:08:09.348Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:08:09.418Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:08:14.755Z] [info] New QR Code generated
+[2025-12-22T23:08:14.794Z] [info] New QR Code generated
+[2025-12-22T23:08:34.759Z] [info] New QR Code generated
+[2025-12-22T23:08:34.801Z] [info] New QR Code generated
+[2025-12-22T23:08:54.760Z] [info] New QR Code generated
+[2025-12-22T23:08:54.804Z] [info] New QR Code generated
+[2025-12-22T23:09:14.763Z] [warn] Connection closed. Status code: 408, Error: QR refs attempts ended
+[2025-12-22T23:09:14.764Z] [info] Reconnecting...
+[2025-12-22T23:09:14.809Z] [warn] Connection closed. Status code: 408, Error: QR refs attempts ended
+[2025-12-22T23:09:14.810Z] [info] Reconnecting...
+[2025-12-22T23:09:20.023Z] [info] using WA v2.3000.1027934701, isLatest: true
+[2025-12-22T23:09:20.105Z] [info] using WA v2.3000.1027934701, isLatest: true
+[2025-12-22T23:09:20.621Z] [info] New QR Code generated
+[2025-12-22T23:09:20.933Z] [info] New QR Code generated
+[2025-12-22T23:10:18.797Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:10:20.622Z] [info] New QR Code generated
+[2025-12-22T23:10:20.933Z] [info] New QR Code generated
+[2025-12-22T23:10:25.204Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:10:33.267Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:10:39.593Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:10:40.624Z] [info] New QR Code generated
+[2025-12-22T23:10:40.936Z] [info] New QR Code generated
+[2025-12-22T23:10:46.422Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:10:55.707Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:10:55.711Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:11:00.626Z] [info] New QR Code generated
+[2025-12-22T23:11:00.946Z] [info] New QR Code generated
+[2025-12-22T23:11:20.628Z] [info] New QR Code generated
+[2025-12-22T23:11:20.946Z] [info] New QR Code generated
+[2025-12-22T23:11:22.815Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:11:40.631Z] [info] New QR Code generated
+[2025-12-22T23:11:40.947Z] [info] New QR Code generated
+[2025-12-22T23:12:00.677Z] [warn] Connection closed. Status code: 408, Error: QR refs attempts ended
+[2025-12-22T23:12:00.724Z] [info] Reconnecting...
+[2025-12-22T23:12:00.949Z] [warn] Connection closed. Status code: 408, Error: QR refs attempts ended
+[2025-12-22T23:12:00.949Z] [info] Reconnecting...
+[2025-12-22T23:12:06.006Z] [info] using WA v2.3000.1027934701, isLatest: true
+[2025-12-22T23:12:06.224Z] [info] using WA v2.3000.1027934701, isLatest: true
+[2025-12-22T23:12:06.285Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T23:12:06.286Z] [info] Reconnecting...
+[2025-12-22T23:12:06.969Z] [info] New QR Code generated
+[2025-12-22T23:12:11.803Z] [info] using WA v2.3000.1027934701, isLatest: true
+[2025-12-22T23:12:12.517Z] [info] New QR Code generated
+[2025-12-22T23:13:06.971Z] [info] New QR Code generated
+[2025-12-22T23:13:12.518Z] [info] New QR Code generated
+[2025-12-22T23:13:26.972Z] [info] New QR Code generated
+[2025-12-22T23:13:32.520Z] [info] New QR Code generated
+[2025-12-22T23:13:33.846Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:13:41.937Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:13:42.059Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:13:43.458Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:13:46.974Z] [info] New QR Code generated
+[2025-12-22T23:13:47.492Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:13:47.865Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:13:49.889Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:13:52.599Z] [info] New QR Code generated
+[2025-12-22T23:13:56.191Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:14:02.570Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:14:06.977Z] [info] New QR Code generated
+[2025-12-22T23:14:08.964Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:14:09.497Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:14:12.665Z] [info] New QR Code generated
+[2025-12-22T23:14:15.303Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:14:15.872Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:14:21.622Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:14:22.213Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:14:26.988Z] [info] New QR Code generated
+[2025-12-22T23:14:27.952Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:14:28.574Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:14:32.667Z] [info] New QR Code generated
+[2025-12-22T23:14:37.878Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:14:37.886Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:14:46.990Z] [warn] Connection closed. Status code: 408, Error: QR refs attempts ended
+[2025-12-22T23:14:46.991Z] [info] Reconnecting...
+[2025-12-22T23:14:48.806Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:14:48.811Z] [info] Status: disconnected, Connected: false
+[2025-12-22T23:14:52.670Z] [warn] Connection closed. Status code: 408, Error: QR refs attempts ended
+[2025-12-22T23:14:52.671Z] [info] Reconnecting...
+[2025-12-22T23:14:53.065Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T23:14:55.271Z] [info] Status: disconnected, Connected: false
+[2025-12-22T23:14:55.534Z] [info] Status: disconnected, Connected: false
+[2025-12-22T23:14:58.733Z] [info] using WA v2.3000.1023223821, isLatest: false
+[2025-12-22T23:15:01.466Z] [warn] Connection closed. Status code: 408, Error: WebSocket Error ()
+[2025-12-22T23:15:01.467Z] [info] Reconnecting...
+[2025-12-22T23:15:01.656Z] [warn] Connection closed. Status code: 405, Error: Connection Failure
+[2025-12-22T23:15:01.657Z] [info] Reconnecting...
+[2025-12-22T23:15:01.668Z] [info] Status: disconnected, Connected: false
+[2025-12-22T23:15:01.966Z] [info] Status: disconnected, Connected: false
+[2025-12-22T23:15:07.268Z] [info] using WA v2.3000.1027934701, isLatest: true
+[2025-12-22T23:15:07.280Z] [info] using WA v2.3000.1027934701, isLatest: true
+[2025-12-22T23:15:08.041Z] [info] Status: disconnected, Connected: false
+[2025-12-22T23:15:08.317Z] [info] Status: disconnected, Connected: false
+[2025-12-22T23:15:09.642Z] [info] New QR Code generated
+[2025-12-22T23:15:09.642Z] [info] New QR Code generated
+[2025-12-22T23:15:16.978Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:15:16.981Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:15:23.375Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:15:23.532Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:15:29.777Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:15:29.910Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:15:39.407Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:15:39.502Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:15:45.760Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:15:45.859Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:15:52.169Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:15:52.325Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:15:58.603Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:15:58.666Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:16:05.008Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:16:05.046Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:16:09.643Z] [info] New QR Code generated
+[2025-12-22T23:16:09.644Z] [info] New QR Code generated
+[2025-12-22T23:16:11.352Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:16:11.457Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:16:17.661Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:16:17.683Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:16:29.294Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:16:29.301Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:16:29.663Z] [info] New QR Code generated
+[2025-12-22T23:16:29.668Z] [info] New QR Code generated
+[2025-12-22T23:16:33.820Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:16:34.119Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:16:38.597Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:16:38.613Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:16:45.143Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:16:45.159Z] [info] Status: scan_qr, Connected: false
+[2025-12-22T23:16:49.725Z] [info] New QR Code generated
+[2025-12-22T23:16:51.373Z] [info] Status: scan_qr, Connected: false

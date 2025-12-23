@@ -1,0 +1,31 @@
+[2025-12-22T06:35:48.623Z] GET /api/health 200 207ms - ::1 - -
+[2025-12-22T06:36:20.434Z] GET /api/games 500 91ms - ::1 - -
+[2025-12-22T06:36:44.044Z] POST /api/admin/login 200 17ms - ::1 - -
+[2025-12-22T06:38:35.814Z] GET /api/admin/stats 500 89ms - ::1 - -
+[2025-12-22T06:39:31.483Z] POST /api/transactions/checkout 500 128ms - ::1 - -
+[2025-12-22T07:10:29.670Z] GET /api/health 200 821ms - ::1 - Mozilla/5.0 (Windows NT; Windows NT 10.0; en-US) WindowsPowerShell/5.1.18362.2212
+[2025-12-22T07:18:57.592Z] POST /api/admin/login 200 4ms - ::1 - Mozilla/5.0 (Windows NT; Windows NT 10.0; en-US) WindowsPowerShell/5.1.18362.2212
+[2025-12-22T07:20:53.889Z] GET /api/health 200 41ms - ::ffff:127.0.0.1 - curl/7.79.1
+[2025-12-22T07:21:02.012Z] GET /api/games 500 67ms - ::ffff:127.0.0.1 - curl/7.79.1
+[2025-12-22T07:45:27.583Z] GET /api/categories 200 110ms - ::ffff:127.0.0.1 - curl/7.79.1
+[2025-12-22T07:45:56.492Z] GET /api/categories 200 17ms - ::ffff:127.0.0.1 - curl/7.79.1
+[2025-12-22T07:47:41.385Z] GET /api/games 200 68ms - ::ffff:127.0.0.1 - curl/7.79.1
+[2025-12-22T07:47:59.497Z] GET /api/games 200 43ms - ::ffff:127.0.0.1 - curl/7.79.1
+[2025-12-22T08:45:05.866Z] GET /api/health 200 23ms - ::1 - Mozilla/5.0 (Windows NT; Windows NT 10.0; en-US) WindowsPowerShell/5.1.18362.2212
+[2025-12-22T08:47:43.609Z] GET /api/games 200 30ms - ::1 - Mozilla/5.0 (Windows NT; Windows NT 10.0; en-US) WindowsPowerShell/5.1.18362.2212
+[2025-12-22T08:48:28.818Z] GET /api/categories 200 26ms - ::1 - Mozilla/5.0 (Windows NT; Windows NT 10.0; en-US) WindowsPowerShell/5.1.18362.2212
+[2025-12-22T08:50:04.279Z] POST /api/admin/login 401 6ms - ::1 - Mozilla/5.0 (Windows NT; Windows NT 10.0; en-US) WindowsPowerShell/5.1.18362.2212
+[2025-12-22T08:50:43.597Z] POST /api/admin/login 200 13ms - ::1 - Mozilla/5.0 (Windows NT; Windows NT 10.0; en-US) WindowsPowerShell/5.1.18362.2212
+[2025-12-22T08:53:39.602Z] GET /api/admin/verify 200 7ms - ::1 - Mozilla/5.0 (Windows NT; Windows NT 10.0; en-US) WindowsPowerShell/5.1.18362.2212
+[2025-12-22T09:01:04.365Z] GET /uploads/file-1766394053832-514074846.txt 200 13ms - ::1 - Mozilla/5.0 (Windows NT; Windows NT 10.0; en-US) WindowsPowerShell/5.1.18362.2212
+[2025-12-22T09:16:37.580Z] GET /?ide_webview_request_time=1766394997485 200 8ms - ::1 - Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Trae/1.104.3 Chrome/138.0.7204.251 Electron/37.6.1 Safari/537.36
+[2025-12-22T09:16:39.552Z] GET /@vite/client 404 5ms - ::1 - Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Trae/1.104.3 Chrome/138.0.7204.251 Electron/37.6.1 Safari/537.36
+[2025-12-22T10:15:47.609Z] POST /api/admin/login 200 4ms - ::1 - Mozilla/5.0 (Windows NT; Windows NT 10.0; en-US) WindowsPowerShell/5.1.18362.2212
+[2025-12-22T10:16:58.321Z] GET /api/admin/db/diagnose 200 24ms - ::1 - Mozilla/5.0 (Windows NT; Windows NT 10.0; en-US) WindowsPowerShell/5.1.18362.2212
+[2025-12-22T11:15:23.153Z] GET /api/health 200 15ms - ::1 - Mozilla/5.0 (Windows NT; Windows NT 10.0; en-US) WindowsPowerShell/5.1.18362.2212
+[2025-12-22T11:16:00.763Z] GET /api/health 200 5ms - ::1 - Mozilla/5.0 (Windows NT; Windows NT 10.0; en-US) WindowsPowerShell/5.1.18362.2212
+[2025-12-22T11:22:46.578Z] GET /api/admin/db/diagnose 403 11ms - ::1 - Mozilla/5.0 (Windows NT; Windows NT 10.0; en-US) WindowsPowerShell/5.1.18362.2212
+[2025-12-22T11:23:42.825Z] GET /api/admin/db/diagnose 403 7ms - ::1 - Mozilla/5.0 (Windows NT; Windows NT 10.0; en-US) WindowsPowerShell/5.1.18362.2212
+[2025-12-22T11:25:54.187Z] HEAD /public/assets/VALORANT.jpg 200 3ms - ::ffff:127.0.0.1 - curl/7.79.1
+[2025-12-22T11:33:33.888Z] GET /api/games 200 18ms - ::ffff:127.0.0.1 - curl/7.79.1
+[2025-12-22T12:30:54.647Z] GET /api/health 200 19ms - ::1 - Mozilla/5.0 (Windows NT; Windows NT 10.0; en-US) WindowsPowerShell/5.1.18362.2212

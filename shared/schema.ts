@@ -9,6 +9,7 @@ export const games = pgTable("games", {
   slug: text("slug").notNull().unique(),
   description: text("description").notNull(),
   price: decimal("price", { precision: 10, scale: 2 }).notNull(),
+  oldPrice: decimal("old_price", { precision: 10, scale: 2 }),
   currency: varchar("currency", { length: 10 }).notNull().default("EGP"),
   image: text("image").notNull(),
   category: text("category").notNull(),
@@ -60,3 +61,78 @@ export const chatMessageSchema = z.object({
 export const insertChatMessageSchema = chatMessageSchema.omit({ id: true, timestamp: true });
 
 export type InsertChatMessage = z.infer<typeof insertChatMessageSchema>;
+
+export type CartItem = {
+  id: string;
+  name: string;
+  price: number;
+  quantity: number;
+  image: string;
+};
+
+// Users table
+export const users = pgTable("users", {
+  id: varchar("id", { length: 50 }).primaryKey(),
+  username: text("username").notNull().unique(),
+  password: text("password").notNull(),
+  email: text("email").notNull().unique(),
+  role: text("role").notNull().default("user"), // 'admin' or 'user'
+  createdAt: integer("created_at").notNull().default(Date.now()),
+});
+
+export const insertUserSchema = createInsertSchema(users);
+export const selectUserSchema = createSelectSchema(users);
+export type User = z.infer<typeof selectUserSchema>;
+export type InsertUser = z.infer<typeof insertUserSchema>;
+
+// Chat Messages table
+export const chatMessages = pgTable("chat_messages", {
+  id: varchar("id", { length: 50 }).primaryKey(),
+  sender: text("sender").notNull(), // 'user', 'support', or specific username
+  message: text("message").notNull(),
+  timestamp: integer("timestamp").notNull(),
+  sessionId: text("session_id").notNull(),
+  userId: varchar("user_id", { length: 50 }), // Optional link to registered user
+  read: boolean("read").notNull().default(false),
+});
+
+export const insertChatMessageTableSchema = createInsertSchema(chatMessages);
+export type InsertChatMessageTable = z.infer<typeof insertChatMessageTableSchema>;
+
+// Transactions table
+export const transactions = pgTable("transactions", {
+  id: varchar("id", { length: 50 }).primaryKey(),
+  userId: varchar("user_id", { length: 50 }), // Optional (guest checkout)
+  totalAmount: decimal("total_amount", { precision: 10, scale: 2 }).notNull(),
+  status: text("status").notNull().default("pending"),
+  items: text("items").notNull(), // JSON string of items
+  paymentMethod: text("payment_method").notNull(),
+  customerName: text("customer_name"),
+  customerPhone: text("customer_phone"),
+  timestamp: integer("timestamp").notNull().default(Date.now()),
+});
+
+export const insertTransactionSchema = createInsertSchema(transactions);
+export type InsertTransaction = z.infer<typeof insertTransactionSchema>;
+
+// WhatsApp Messages (Audit)
+export const whatsappMessages = pgTable("whatsapp_messages", {
+  id: varchar("id", { length: 50 }).primaryKey(),
+  waMessageId: text("wa_message_id"),
+  direction: text("direction").notNull(), // 'inbound', 'outbound'
+  fromPhone: text("from_phone"),
+  toPhone: text("to_phone"),
+  message: text("message"),
+  timestamp: integer("timestamp").notNull().default(Date.now()),
+  status: text("status").default("sent"),
+});
+
+// Seller Alerts
+export const sellerAlerts = pgTable("seller_alerts", {
+  id: varchar("id", { length: 50 }).primaryKey(),
+  type: text("type").notNull(),
+  summary: text("summary"),
+  read: boolean("read").default(false),
+  flagged: boolean("flagged").default(false),
+  createdAt: integer("created_at").notNull().default(Date.now()),
+});

@@ -1,82 +1,25 @@
 import { useState } from "react";
-import { ShoppingCart, Gamepad2, Zap, Headphones, Shield, Tag, Flame, Gift } from "lucide-react";
+import { Gamepad2, Zap, Headphones, Shield, Tag, Flame } from "lucide-react";
 import { SiTelegram, SiTiktok, SiYoutube, SiFacebook, SiWhatsapp } from "react-icons/si";
-import { Button } from "@/components/ui/button";
 
+import { Header } from "@/components/header";
 import { ShoppingCategories } from "@/components/shopping-categories";
 import { PopularGames } from "@/components/popular-games";
-import { DynamicLoadingProgress } from "@/components/dynamic-loading-progress";
-import { AccessibilityToolbar } from "@/components/accessibility-mode";
 import { LiveChatWidget } from "@/components/live-chat-widget";
-
-import { Link } from "wouter";
 
 import PaymentMethods from "@/components/payment-methods";
 import { CartSidebar } from "@/components/cart-sidebar";
 import { CheckoutModal } from "@/components/checkout-modal";
-import { useCart } from "@/lib/cart-context";
 
 export default function Home() {
-  const { getItemCount } = useCart();
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
-
-  const itemCount = getItemCount();
 
   return (
     <div className="min-h-screen text-foreground font-gaming overflow-x-hidden custom-cursor bg-gradient-to-b from-darker-bg via-gray-900 to-black">
 
-      
       {/* Header */}
-      <header className="relative z-50 bg-card/90 backdrop-blur-md border-b border-gold-primary/20">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            {/* Logo */}
-            <div className="flex items-center space-x-4">
-              <div className="relative">
-                <div className="w-16 h-16 rounded-xl flex items-center justify-center overflow-hidden bg-black">
-                  <img 
-                    src="/attached_assets/ninja-gaming-logo.png" 
-                    alt="Diaa Eldeen Logo"
-                    className="w-14 h-14 object-contain"
-                  />
-                </div>
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold bg-gradient-to-r from-gold-primary to-neon-pink bg-clip-text text-transparent">
-                  Diaa Eldeen
-                </h1>
-                <p className="text-sm text-muted-foreground">Premium Game Store</p>
-              </div>
-            </div>
-
-            {/* Navigation & Cart */}
-            <div className="flex items-center space-x-6">
-              <nav className="hidden md:flex space-x-8 items-center">
-                <Link href="/" className="text-foreground hover:text-gold-primary transition-colors font-medium">Home</Link>
-                <Link href="/games" className="text-foreground hover:text-gold-primary transition-colors font-medium">Games</Link>
-                <Link href="/support" className="text-foreground hover:text-gold-primary transition-colors font-medium">Support</Link>
-              </nav>
-
-              <AccessibilityToolbar />
-              
-              {/* Shopping Cart Button */}
-              <Button
-                onClick={() => setIsCartOpen(true)}
-                className="relative bg-gradient-to-r from-gold-primary to-gold-secondary text-background px-4 py-2 rounded-xl hover:scale-105 transition-all duration-300"
-              >
-                <ShoppingCart className="mr-2 h-4 w-4" />
-                Cart ({itemCount})
-                {itemCount > 0 && (
-                  <span className="absolute -top-2 -right-2 bg-neon-pink text-white text-xs rounded-full w-6 h-6 flex items-center justify-center">
-                    {itemCount}
-                  </span>
-                )}
-              </Button>
-            </div>
-          </div>
-        </div>
-      </header>
+      <Header onCartClick={() => setIsCartOpen(true)} />
 
       {/* Shopping Categories */}
       <ShoppingCategories />
@@ -151,12 +94,30 @@ export default function Home() {
             </div>
 
             {/* Image */}
-            <div className="rounded-2xl overflow-hidden">
-              <img
-                src="/attached_assets/image_(5)_1766184169669.png"
-                alt="Diaa Eldeen"
-                className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
-              />
+            <div className="rounded-2xl overflow-hidden bg-gradient-to-br from-neon-pink/20 via-purple-900/20 to-gold-primary/20 border border-gold-primary/30 p-4">
+              <div className="relative w-full h-64 md:h-96 bg-gradient-to-br from-gray-800 to-black rounded-xl flex items-center justify-center overflow-hidden group">
+                {/* Animated background */}
+                <div className="absolute inset-0 bg-gradient-to-r from-gold-primary/10 via-neon-pink/10 to-purple-600/10 animate-pulse"></div>
+                {/* Small overlay logo */}
+                <img
+                  src="/public/assets/ninja-gaming-logo.png"
+                  alt="Diaa Eldeen small logo"
+                  className="absolute top-4 left-4 w-24 h-24 md:w-32 md:h-32 object-contain opacity-90"
+                />
+                
+                {/* Main image */}
+                <div className="relative z-10 flex flex-col items-center justify-center">
+                  <img
+                    src="/public/assets/ninja-gaming-logo.png"
+                    alt="Diaa Eldeen premium gaming experience logo"
+                    className="w-32 h-32 md:w-48 md:h-48 object-contain drop-shadow-xl"
+                  />
+                </div>
+                
+                {/* Decorative elements */}
+                <div className="absolute top-2 right-2 w-20 h-20 bg-gradient-to-br from-gold-primary to-transparent rounded-full opacity-20 blur-2xl"></div>
+                <div className="absolute bottom-2 left-2 w-24 h-24 bg-gradient-to-tr from-neon-pink to-transparent rounded-full opacity-20 blur-2xl"></div>
+              </div>
             </div>
           </div>
         </div>
@@ -216,23 +177,29 @@ export default function Home() {
       </section>
 
       {/* Footer */}
-      <footer className="bg-darker-bg border-t border-gray-800 py-12">
+      <footer className="bg-gradient-to-br from-darker-bg via-gray-900 to-black border-t border-gold-primary/20 py-12">
         <div className="container mx-auto px-4">
           {/* Character Showcase */}
           <div className="text-center mb-12">
-            <div className="inline-block mb-4">
-              <img 
-                src="/attached_assets/image_(5)_1766184169669.png" 
-                alt="Crossfire Character"
-                className="h-48 object-contain"
-              />
+            <div className="inline-block mb-4 relative">
+              {/* Placeholder gaming character display */}
+              <div className="w-48 h-48 rounded-2xl bg-gradient-to-br from-gold-primary/20 to-neon-pink/20 border border-gold-primary/30 flex items-center justify-center overflow-hidden group">
+                <div className="absolute inset-0 bg-gradient-to-r from-gold-primary/10 via-transparent to-neon-pink/10 animate-pulse"></div>
+                <div className="relative z-10 flex flex-col items-center">
+                  <Flame className="w-16 h-16 text-gold-primary mb-2 animate-float" />
+                  <p className="text-gold-primary font-bold text-sm">Gaming Character</p>
+                  <p className="text-xs text-gray-400 mt-1">Diaa Eldeen Store</p>
+                </div>
+                <div className="absolute -top-12 -right-12 w-32 h-32 bg-gradient-to-br from-gold-primary to-transparent rounded-full opacity-20 blur-3xl"></div>
+                <div className="absolute -bottom-12 -left-12 w-32 h-32 bg-gradient-to-tr from-neon-pink to-transparent rounded-full opacity-20 blur-3xl"></div>
+              </div>
             </div>
           </div>
 
           {/* Social Links */}
           <div className="flex justify-center space-x-8 mb-8">
             <a
-              href="https://t.me/+7iivzambZno1NzBk"
+              href="https://t.me/diaaeldeen"
               target="_blank"
               rel="noopener noreferrer"
               className="text-blue-500 hover:text-blue-400 text-3xl transition-all duration-300 hover:scale-125"
@@ -268,7 +235,7 @@ export default function Home() {
               <SiTiktok />
             </a>
             <a
-              href="https://youtube.com/channel/UCTMMrq_QBRQOCmqWdyp-Ttw"
+              href="https://www.youtube.com/@bemora-site"
               target="_blank"
               rel="noopener noreferrer"
               className="text-red-500 hover:text-red-400 text-3xl transition-all duration-300 hover:scale-125"

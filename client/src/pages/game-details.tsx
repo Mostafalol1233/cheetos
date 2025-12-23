@@ -96,6 +96,21 @@ export default function GameDetails() {
     );
   }
 
+  const structuredData = game ? {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: game.name,
+    image: game.image,
+    description: game.description,
+    sku: game.id,
+    offers: {
+      "@type": "Offer",
+      priceCurrency: game.currency,
+      price: game.price,
+      availability: "https://schema.org/InStock"
+    }
+  } : null;
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       <div className="container mx-auto px-4 py-8 max-w-4xl">
@@ -106,12 +121,18 @@ export default function GameDetails() {
           </Button>
         </Link>
 
+        {structuredData && (
+          <script type="application/ld+json">
+            {JSON.stringify(structuredData)}
+          </script>
+        )}
+
         <div className="grid md:grid-cols-2 gap-8">
           {/* Game Image */}
           <div className="relative">
             <img
               src={game.image}
-              alt={game.name}
+              alt={`${game.name} | Diaa Eldeen`}
               className="w-full h-64 md:h-80 object-contain bg-white dark:bg-gray-900 rounded-2xl shadow-lg p-4"
             />
             <div className="absolute top-4 right-4 bg-gold-primary text-background px-3 py-1 rounded-full text-sm font-bold">
@@ -167,6 +188,9 @@ export default function GameDetails() {
                       </div>
                     </div>
                     <div className="text-right">
+                      {game.oldPrice ? (
+                        <div className="text-xs text-red-500 line-through">${game.oldPrice}</div>
+                      ) : null}
                       <div className="text-2xl font-bold text-gold-primary">
                         ${game.price}
                       </div>

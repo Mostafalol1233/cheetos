@@ -4,7 +4,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ShoppingCart, Star, Package, ArrowLeft } from "lucide-react";
 import { useCart } from "@/lib/cart-context";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import type { Game } from "@shared/schema";
 
 export default function GamePage() {
   const { slug } = useParams();
@@ -12,9 +13,18 @@ export default function GamePage() {
   const [, setLocation] = useLocation();
   const [selectedPackage, setSelectedPackage] = useState<number>(0);
 
-  const { data: game, isLoading } = useQuery({
+  const { data: game, isLoading } = useQuery<Game>({
     queryKey: [`/api/games/${slug}`],
   });
+
+  useEffect(() => {
+    if (game) {
+      document.title = `${game.name} | Diaa Eldeen`;
+    }
+    return () => {
+      document.title = "Diaa Eldeen | Premium Game Store";
+    };
+  }, [game]);
 
   if (isLoading) {
     return (
@@ -49,7 +59,6 @@ export default function GamePage() {
       name: `${game.name} - ${packageName}`,
       price: parseFloat(packagePrice),
       image: game.image,
-      quantity: 1
     });
   };
 

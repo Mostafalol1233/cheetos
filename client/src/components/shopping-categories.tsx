@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Category } from "@shared/schema";
 import { Flame, Globe, Smartphone, Gift, Clock } from "lucide-react";
 import { Link } from "wouter";
+import ImageWithFallback from "./image-with-fallback";
 
 const iconMap = {
   fire: Flame,
@@ -58,7 +59,7 @@ export function ShoppingCategories() {
             >
               <div className={`relative overflow-hidden rounded-2xl bg-gradient-to-br ${category.gradient} p-6 h-64 card-hover transition-all duration-500 cursor-pointer group`}>
                 <div className="absolute inset-0 bg-black/30 group-hover:bg-black/20 transition-all"></div>
-                <img
+                <ImageWithFallback
                   src={category.image}
                   alt={`${category.name} category`}
                   className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"

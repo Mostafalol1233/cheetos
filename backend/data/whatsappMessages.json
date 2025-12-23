@@ -1,0 +1,52 @@
+[
+  {
+    "id": "wa_1766295245158_ib5uymv",
+    "waMessageId": "3EB0EF268D551EB69B5748",
+    "direction": "inbound",
+    "fromPhone": "120363420138621838@newsletter",
+    "toPhone": null,
+    "message": "https://whatsapp.com/channel/0029Vb60NIU0AgW7lal6IN1p/324,💙,❤️,🧡,🔋,🥰,😘,🥹,😏,🇱🇰,☣️",
+    "timestamp": 1766295245159,
+    "status": "received"
+  },
+  {
+    "id": "wa_1766295290039_55nerdz",
+    "waMessageId": "3EB083A493F9AF1E6F7B3B",
+    "direction": "inbound",
+    "fromPhone": "120363420138621838@newsletter",
+    "toPhone": null,
+    "message": "https://whatsapp.com/channel/0029Vb60NIU0AgW7lal6IN1p/325,💙,❤️,🧡,🔋,🥰,😘,🥹,😏,🇱🇰,☣️",
+    "timestamp": 1766295290039,
+    "status": "received"
+  },
+  {
+    "id": "wa_1766295600334_m0yoqqo",
+    "waMessageId": "AC3F00DCFB937BECEC3AD5AF4EBACD6C",
+    "direction": "inbound",
+    "fromPhone": "120363420888228725@g.us",
+    "toPhone": null,
+    "message": "انا 😁",
+    "timestamp": 1766295600334,
+    "status": "received"
+  },
+  {
+    "id": "wa_1766300270122_xsn1r61",
+    "waMessageId": "ACF1FFE45ADDC8EC6604A2272FE42373",
+    "direction": "inbound",
+    "fromPhone": "120363420888228725@g.us",
+    "toPhone": null,
+    "message": "مثقف ايه انت التاني جوجل بيقولك يا ناكر الجميل",
+    "timestamp": 1766300270122,
+    "status": "received"
+  },
+  {
+    "id": "wa_1766300354205_hfh7xbb",
+    "waMessageId": "AC27509293625614B807489816AF45ED",
+    "direction": "inbound",
+    "fromPhone": "120363420888228725@g.us",
+    "toPhone": null,
+    "message": "يا اخويا هي معروفه جوجل شغال تمام 😂",
+    "timestamp": 1766300354205,
+    "status": "received"
+  }
+]

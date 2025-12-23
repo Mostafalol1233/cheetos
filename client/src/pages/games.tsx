@@ -10,6 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useCart } from "@/lib/cart-context";
 import { useToast } from "@/hooks/use-toast";
 import type { Game, Category } from "@shared/schema";
+import ImageWithFallback from "@/components/image-with-fallback";
 
 export default function GamesPage() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -18,14 +19,12 @@ export default function GamesPage() {
   const { addToCart } = useCart();
   const { toast } = useToast();
 
-  const { data: categories = [] } = useQuery({
+  const { data: categories = [] } = useQuery<Category[]>({
     queryKey: ["/api/categories"],
-    queryFn: () => fetch("/api/categories").then(res => res.json()) as Promise<Category[]>
   });
 
-  const { data: allGames = [], isLoading } = useQuery({
+  const { data: allGames = [], isLoading } = useQuery<Game[]>({
     queryKey: ["/api/games"],
-    queryFn: () => fetch("/api/games").then(res => res.json()) as Promise<Game[]>
   });
 
   const handleAddToCart = (game: Game) => {
@@ -139,7 +138,7 @@ export default function GamesPage() {
                     
                     {/* Game Image */}
                     <div className="relative rounded-lg overflow-hidden border border-cyan-400/20 bg-gray-800 flex-1 mb-3 flex items-center justify-center">
-                      <img
+                      <ImageWithFallback
                         src={game.image}
                         alt={game.name}
                         className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-500"
@@ -156,7 +155,7 @@ export default function GamesPage() {
                     <div className="relative z-10">
                       <h3 className="font-bold text-white mb-1 text-lg line-clamp-1">{game.name}</h3>
                       <div className="flex items-center justify-between mb-3">
-                        <span className="text-cyan-400 font-bold text-lg">{game.price} EGP</span>
+                        <span className="text-cyan-400 font-bold text-lg">{game.category === 'mobile-games' ? `Starting from ${game.price} EGP` : `${game.price} EGP`}</span>
                         <span className="text-xs text-cyan-300/70 bg-cyan-400/10 px-2 py-1 rounded">Stock: {game.stock}</span>
                       </div>
                     </div>

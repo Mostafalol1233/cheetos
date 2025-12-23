@@ -6,13 +6,13 @@ import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
 import { ShoppingBag, Star, Flame, Share2, Play, Check } from "lucide-react";
 import { InteractiveGamePreview } from "./interactive-game-preview";
+import ImageWithFallback from "./image-with-fallback";
 import { useToast } from "@/hooks/use-toast";
 import { DynamicLoadingProgress } from "./dynamic-loading-progress";
 
 export function PopularGames() {
-  const { data: games = [], isLoading, isError } = useQuery({
+  const { data: games = [], isLoading, isError } = useQuery<Game[]>({
     queryKey: ["/api/games/popular"],
-    queryFn: () => fetch("/api/games/popular").then(res => res.json()) as Promise<Game[]>
   });
 
   const { addToCart } = useCart();
@@ -62,66 +62,52 @@ export function PopularGames() {
           const isAdding = addingItems.includes(game.id);
           
           return (
-            <div key={game.id} className="relative group">
-              <div className="relative rounded-2xl overflow-hidden border-2 border-cyan-400/30 bg-gradient-to-b from-gray-900 to-black p-4 h-full flex flex-col justify-between shadow-lg hover:shadow-2xl hover:shadow-cyan-500/50 transition-all duration-300 hover:border-cyan-400/60 group-hover:glow-cyan">
+            <div key={game.id} className="relative group perspective">
+              <Link href={`/game/${game.slug}`} className="block">
+              <div className="relative rounded-2xl overflow-hidden border-2 border-cyan-400/30 bg-gradient-to-b from-gray-900 to-black p-4 h-full flex flex-col justify-between shadow-lg hover:shadow-2xl hover:shadow-cyan-500/50 transition-all duration-300 hover:border-cyan-400/60 group-hover:glow-cyan cursor-pointer">
                 {/* Card glow effect */}
                 <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/0 via-cyan-500/0 to-cyan-500/0 group-hover:from-cyan-500/10 group-hover:via-cyan-500/5 group-hover:to-cyan-500/10 transition-all duration-300 pointer-events-none"></div>
                 
                 {/* Game Image */}
-                <div className="relative rounded-lg overflow-hidden border border-cyan-400/20 bg-gray-800 flex-1 mb-3 flex items-center justify-center h-56">
-                  <img
-                    src={game.image}
-                    alt={game.name}
-                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                  />
-                  {game.isPopular && (
-                    <div className="absolute top-2 right-2 bg-gradient-to-r from-cyan-400 to-blue-500 text-black px-2 py-1 rounded-full text-xs font-bold flex items-center shadow-lg">
-                      <Star className="w-3 h-3 mr-1" />
-                      Popular
-                    </div>
-                  )}
+                <div className="relative flex-1 h-56 mb-3 flip-card">
+                  <div className="relative rounded-lg overflow-hidden border border-cyan-400/20 bg-gray-800 w-full h-full flex items-center justify-center flip-card-face">
+                    <ImageWithFallback
+                      src={game.image}
+                      alt={game.name}
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                    />
+                    {game.isPopular && (
+                      <div className="absolute top-2 right-2 bg-gradient-to-r from-cyan-400 to-blue-500 text-black px-2 py-1 rounded-full text-xs font-bold flex items-center shadow-lg">
+                        <Star className="w-3 h-3 mr-1" />
+                        Popular
+                      </div>
+                    )}
+                  </div>
+                  {/* Back face with extra details */}
+                  <div className="absolute inset-0 rounded-lg overflow-hidden p-4 bg-gradient-to-b from-black to-gray-900 text-cyan-200 flex flex-col justify-center items-center gap-2 flip-card-back">
+                    <p className="text-sm">Category: {game.category}</p>
+                    <p className="text-sm">Packages: {Array.isArray(game.packages) ? game.packages.join(', ') : '—'}</p>
+                    <p className="text-xs opacity-70">Stock: {game.stock}</p>
+                  </div>
                 </div>
 
                 {/* Game Info */}
                 <div className="relative z-10">
                   <h3 className="font-bold text-white mb-1 text-lg line-clamp-1">{game.name}</h3>
                   <div className="flex items-center justify-between mb-3">
-                    <span className="text-cyan-400 font-bold text-lg">{game.price} EGP</span>
+                    <div className="flex items-center gap-2">
+                      {game.oldPrice ? (
+                        <span className="text-xs text-red-500 line-through">{game.oldPrice} EGP</span>
+                      ) : null}
+                      <span className="text-cyan-400 font-bold text-lg">{game.price} EGP</span>
+                    </div>
                     <span className="text-xs text-cyan-300/70 bg-cyan-400/10 px-2 py-1 rounded">Stock: {game.stock}</span>
                   </div>
                 </div>
 
-                {/* Action Buttons */}
-                <div className="relative z-10 flex gap-2">
-                  <Link href={`/game/${game.slug}`} className="flex-1">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="w-full border-cyan-400/50 text-cyan-400 hover:bg-cyan-400/10 hover:text-cyan-300"
-                    >
-                      View
-                    </Button>
-                  </Link>
-                  <Button
-                    onClick={() => handleAddToCart(game)}
-                    disabled={isAdding}
-                    size="sm"
-                    className="flex-1 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-black font-semibold gap-1"
-                  >
-                    {isAdding ? (
-                      <>
-                        <Check className="w-4 h-4" />
-                        Added!
-                      </>
-                    ) : (
-                      <>
-                        <ShoppingBag className="w-4 h-4" />
-                        Add
-                      </>
-                    )}
-                  </Button>
-                </div>
+                
               </div>
+              </Link>
             </div>
           );
         })}

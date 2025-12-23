@@ -4,49 +4,49 @@ const paymentMethods = [
   { 
     id: "visa", 
     name: "Visa", 
-    image: "/attached_assets/image_32_1754945434846.png",
+    image: "/public/assets/image_32_1754945434846.png",
     color: "text-blue-600" 
   },
   { 
     id: "mastercard", 
     name: "Mastercard", 
-    image: "/attached_assets/image_31_1754945434846.png",
+    image: "/public/assets/image_31_1754945434846.png",
     color: "text-red-500" 
   },
   { 
     id: "vodafone", 
     name: "Vodafone Cash", 
-    image: "/attached_assets/image_33_1754945434846.png",
+    image: "/public/assets/image_33_1754945434846.png",
     color: "text-red-600" 
   },
   { 
     id: "orange", 
     name: "Orange Money", 
-    image: "/attached_assets/image_36_1754945434846.png",
+    image: "/public/assets/image_36_1754945434846.png",
     color: "text-orange-500" 
   },
   { 
     id: "etisalat", 
     name: "Etisalat Cash", 
-    image: "/attached_assets/image_34_1754945434846.png",
+    image: "/public/assets/image_34_1754945434846.png",
     color: "text-green-500" 
   },
   { 
     id: "instapay", 
     name: "InstaPay", 
-    image: "/attached_assets/image_29_1754945434846.png",
+    image: "/public/assets/image_29_1754945434846.png",
     color: "text-blue-500" 
   },
   { 
     id: "cib", 
     name: "CIB Bank", 
-    image: "/attached_assets/image_30_1754945434846.png",
+    image: "/public/assets/image_30_1754945434846.png",
     color: "text-blue-700" 
   },
   { 
     id: "we", 
     name: "WE Pay", 
-    image: "/attached_assets/image_35_1754945434846.png",
+    image: "/public/assets/image_35_1754945434846.png",
     color: "text-purple-500" 
   },
 ];
@@ -74,7 +74,7 @@ export default function PaymentMethods() {
                 <img 
                   src={method.image} 
                   alt={method.name}
-                  className="w-12 h-12 object-contain mb-2 group-hover:scale-110 transition-transform duration-300"
+                  className="w-12 h-12 object-contain mb-2 group-hover:scale-110 transition-transform duration-300 filter brightness-75 contrast-125"
                 />
                 <span className="text-xs text-gray-300 text-center font-medium group-hover:text-gold-primary transition-colors duration-300">
                   {method.name}
@@ -91,7 +91,7 @@ export default function PaymentMethods() {
                 <img 
                   src={method.image} 
                   alt={method.name}
-                  className="w-12 h-12 object-contain mb-2 group-hover:scale-110 transition-transform duration-300"
+                  className="w-12 h-12 object-contain mb-2 group-hover:scale-110 transition-transform duration-300 filter brightness-75 contrast-125"
                 />
                 <span className="text-xs text-gray-300 text-center font-medium group-hover:text-gold-primary transition-colors duration-300">
                   {method.name}

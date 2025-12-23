@@ -1,0 +1,42 @@
+{
+  "name": "gamecart-backend",
+  "version": "1.0.0",
+  "description": "GameCart Backend API - Node.js with Express",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node --watch index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "gaming",
+    "ecommerce",
+    "api",
+    "express",
+    "backend"
+  ],
+  "author": "GameCart",
+  "license": "MIT",
+  "dependencies": {
+    "@hapi/boom": "^10.0.1",
+    "@vercel/node": "^3.0.0",
+    "@whiskeysockets/baileys": "^6.5.0",
+    "cloudinary": "^1.41.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "jsonwebtoken": "^9.0.2",
+    "multer": "^1.4.5-lts.1",
+    "pg": "^8.16.3",
+    "pino": "^8.17.2",
+    "qrcode-terminal": "^0.12.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  },
+  "engines": {
+    "node": ">=14.0.0",
+    "npm": ">=6.0.0"
+  }
+}

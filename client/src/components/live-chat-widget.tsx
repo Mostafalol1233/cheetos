@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useQuery, useMutation } from '@tanstack/react-query';
-import { queryClient } from '@/lib/queryClient';
+import { queryClient, apiRequest } from '@/lib/queryClient';
 
 interface ChatMessage {
   id: string;
@@ -21,10 +21,10 @@ export function LiveChatWidget() {
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
   // Fetch chat messages
-  const { data: messages = [] } = useQuery({
+  const { data: messages = [] } = useQuery<ChatMessage[]>({
     queryKey: [`/api/chat/${sessionId}`],
     enabled: isOpen,
-    refetchInterval: 2000 // Poll every 2 seconds
+    refetchInterval: 2000
   });
 
   // Auto-reply mutation
@@ -36,14 +36,10 @@ export function LiveChatWidget() {
     },
     onSuccess: async () => {
       // Add auto-reply message
-      await fetch('/api/chat/message', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          sender: 'support',
-          message: 'Thank you for contacting Diaa Eldeen! Our support team will get back to you soon. 🎮',
-          sessionId
-        })
+      await apiRequest('POST', '/api/chat/message', {
+        sender: 'support',
+        message: 'Thank you for contacting Diaa Eldeen! Our support team will get back to you soon. 🎮',
+        sessionId
       });
       queryClient.invalidateQueries({ queryKey: [`/api/chat/${sessionId}`] });
     }
@@ -52,14 +48,10 @@ export function LiveChatWidget() {
   // Send message mutation
   const sendMutation = useMutation({
     mutationFn: async (msg: string) => {
-      const response = await fetch('/api/chat/message', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          sender: 'user',
-          message: msg,
-          sessionId
-        })
+      const response = await apiRequest('POST', '/api/chat/message', {
+        sender: 'user',
+        message: msg,
+        sessionId
       });
       return response.json();
     },
@@ -88,11 +80,17 @@ export function LiveChatWidget() {
     }
   }, [messages]);
 
+  useEffect(() => {
+    const handler = () => setIsOpen(true);
+    window.addEventListener('open-live-chat', handler);
+    return () => window.removeEventListener('open-live-chat', handler);
+  }, []);
+
   if (!isOpen) {
     return (
       <Button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 right-6 rounded-full w-14 h-14 bg-gradient-to-r from-gold-primary to-neon-pink hover:scale-110 transition-transform duration-300 shadow-lg z-40 flex items-center justify-center"
+        className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 rounded-full w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-r from-gold-primary to-neon-pink hover:scale-110 transition-transform duration-300 shadow-lg z-40 flex items-center justify-center"
       >
         <MessageCircle className="w-6 h-6 text-white" />
       </Button>
@@ -100,7 +98,7 @@ export function LiveChatWidget() {
   }
 
   return (
-    <div className="fixed bottom-6 right-6 w-96 bg-card border border-gold-primary/30 rounded-2xl shadow-2xl z-50 flex flex-col h-[600px] overflow-hidden">
+    <div className="fixed bottom-0 left-0 right-0 sm:bottom-6 sm:right-6 sm:left-auto sm:w-96 w-full bg-card border border-gold-primary/30 rounded-t-2xl sm:rounded-2xl shadow-2xl z-50 flex flex-col h-[60vh] sm:h-[600px] overflow-hidden">
       {/* Header */}
       <div className="bg-gradient-to-r from-gold-primary/20 to-neon-pink/20 border-b border-gold-primary/30 p-4 flex items-center justify-between">
         <div>
@@ -130,7 +128,7 @@ export function LiveChatWidget() {
       {!isMinimized && (
         <>
           {/* Messages Area */}
-          <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
+          <ScrollArea className="flex-1 p-2 sm:p-4" ref={scrollAreaRef}>
             <div className="space-y-4">
               {messages.length === 0 ? (
                 <div className="text-center text-muted-foreground py-8">
@@ -165,7 +163,7 @@ export function LiveChatWidget() {
           </ScrollArea>
 
           {/* Input Area */}
-          <div className="border-t border-gold-primary/30 p-4 bg-muted/20">
+          <div className="border-t border-gold-primary/30 p-2 sm:p-4 bg-muted/20">
             <form onSubmit={handleSendMessage} className="flex gap-2">
               <Input
                 value={inputMessage}

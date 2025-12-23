@@ -1,0 +1,42 @@
+[
+  {
+    "id": "alert_1766295245161",
+    "type": "whatsapp_message",
+    "summary": "New WhatsApp from 120363420138621838@newsletter: https://whatsapp.com/channel/0029Vb60NIU0AgW7lal6I",
+    "read": false,
+    "flagged": false,
+    "createdAt": 1766295245161
+  },
+  {
+    "id": "alert_1766295290040",
+    "type": "whatsapp_message",
+    "summary": "New WhatsApp from 120363420138621838@newsletter: https://whatsapp.com/channel/0029Vb60NIU0AgW7lal6I",
+    "read": false,
+    "flagged": false,
+    "createdAt": 1766295290040
+  },
+  {
+    "id": "alert_1766295600335",
+    "type": "whatsapp_message",
+    "summary": "New WhatsApp from 120363420888228725@g.us: انا 😁",
+    "read": false,
+    "flagged": false,
+    "createdAt": 1766295600335
+  },
+  {
+    "id": "alert_1766300270125",
+    "type": "whatsapp_message",
+    "summary": "New WhatsApp from 120363420888228725@g.us: مثقف ايه انت التاني جوجل بيقولك يا ناكر الجميل",
+    "read": false,
+    "flagged": false,
+    "createdAt": 1766300270125
+  },
+  {
+    "id": "alert_1766300354206",
+    "type": "whatsapp_message",
+    "summary": "New WhatsApp from 120363420888228725@g.us: يا اخويا هي معروفه جوجل شغال تمام 😂",
+    "read": false,
+    "flagged": false,
+    "createdAt": 1766300354206
+  }
+]

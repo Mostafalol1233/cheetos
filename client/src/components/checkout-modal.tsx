@@ -1,12 +1,17 @@
 import { useState } from "react";
+import { useLocation } from "wouter";
 import { useCart } from "@/lib/cart-context";
+import { apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { X } from "lucide-react";
 import { SiWhatsapp } from "react-icons/si";
+import { useToast } from "@/hooks/use-toast";
 
 interface CheckoutModalProps {
   isOpen: boolean;
@@ -15,14 +20,18 @@ interface CheckoutModalProps {
 
 export function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
   const { cart, getTotalPrice, clearCart } = useCart();
+  const [, setLocation] = useLocation();
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
   const [countryCode, setCountryCode] = useState("+20");
   const [paymentMethod, setPaymentMethod] = useState("Orange Cash");
+  const [confirmMethod, setConfirmMethod] = useState<'whatsapp' | 'live'>('whatsapp');
+  const [paymentMessage, setPaymentMessage] = useState("");
+  const { toast } = useToast();
 
   const SELLER_WHATSAPP = import.meta.env.VITE_SELLER_WHATSAPP || "+201234567890";
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!customerName.trim() || !customerPhone.trim()) {
@@ -55,12 +64,32 @@ ${orderSummary}
 
 شكراً لك! 🔥 يسعدنا خدمتك 💎`;
 
-    const whatsappUrl = `https://wa.me/${SELLER_WHATSAPP.replace('+', '')}?text=${encodeURIComponent(message)}`;
+    try {
+      const items = cart.map(item => ({ id: item.id, name: item.name, price: item.price, quantity: item.quantity }));
+      const res = await apiRequest('POST', '/api/transactions/checkout', {
+        customerName,
+        customerPhone: `${countryCode}${customerPhone}`,
+        paymentMethod,
+        items,
+      });
+      const { id: transactionId } = await res.json();
 
-    // Open WhatsApp
-    window.open(whatsappUrl, '_blank');
+      if (confirmMethod === 'whatsapp') {
+        const whatsappUrl = `https://wa.me/${SELLER_WHATSAPP.replace('+', '')}?text=${encodeURIComponent(message)}`;
+        window.open(whatsappUrl, '_blank');
+      } else {
+        setLocation(`/checkout/security/${transactionId}`);
+      }
+      toast({
+        title: "Purchase Confirmed",
+        description: `Transaction ${transactionId} for ${items.length} item(s) has been initiated. Total: ${getTotalPrice()} EGP`,
+        duration: 4000,
+      });
+    } catch (err) {
+      alert(String(err));
+      return;
+    }
 
-    // Clear cart and close modal
     clearCart();
     onClose();
     
@@ -96,6 +125,24 @@ ${orderSummary}
             <div className="border-t mt-2 pt-2 font-bold">
               Total: {getTotalPrice()} EGP
             </div>
+          </div>
+
+          {/* Confirmation Method */}
+          <div>
+            <Label>Confirmation Method *</Label>
+            <RadioGroup value={confirmMethod} onValueChange={(val) => setConfirmMethod(val as 'whatsapp' | 'live')} className="mt-2">
+              <div className="flex items-center gap-2">
+                <RadioGroupItem id="method-whatsapp" value="whatsapp" />
+                <Label htmlFor="method-whatsapp">WhatsApp</Label>
+              </div>
+              <div className="flex items-center gap-2 mt-2">
+                <RadioGroupItem id="method-live" value="live" />
+                <Label htmlFor="method-live">Live Message (Secure)</Label>
+              </div>
+            </RadioGroup>
+            {confirmMethod === 'live' && (
+              <p className="text-xs text-muted-foreground mt-2">You will be redirected to a security page to submit your payment message and receipt.</p>
+            )}
           </div>
 
           {/* Customer Information */}
@@ -151,14 +198,58 @@ ${orderSummary}
                 <SelectItem value="Bank Transfer">Bank Transfer</SelectItem>
               </SelectContent>
             </Select>
+            <div className="mt-3 text-sm bg-muted/30 rounded-lg p-3">
+              {paymentMethod === 'Orange Cash' && (
+                <div>
+                  <p className="font-medium">Transfer number:</p>
+                  <p className="text-foreground">01001387284</p>
+                </div>
+              )}
+              {paymentMethod === 'Vodafone Cash' && (
+                <div>
+                  <p className="font-medium">Transfer number:</p>
+                  <p className="text-foreground">01001387284</p>
+                </div>
+              )}
+              {paymentMethod === 'Etisalat Cash' && (
+                <div>
+                  <p className="font-medium">Transfer number:</p>
+                  <p className="text-foreground">01001387284</p>
+                </div>
+              )}
+              {paymentMethod === 'WE Pay' && (
+                <div>
+                  <p className="font-medium">Transfer numbers:</p>
+                  <p className="text-foreground">01001387284 or 01029070780</p>
+                </div>
+              )}
+              {paymentMethod === 'InstaPay' && (
+                <div>
+                  <p className="font-medium">Account:</p>
+                  <p className="text-foreground">DiaaEldeenn</p>
+                </div>
+              )}
+              {paymentMethod === 'Bank Transfer' && (
+                <div>
+                  <p className="font-medium">Bank:</p>
+                  <p className="text-foreground">CIB Bank - Account Number: 0123456789</p>
+                </div>
+              )}
+            </div>
           </div>
 
           <Button 
             type="submit" 
             className="w-full bg-green-600 hover:bg-green-700 text-white"
           >
-            <SiWhatsapp className="mr-2" />
-            Send Order via WhatsApp
+            {confirmMethod === 'whatsapp' ? (
+              <>
+                <SiWhatsapp className="mr-2" />
+                Send Order via WhatsApp
+              </>
+            ) : (
+              <>Proceed to Secure Confirmation</>
+            )}
           </Button>
         </form>
       </DialogContent>

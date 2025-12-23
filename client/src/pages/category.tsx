@@ -5,20 +5,28 @@ import { Link } from "wouter";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useEffect } from "react";
 import type { Game, Category } from "@shared/schema";
 
 export default function CategoryPage() {
   const { slug } = useParams<{ slug: string }>();
 
-  const { data: category } = useQuery({
+  const { data: category } = useQuery<Category[], Error, Category | undefined>({
     queryKey: ["/api/categories"],
-    queryFn: () => fetch("/api/categories").then(res => res.json()) as Promise<Category[]>,
-    select: (categories) => categories.find(cat => cat.slug === slug),
+    select: (categories) => categories?.find(cat => cat.slug === slug),
   });
 
-  const { data: games = [], isLoading } = useQuery({
+  useEffect(() => {
+    if (category) {
+      document.title = `${category.name} Games | Diaa Eldeen`;
+    }
+    return () => {
+      document.title = "Diaa Eldeen | Premium Game Store";
+    };
+  }, [category]);
+
+  const { data: games = [], isLoading } = useQuery<Game[]>({
     queryKey: ["/api/games/category", slug],
-    queryFn: () => fetch(`/api/games/category/${slug}`).then(res => res.json()) as Promise<Game[]>,
     enabled: !!slug,
   });
 
@@ -124,7 +132,7 @@ export default function CategoryPage() {
                     <p className="text-gray-600 dark:text-gray-300 text-sm mb-3 line-clamp-2">{game.description}</p>
                     <div className="flex items-center justify-between">
                       <span className="text-xl font-bold text-blue-600 dark:text-blue-400">
-                        {game.price} {game.currency}
+                        {game.category === 'mobile-games' ? `Starting from ${game.price} ${game.currency}` : `${game.price} ${game.currency}`}
                       </span>
                       <div className="flex gap-2">
                         <Link href={`/game/${game.slug}`}>

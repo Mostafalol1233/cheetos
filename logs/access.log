@@ -1,0 +1,40 @@
+[2025-12-21T06:29:31.581Z] POST /api/admin/login 200 21ms - ::1 - Mozilla/5.0 (Windows NT; Windows NT 10.0; en-US) WindowsPowerShell/5.1.18362.2212
+[2025-12-21T06:29:45.684Z] POST /api/admin/login 200 7ms - ::1 - Mozilla/5.0 (Windows NT; Windows NT 10.0; en-US) WindowsPowerShell/5.1.18362.2212
+[2025-12-21T06:30:14.929Z] GET /api/admin/db/diagnose 200 283ms - ::1 - Mozilla/5.0 (Windows NT; Windows NT 10.0; en-US) WindowsPowerShell/5.1.18362.2212
+[2025-12-21T06:31:08.912Z] GET /api/admin/db/diagnose 200 110ms - ::1 - Mozilla/5.0 (Windows NT; Windows NT 10.0; en-US) WindowsPowerShell/5.1.18362.2212
+[2025-12-21T06:31:25.282Z] GET /api/admin/storage/health 200 11ms - ::1 - Mozilla/5.0 (Windows NT; Windows NT 10.0; en-US) WindowsPowerShell/5.1.18362.2212
+[2025-12-21T16:11:40.633Z] GET /api/categories 200 29ms :: [{"id":"hot-deals","name":"HOT DEALS","slug":"h…
+[2025-12-21T16:16:44.479Z] GET /api/games/popular 200 7ms :: [{"id":"crossfire","name":"CROSSFIRE","slug":…
+[2025-12-22T06:12:25.652Z] GET /api/categories 200 17ms :: [{"id":"hot-deals","name":"HOT DEALS","slug":"h…
+[2025-12-22T06:12:25.678Z] GET /api/categories 200 64ms
+[2025-12-22T06:12:26.376Z] GET /api/games/popular 200 8ms :: [{"id":"crossfire","name":"CROSSFIRE","slug":…
+[2025-12-22T06:15:37.753Z] GET /api/games/popular 200 5ms :: [{"id":"crossfire","name":"CROSSFIRE","slug":…
+[2025-12-22T06:15:38.268Z] GET /api/categories 200 3ms :: [{"id":"hot-deals","name":"HOT DEALS","slug":"ho…
+[2025-12-22T06:15:38.297Z] GET /api/categories 200 593ms
+[2025-12-22T06:17:05.422Z] GET /api/health 404 27ms
+[2025-12-22T06:18:51.079Z] GET /api/health 404 10ms
+[2025-12-22T06:18:51.084Z] GET /api/health 404 20ms
+[2025-12-22T06:26:03.116Z] GET /api/health 404 25ms
+[2025-12-22T06:26:03.118Z] GET /api/health 404 40ms
+[2025-12-22T06:34:32.164Z] GET /api/health 404 7ms
+[2025-12-22T06:34:32.164Z] GET /api/health 404 24ms
+[2025-12-22T06:50:51.110Z] GET /api/categories 200 65ms :: [{"id":"hot-deals","name":"HOT DEALS","slug":"h…
+[2025-12-22T06:50:51.196Z] GET /api/categories 200 176ms
+[2025-12-22T06:50:51.514Z] GET /api/games/popular 200 23ms :: [{"id":"crossfire","name":"CROSSFIRE","slug"…
+[2025-12-22T07:10:04.146Z] GET /api/games/popular 200 9ms :: [{"id":"crossfire","name":"CROSSFIRE","slug":…
+[2025-12-22T07:10:09.605Z] GET /api/categories 200 3ms :: [{"id":"hot-deals","name":"HOT DEALS","slug":"ho…
+[2025-12-22T07:10:09.608Z] GET /api/categories 200 4624ms
+[2025-12-22T07:10:31.868Z] GET /api/health 404 9ms
+[2025-12-22T07:10:34.285Z] GET /api/health 404 13ms
+[2025-12-22T07:10:34.288Z] GET /api/health 404 22ms
+[2025-12-22T14:05:36.056Z] GET /api/categories 200 3138ms - ::ffff:127.0.0.1 - curl/7.79.1
+[2025-12-22T14:06:12.981Z] GET /api/games/popular 200 602ms - ::ffff:127.0.0.1 - curl/7.79.1
+[2025-12-22T14:06:28.269Z] GET /api/games/popular 200 3114ms - ::ffff:127.0.0.1 - curl/7.79.1
+[2025-12-22T22:39:16.971Z] GET /api/games/popular 200 1378ms - ::ffff:127.0.0.1 - curl/7.79.1
+[2025-12-22T22:40:42.479Z] GET /api/games 200 7581ms - ::ffff:127.0.0.1 - curl/7.79.1
+[2025-12-22T22:41:00.948Z] GET /api/games 200 887ms - ::ffff:127.0.0.1 - curl/7.79.1
+[2025-12-22T23:02:59.466Z] GET /?ide_webview_request_time=1766444576758 200 24ms - ::1 - Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Trae/1.104.3 Chrome/138.0.7204.251 Electron/37.6.1 Safari/537.36
+[2025-12-22T23:03:00.721Z] GET /@vite/client 404 15ms - ::1 - Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Trae/1.104.3 Chrome/138.0.7204.251 Electron/37.6.1 Safari/537.36
+[2025-12-22T23:03:01.111Z] GET /?token=1TecT88v8VTP 200 5ms - ::1 - Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Trae/1.104.3 Chrome/138.0.7204.251 Electron/37.6.1 Safari/537.36
+[2025-12-22T23:03:01.143Z] GET /@fs/D:/GameCart-1/node_modules/vite/dist/client/env.mjs 404 7ms - ::1 - Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Trae/1.104.3 Chrome/138.0.7204.251 Electron/37.6.1 Safari/537.36
+[2025-12-22T23:03:01.279Z] GET /sw.js 404 2ms - ::1 - Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Trae/1.104.3 Chrome/138.0.7204.251 Electron/37.6.1 Safari/537.36

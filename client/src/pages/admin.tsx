@@ -4,18 +4,15 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Trash2, Edit, Plus, MessageSquare } from 'lucide-react';
+import { Trash2, Edit, Plus, MessageSquare, Bell, Check, AlertCircle, Info, Search, Package, Shield, ShoppingCart } from 'lucide-react';
 import { queryClient } from '@/lib/queryClient';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import type { Game } from '@shared/schema';
 
-interface Game {
-  id: string;
-  name: string;
-  price: string;
-  stock: number;
-  category: string;
-  image: string;
-}
+
 
 interface Category {
   id: string;
@@ -31,35 +28,102 @@ interface ChatMessage {
   timestamp: number;
 }
 
+interface Alert {
+  id: number;
+  type: 'stock' | 'system' | 'order' | 'security';
+  priority: 'low' | 'medium' | 'high';
+  summary: string;
+  details: any;
+  timestamp: number;
+  read: boolean;
+}
+
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('games');
   const [editingGame, setEditingGame] = useState<Game | null>(null);
   const [selectedSession, setSelectedSession] = useState<string | null>(null);
   const [replyMessage, setReplyMessage] = useState('');
+  const [cardsPage, setCardsPage] = useState(1);
+  const [cardsLimit, setCardsLimit] = useState(20);
+  const [newCardGameId, setNewCardGameId] = useState<string>('');
+  const [newCardCode, setNewCardCode] = useState('');
+  const [alertStatus, setAlertStatus] = useState<string>('all');
+  const [alertType, setAlertType] = useState<string>('all');
+  const [alertSearch, setAlertSearch] = useState('');
 
   // Fetch games
-  const { data: games = [] } = useQuery({
+  const { data: games = [] } = useQuery<Game[]>({
     queryKey: ['/api/games'],
-    queryFn: () => fetch('/api/games').then(res => res.json())
   });
 
   // Fetch categories
-  const { data: categories = [] } = useQuery({
+  const { data: categories = [] } = useQuery<Category[]>({
     queryKey: ['/api/categories'],
-    queryFn: () => fetch('/api/categories').then(res => res.json())
   });
 
+  // Fetch alerts
+  const { data: alerts = [] } = useQuery<Alert[]>({
+    queryKey: ['/api/admin/alerts', alertStatus, alertType, alertSearch],
+    enabled: activeTab === 'alerts',
+    refetchInterval: 5000, // Real-time updates
+    queryFn: async () => {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('adminToken') : null;
+      const params = new URLSearchParams();
+      if (alertStatus !== 'all') params.append('status', alertStatus);
+      if (alertType !== 'all') params.append('type', alertType);
+      if (alertSearch) params.append('q', alertSearch);
+      
+      const res = await fetch(`/api/admin/alerts?${params.toString()}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined
+      });
+      return await res.json();
+    }
+  });
+
+  // Mark alert as read mutation
+  const markAlertReadMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('adminToken') : null;
+      const res = await fetch(`/api/admin/alerts/${id}/read`, {
+        method: 'PUT',
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined
+      });
+      return await res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/alerts'] });
+    }
+  });
+
+  // Fetch game cards (admin)
+  const { data: cardsResponse } = useQuery<{ items: Array<{ id: string; game_id: string; card_code: string; is_used: boolean; created_at: string }>; page: number; limit: number; total: number }>({
+    queryKey: ['/api/admin/game-cards', `?page=${cardsPage}&limit=${cardsLimit}`],
+    enabled: activeTab === 'cards',
+    queryFn: async () => {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('adminToken') : null;
+      const res = await fetch(`/api/admin/game-cards?page=${cardsPage}&limit=${cardsLimit}`,
+        { headers: token ? { Authorization: `Bearer ${token}` } : undefined }
+      );
+      return await res.json();
+    }
+  });
+  const gameCards = cardsResponse?.items || [];
+  const gameCardsTotal = cardsResponse?.total || 0;
+
   // Fetch all chats
-  const { data: allChats = [], refetch: refetchChats } = useQuery({
+  const { data: allChats = [], refetch: refetchChats } = useQuery<ChatMessage[]>({
     queryKey: ['/api/chat/all'],
-    queryFn: () => fetch('/api/chat/all').then(res => res.json()),
     enabled: activeTab === 'chats'
   });
 
   // Delete game mutation
   const deleteGameMutation = useMutation({
     mutationFn: async (gameId: string) => {
-      const res = await fetch(`/api/admin/games/${gameId}`, { method: 'DELETE' });
+      const token = localStorage.getItem('adminToken');
+      const res = await fetch(`/api/admin/games/${gameId}`, { 
+        method: 'DELETE',
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      });
       return res.json();
     },
     onSuccess: () => {
@@ -70,9 +134,10 @@ export default function AdminDashboard() {
   // Update game mutation
   const updateGameMutation = useMutation({
     mutationFn: async (game: Partial<Game> & { id: string }) => {
+      const token = localStorage.getItem('adminToken');
       const res = await fetch(`/api/admin/games/${game.id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
         body: JSON.stringify(game)
       });
       return res.json();
@@ -86,15 +151,68 @@ export default function AdminDashboard() {
   // Create game mutation
   const createGameMutation = useMutation({
     mutationFn: async (gameData: Omit<Game, 'id'>) => {
+      const token = localStorage.getItem('adminToken');
       const res = await fetch('/api/admin/games', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
         body: JSON.stringify(gameData)
       });
       return res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/games'] });
+    }
+  });
+
+  // Create game card mutation
+  const createCardMutation = useMutation({
+    mutationFn: async () => {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('adminToken') : null;
+      if (!newCardGameId || !newCardCode.trim() || newCardCode.trim().length > 200) {
+        throw new Error('Invalid card data');
+      }
+      const res = await fetch('/api/admin/game-cards', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: JSON.stringify({ game_id: newCardGameId, card_code: newCardCode.trim() })
+      });
+      return await res.json();
+    },
+    onSuccess: () => {
+      setNewCardCode('');
+      setNewCardGameId('');
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/game-cards'] });
+    }
+  });
+
+  // Update game card mutation (mark used / update code)
+  const updateCardMutation = useMutation({
+    mutationFn: async (payload: { id: string; is_used?: boolean; card_code?: string }) => {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('adminToken') : null;
+      const res = await fetch(`/api/admin/game-cards/${payload.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: JSON.stringify(payload)
+      });
+      return await res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/game-cards'] });
+    }
+  });
+
+  // Delete game card
+  const deleteCardMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('adminToken') : null;
+      const res = await fetch(`/api/admin/game-cards/${id}`, {
+        method: 'DELETE',
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      });
+      return await res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/game-cards'] });
     }
   });
 
@@ -131,17 +249,48 @@ export default function AdminDashboard() {
   const handleCreateGame = () => {
     const name = prompt('Game name:');
     if (name) {
+      const slug = name.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-');
       createGameMutation.mutate({
         name,
+        slug,
+        description: `${name} Top-Up`,
         price: '99.99',
-        stock: 50,
+        currency: 'EGP',
+        image: '/placeholder.jpg',
         category: 'online-games',
-        image: '/placeholder.jpg'
-      });
+        isPopular: false,
+        stock: 50,
+        packages: null,
+        packagePrices: null
+      } as Omit<Game, 'id'>);
     }
   };
 
   const sessionChats = selectedSession ? allChats.filter((msg: ChatMessage) => msg.sessionId === selectedSession) : [];
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const token = localStorage.getItem('adminToken');
+      const res = await fetch('/api/admin/upload', {
+        method: 'POST',
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+        body: formData
+      });
+      const data = await res.json();
+      if (data.url && editingGame) {
+        setEditingGame({ ...editingGame, image: data.url });
+      }
+    } catch (err) {
+      console.error('Upload failed', err);
+      alert('Upload failed');
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background p-8">
@@ -149,11 +298,115 @@ export default function AdminDashboard() {
         <h1 className="text-3xl font-bold text-gold-primary mb-8">Diaa Eldeen Admin Dashboard</h1>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="games">Games & Products</TabsTrigger>
             <TabsTrigger value="categories">Categories</TabsTrigger>
+            <TabsTrigger value="cards">Game Cards</TabsTrigger>
             <TabsTrigger value="chats">Support Chat</TabsTrigger>
+            <TabsTrigger value="whatsapp">WhatsApp</TabsTrigger>
+            <TabsTrigger value="alerts">
+              Alerts
+              {alerts.some(a => !a.read) && (
+                <span className="ml-2 w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+              )}
+            </TabsTrigger>
           </TabsList>
+
+          {/* Alerts Tab */}
+          <TabsContent value="alerts" className="space-y-6">
+            <div className="flex flex-col gap-4">
+              <div className="flex justify-between items-center">
+                <h2 className="text-2xl font-bold text-foreground">System Alerts</h2>
+                <div className="flex gap-2">
+                  <Select value={alertStatus} onValueChange={setAlertStatus}>
+                    <SelectTrigger className="w-[150px]">
+                      <SelectValue placeholder="Status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Status</SelectItem>
+                      <SelectItem value="unread">Unread</SelectItem>
+                      <SelectItem value="read">Read</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Select value={alertType} onValueChange={setAlertType}>
+                    <SelectTrigger className="w-[150px]">
+                      <SelectValue placeholder="Type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Types</SelectItem>
+                      <SelectItem value="stock">Stock</SelectItem>
+                      <SelectItem value="system">System</SelectItem>
+                      <SelectItem value="order">Order</SelectItem>
+                      <SelectItem value="security">Security</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <div className="relative">
+                    <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Search alerts..."
+                      value={alertSearch}
+                      onChange={(e) => setAlertSearch(e.target.value)}
+                      className="pl-8 w-[200px]"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid gap-4">
+                {alerts.length === 0 ? (
+                  <Card className="bg-card/50 border-gold-primary/30 p-8 text-center text-muted-foreground">
+                    No alerts found matching your criteria.
+                  </Card>
+                ) : (
+                  alerts.map((alert) => (
+                    <Card key={alert.id} className={`bg-card/50 border-gold-primary/30 ${!alert.read ? 'border-l-4 border-l-gold-primary' : ''}`}>
+                      <CardContent className="p-6 flex items-start justify-between gap-4">
+                        <div className="flex gap-4">
+                          <div className={`p-2 rounded-full ${
+                            alert.priority === 'high' ? 'bg-red-500/20 text-red-500' :
+                            alert.priority === 'medium' ? 'bg-yellow-500/20 text-yellow-500' :
+                            'bg-blue-500/20 text-blue-500'
+                          }`}>
+                            {alert.type === 'stock' ? <Package className="w-5 h-5" /> :
+                             alert.type === 'security' ? <Shield className="w-5 h-5" /> :
+                             alert.type === 'order' ? <ShoppingCart className="w-5 h-5" /> :
+                             <AlertCircle className="w-5 h-5" />}
+                          </div>
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2">
+                              <h3 className="font-semibold text-lg">{alert.summary}</h3>
+                              {!alert.read && (
+                                <span className="bg-gold-primary/20 text-gold-primary text-xs px-2 py-0.5 rounded-full">New</span>
+                              )}
+                            </div>
+                            <p className="text-sm text-muted-foreground">
+                              {new Date(alert.timestamp).toLocaleString()} • {alert.type.toUpperCase()}
+                            </p>
+                            {alert.details && (
+                              <div className="mt-2 text-xs bg-muted/50 p-2 rounded overflow-x-auto max-w-2xl font-mono">
+                                {typeof alert.details === 'string' ? alert.details : JSON.stringify(alert.details, null, 2)}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        {!alert.read && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => markAlertReadMutation.mutate(alert.id)}
+                            className="text-muted-foreground hover:text-foreground shrink-0"
+                          >
+                            <Check className="w-4 h-4 mr-2" />
+                            Mark as Read
+                          </Button>
+                        )}
+                      </CardContent>
+                    </Card>
+                  ))
+                )}
+              </div>
+            </div>
+          </TabsContent>
 
           {/* Games Tab */}
           <TabsContent value="games" className="space-y-6">
@@ -174,7 +427,12 @@ export default function AdminDashboard() {
                   <CardContent className="space-y-4">
                     <div>
                       <p className="text-sm text-muted-foreground">Price</p>
-                      <p className="text-lg font-bold text-gold-primary">{game.price} EGP</p>
+                      <div className="flex items-center gap-2">
+                        {game.oldPrice ? (
+                          <span className="text-xs text-red-500 line-through">{game.oldPrice} EGP</span>
+                        ) : null}
+                        <span className="text-lg font-bold text-gold-primary">{game.price} EGP</span>
+                      </div>
                     </div>
                     <div>
                       <p className="text-sm text-muted-foreground">Stock</p>
@@ -248,6 +506,120 @@ export default function AdminDashboard() {
                 </Card>
               ))}
             </div>
+          </TabsContent>
+
+          {/* Game Cards Tab */}
+          <TabsContent value="cards" className="space-y-6">
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-bold text-foreground">Manage Game Cards</h2>
+              <div className="flex items-center gap-2">
+                <Select value={newCardGameId} onValueChange={setNewCardGameId}>
+                  <SelectTrigger className="w-48">
+                    <SelectValue placeholder="Select game" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {games.map((g) => (
+                      <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Input
+                  value={newCardCode}
+                  onChange={(e) => setNewCardCode(e.target.value)}
+                  placeholder="Card code"
+                  className="w-64"
+                />
+                <Button
+                  onClick={() => createCardMutation.mutate()}
+                  disabled={!newCardGameId || !newCardCode.trim() || newCardCode.trim().length > 200 || createCardMutation.isPending}
+                  className="bg-gold-primary hover:bg-gold-primary/80"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Card
+                </Button>
+              </div>
+            </div>
+
+            <Card className="bg-card/50 border-gold-primary/30">
+              <CardHeader>
+                <CardTitle className="text-lg">Cards Inventory</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="overflow-x-auto">
+                  <table className="min-w-full text-sm">
+                    <thead>
+                      <tr className="text-muted-foreground">
+                        <th className="text-left p-2">Code</th>
+                        <th className="text-left p-2">Game</th>
+                        <th className="text-left p-2">Used</th>
+                        <th className="text-left p-2">Created</th>
+                        <th className="text-left p-2">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {gameCards.map((c) => {
+                        const gameName = games.find(g => g.id === c.game_id)?.name || '—';
+                        return (
+                          <tr key={c.id} className="border-t border-gold-primary/20">
+                            <td className="p-2 font-mono">{c.card_code}</td>
+                            <td className="p-2">{gameName}</td>
+                            <td className="p-2">{c.is_used ? 'Yes' : 'No'}</td>
+                            <td className="p-2">{new Date(c.created_at).toLocaleString()}</td>
+                            <td className="p-2 flex gap-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => updateCardMutation.mutate({ id: c.id, is_used: !c.is_used })}
+                              >
+                                {c.is_used ? 'Mark Unused' : 'Mark Used'}
+                              </Button>
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                onClick={() => deleteCardMutation.mutate(c.id)}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                      {gameCards.length === 0 && (
+                        <tr>
+                          <td className="p-4 text-center text-muted-foreground" colSpan={5}>No cards found.</td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+
+                <div className="flex items-center justify-between mt-4">
+                  <div className="text-xs text-muted-foreground">Total: {gameCardsTotal}</div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCardsPage(p => Math.max(1, p - 1))}
+                      disabled={cardsPage <= 1}
+                    >
+                      Prev
+                    </Button>
+                    <span className="text-sm">Page {cardsPage}</span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        const maxPage = Math.max(1, Math.ceil(gameCardsTotal / cardsLimit));
+                        setCardsPage(p => Math.min(maxPage, p + 1));
+                      }}
+                      disabled={cardsPage >= Math.ceil(gameCardsTotal / cardsLimit)}
+                    >
+                      Next
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
 
           {/* Chat Tab */}
@@ -340,8 +712,221 @@ export default function AdminDashboard() {
               </div>
             </div>
           </TabsContent>
+
+          {/* WhatsApp Tab */}
+          <TabsContent value="whatsapp" className="space-y-6">
+            <h2 className="text-2xl font-bold text-foreground mb-2">WhatsApp Integration</h2>
+            <p className="text-sm text-muted-foreground mb-4">Manage your connected WhatsApp number and send test messages.</p>
+
+            {/* Connection Status */}
+            <Card className="bg-card/50 border-gold-primary/30">
+              <CardHeader>
+                <CardTitle>Connection Status</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <WhatsAppConnectionPanel />
+              </CardContent>
+            </Card>
+
+            {/* Seller Alerts */}
+            <Card className="bg-card/50 border-gold-primary/30">
+              <CardHeader>
+                <CardTitle>Seller Alerts</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <SellerAlertsPanel />
+              </CardContent>
+            </Card>
+          </TabsContent>
         </Tabs>
       </div>
+
+      {/* Edit Game Dialog */}
+      <Dialog open={!!editingGame} onOpenChange={(open) => !open && setEditingGame(null)}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Edit Game</DialogTitle>
+          </DialogHeader>
+          {editingGame && (
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="name" className="text-right">Name</Label>
+                <Input
+                  id="name"
+                  value={editingGame.name}
+                  onChange={(e) => setEditingGame({ ...editingGame, name: e.target.value })}
+                  className="col-span-3"
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="slug" className="text-right">Slug</Label>
+                <Input
+                  id="slug"
+                  value={editingGame.slug || ''}
+                  onChange={(e) => setEditingGame({ ...editingGame, slug: e.target.value })}
+                  placeholder="Auto-generated if empty"
+                  className="col-span-3"
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="finalPrice" className="text-right">Final Price</Label>
+                <Input
+                  id="finalPrice"
+                  value={editingGame.price}
+                  onChange={(e) => setEditingGame({ ...editingGame, price: e.target.value })}
+                  className="col-span-3"
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="oldPrice" className="text-right">Old Price</Label>
+                <Input
+                  id="oldPrice"
+                  value={(editingGame as any).oldPrice || ''}
+                  onChange={(e) => setEditingGame({ ...editingGame, oldPrice: e.target.value } as any)}
+                  className="col-span-3"
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="stock" className="text-right">Stock</Label>
+                <Input
+                  id="stock"
+                  type="number"
+                  value={editingGame.stock}
+                  onChange={(e) => setEditingGame({ ...editingGame, stock: parseInt(e.target.value) || 0 })}
+                  className="col-span-3"
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="category" className="text-right">Category</Label>
+                <Select
+                  value={editingGame.category}
+                  onValueChange={(val) => setEditingGame({ ...editingGame, category: val })}
+                >
+                  <SelectTrigger className="col-span-3">
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categories.map((c) => (
+                      <SelectItem key={c.id} value={c.slug}>{c.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="image" className="text-right">Image URL</Label>
+                <Input
+                  id="image"
+                  value={editingGame.image}
+                  onChange={(e) => setEditingGame({ ...editingGame, image: e.target.value })}
+                  className="col-span-3"
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label className="text-right">Upload</Label>
+                <Input 
+                  type="file" 
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  className="col-span-3"
+                />
+              </div>
+              {editingGame.image && (
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <div className="col-start-2 col-span-3">
+                    <img src={editingGame.image} alt="Preview" className="h-32 object-contain rounded-md border" />
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditingGame(null)}>Cancel</Button>
+            <Button type="submit" onClick={() => updateGameMutation.mutate(editingGame as Game)} disabled={!(Number(editingGame?.price) >= 0)}>Save changes</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
+function WhatsAppConnectionPanel() {
+  const { data: cfg } = useQuery<{ connected: boolean; phoneNumberId: string | null }>({ queryKey: ['/api/admin/whatsapp/config'] });
+  const [to, setTo] = useState('');
+  const [text, setText] = useState('Hello from Diaa Eldeen!');
+  const sendMutation = useMutation({
+    mutationFn: async () => {
+      const token = localStorage.getItem('adminToken');
+      const res = await fetch('/api/admin/whatsapp/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: JSON.stringify({ to, text })
+      });
+      return res.json();
+    }
+  });
+
+  return (
+    <div className="space-y-3">
+      <p className="text-sm">Connected: <span className={cfg?.connected ? 'text-green-500' : 'text-red-500'}>{cfg?.connected ? 'Yes' : 'No'}</span></p>
+      <p className="text-sm">Phone Number ID: <span className="font-mono">{cfg?.phoneNumberId || 'not set'}</span></p>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mt-2">
+        <Input placeholder="Recipient (E.164)" value={to} onChange={(e) => setTo(e.target.value)} />
+        <Input placeholder="Message" value={text} onChange={(e) => setText(e.target.value)} />
+        <Button onClick={() => sendMutation.mutate()} disabled={!to || !text} className="bg-gold-primary">Send Test</Button>
+      </div>
+      {!cfg?.connected && (
+        <p className="text-xs text-muted-foreground">Set WHATSAPP_TOKEN, WHATSAPP_PHONE_NUMBER_ID, and WHATSAPP_VERIFY_TOKEN in backend environment.</p>
+      )}
+    </div>
+  );
+}
+
+function SellerAlertsPanel() {
+  const token = typeof window !== 'undefined' ? localStorage.getItem('adminToken') : null;
+  const { data: alerts = [], refetch } = useQuery<Array<{ id: string; type: string; summary: string; created_at: string; read: boolean; flagged: boolean }>>({
+    queryKey: ['/api/admin/alerts'],
+    refetchInterval: 5000,
+    queryFn: async () => {
+      const res = await fetch('/api/admin/alerts', { headers: token ? { Authorization: `Bearer ${token}` } : undefined });
+      return res.json();
+    }
+  });
+
+  const markRead = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await fetch(`/api/admin/alerts/${id}/read`, { method: 'POST', headers: token ? { Authorization: `Bearer ${token}` } : undefined });
+      return res.json();
+    },
+    onSuccess: () => refetch()
+  });
+
+  const flagAlert = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await fetch(`/api/admin/alerts/${id}/flag`, { method: 'POST', headers: token ? { Authorization: `Bearer ${token}` } : undefined });
+      return res.json();
+    },
+    onSuccess: () => refetch()
+  });
+
+  return (
+    <div className="space-y-2">
+      {alerts.length === 0 ? (
+        <p className="text-sm text-muted-foreground">No alerts yet.</p>
+      ) : (
+        alerts.map((a) => (
+          <div key={a.id} className="flex items-center justify-between border rounded-lg p-3 text-sm">
+            <div>
+              <p className="font-medium">{a.type.replace('_', ' ')}</p>
+              <p className="text-muted-foreground">{a.summary}</p>
+              <p className="text-xs">{new Date(a.created_at).toLocaleString()}</p>
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={() => markRead.mutate(a.id)} disabled={a.read}>Mark Read</Button>
+              <Button variant="secondary" size="sm" onClick={() => flagAlert.mutate(a.id)} disabled={a.flagged}>Flag</Button>
+            </div>
+          </div>
+        ))
+      )}
     </div>
   );
 }
