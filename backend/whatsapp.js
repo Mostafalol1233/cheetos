@@ -53,11 +53,9 @@ export async function startWhatsApp() {
   const { state, saveCreds } = await useMultiFileAuthState(AUTH_FOLDER);
   const { version, isLatest } = await fetchLatestBaileysVersion();
 
-  console.log(`using WA v${version.join(".")}, isLatest: ${isLatest}`);
-
   sock = makeWASocket({
     version,
-    logger: pino({ level: "info" }),
+    logger: pino({ level: "silent" }), // Silent to reduce noise
     printQRInTerminal: false,
     auth: state,
     generateHighQualityLinkPreview: true,
@@ -70,76 +68,51 @@ export async function startWhatsApp() {
     if (qr) {
       qrCode = qr;
       connectionStatus = "scan_qr";
-      console.log("[WhatsApp] New QR Code generated - Scan with WhatsApp App");
+      console.log("\n╔════════════════════════════════════════╗");
+      console.log("║   WhatsApp QR Code - Scan to Connect   ║");
+      console.log("╚════════════════════════════════════════╝\n");
       qrcode.generate(qr, { small: true });
+      console.log("\n");
     }
 
     if (connection === "close") {
       const statusCode = lastDisconnect?.error?.output?.statusCode;
       const shouldReconnect = statusCode !== DisconnectReason.loggedOut;
       
-      console.log(`[WhatsApp] Connection closed. Status code: ${statusCode}, Error: ${lastDisconnect?.error?.message}`);
-      
-      // Handle Stream Errored (515) specifically
-      if (statusCode === 515) {
-        console.log("[WhatsApp] Stream Errored (515). Attempting immediate restart...");
-      }
-
       isConnected = false;
       connectionStatus = "disconnected";
       qrCode = null;
 
       if (shouldReconnect) {
-        console.log("[WhatsApp] Reconnecting...");
-        setTimeout(() => startWhatsApp(), statusCode === 515 ? 1000 : 5000); // Fast reconnect for 515
-      } else {
-        console.log("[WhatsApp] Logged out. Clear auth folder to restart.");
+        setTimeout(() => startWhatsApp(), statusCode === 515 ? 1000 : 5000);
       }
     } else if (connection === "open") {
-      console.log("[WhatsApp] Connection established successfully!");
       isConnected = true;
       connectionStatus = "connected";
       qrCode = null;
+      
+      const botNumber = sock.user.id.split(':')[0];
+      console.log(`\n✅ WhatsApp Bot Connected to: ${botNumber}\n`);
 
-      // Send welcome message to self (rate-limited)
+      // Send welcome message to admin (rate-limited)
       try {
         const now = Date.now();
-        const botId = sock.user.id.split(':')[0] + "@s.whatsapp.net";
         if (now - lastAdminNotifyAt >= 60 * 60 * 1000) {
-          const msg = [
-            "🤖 GameCart Bot Connected",
-            "",
-            "✅ Status: Online",
-            `📅 Time: ${new Date(now).toLocaleString()}`,
-            `📱 WA Version: ${version.join('.')}`,
-            "",
-            "What this bot does:",
-            "• Monitors WhatsApp inbox and logs new messages",
-            "• Records alerts for seller dashboard",
-            "• Confirms orders and payment messages",
-            "• Auto-reconnects on disconnects",
-            "",
-            "No action needed. If you see frequent reconnects, we limit status messages to once per hour to avoid noise."
-          ].join('\n');
-          await sock.sendMessage(botId, { text: msg });
-          lastAdminNotifyAt = now;
-          console.log(`[WhatsApp] Status message sent to ${botId}`);
           const adminPhone = process.env.ADMIN_PHONE || '';
           if (adminPhone) {
             try {
               const cleanPhone = adminPhone.replace(/[^\d]/g, '');
               const jid = cleanPhone.includes('@s.whatsapp.net') ? cleanPhone : `${cleanPhone}@s.whatsapp.net`;
+              const msg = `🤖 GameCart Bot Connected\n✅ Status: Online\n📱 Number: ${botNumber}\n📅 ${new Date(now).toLocaleString()}`;
               await sock.sendMessage(jid, { text: msg });
-              console.log(`[WhatsApp] Admin notified at ${jid}`);
+              lastAdminNotifyAt = now;
             } catch (e) {
-              console.warn('[WhatsApp] Failed to notify admin:', e.message);
+              // Silent fail
             }
           }
-        } else {
-          console.log('[WhatsApp] Skipping status message (rate-limited)');
         }
       } catch (err) {
-        console.error("[WhatsApp] Failed to send welcome message:", err.message);
+        // Silent fail
       }
     }
   });
@@ -153,12 +126,12 @@ export async function startWhatsApp() {
     if (type === "notify") {
       for (const msg of messages) {
         if (!msg.key.fromMe) {
-          console.log("replying to", msg.key.remoteJid);
           const from = msg.key.remoteJid;
           const text = msg.message?.conversation || msg.message?.extendedTextMessage?.text;
           
           if (from && text) {
              try {
+                 const phoneNumber = from.replace('@s.whatsapp.net', '');
                  const id = `wa_${Date.now()}_${Math.random().toString(36).slice(2,9)}`;
                  await storage.createWhatsAppMessage({
                    id,
@@ -179,8 +152,11 @@ export async function startWhatsApp() {
                    flagged: false,
                    createdAt: Date.now()
                  });
+                 
+                 // Only log user messages (not system messages)
+                 console.log(`📱 User message from ${phoneNumber}: ${text.substring(0, 60)}${text.length > 60 ? '...' : ''}`);
              } catch (err) {
-                 console.error("Failed to log WA message:", err);
+                 // Silent fail
              }
           }
         }
@@ -192,14 +168,10 @@ export async function startWhatsApp() {
 function startConnectionMonitor() {
   setInterval(() => {
     if (sock) {
-      console.log(`[WhatsApp Monitor] Status: ${connectionStatus}, Connected: ${isConnected}`);
       // If we think we are connected but the socket is closed, trigger reconnect
       if (isConnected && sock.ws?.readyState !== 1) { // 1 = OPEN
-         console.warn("[WhatsApp Monitor] Socket state inconsistent. Reconnecting...");
          startWhatsApp();
       }
-    } else {
-      console.log("[WhatsApp Monitor] Client not initialized.");
     }
   }, 10 * 60 * 1000); // Check every 10 minutes
 }

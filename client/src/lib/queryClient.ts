@@ -46,7 +46,20 @@ export const getQueryFn: <T>(options: {
     }
 
     await throwIfResNotOk(res);
-    return await res.json();
+    const data = await res.json();
+    
+    // Ensure arrays are returned as arrays (handle edge cases)
+    if (Array.isArray(data)) {
+      return data;
+    }
+    
+    // If expecting an array but got an object, return empty array
+    if (path.includes('/api/games') || path.includes('/api/categories')) {
+      console.warn(`Expected array but got:`, typeof data, data);
+      return [];
+    }
+    
+    return data;
   };
 
 export const queryClient = new QueryClient({

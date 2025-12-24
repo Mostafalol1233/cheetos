@@ -177,6 +177,11 @@ app.get('/api/games/popular', async (req, res) => {
   }
 });
 
+// 404 handler for API routes (must be before errorHandler)
+app.use('/api/*', (req, res) => {
+  res.status(404).json({ message: 'API endpoint not found', path: req.path });
+});
+
 // Global Error Handler
 app.use(errorHandler);
 
@@ -582,10 +587,17 @@ app.get('/api/games', async (req, res) => {
       FROM games 
       ORDER BY id DESC
     `);
-    res.json(result.rows);
+    // Ensure packages and prices are arrays
+    const games = result.rows.map(game => ({
+      ...game,
+      packages: Array.isArray(game.packages) ? game.packages : (game.packages ? JSON.parse(game.packages) : []),
+      packagePrices: Array.isArray(game.packagePrices) ? game.packagePrices : (game.packagePrices ? JSON.parse(game.packagePrices) : []),
+      packageDiscountPrices: Array.isArray(game.packageDiscountPrices) ? game.packageDiscountPrices : (game.packageDiscountPrices ? JSON.parse(game.packageDiscountPrices) : [])
+    }));
+    res.json(games);
   } catch (err) {
     console.error('Error fetching games:', err);
-    res.status(500).json({ message: err.message });
+    res.status(500).json({ message: err.message, error: 'Failed to fetch games' });
   }
 });
 
@@ -600,10 +612,17 @@ app.get('/api/games/popular', async (req, res) => {
       WHERE is_popular = true 
       LIMIT 10
     `);
-    res.json(result.rows);
+    // Ensure packages and prices are arrays
+    const games = result.rows.map(game => ({
+      ...game,
+      packages: Array.isArray(game.packages) ? game.packages : (game.packages ? JSON.parse(game.packages) : []),
+      packagePrices: Array.isArray(game.packagePrices) ? game.packagePrices : (game.packagePrices ? JSON.parse(game.packagePrices) : []),
+      packageDiscountPrices: Array.isArray(game.packageDiscountPrices) ? game.packageDiscountPrices : (game.packageDiscountPrices ? JSON.parse(game.packageDiscountPrices) : [])
+    }));
+    res.json(games);
   } catch (err) {
     console.error('Error fetching popular games:', err);
-    res.status(500).json({ message: err.message });
+    res.status(500).json({ message: err.message, error: 'Failed to fetch popular games' });
   }
 });
 
@@ -794,9 +813,10 @@ app.delete('/api/admin/games/:id', authenticateToken, async (req, res) => {
 app.get('/api/categories', async (req, res) => {
   try {
     const result = await pool.query('SELECT * FROM categories ORDER BY id DESC');
-    res.json(result.rows);
+    res.json(result.rows || []);
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error('Error fetching categories:', err);
+    res.status(500).json({ message: err.message, error: 'Failed to fetch categories' });
   }
 });
 
@@ -1755,35 +1775,9 @@ const startServer = async () => {
       console.log(`║     Environment: ${process.env.NODE_ENV || 'development'}         ║`);
       console.log(`║     Database: ${isConnected ? 'Connected ✅' : 'Disconnected ❌'}       ║`);
       console.log('╚════════════════════════════════════════╝\n');
+      console.log('📡 API Endpoints ready\n');
       
-      console.log('API Documentation:');
-      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-      console.log('Games:');
-      console.log('  GET    /api/games                  - Get all games');
-      console.log('  GET    /api/games/:id              - Get game by ID');
-      console.log('  GET    /api/games/slug/:slug       - Get game by slug');
-      console.log('  GET    /api/games/popular          - Get popular games');
-      console.log('  GET    /api/games/category/:cat    - Get games by category');
-      console.log('  POST   /api/admin/games            - Create game (multipart)');
-      console.log('  PUT    /api/admin/games/:id        - Update game (multipart)');
-      console.log('  DELETE /api/admin/games/:id        - Delete game');
-      console.log('\nCategories:');
-      console.log('  GET    /api/categories             - Get all categories');
-      console.log('  GET    /api/categories/:id         - Get category by ID');
-      console.log('  POST   /api/admin/categories       - Create category (multipart)');
-      console.log('  PUT    /api/admin/categories/:id   - Update category (multipart)');
-      console.log('  DELETE /api/admin/categories/:id   - Delete category');
-      console.log('\nUtilities:');
-      console.log('  GET    /api/search                 - Search games (q, category, minPrice, maxPrice)');
-      console.log('  GET    /api/admin/stats            - Dashboard statistics');
-      console.log('  GET    /api/admin/export           - Export all data');
-      console.log('  POST   /api/admin/import-cards     - Import cards from JSON');
-      console.log('  POST   /api/admin/upload           - Upload file (multipart)');
-      console.log('\nHealth:');
-      console.log('  GET    /api/health                 - Health check');
-      console.log('  GET    /                            - API info');
-      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
-      console.log('Startup complete');
+      console.log('Startup complete\n');
     });
   } catch (err) {
     console.error('Failed to start server:', err.message);

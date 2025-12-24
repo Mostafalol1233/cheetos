@@ -25,10 +25,14 @@ const requestLogger = (req, res, next) => {
   res.on('finish', () => {
     const duration = Date.now() - start;
     const { statusCode } = res;
+    // Only log API requests, skip static files
+    if (url.startsWith('/api/')) {
+      const statusColor = statusCode >= 500 ? '\x1b[31m' : statusCode >= 400 ? '\x1b[33m' : statusCode >= 300 ? '\x1b[36m' : '\x1b[32m';
+      const resetColor = '\x1b[0m';
+      console.log(`${statusColor}${method} ${url} ${statusCode}${resetColor} ${duration}ms`);
+    }
+    
     const logMessage = `[${new Date().toISOString()}] ${method} ${url} ${statusCode} ${duration}ms - ${ip} - ${userAgent}\n`;
-    
-    console.log(logMessage.trim());
-    
     if (accessLogStream) {
       try { accessLogStream.write(logMessage); } catch {}
     }
