@@ -2,28 +2,20 @@ import { useState } from "react";
 import { Gamepad2, Zap, Headphones, Shield, Tag, Flame } from "lucide-react";
 import { SiTelegram, SiTiktok, SiYoutube, SiFacebook, SiWhatsapp } from "react-icons/si";
 
-import { Header } from "@/components/header";
 import { ShoppingCategories } from "@/components/shopping-categories";
 import { PopularGames } from "@/components/popular-games";
-import { LiveChatWidget } from "@/components/live-chat-widget";
 
 import PaymentMethods from "@/components/payment-methods";
-import { CartSidebar } from "@/components/cart-sidebar";
-import { CheckoutModal } from "@/components/checkout-modal";
 
 import { Footer } from "@/components/footer";
 import { useTranslation } from "@/lib/translation";
 
 export default function Home() {
-  const [isCartOpen, setIsCartOpen] = useState(false);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const { t } = useTranslation();
 
   return (
     <div className="min-h-screen text-foreground font-gaming overflow-x-hidden custom-cursor bg-gradient-to-b from-darker-bg dark:via-gray-900 dark:to-black via-gray-50 to-white animate-fade-in">
-
-      {/* Header */}
-      <Header onCartClick={() => setIsCartOpen(true)} />
 
       {/* Hero Section */}
       <section className="relative w-full h-[500px] flex items-center justify-center overflow-hidden">
@@ -210,25 +202,6 @@ export default function Home() {
 
       {/* Footer */}
       <Footer />
-
-      {/* Cart Sidebar */}
-      <CartSidebar
-        isOpen={isCartOpen}
-        onClose={() => setIsCartOpen(false)}
-        onCheckout={() => {
-          setIsCartOpen(false);
-          setIsCheckoutOpen(true);
-        }}
-      />
-
-      {/* Checkout Modal */}
-      <CheckoutModal
-        isOpen={isCheckoutOpen}
-        onClose={() => setIsCheckoutOpen(false)}
-      />
-
-      {/* Live Chat Widget */}
-      <LiveChatWidget />
     </div>
   );
 }

@@ -25,7 +25,7 @@ export function PopularGames() {
     if (Number(game.stock) <= 0) {
       toast({
         title: t('out_of_stock'),
-        description: 'This item is currently unavailable.',
+        description: t('item_unavailable'),
         duration: 2500,
       });
       return;
@@ -81,8 +81,8 @@ export function PopularGames() {
                 <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/0 via-cyan-500/0 to-cyan-500/0 group-hover:from-cyan-500/10 group-hover:via-cyan-500/5 group-hover:to-cyan-500/10 transition-all duration-300 pointer-events-none"></div>
                 
                 {/* Game Image */}
-                <div className="relative flex-1 h-56 mb-3 flip-card">
-                  <div className="relative rounded-lg overflow-hidden border border-cyan-400/20 bg-gray-800 w-full h-full flex items-center justify-center flip-card-face">
+                <div className="relative flex-1 h-56 mb-3">
+                  <div className="relative rounded-lg overflow-hidden border border-cyan-400/20 bg-gray-800 w-full h-full flex items-center justify-center">
                     <ImageWithFallback
                       src={game.image}
                       alt={game.name}
@@ -91,75 +91,15 @@ export function PopularGames() {
                     {game.isPopular && (
                       <div className="absolute top-2 right-2 bg-gradient-to-r from-cyan-400 to-blue-500 text-black px-2 py-1 rounded-full text-xs font-bold flex items-center shadow-lg">
                         <Star className="w-3 h-3 mr-1" />
-                        Popular
+                        {t('popular')}
                       </div>
                     )}
-                  </div>
-                  {/* Back face with extra details */}
-                  <div className="absolute inset-0 rounded-lg overflow-hidden p-4 bg-gradient-to-b from-black via-gray-900 to-black border border-cyan-500/30 text-cyan-100 flex flex-col justify-center items-center gap-3 flip-card-back shadow-[inset_0_0_20px_rgba(0,255,255,0.1)]">
-                    <div className="text-center">
-                      <p className="text-xs text-cyan-400 uppercase tracking-wider font-bold mb-1">{t('categories')}</p>
-                      <p className="text-sm font-medium text-white capitalize">{game.category}</p>
-                    </div>
-                    
-                    <div className="w-full h-px bg-cyan-500/30 my-1"></div>
-                    
-                    <div className="text-center w-full">
-                      <p className="text-xs text-cyan-400 uppercase tracking-wider font-bold mb-1">{t('available_packages')}</p>
-                      <p className="text-xs text-gray-300 line-clamp-3 leading-relaxed px-2">
-                        {Array.isArray(game.packages) && game.packages.length > 0 
-                          ? game.packages.join(' • ') 
-                          : t('standard_package_available')}
-                      </p>
-                    </div>
-                    
-                    <div className={`mt-auto pt-2 flex items-center gap-2 text-xs font-mono px-3 py-1 rounded-full border ${isOutOfStock ? 'text-red-300 bg-red-950/30 border-red-500/20' : 'text-green-400 bg-green-950/30 border-green-500/20'}`}>
-                      <Check className="w-3 h-3" />
-                      <span>{isOutOfStock ? t('out_of_stock') : `${t('in_stock_prefix')}: ${game.stock}`}</span>
-                    </div>
                   </div>
                 </div>
 
                 {/* Game Info */}
                 <div className="relative z-10">
                   <h3 className="font-bold text-white mb-2 text-lg line-clamp-1">{game.name}</h3>
-                  
-                  {/* Card Amounts/Packages */}
-                  {Array.isArray(game.packages) && game.packages.length > 0 ? (
-                    <div className="mb-2 space-y-1">
-                      {game.packages.slice(0, 2).map((pkg: string, idx: number) => {
-                        const pkgPrice = game.packagePrices?.[idx] || game.price;
-                        const pkgDiscountPrice = (game as any).packageDiscountPrices?.[idx] || null;
-                        const hasPkgDiscount = pkgDiscountPrice && parseFloat(pkgDiscountPrice) > 0;
-                        
-                        return (
-                          <div key={idx} className="flex items-center justify-between text-xs">
-                            <span className="text-cyan-300/80">{pkg}</span>
-                            <div className="flex items-center gap-1">
-                              {hasPkgDiscount && (
-                                <span className="text-red-400 line-through text-[10px]">{pkgPrice} {game.currency}</span>
-                              )}
-                              <span className="text-cyan-400 font-bold">{hasPkgDiscount ? pkgDiscountPrice : pkgPrice} {game.currency}</span>
-                            </div>
-                          </div>
-                        );
-                      })}
-                      {game.packages.length > 2 && (
-                        <div className="text-xs text-cyan-300/60">+{game.packages.length - 2} more packages</div>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="mb-2">
-                      {game.discountPrice && parseFloat(game.discountPrice.toString()) > 0 ? (
-                        <div className="flex items-center gap-2">
-                          <span className="text-red-400 line-through text-sm">{game.price} {game.currency}</span>
-                          <span className="text-cyan-400 font-bold text-lg">{game.discountPrice} {game.currency}</span>
-                        </div>
-                      ) : (
-                        <span className="text-cyan-400 font-bold text-lg">{game.price} {game.currency}</span>
-                      )}
-                    </div>
-                  )}
                   
                   <div className="flex items-center justify-between">
                     <span className={`text-xs px-2 py-1 rounded ${isOutOfStock ? 'text-red-200 bg-red-500/10' : 'text-cyan-300/70 bg-cyan-400/10'}`}>
