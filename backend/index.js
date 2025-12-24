@@ -95,8 +95,10 @@ app.use(cors({
   origin: [
     'http://localhost:5173',
     'http://localhost:5000',
+    'http://diaasadek.com',
     'http://localhost:3000',
     'https://diaaa.vercel.app',
+    'https://*.vercel.app',
     process.env.FRONTEND_URL || '*'
   ],
   credentials: true
