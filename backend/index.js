@@ -309,10 +309,11 @@ async function initializeDatabase() {
         currency VARCHAR(10) DEFAULT 'EGP',
         image VARCHAR(255),
         category VARCHAR(100),
-        isPopular BOOLEAN DEFAULT false,
+        is_popular BOOLEAN DEFAULT false,
         stock INTEGER DEFAULT 100,
         packages JSONB DEFAULT '[]',
-        packagePrices JSONB DEFAULT '[]',
+        package_prices JSONB DEFAULT '[]',
+        package_discount_prices JSONB DEFAULT '[]',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
@@ -847,15 +848,34 @@ app.get('/api/games/:slug', async (req, res) => {
 app.post('/api/admin/games', authenticateToken, imageUpload.single('image'), async (req, res) => {
   try {
     const { name, slug, description, price, currency, category, isPopular, stock, discountPrice, packages, packagePrices, packageDiscountPrices } = req.body;
-    const image = req.file ? `/uploads/${req.file.filename}` : null;
+    const image = req.file ? normalizeImageUrl(`/uploads/${req.file.filename}`) : null;
     const id = `game_${Date.now()}`;
     
     // Generate slug if not provided
     const finalSlug = slug || name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
     const isPop = String(isPopular) === 'true';
-    const packagesJson = packages ? JSON.stringify(Array.isArray(packages) ? packages : [packages]) : '[]';
-    const packagePricesJson = packagePrices ? JSON.stringify(Array.isArray(packagePrices) ? packagePrices : [packagePrices]) : '[]';
-    const packageDiscountPricesJson = packageDiscountPrices ? JSON.stringify(Array.isArray(packageDiscountPrices) ? packageDiscountPrices : [packageDiscountPrices]) : '[]';
+
+    const normalizeToArray = (v) => {
+      if (v === undefined) return [];
+      if (v === null) return [];
+      if (Array.isArray(v)) return v;
+      if (typeof v === 'string') {
+        const s = v.trim();
+        if (!s) return [];
+        if (s.startsWith('[')) {
+          try {
+            const parsed = JSON.parse(s);
+            if (Array.isArray(parsed)) return parsed;
+          } catch {}
+        }
+        return [s];
+      }
+      return [v];
+    };
+
+    const packagesArr = normalizeToArray(packages);
+    const packagePricesArr = normalizeToArray(packagePrices);
+    const packageDiscountPricesArr = normalizeToArray(packageDiscountPrices);
 
     const result = await pool.query(
       `INSERT INTO games (id, name, slug, description, price, currency, image, category, is_popular, stock, discount_price, packages, package_prices, package_discount_prices) 
@@ -864,7 +884,7 @@ app.post('/api/admin/games', authenticateToken, imageUpload.single('image'), asy
                  discount_price as "discountPrice", packages, package_prices as "packagePrices", 
                  package_discount_prices as "packageDiscountPrices"`,
       [id, name, finalSlug, description, Number(price) || 0, currency || 'EGP', image, category, isPop, Number(stock) || 100, 
-       discountPrice ? Number(discountPrice) : null, packagesJson, packagePricesJson, packageDiscountPricesJson]
+       discountPrice ? Number(discountPrice) : null, packagesArr, packagePricesArr, packageDiscountPricesArr]
     );
 
     res.status(201).json(result.rows[0]);
@@ -888,12 +908,32 @@ app.put('/api/admin/games/:id', authenticateToken, imageUpload.single('image'), 
     }
     const gameId = lookup.rows[0].id;
     const { name, slug, description, price, currency, category, isPopular, stock, discountPrice, packages, packagePrices, packageDiscountPrices } = req.body;
-    const image = req.file ? `/uploads/${req.file.filename}` : req.body.image;
+    const imageRaw = req.file ? `/uploads/${req.file.filename}` : req.body.image;
+    const image = imageRaw !== undefined ? normalizeImageUrl(imageRaw) : undefined;
     
     const isPop = String(isPopular) === 'true';
-    const packagesJson = packages ? JSON.stringify(Array.isArray(packages) ? packages : [packages]) : undefined;
-    const packagePricesJson = packagePrices ? JSON.stringify(Array.isArray(packagePrices) ? packagePrices : [packagePrices]) : undefined;
-    const packageDiscountPricesJson = packageDiscountPrices ? JSON.stringify(Array.isArray(packageDiscountPrices) ? packageDiscountPrices : [packageDiscountPrices]) : undefined;
+
+    const normalizeOptionalArray = (v) => {
+      if (v === undefined) return undefined;
+      if (v === null) return [];
+      if (Array.isArray(v)) return v;
+      if (typeof v === 'string') {
+        const s = v.trim();
+        if (!s) return [];
+        if (s.startsWith('[')) {
+          try {
+            const parsed = JSON.parse(s);
+            if (Array.isArray(parsed)) return parsed;
+          } catch {}
+        }
+        return [s];
+      }
+      return [v];
+    };
+
+    const packagesArr = normalizeOptionalArray(packages);
+    const packagePricesArr = normalizeOptionalArray(packagePrices);
+    const packageDiscountPricesArr = normalizeOptionalArray(packageDiscountPrices);
 
     // Build dynamic update query
     const updates = [];
@@ -910,11 +950,9 @@ app.put('/api/admin/games/:id', authenticateToken, imageUpload.single('image'), 
     if (isPopular !== undefined) { updates.push(`is_popular = $${paramIndex++}`); values.push(isPop); }
     if (stock !== undefined) { updates.push(`stock = $${paramIndex++}`); values.push(Number(stock) || 0); }
     if (discountPrice !== undefined) { updates.push(`discount_price = $${paramIndex++}`); values.push(discountPrice ? Number(discountPrice) : null); }
-    if (packagesJson !== undefined) { updates.push(`packages = $${paramIndex++}`); values.push(packagesJson); }
-    if (packagePricesJson !== undefined) { updates.push(`package_prices = $${paramIndex++}`); values.push(packagePricesJson); }
-    if (packageDiscountPricesJson !== undefined) { updates.push(`package_discount_prices = $${paramIndex++}`); values.push(packageDiscountPricesJson); }
-    
-    updates.push(`updated_at = CURRENT_TIMESTAMP`);
+    if (packagesArr !== undefined) { updates.push(`packages = $${paramIndex++}`); values.push(packagesArr); }
+    if (packagePricesArr !== undefined) { updates.push(`package_prices = $${paramIndex++}`); values.push(packagePricesArr); }
+    if (packageDiscountPricesArr !== undefined) { updates.push(`package_discount_prices = $${paramIndex++}`); values.push(packageDiscountPricesArr); }
     values.push(gameId);
 
     const query = `
@@ -932,7 +970,12 @@ app.put('/api/admin/games/:id', authenticateToken, imageUpload.single('image'), 
       return res.status(404).json({ message: 'Game not found' });
     }
 
-    res.json(result.rows[0]);
+    const row = result.rows[0];
+    row.image = normalizeImageUrl(row.image);
+    row.packages = Array.isArray(row.packages) ? row.packages : (row.packages ? JSON.parse(row.packages) : []);
+    row.packagePrices = Array.isArray(row.packagePrices) ? row.packagePrices : (row.packagePrices ? JSON.parse(row.packagePrices) : []);
+    row.packageDiscountPrices = Array.isArray(row.packageDiscountPrices) ? row.packageDiscountPrices : (row.packageDiscountPrices ? JSON.parse(row.packageDiscountPrices) : []);
+    res.json(row);
   } catch (err) {
     console.error('Error updating game:', err);
     res.status(500).json({ message: err.message });
