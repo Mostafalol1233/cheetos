@@ -112,43 +112,86 @@ export default function CategoryPage() {
             </div>
             
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-              {games.map((game) => (
-                <Card key={game.id} className="overflow-hidden hover:shadow-lg hover:scale-105 transition-all duration-300">
-                  <div className="aspect-[4/3] relative overflow-hidden">
-                    <img
-                      src={game.image}
-                      alt={game.name}
-                      className="w-full h-full object-cover hover:scale-110 transition-transform duration-500"
-                    />
-                    {game.isPopular && (
-                      <div className="absolute top-2 right-2 bg-gradient-to-r from-yellow-500 to-orange-500 text-white px-2 py-1 rounded-full text-xs font-bold flex items-center shadow-lg">
-                        <Star className="w-3 h-3 mr-1" />
-                        Popular
-                      </div>
-                    )}
-                  </div>
-                  <CardContent className="p-4">
-                    <h3 className="font-bold text-lg mb-2 text-gray-900 dark:text-white">{game.name}</h3>
-                    <p className="text-gray-600 dark:text-gray-300 text-sm mb-3 line-clamp-2">{game.description}</p>
-                    <div className="flex items-center justify-between">
-                      <span className="text-xl font-bold text-blue-600 dark:text-blue-400">
-                        {game.category === 'mobile-games' ? `Starting from ${game.price} ${game.currency}` : `${game.price} ${game.currency}`}
-                      </span>
+              {games.map((game) => {
+                const packages = Array.isArray(game.packages) ? game.packages : [];
+                const packagePrices = Array.isArray(game.packagePrices) ? game.packagePrices : [];
+                const packageDiscountPrices = Array.isArray((game as any).packageDiscountPrices) ? (game as any).packageDiscountPrices : [];
+                const hasDiscount = game.discountPrice && parseFloat(game.discountPrice.toString()) > 0;
+                const mainPrice = parseFloat(game.price.toString());
+                const discountPrice = hasDiscount ? parseFloat(game.discountPrice.toString()) : null;
+                
+                return (
+                  <Card key={game.id} className="overflow-hidden hover:shadow-lg hover:scale-105 transition-all duration-300">
+                    <div className="aspect-[4/3] relative overflow-hidden">
+                      <img
+                        src={game.image}
+                        alt={game.name}
+                        className="w-full h-full object-cover hover:scale-110 transition-transform duration-500"
+                      />
+                      {game.isPopular && (
+                        <div className="absolute top-2 right-2 bg-gradient-to-r from-yellow-500 to-orange-500 text-white px-2 py-1 rounded-full text-xs font-bold flex items-center shadow-lg">
+                          <Star className="w-3 h-3 mr-1" />
+                          Popular
+                        </div>
+                      )}
+                    </div>
+                    <CardContent className="p-4">
+                      <h3 className="font-bold text-lg mb-2 text-gray-900 dark:text-white">{game.name}</h3>
+                      
+                      {/* Card Amounts/Packages */}
+                      {packages.length > 0 ? (
+                        <div className="mb-3 space-y-1">
+                          {packages.slice(0, 2).map((pkg: string, idx: number) => {
+                            const pkgPrice = packagePrices[idx] || game.price;
+                            const pkgDiscountPrice = packageDiscountPrices[idx] || null;
+                            const hasPkgDiscount = pkgDiscountPrice && parseFloat(pkgDiscountPrice) > 0;
+                            
+                            return (
+                              <div key={idx} className="flex items-center justify-between text-xs">
+                                <span className="text-gray-600 dark:text-gray-300">{pkg}</span>
+                                <div className="flex items-center gap-1">
+                                  {hasPkgDiscount && (
+                                    <span className="text-red-500 line-through text-[10px]">{pkgPrice} {game.currency}</span>
+                                  )}
+                                  <span className="text-blue-600 dark:text-blue-400 font-bold">{hasPkgDiscount ? pkgDiscountPrice : pkgPrice} {game.currency}</span>
+                                </div>
+                              </div>
+                            );
+                          })}
+                          {packages.length > 2 && (
+                            <div className="text-xs text-gray-500 dark:text-gray-400">+{packages.length - 2} more</div>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="mb-3">
+                          {hasDiscount ? (
+                            <div className="flex items-center gap-2">
+                              <span className="text-red-500 line-through text-sm">{mainPrice} {game.currency}</span>
+                              <span className="text-xl font-bold text-blue-600 dark:text-blue-400">{discountPrice} {game.currency}</span>
+                            </div>
+                          ) : (
+                            <span className="text-xl font-bold text-blue-600 dark:text-blue-400">
+                              {game.category === 'mobile-games' ? `Starting from ${game.price} ${game.currency}` : `${game.price} ${game.currency}`}
+                            </span>
+                          )}
+                        </div>
+                      )}
+                      
                       <div className="flex gap-2">
-                        <Link href={`/game/${game.slug}`}>
-                          <Button variant="outline" size="sm">
+                        <Link href={`/game/${game.slug}`} className="flex-1">
+                          <Button variant="outline" size="sm" className="w-full">
                             View
                           </Button>
                         </Link>
-                        <Button size="sm" className="flex items-center bg-blue-600 hover:bg-blue-700">
+                        <Button size="sm" className="flex items-center bg-blue-600 hover:bg-blue-700 flex-1">
                           <ShoppingCart className="w-4 h-4 mr-1" />
                           Buy
                         </Button>
                       </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+                    </CardContent>
+                  </Card>
+                );
+              })}
             </div>
           </div>
         ) : (

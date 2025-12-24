@@ -130,14 +130,21 @@ export default function GamesPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
             {filteredGames.map((game) => {
               const isAdding = addingItems.includes(game.id);
+              const packages = Array.isArray(game.packages) ? game.packages : [];
+              const packagePrices = Array.isArray(game.packagePrices) ? game.packagePrices : [];
+              const packageDiscountPrices = Array.isArray((game as any).packageDiscountPrices) ? (game as any).packageDiscountPrices : [];
+              const hasDiscount = game.discountPrice && parseFloat(game.discountPrice.toString()) > 0;
+              const mainPrice = parseFloat(game.price.toString());
+              const discountPrice = hasDiscount ? parseFloat(game.discountPrice.toString()) : null;
+              
               return (
                 <div key={game.id} className="relative group">
-                  <div className="relative rounded-2xl overflow-hidden border-2 border-cyan-400/30 bg-gradient-to-b from-gray-900 to-black p-4 h-80 flex flex-col justify-between shadow-lg hover:shadow-2xl hover:shadow-cyan-500/50 transition-all duration-300 hover:border-cyan-400/60">
+                  <div className="relative rounded-2xl overflow-hidden border-2 border-cyan-400/30 bg-gradient-to-b from-gray-900 to-black p-4 shadow-lg hover:shadow-2xl hover:shadow-cyan-500/50 transition-all duration-300 hover:border-cyan-400/60">
                     {/* Card glow effect */}
                     <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/0 via-cyan-500/0 to-cyan-500/0 group-hover:from-cyan-500/10 group-hover:via-cyan-500/5 group-hover:to-cyan-500/10 transition-all duration-300 pointer-events-none"></div>
                     
                     {/* Game Image */}
-                    <div className="relative rounded-lg overflow-hidden border border-cyan-400/20 bg-gray-800 flex-1 mb-3 flex items-center justify-center">
+                    <div className="relative rounded-lg overflow-hidden border border-cyan-400/20 bg-gray-800 h-48 mb-3 flex items-center justify-center">
                       <ImageWithFallback
                         src={game.image}
                         alt={game.name}
@@ -152,10 +159,49 @@ export default function GamesPage() {
                     </div>
 
                     {/* Game Info */}
-                    <div className="relative z-10">
-                      <h3 className="font-bold text-white mb-1 text-lg line-clamp-1">{game.name}</h3>
-                      <div className="flex items-center justify-between mb-3">
-                        <span className="text-cyan-400 font-bold text-lg">{game.category === 'mobile-games' ? `Starting from ${game.price} EGP` : `${game.price} EGP`}</span>
+                    <div className="relative z-10 mb-3">
+                      <h3 className="font-bold text-white mb-2 text-lg line-clamp-1">{game.name}</h3>
+                      
+                      {/* Card Amounts/Packages */}
+                      {packages.length > 0 ? (
+                        <div className="mb-2 space-y-1">
+                          {packages.slice(0, 2).map((pkg: string, idx: number) => {
+                            const pkgPrice = packagePrices[idx] || game.price;
+                            const pkgDiscountPrice = packageDiscountPrices[idx] || null;
+                            const hasPkgDiscount = pkgDiscountPrice && parseFloat(pkgDiscountPrice) > 0;
+                            
+                            return (
+                              <div key={idx} className="flex items-center justify-between text-xs">
+                                <span className="text-cyan-300/80">{pkg}</span>
+                                <div className="flex items-center gap-1">
+                                  {hasPkgDiscount && (
+                                    <span className="text-red-400 line-through text-[10px]">{pkgPrice} {game.currency}</span>
+                                  )}
+                                  <span className="text-cyan-400 font-bold">{hasPkgDiscount ? pkgDiscountPrice : pkgPrice} {game.currency}</span>
+                                </div>
+                              </div>
+                            );
+                          })}
+                          {packages.length > 2 && (
+                            <div className="text-xs text-cyan-300/60">+{packages.length - 2} more packages</div>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="mb-2">
+                          <div className="flex items-center justify-between">
+                            {hasDiscount ? (
+                              <>
+                                <span className="text-red-400 line-through text-sm">{mainPrice} {game.currency}</span>
+                                <span className="text-cyan-400 font-bold text-lg">{discountPrice} {game.currency}</span>
+                              </>
+                            ) : (
+                              <span className="text-cyan-400 font-bold text-lg">{mainPrice} {game.currency}</span>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                      
+                      <div className="flex items-center justify-between">
                         <span className="text-xs text-cyan-300/70 bg-cyan-400/10 px-2 py-1 rounded">Stock: {game.stock}</span>
                       </div>
                     </div>

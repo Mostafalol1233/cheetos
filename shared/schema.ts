@@ -15,7 +15,9 @@ export const games = pgTable("games", {
   isPopular: boolean("is_popular").notNull().default(false),
   stock: integer("stock").notNull().default(50),
   packages: text("packages").array(),
-  packagePrices: text("package_prices").array()
+  packagePrices: text("package_prices").array(),
+  discountPrice: decimal("discount_price", { precision: 10, scale: 2 }),
+  packageDiscountPrices: text("package_discount_prices").array()
 });
 
 // Categories table

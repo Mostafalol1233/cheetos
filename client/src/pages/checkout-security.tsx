@@ -153,6 +153,12 @@ export default function CheckoutSecurityPage() {
                       <p>DiaaEldeenn</p>
                     </div>
                   )}
+                  {transaction.payment_method === 'PayPal' && (
+                    <div>
+                      <p className="font-medium">PayPal Account</p>
+                      <p>support@diaaeldeen.com</p>
+                    </div>
+                  )}
                   {transaction.payment_method === 'Bank Transfer' && (
                     <div>
                       <p className="font-medium">Bank</p>

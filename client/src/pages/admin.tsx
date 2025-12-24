@@ -773,6 +773,17 @@ export default function AdminDashboard() {
                 />
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="discountPrice" className="text-right">Discount Price</Label>
+                <Input
+                  id="discountPrice"
+                  type="number"
+                  value={(editingGame as any).discountPrice || ''}
+                  onChange={(e) => setEditingGame({ ...editingGame, discountPrice: e.target.value || null } as any)}
+                  placeholder="Optional - shows as strikethrough"
+                  className="col-span-3"
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="stock" className="text-right">Stock</Label>
                 <Input
                   id="stock"

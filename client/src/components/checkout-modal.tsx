@@ -195,6 +195,7 @@ ${orderSummary}
                 <SelectItem value="Etisalat Cash">Etisalat Cash</SelectItem>
                 <SelectItem value="WE Pay">WE Pay</SelectItem>
                 <SelectItem value="InstaPay">InstaPay</SelectItem>
+                <SelectItem value="PayPal">PayPal</SelectItem>
                 <SelectItem value="Bank Transfer">Bank Transfer</SelectItem>
               </SelectContent>
             </Select>
@@ -227,6 +228,12 @@ ${orderSummary}
                 <div>
                   <p className="font-medium">Account:</p>
                   <p className="text-foreground">DiaaEldeenn</p>
+                </div>
+              )}
+              {paymentMethod === 'PayPal' && (
+                <div>
+                  <p className="font-medium">PayPal Account:</p>
+                  <p className="text-foreground">support@diaaeldeen.com</p>
                 </div>
               )}
               {paymentMethod === 'Bank Transfer' && (

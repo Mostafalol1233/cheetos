@@ -231,6 +231,8 @@ async function initializeDatabase() {
     await pool.query(`ALTER TABLE games ADD COLUMN IF NOT EXISTS category_id VARCHAR(50)`);
     await pool.query(`ALTER TABLE games ADD COLUMN IF NOT EXISTS stock_amount INTEGER DEFAULT 0`);
     await pool.query(`ALTER TABLE games ADD COLUMN IF NOT EXISTS image_url TEXT`);
+    await pool.query(`ALTER TABLE games ADD COLUMN IF NOT EXISTS discount_price DECIMAL(10, 2)`);
+    await pool.query(`ALTER TABLE games ADD COLUMN IF NOT EXISTS package_discount_prices JSONB DEFAULT '[]'`);
 
     // Game cards table
     await pool.query(`
@@ -573,9 +575,16 @@ function normalizeGamePayload(body) {
 // Get all games
 app.get('/api/games', async (req, res) => {
   try {
-    const result = await pool.query('SELECT id, name, slug, description, price, currency, image, category, is_popular as isPopular, stock, packages, package_prices as packagePrices FROM games ORDER BY id DESC');
+    const result = await pool.query(`
+      SELECT id, name, slug, description, price, currency, image, category, 
+             is_popular as "isPopular", stock, packages, package_prices as "packagePrices",
+             discount_price as "discountPrice", package_discount_prices as "packageDiscountPrices"
+      FROM games 
+      ORDER BY id DESC
+    `);
     res.json(result.rows);
   } catch (err) {
+    console.error('Error fetching games:', err);
     res.status(500).json({ message: err.message });
   }
 });
@@ -583,9 +592,17 @@ app.get('/api/games', async (req, res) => {
 // Get popular games
 app.get('/api/games/popular', async (req, res) => {
   try {
-    const result = await pool.query('SELECT id, name, slug, description, price, currency, image, category, is_popular as isPopular, stock, packages, package_prices as packagePrices FROM games WHERE is_popular = true LIMIT 10');
+    const result = await pool.query(`
+      SELECT id, name, slug, description, price, currency, image, category, 
+             is_popular as "isPopular", stock, packages, package_prices as "packagePrices",
+             discount_price as "discountPrice", package_discount_prices as "packageDiscountPrices"
+      FROM games 
+      WHERE is_popular = true 
+      LIMIT 10
+    `);
     res.json(result.rows);
   } catch (err) {
+    console.error('Error fetching popular games:', err);
     res.status(500).json({ message: err.message });
   }
 });
@@ -594,9 +611,17 @@ app.get('/api/games/popular', async (req, res) => {
 app.get('/api/games/category/:category', async (req, res) => {
   try {
     const { category } = req.params;
-    const result = await pool.query('SELECT * FROM games WHERE category = $1', [category]);
+    const result = await pool.query(`
+      SELECT id, name, slug, description, price, currency, image, category, 
+             is_popular as "isPopular", stock, packages, package_prices as "packagePrices",
+             discount_price as "discountPrice", package_discount_prices as "packageDiscountPrices"
+      FROM games 
+      WHERE category = $1 OR category_id = $1
+      ORDER BY id DESC
+    `, [category]);
     res.json(result.rows);
   } catch (err) {
+    console.error('Error fetching games by category:', err);
     res.status(500).json({ message: err.message });
   }
 });
@@ -605,7 +630,13 @@ app.get('/api/games/category/:category', async (req, res) => {
 app.get('/api/games/slug/:slug', async (req, res) => {
   try {
     const { slug } = req.params;
-    const result = await pool.query('SELECT * FROM games WHERE slug = $1', [slug]);
+    const result = await pool.query(`
+      SELECT id, name, slug, description, price, currency, image, category, 
+             is_popular as "isPopular", stock, packages, package_prices as "packagePrices",
+             discount_price as "discountPrice", package_discount_prices as "packageDiscountPrices"
+      FROM games 
+      WHERE slug = $1
+    `, [slug]);
     
     if (result.rows.length === 0) {
       return res.status(404).json({ message: 'Game not found' });
@@ -613,6 +644,7 @@ app.get('/api/games/slug/:slug', async (req, res) => {
 
     res.json(result.rows[0]);
   } catch (err) {
+    console.error('Error fetching game by slug:', err);
     res.status(500).json({ message: err.message });
   }
 });
@@ -620,12 +652,19 @@ app.get('/api/games/slug/:slug', async (req, res) => {
 app.get('/api/games/:slug', async (req, res) => {
   try {
     const { slug } = req.params;
-    const result = await pool.query('SELECT * FROM games WHERE slug = $1', [slug]);
+    const result = await pool.query(`
+      SELECT id, name, slug, description, price, currency, image, category, 
+             is_popular as "isPopular", stock, packages, package_prices as "packagePrices",
+             discount_price as "discountPrice", package_discount_prices as "packageDiscountPrices"
+      FROM games 
+      WHERE slug = $1
+    `, [slug]);
     if (result.rows.length === 0) {
       return res.status(404).json({ message: 'Game not found' });
     }
     res.json(result.rows[0]);
   } catch (err) {
+    console.error('Error fetching game:', err);
     res.status(500).json({ message: err.message });
   }
 });
@@ -646,21 +685,30 @@ app.get('/api/games/id/:id', async (req, res) => {
 // Create game (Admin)
 app.post('/api/admin/games', authenticateToken, imageUpload.single('image'), async (req, res) => {
   try {
-    const { name, slug, description, price, currency, category, isPopular, stock } = req.body;
+    const { name, slug, description, price, currency, category, isPopular, stock, discountPrice, packages, packagePrices, packageDiscountPrices } = req.body;
     const image = req.file ? `/uploads/${req.file.filename}` : null;
     const id = `game_${Date.now()}`;
     
     // Generate slug if not provided
     const finalSlug = slug || name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
     const isPop = String(isPopular) === 'true';
+    const packagesJson = packages ? JSON.stringify(Array.isArray(packages) ? packages : [packages]) : '[]';
+    const packagePricesJson = packagePrices ? JSON.stringify(Array.isArray(packagePrices) ? packagePrices : [packagePrices]) : '[]';
+    const packageDiscountPricesJson = packageDiscountPrices ? JSON.stringify(Array.isArray(packageDiscountPrices) ? packageDiscountPrices : [packageDiscountPrices]) : '[]';
 
     const result = await pool.query(
-      'INSERT INTO games (id, name, slug, description, price, currency, image, category, is_popular, stock) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id, name, slug, description, price, currency, image, category, is_popular as isPopular, stock, packages, package_prices as packagePrices',
-      [id, name, finalSlug, description, Number(price) || 0, currency || 'EGP', image, category, isPop, Number(stock) || 100]
+      `INSERT INTO games (id, name, slug, description, price, currency, image, category, is_popular, stock, discount_price, packages, package_prices, package_discount_prices) 
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) 
+       RETURNING id, name, slug, description, price, currency, image, category, is_popular as "isPopular", stock, 
+                 discount_price as "discountPrice", packages, package_prices as "packagePrices", 
+                 package_discount_prices as "packageDiscountPrices"`,
+      [id, name, finalSlug, description, Number(price) || 0, currency || 'EGP', image, category, isPop, Number(stock) || 100, 
+       discountPrice ? Number(discountPrice) : null, packagesJson, packagePricesJson, packageDiscountPricesJson]
     );
 
     res.status(201).json(result.rows[0]);
   } catch (err) {
+    console.error('Error creating game:', err);
     res.status(500).json({ message: err.message });
   }
 });
@@ -669,15 +717,46 @@ app.post('/api/admin/games', authenticateToken, imageUpload.single('image'), asy
 app.put('/api/admin/games/:id', authenticateToken, imageUpload.single('image'), async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, slug, description, price, currency, category, isPopular, stock } = req.body;
+    const { name, slug, description, price, currency, category, isPopular, stock, discountPrice, packages, packagePrices, packageDiscountPrices } = req.body;
     const image = req.file ? `/uploads/${req.file.filename}` : req.body.image;
     
     const isPop = String(isPopular) === 'true';
+    const packagesJson = packages ? JSON.stringify(Array.isArray(packages) ? packages : [packages]) : undefined;
+    const packagePricesJson = packagePrices ? JSON.stringify(Array.isArray(packagePrices) ? packagePrices : [packagePrices]) : undefined;
+    const packageDiscountPricesJson = packageDiscountPrices ? JSON.stringify(Array.isArray(packageDiscountPrices) ? packageDiscountPrices : [packageDiscountPrices]) : undefined;
 
-    const result = await pool.query(
-      'UPDATE games SET name = $1, slug = $2, description = $3, price = $4, currency = $5, image = $6, category = $7, is_popular = $8, stock = $9 WHERE id = $10 RETURNING id, name, slug, description, price, currency, image, category, is_popular as isPopular, stock, packages, package_prices as packagePrices',
-      [name, slug, description, Number(price) || 0, currency || 'EGP', image, category, isPop, Number(stock) || 0, id]
-    );
+    // Build dynamic update query
+    const updates = [];
+    const values = [];
+    let paramIndex = 1;
+
+    if (name !== undefined) { updates.push(`name = $${paramIndex++}`); values.push(name); }
+    if (slug !== undefined) { updates.push(`slug = $${paramIndex++}`); values.push(slug); }
+    if (description !== undefined) { updates.push(`description = $${paramIndex++}`); values.push(description); }
+    if (price !== undefined) { updates.push(`price = $${paramIndex++}`); values.push(Number(price) || 0); }
+    if (currency !== undefined) { updates.push(`currency = $${paramIndex++}`); values.push(currency); }
+    if (image !== undefined) { updates.push(`image = $${paramIndex++}`); values.push(image); }
+    if (category !== undefined) { updates.push(`category = $${paramIndex++}`); values.push(category); }
+    if (isPopular !== undefined) { updates.push(`is_popular = $${paramIndex++}`); values.push(isPop); }
+    if (stock !== undefined) { updates.push(`stock = $${paramIndex++}`); values.push(Number(stock) || 0); }
+    if (discountPrice !== undefined) { updates.push(`discount_price = $${paramIndex++}`); values.push(discountPrice ? Number(discountPrice) : null); }
+    if (packagesJson !== undefined) { updates.push(`packages = $${paramIndex++}`); values.push(packagesJson); }
+    if (packagePricesJson !== undefined) { updates.push(`package_prices = $${paramIndex++}`); values.push(packagePricesJson); }
+    if (packageDiscountPricesJson !== undefined) { updates.push(`package_discount_prices = $${paramIndex++}`); values.push(packageDiscountPricesJson); }
+    
+    updates.push(`updated_at = CURRENT_TIMESTAMP`);
+    values.push(id);
+
+    const query = `
+      UPDATE games 
+      SET ${updates.join(', ')} 
+      WHERE id = $${paramIndex}
+      RETURNING id, name, slug, description, price, currency, image, category, is_popular as "isPopular", stock,
+                discount_price as "discountPrice", packages, package_prices as "packagePrices",
+                package_discount_prices as "packageDiscountPrices"
+    `;
+
+    const result = await pool.query(query, values);
 
     if (result.rows.length === 0) {
       return res.status(404).json({ message: 'Game not found' });
@@ -685,6 +764,7 @@ app.put('/api/admin/games/:id', authenticateToken, imageUpload.single('image'), 
 
     res.json(result.rows[0]);
   } catch (err) {
+    console.error('Error updating game:', err);
     res.status(500).json({ message: err.message });
   }
 });
@@ -1632,28 +1712,28 @@ const startServer = async () => {
     const totalErrors = autoResults.reduce((s,r)=>s+r.errors,0);
     console.log(`Autoload summary: ${totalLoaded} modules loaded, ${totalErrors} errors`);
 
-    // 3.5 Run Critical Maintenance Scripts
-    console.log('🔧 Running maintenance scripts...');
-    try {
-      const scriptsDir = path.join(__dirname, 'scripts');
-      
-      // 1. Verify Media
-      const verifyScript = path.join(scriptsDir, 'verify-media.js');
-      if (fs.existsSync(verifyScript)) {
-         console.log('   Running verify-media.js...');
-         execSync(`node "${verifyScript}"`, { stdio: 'inherit' });
+    // 3.5 Run Critical Maintenance Scripts (skippable by env flag)
+    const shouldRunMaintenance = String(process.env.DISABLE_MAINTENANCE_SCRIPTS || '').toLowerCase() !== 'true';
+    if (shouldRunMaintenance) {
+      console.log('🔧 Running maintenance scripts...');
+      try {
+        const scriptsDir = path.join(__dirname, 'scripts');
+        const verifyScript = path.join(scriptsDir, 'verify-media.js');
+        if (fs.existsSync(verifyScript)) {
+           console.log('   Running verify-media.js...');
+           execSync(`node "${verifyScript}"`, { stdio: 'inherit' });
+        }
+        const updateScript = path.join(scriptsDir, 'update-packages.js');
+        if (fs.existsSync(updateScript)) {
+           console.log('   Running update-packages.js...');
+           execSync(`node "${updateScript}"`, { stdio: 'inherit' });
+        }
+        console.log('✅ Maintenance scripts completed');
+      } catch (scriptErr) {
+         console.error('⚠️ Maintenance script error:', scriptErr.message);
       }
-
-      // 2. Update Packages
-      const updateScript = path.join(scriptsDir, 'update-packages.js');
-      if (fs.existsSync(updateScript)) {
-         console.log('   Running update-packages.js...');
-         execSync(`node "${updateScript}"`, { stdio: 'inherit' });
-      }
-      
-      console.log('✅ Maintenance scripts completed');
-    } catch (scriptErr) {
-       console.error('⚠️ Maintenance script error:', scriptErr.message);
+    } else {
+      console.log('⏭️  Maintenance scripts disabled by DISABLE_MAINTENANCE_SCRIPTS');
     }
 
     // 4. Start WhatsApp Client

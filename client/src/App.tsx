@@ -18,6 +18,11 @@ import CheckoutSecurityPage from "./pages/checkout-security";
 import NotFound from "@/pages/not-found";
 import QrLoginPage from "./pages/qr-login";
 import QrConfirmPage from "./pages/qr-confirm";
+import FAQPage from "./pages/faq";
+import TermsPage from "./pages/terms";
+import PrivacyPage from "./pages/privacy";
+import RefundsPage from "./pages/refunds";
+import TrackOrderPage from "./pages/track-order";
 import { LiveChatWidget } from "@/components/live-chat-widget";
 
 // Protected admin route component
@@ -52,6 +57,11 @@ function ProtectedAdminRoute() {
         <Route path="/admin" component={ProtectedAdminRoute} />
         <Route path="/category/:slug" component={CategoryPage} />
         <Route path="/game/:slug" component={GamePage} />
+        <Route path="/faq" component={FAQPage} />
+        <Route path="/terms" component={TermsPage} />
+        <Route path="/privacy" component={PrivacyPage} />
+        <Route path="/refunds" component={RefundsPage} />
+        <Route path="/track-order" component={TrackOrderPage} />
 
         <Route component={NotFound} />
       </Switch>
