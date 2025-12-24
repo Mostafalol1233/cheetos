@@ -6,15 +6,26 @@ import { ShoppingCart, Star, Package, ArrowLeft } from "lucide-react";
 import { useCart } from "@/lib/cart-context";
 import { useState, useEffect } from "react";
 import type { Game } from "@shared/schema";
+import { useToast } from "@/hooks/use-toast";
+import type { Category } from "@shared/schema";
+import { Link } from "wouter";
+import ImageWithFallback from "@/components/image-with-fallback";
+import { useTranslation } from "@/lib/translation";
 
 export default function GamePage() {
   const { slug } = useParams();
   const { addToCart } = useCart();
+  const { toast } = useToast();
+  const { t } = useTranslation();
   const [, setLocation] = useLocation();
   const [selectedPackage, setSelectedPackage] = useState<number>(0);
 
   const { data: game, isLoading } = useQuery<Game>({
     queryKey: [`/api/games/${slug}`],
+  });
+
+  const { data: categories = [] } = useQuery<Category[]>({
+    queryKey: ["/api/categories"],
   });
 
   useEffect(() => {
@@ -40,8 +51,8 @@ export default function GamePage() {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Game Not Found</h1>
-          <p className="text-gray-600 dark:text-gray-300">The requested game could not be found.</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">{t('game_not_found')}</h1>
+          <p className="text-gray-600 dark:text-gray-300">{t('game_not_found_desc')}</p>
         </div>
       </div>
     );
@@ -50,16 +61,35 @@ export default function GamePage() {
   const packages = game.packages || [];
   const packagePrices = game.packagePrices || [];
   const categoryLabel = (game.category ? String(game.category) : "").replace('-', ' ').toUpperCase();
+  const category = Array.isArray(categories)
+    ? categories.find((c) => c.slug === game.category)
+    : undefined;
+  const isOutOfStock = Number(game.stock) <= 0;
 
   const handleAddToCart = () => {
-    const packageName = packages[selectedPackage] || "Default Package";
+    if (isOutOfStock) {
+      toast({
+        title: t('out_of_stock'),
+        description: t('item_unavailable'),
+        duration: 2500,
+      });
+      return;
+    }
+
+    const packageName = packages[selectedPackage] || t('default_package');
     const packagePrice = packagePrices[selectedPackage] || game.price;
     
     addToCart({
       id: `${game.id}-${selectedPackage}`,
       name: `${game.name} - ${packageName}`,
-      price: parseFloat(packagePrice),
+      price: parseFloat(String(packagePrice)),
       image: game.image,
+    });
+
+    toast({
+      title: t('success'),
+      description: `${game.name} (${packageName}) ${t('added_to_cart')}`,
+      duration: 2000,
     });
   };
 
@@ -72,22 +102,18 @@ export default function GamePage() {
         className="mb-6 text-foreground hover:text-gold-primary"
       >
         <ArrowLeft className="w-4 h-4 mr-2" />
-        Back
+        {t('back')}
       </Button>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Game Image */}
         <div className="relative">
           <div className="aspect-square overflow-hidden rounded-2xl">
-            <img
-              src={game.image}
-              alt={game.name}
-              className="w-full h-full object-contain"
-            />
+            <ImageWithFallback src={game.image} alt={game.name} className="w-full h-full object-contain" />
             {game.isPopular && (
               <div className="absolute top-4 right-4 bg-gradient-to-r from-yellow-500 to-orange-500 text-white px-3 py-1 rounded-full text-sm font-bold flex items-center shadow-lg">
                 <Star className="w-4 h-4 mr-1" />
-                Popular
+                {t('popular')}
               </div>
             )}
           </div>
@@ -101,12 +127,30 @@ export default function GamePage() {
           </div>
 
           <div className="flex items-center gap-4">
-            <span className="text-sm text-green-600 dark:text-green-400 font-medium bg-green-100 dark:bg-green-900 px-3 py-1 rounded-full">
-              ✓ {game.stock} In Stock
-            </span>
-            <span className="text-sm text-blue-600 dark:text-blue-400 font-medium bg-blue-100 dark:bg-blue-900 px-3 py-1 rounded-full">
-              {categoryLabel || "UNKNOWN"}
-            </span>
+            {isOutOfStock ? (
+              <span className="text-sm text-red-700 dark:text-red-300 font-medium bg-red-100 dark:bg-red-900 px-3 py-1 rounded-full">
+                {t('out_of_stock')}
+              </span>
+            ) : (
+              <span className="text-sm text-green-600 dark:text-green-400 font-medium bg-green-100 dark:bg-green-900 px-3 py-1 rounded-full">
+                ✓ {game.stock} {t('in_stock')}
+              </span>
+            )}
+
+            {category ? (
+              <Link href={`/category/${category.slug}`}>
+                <span className="inline-flex items-center gap-2 text-sm text-blue-700 dark:text-blue-300 font-medium bg-blue-100 dark:bg-blue-900 px-3 py-1 rounded-full cursor-pointer hover:opacity-90 transition-opacity">
+                  {category.image ? (
+                    <ImageWithFallback src={category.image} alt={category.name} className="w-6 h-6 rounded object-cover" />
+                  ) : null}
+                  {category.name}
+                </span>
+              </Link>
+            ) : (
+              <span className="text-sm text-blue-600 dark:text-blue-400 font-medium bg-blue-100 dark:bg-blue-900 px-3 py-1 rounded-full">
+                {categoryLabel || t('unknown')}
+              </span>
+            )}
           </div>
 
           {/* Package Selection */}
@@ -115,7 +159,7 @@ export default function GamePage() {
               <CardContent className="p-6">
                 <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center">
                   <Package className="w-5 h-5 mr-2" />
-                  Available Packages
+                  {t('available_packages')}
                 </h3>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                   {packages.map((pkg, index) => (
@@ -132,19 +176,19 @@ export default function GamePage() {
                     >
                       <div className="flex items-center gap-3">
                         <div className="shrink-0 w-12 h-12 rounded-lg bg-muted/40 flex items-center justify-center ring-1 ring-border overflow-hidden">
-                          <img
+                          <ImageWithFallback
                             src={game.image}
                             alt={game.name}
-                            className="w-10 h-10 object-contain group-hover:scale-105 transition-transform"
+                            className="w-11 h-11 object-contain group-hover:scale-105 transition-transform"
                           />
                         </div>
                         <div className="flex-1">
                           <div className="font-semibold text-foreground">{pkg}</div>
-                          <div className="text-sm text-muted-foreground">Package</div>
+                          <div className="text-sm text-muted-foreground">{t('package')}</div>
                         </div>
                         <div className="text-right">
-                          <div className="font-bold text-blue-600 dark:text-blue-400">{packagePrices[index]} L.E</div>
-                          <div className="text-xs text-muted-foreground">Includes taxes</div>
+                          <div className="font-bold text-blue-600 dark:text-blue-400">{packagePrices[index]} {game.currency}</div>
+                          <div className="text-xs text-muted-foreground">{t('includes_taxes')}</div>
                         </div>
                       </div>
                     </button>
@@ -160,20 +204,21 @@ export default function GamePage() {
               <div className="flex items-center justify-between mb-4">
                 <div>
                   <h3 className="text-xl font-bold text-gray-900 dark:text-white">
-                    {packages[selectedPackage] || "Default Package"}
+                    {packages[selectedPackage] || t('default_package')}
                   </h3>
                   <span className="text-3xl font-bold text-blue-600 dark:text-blue-400">
-                    {packagePrices[selectedPackage] || game.price} L.E
+                    {packagePrices[selectedPackage] || game.price} {game.currency}
                   </span>
                 </div>
               </div>
               
               <Button 
                 onClick={handleAddToCart}
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 text-lg flex items-center justify-center"
+                disabled={isOutOfStock}
+                className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-500 disabled:hover:bg-gray-500 text-white font-bold py-3 text-lg flex items-center justify-center"
               >
                 <ShoppingCart className="w-5 h-5 mr-2" />
-                Add to Cart
+                {isOutOfStock ? t('out_of_stock') : t('add_to_cart')}
               </Button>
             </CardContent>
           </Card>

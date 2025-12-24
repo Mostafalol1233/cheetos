@@ -12,10 +12,12 @@ import { CartSidebar } from "@/components/cart-sidebar";
 import { CheckoutModal } from "@/components/checkout-modal";
 
 import { Footer } from "@/components/footer";
+import { useTranslation } from "@/lib/translation";
 
 export default function Home() {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+  const { t } = useTranslation();
 
   return (
     <div className="min-h-screen text-foreground font-gaming overflow-x-hidden custom-cursor bg-gradient-to-b from-darker-bg dark:via-gray-900 dark:to-black via-gray-50 to-white animate-fade-in">
@@ -32,23 +34,23 @@ export default function Home() {
         {/* Content */}
         <div className="relative z-10 text-center px-4 max-w-4xl mx-auto">
           <h1 className="text-4xl md:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-gold-primary via-gray-900 dark:via-white to-neon-pink mb-6 drop-shadow-[0_0_15px_rgba(255,204,51,0.5)] animate-fade-in">
-            LEVEL UP YOUR GAME
+            {t('hero_title')}
           </h1>
           <p className="text-xl md:text-2xl text-gray-700 dark:text-gray-300 mb-8 font-light tracking-wide animate-fade-in animation-delay-500">
-            Premium Currencies, Gift Cards & Instant Delivery
+            {t('hero_subtitle')}
           </p>
           <div className="flex justify-center gap-4 animate-fade-in animation-delay-1000">
             <button 
               onClick={() => document.getElementById('categories')?.scrollIntoView({ behavior: 'smooth' })}
               className="px-8 py-3 bg-gradient-to-r from-gold-primary to-gold-secondary text-black font-bold rounded-full hover:scale-105 transition-transform shadow-[0_0_20px_rgba(255,204,51,0.4)]"
             >
-              Shop Now
+              {t('shop_now')}
             </button>
             <button 
               onClick={() => window.location.href='/games'}
               className="px-8 py-3 border border-neon-pink/50 text-neon-pink font-bold rounded-full hover:bg-neon-pink/10 transition-colors backdrop-blur-sm"
             >
-              View All Games
+              {t('view_all_games')}
             </button>
           </div>
         </div>
@@ -74,7 +76,7 @@ export default function Home() {
               <Zap className="text-darker-bg text-2xl" />
             </div>
             <h3 className="text-gray-900 dark:text-white font-semibold mb-2">Fast Delivery</h3>
-            <p className="text-gray-600 dark:text-gray-400 text-sm">Get your products quickly and reliably.</p>
+            <p className="text-gray-600 dark:text-gray-400 text-sm">{t('features_fast_delivery_desc')}</p>
           </div>
           
           <div className="flex flex-col items-center">
@@ -82,7 +84,7 @@ export default function Home() {
               <Headphones className="text-darker-bg text-2xl" />
             </div>
             <h3 className="text-gray-900 dark:text-white font-semibold mb-2">Online Support</h3>
-            <p className="text-gray-600 dark:text-gray-400 text-sm">24 hours a day, 7 days a week.</p>
+            <p className="text-gray-600 dark:text-gray-400 text-sm">{t('features_online_support_desc')}</p>
           </div>
           
           <div className="flex flex-col items-center">
@@ -90,7 +92,7 @@ export default function Home() {
               <Shield className="text-darker-bg text-2xl" />
             </div>
             <h3 className="text-gray-900 dark:text-white font-semibold mb-2">Secure Payment</h3>
-            <p className="text-gray-600 dark:text-gray-400 text-sm">Pay with Multiple Payment Methods.</p>
+            <p className="text-gray-600 dark:text-gray-400 text-sm">{t('features_secure_payment_desc')}</p>
           </div>
           
           <div className="flex flex-col items-center">
@@ -98,7 +100,7 @@ export default function Home() {
               <Tag className="text-darker-bg text-2xl" />
             </div>
             <h3 className="text-gray-900 dark:text-white font-semibold mb-2">Best Prices</h3>
-            <p className="text-gray-600 dark:text-gray-400 text-sm">Discover unbeatable prices.</p>
+            <p className="text-gray-600 dark:text-gray-400 text-sm">{t('features_best_prices_desc')}</p>
           </div>
         </div>
       </section>
@@ -109,25 +111,25 @@ export default function Home() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
             {/* Text Content */}
             <div>
-              <h2 className="text-3xl font-bold text-gold-primary mb-4">About Diaa Eldeen</h2>
+              <h2 className="text-3xl font-bold text-gold-primary mb-4">{t('about_title')}</h2>
               <p className="text-gray-700 dark:text-gray-300 text-lg mb-4">
-                Welcome to Diaa Eldeen - Your trusted gaming partner since day one. We specialize in providing premium digital gaming products with fast delivery and exceptional customer service.
+                {t('about_p1')}
               </p>
               <p className="text-gray-700 dark:text-gray-300 text-lg mb-6">
-                Our mission is to make gaming accessible and affordable for everyone. Whether you're looking for game currencies, gift cards, or digital vouchers, we've got you covered with the best prices and fastest delivery in the market.
+                {t('about_p2')}
               </p>
               <div className="flex gap-4">
                 <div className="text-center">
                   <p className="text-3xl font-bold text-gold-primary">1K+</p>
-                  <p className="text-gray-600 dark:text-gray-400 text-sm">Happy Customers</p>
+                  <p className="text-gray-600 dark:text-gray-400 text-sm">{t('happy_customers')}</p>
                 </div>
                 <div className="text-center">
                   <p className="text-3xl font-bold text-gold-primary">5K+</p>
-                  <p className="text-gray-600 dark:text-gray-400 text-sm">Orders Completed</p>
+                  <p className="text-gray-600 dark:text-gray-400 text-sm">{t('orders_completed')}</p>
                 </div>
                 <div className="text-center">
                   <p className="text-3xl font-bold text-gold-primary">24/7</p>
-                  <p className="text-gray-600 dark:text-gray-400 text-sm">Customer Support</p>
+                  <p className="text-gray-600 dark:text-gray-400 text-sm">{t('customer_support')}</p>
                 </div>
               </div>
             </div>
@@ -156,8 +158,8 @@ export default function Home() {
       {/* Customer Reviews Section */}
       <section className="container mx-auto px-4 py-16">
         <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold text-foreground mb-2">What Our Customers Say</h2>
-          <p className="text-gray-600 dark:text-gray-400">Real testimonials from real gamers</p>
+          <h2 className="text-3xl font-bold text-foreground mb-2">{t('reviews_title')}</h2>
+          <p className="text-gray-600 dark:text-gray-400">{t('reviews_subtitle')}</p>
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

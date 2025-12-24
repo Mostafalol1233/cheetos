@@ -10,36 +10,36 @@ export default function FAQPage() {
   const { t } = useTranslation();
   const faqs = [
     {
-      question: "How do I purchase game currency or gift cards?",
-      answer: "Browse our games, select the package you want, add it to your cart, and proceed to checkout. You can pay via Vodafone Cash, Orange Cash, PayPal, or other available payment methods."
+      question: t("faq_q1"),
+      answer: t("faq_a1")
     },
     {
-      question: "How long does delivery take?",
-      answer: "Most digital products are delivered instantly after payment confirmation. For physical gift cards, delivery typically takes 1-3 business days."
+      question: t("faq_q2"),
+      answer: t("faq_a2")
     },
     {
-      question: "What payment methods do you accept?",
-      answer: "We accept Vodafone Cash, Orange Cash, Etisalat Cash, WE Pay, InstaPay, Bank Transfer, and PayPal."
+      question: t("faq_q3"),
+      answer: t("faq_a3")
     },
     {
-      question: "Is my payment information secure?",
-      answer: "Yes, we use encrypted payment processing and never store your full payment details. All transactions are secure and protected."
+      question: t("faq_q4"),
+      answer: t("faq_a4")
     },
     {
-      question: "Can I get a refund?",
-      answer: "Refunds are available for unused products within 7 days of purchase. Please contact our support team for assistance."
+      question: t("faq_q5"),
+      answer: t("faq_a5")
     },
     {
-      question: "What if I don't receive my order?",
-      answer: "If you don't receive your order within the expected timeframe, please contact our 24/7 support team. We'll investigate and resolve the issue immediately."
+      question: t("faq_q6"),
+      answer: t("faq_a6")
     },
     {
-      question: "Do you offer customer support?",
-      answer: "Yes! We offer 24/7 customer support via live chat on our website or WhatsApp. Our team is always ready to help you."
+      question: t("faq_q7"),
+      answer: t("faq_a7")
     },
     {
-      question: "Are your prices competitive?",
-      answer: "Absolutely! We offer the best prices in the market with regular discounts and special offers. Check our website regularly for the latest deals."
+      question: t("faq_q8"),
+      answer: t("faq_a8")
     }
   ];
 

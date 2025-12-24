@@ -9,8 +9,10 @@ import { InteractiveGamePreview } from "./interactive-game-preview";
 import ImageWithFallback from "./image-with-fallback";
 import { useToast } from "@/hooks/use-toast";
 import { DynamicLoadingProgress } from "./dynamic-loading-progress";
+import { useTranslation } from "@/lib/translation";
 
 export function PopularGames() {
+  const { t } = useTranslation();
   const { data: games = [], isLoading, isError } = useQuery<Game[]>({
     queryKey: ["/api/games/popular"],
   });
@@ -20,6 +22,15 @@ export function PopularGames() {
   const [addingItems, setAddingItems] = useState<string[]>([]);
 
   const handleAddToCart = async (game: Game) => {
+    if (Number(game.stock) <= 0) {
+      toast({
+        title: t('out_of_stock'),
+        description: 'This item is currently unavailable.',
+        duration: 2500,
+      });
+      return;
+    }
+
     setAddingItems(prev => [...prev, game.id]);
     
     addToCart({
@@ -30,8 +41,8 @@ export function PopularGames() {
     });
 
     toast({
-      title: "Success! ✅",
-      description: `${game.name} added to cart`,
+      title: t('success'),
+      description: `${game.name} ${t('added_to_cart')}`,
       duration: 2000,
     });
 
@@ -41,7 +52,7 @@ export function PopularGames() {
   };
 
   if (isLoading) {
-    return <DynamicLoadingProgress isLoading={true} loadingText="Loading popular games..." />;
+    return <DynamicLoadingProgress isLoading={true} loadingText={t('loading_popular_games')} />;
   }
 
   if (isError || !Array.isArray(games) || games.length === 0) {
@@ -54,12 +65,13 @@ export function PopularGames() {
         <div className="w-6 h-6 bg-gold-primary rounded-full flex items-center justify-center mr-3 shadow-[0_0_10px_rgba(255,204,51,0.5)]">
           <Flame className="w-3 h-3 text-black" />
         </div>
-        <h2 className="text-2xl font-bold text-foreground">Most Popular Games</h2>
+        <h2 className="text-2xl font-bold text-foreground">{t('popular_games')}</h2>
       </div>
       
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
         {Array.isArray(games) && games.map((game) => {
           const isAdding = addingItems.includes(game.id);
+          const isOutOfStock = Number(game.stock) <= 0;
           
           return (
             <div key={game.id} className="relative group perspective">
@@ -86,24 +98,24 @@ export function PopularGames() {
                   {/* Back face with extra details */}
                   <div className="absolute inset-0 rounded-lg overflow-hidden p-4 bg-gradient-to-b from-black via-gray-900 to-black border border-cyan-500/30 text-cyan-100 flex flex-col justify-center items-center gap-3 flip-card-back shadow-[inset_0_0_20px_rgba(0,255,255,0.1)]">
                     <div className="text-center">
-                      <p className="text-xs text-cyan-400 uppercase tracking-wider font-bold mb-1">Category</p>
+                      <p className="text-xs text-cyan-400 uppercase tracking-wider font-bold mb-1">{t('categories')}</p>
                       <p className="text-sm font-medium text-white capitalize">{game.category}</p>
                     </div>
                     
                     <div className="w-full h-px bg-cyan-500/30 my-1"></div>
                     
                     <div className="text-center w-full">
-                      <p className="text-xs text-cyan-400 uppercase tracking-wider font-bold mb-1">Packages</p>
+                      <p className="text-xs text-cyan-400 uppercase tracking-wider font-bold mb-1">{t('available_packages')}</p>
                       <p className="text-xs text-gray-300 line-clamp-3 leading-relaxed px-2">
                         {Array.isArray(game.packages) && game.packages.length > 0 
                           ? game.packages.join(' • ') 
-                          : 'Standard Package Available'}
+                          : t('standard_package_available')}
                       </p>
                     </div>
                     
-                    <div className="mt-auto pt-2 flex items-center gap-2 text-xs text-green-400 font-mono bg-green-950/30 px-3 py-1 rounded-full border border-green-500/20">
+                    <div className={`mt-auto pt-2 flex items-center gap-2 text-xs font-mono px-3 py-1 rounded-full border ${isOutOfStock ? 'text-red-300 bg-red-950/30 border-red-500/20' : 'text-green-400 bg-green-950/30 border-green-500/20'}`}>
                       <Check className="w-3 h-3" />
-                      <span>In Stock: {game.stock}</span>
+                      <span>{isOutOfStock ? t('out_of_stock') : `${t('in_stock_prefix')}: ${game.stock}`}</span>
                     </div>
                   </div>
                 </div>
@@ -150,7 +162,9 @@ export function PopularGames() {
                   )}
                   
                   <div className="flex items-center justify-between">
-                    <span className="text-xs text-cyan-300/70 bg-cyan-400/10 px-2 py-1 rounded">Stock: {game.stock}</span>
+                    <span className={`text-xs px-2 py-1 rounded ${isOutOfStock ? 'text-red-200 bg-red-500/10' : 'text-cyan-300/70 bg-cyan-400/10'}`}>
+                      {isOutOfStock ? t('out_of_stock') : `${t('in_stock_prefix')}: ${game.stock}`}
+                    </span>
                   </div>
                 </div>
 

@@ -3,6 +3,7 @@ import { Category } from "@shared/schema";
 import { Flame, Globe, Smartphone, Gift, Clock } from "lucide-react";
 import { Link } from "wouter";
 import ImageWithFallback from "./image-with-fallback";
+import { useTranslation } from "@/lib/translation";
 
 const iconMap = {
   fire: Flame,
@@ -13,6 +14,7 @@ const iconMap = {
 };
 
 export function ShoppingCategories() {
+  const { t } = useTranslation();
   const { data: categories = [], isLoading, isError } = useQuery({
     queryKey: ["/api/categories"],
     queryFn: () => fetch("/api/categories").then(res => res.json()) as Promise<Category[]>
@@ -44,7 +46,7 @@ export function ShoppingCategories() {
         <div className="w-6 h-6 bg-gold-primary rounded-full flex items-center justify-center mr-3">
           <div className="w-3 h-3 bg-darker-bg rounded-full"></div>
         </div>
-        <h2 className="text-2xl font-bold text-white">Shopping Categories</h2>
+        <h2 className="text-2xl font-bold text-white">{t('shopping_categories')}</h2>
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
@@ -73,7 +75,7 @@ export function ShoppingCategories() {
                     <p className="text-white/90 mb-3 text-sm drop-shadow">{category.description}</p>
                     <div className="flex items-center text-white/90 group-hover:text-white transition-colors">
                       <div className="w-2 h-2 bg-white rounded-full mr-2"></div>
-                      <span className="text-sm">Explore Now</span>
+                      <span className="text-sm">{t('explore_now')}</span>
                     </div>
                   </div>
                 </div>

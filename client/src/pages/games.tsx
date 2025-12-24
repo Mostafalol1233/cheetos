@@ -11,6 +11,7 @@ import { useCart } from "@/lib/cart-context";
 import { useToast } from "@/hooks/use-toast";
 import type { Game, Category } from "@shared/schema";
 import ImageWithFallback from "@/components/image-with-fallback";
+import { useTranslation } from "@/lib/translation";
 
 export default function GamesPage() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -18,6 +19,7 @@ export default function GamesPage() {
   const [addingItems, setAddingItems] = useState<string[]>([]);
   const { addToCart } = useCart();
   const { toast } = useToast();
+  const { t } = useTranslation();
 
   const { data: categories = [] } = useQuery<Category[]>({
     queryKey: ["/api/categories"],
@@ -28,6 +30,15 @@ export default function GamesPage() {
   });
 
   const handleAddToCart = (game: Game) => {
+    if (Number(game.stock) <= 0) {
+      toast({
+        title: t('out_of_stock'),
+        description: t('item_unavailable'),
+        duration: 2500,
+      });
+      return;
+    }
+
     setAddingItems(prev => [...prev, game.id]);
     addToCart({
       id: game.id,
@@ -36,8 +47,8 @@ export default function GamesPage() {
       image: game.image
     });
     toast({
-      title: "Success! ✅",
-      description: `${game.name} added to cart`,
+      title: t('success'),
+      description: `${game.name} ${t('added_to_cart')}`,
       duration: 2000,
     });
     setTimeout(() => {
@@ -83,12 +94,12 @@ export default function GamesPage() {
             className="inline-flex items-center text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors mb-4"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Home
+            {t('back_to_home')}
           </Link>
           
           <div className="mb-6">
-            <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">All Games</h1>
-            <p className="text-gray-600 dark:text-gray-300 text-lg">Browse our complete collection of games</p>
+            <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">{t('games')}</h1>
+            <p className="text-gray-600 dark:text-gray-300 text-lg">{t('browse_games_desc')}</p>
           </div>
 
           {/* Search and Filter */}
@@ -96,7 +107,7 @@ export default function GamesPage() {
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
               <Input
-                placeholder="Search games..."
+                placeholder={`${t('search')}...`}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10"
@@ -105,12 +116,12 @@ export default function GamesPage() {
             <Select value={selectedCategory} onValueChange={setSelectedCategory}>
               <SelectTrigger className="w-full sm:w-[200px]">
                 <Filter className="w-4 h-4 mr-2" />
-                <SelectValue placeholder="All Categories" />
+                <SelectValue placeholder={t('all_categories')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Categories</SelectItem>
+                <SelectItem value="all">{t('all_categories')}</SelectItem>
                 {categories.map((category) => (
-                  <SelectItem key={category.id} value={category.id}>
+                  <SelectItem key={category.id} value={category.slug}>
                     {category.name}
                   </SelectItem>
                 ))}
@@ -120,7 +131,7 @@ export default function GamesPage() {
 
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-              {filteredGames.length} games found
+              {filteredGames.length} {t('games_found')}
             </h2>
           </div>
         </div>
@@ -130,6 +141,7 @@ export default function GamesPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
             {filteredGames.map((game) => {
               const isAdding = addingItems.includes(game.id);
+              const isOutOfStock = Number(game.stock) <= 0;
               const packages = Array.isArray(game.packages) ? game.packages : [];
               const packagePrices = Array.isArray(game.packagePrices) ? game.packagePrices : [];
               const packageDiscountPrices = Array.isArray((game as any).packageDiscountPrices) ? (game as any).packageDiscountPrices : [];
@@ -153,7 +165,7 @@ export default function GamesPage() {
                       {game.isPopular && (
                         <div className="absolute top-2 right-2 bg-gradient-to-r from-cyan-400 to-blue-500 text-black px-2 py-1 rounded-full text-xs font-bold flex items-center shadow-lg">
                           <Star className="w-3 h-3 mr-1" />
-                          Popular
+                          {t('popular')}
                         </div>
                       )}
                     </div>
@@ -183,7 +195,7 @@ export default function GamesPage() {
                             );
                           })}
                           {packages.length > 2 && (
-                            <div className="text-xs text-cyan-300/60">+{packages.length - 2} more packages</div>
+                            <div className="text-xs text-cyan-300/60">+{packages.length - 2} {t('more_packages')}</div>
                           )}
                         </div>
                       ) : (
@@ -202,7 +214,9 @@ export default function GamesPage() {
                       )}
                       
                       <div className="flex items-center justify-between">
-                        <span className="text-xs text-cyan-300/70 bg-cyan-400/10 px-2 py-1 rounded">Stock: {game.stock}</span>
+                        <span className={`text-xs px-2 py-1 rounded ${isOutOfStock ? 'text-red-200 bg-red-500/10' : 'text-cyan-300/70 bg-cyan-400/10'}`}>
+                          {isOutOfStock ? t('out_of_stock') : `${t('in_stock_prefix')}: ${game.stock}`}
+                        </span>
                       </div>
                     </div>
 
@@ -214,24 +228,24 @@ export default function GamesPage() {
                           size="sm"
                           className="w-full border-cyan-400/50 text-cyan-400 hover:bg-cyan-400/10 hover:text-cyan-300"
                         >
-                          View
+                          {t('view')}
                         </Button>
                       </Link>
                       <Button
                         onClick={() => handleAddToCart(game)}
-                        disabled={isAdding}
+                        disabled={isAdding || isOutOfStock}
                         size="sm"
                         className="flex-1 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-black font-semibold gap-1"
                       >
                         {isAdding ? (
                           <>
                             <Check className="w-4 h-4" />
-                            Added!
+                            {t('added')}
                           </>
                         ) : (
                           <>
                             <ShoppingCart className="w-4 h-4" />
-                            Add
+                            {t('add')}
                           </>
                         )}
                       </Button>
@@ -245,10 +259,10 @@ export default function GamesPage() {
           <div className="text-center py-12">
             <Search className="w-16 h-16 mx-auto text-gray-400 mb-4" />
             <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-              No Games Found
+              {t('no_games_found')}
             </h3>
             <p className="text-gray-600 dark:text-gray-300 mb-6">
-              Try adjusting your search or filter criteria.
+              {t('try_adjust_search')}
             </p>
             <Button
               onClick={() => {
@@ -257,7 +271,7 @@ export default function GamesPage() {
               }}
               className="bg-blue-600 hover:bg-blue-700"
             >
-              Clear Filters
+              {t('clear_filters')}
             </Button>
           </div>
         )}

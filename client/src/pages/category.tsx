@@ -7,9 +7,16 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useEffect } from "react";
 import type { Game, Category } from "@shared/schema";
+import ImageWithFallback from "@/components/image-with-fallback";
+import { useCart } from "@/lib/cart-context";
+import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "@/lib/translation";
 
 export default function CategoryPage() {
   const { slug } = useParams<{ slug: string }>();
+  const { addToCart } = useCart();
+  const { toast } = useToast();
+  const { t } = useTranslation();
 
   const { data: category } = useQuery<Category[], Error, Category | undefined>({
     queryKey: ["/api/categories"],
@@ -56,14 +63,14 @@ export default function CategoryPage() {
         <div className="container mx-auto px-4 py-8">
           <div className="text-center">
             <Package className="w-16 h-16 mx-auto text-gray-400 mb-4" />
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Category Not Found</h1>
-            <p className="text-gray-600 dark:text-gray-300 mb-6">The category you're looking for doesn't exist.</p>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">{t('category_not_found')}</h1>
+            <p className="text-gray-600 dark:text-gray-300 mb-6">{t('category_not_found_desc')}</p>
             <Link
               href="/"
               className="inline-flex items-center px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Home
+              {t('back_to_home')}
             </Link>
           </div>
         </div>
@@ -81,12 +88,12 @@ export default function CategoryPage() {
             className="inline-flex items-center text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors mb-4"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Home
+            {t('back_to_home')}
           </Link>
           
           <div className={`relative overflow-hidden rounded-3xl bg-gradient-to-br ${category.gradient} p-8 mb-8`}>
             <div className="absolute inset-0 bg-black/20"></div>
-            <img
+            <ImageWithFallback
               src={category.image}
               alt={`${category.name} category`}
               className="absolute inset-0 w-full h-full object-cover opacity-70"
@@ -103,11 +110,11 @@ export default function CategoryPage() {
           <div>
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-                Available Games ({games.length})
+                {t('available_games')} ({games.length})
               </h2>
               <div className="flex items-center text-gray-600 dark:text-gray-300">
                 <Search className="w-4 h-4 mr-2" />
-                <span>{games.length} games found</span>
+                <span>{games.length} {t('games_found')}</span>
               </div>
             </div>
             
@@ -120,10 +127,30 @@ export default function CategoryPage() {
                 const mainPrice = parseFloat(game.price.toString());
                 const discountPrice = hasDiscount ? parseFloat(game.discountPrice.toString()) : null;
                 
+                const isOutOfStock = Number(game.stock) <= 0;
+
+                const handleBuy = () => {
+                  if (isOutOfStock) {
+                    toast({ title: t('out_of_stock'), description: t('item_unavailable'), duration: 2500 });
+                    return;
+                  }
+                  const packagesArr = Array.isArray(game.packages) ? game.packages : [];
+                  const pricesArr = Array.isArray(game.packagePrices) ? game.packagePrices : [];
+                  const pkgName = packagesArr[0];
+                  const pkgPrice = pricesArr[0];
+                  addToCart({
+                    id: pkgName ? `${game.id}-0` : game.id,
+                    name: pkgName ? `${game.name} - ${pkgName}` : game.name,
+                    price: parseFloat((pkgPrice || game.price).toString()),
+                    image: game.image,
+                  });
+                  toast({ title: t('success'), description: `${game.name} ${t('added_to_cart')}`, duration: 2000 });
+                };
+
                 return (
                   <Card key={game.id} className="overflow-hidden hover:shadow-lg hover:scale-105 transition-all duration-300">
                     <div className="aspect-[4/3] relative overflow-hidden">
-                      <img
+                      <ImageWithFallback
                         src={game.image}
                         alt={game.name}
                         className="w-full h-full object-cover hover:scale-110 transition-transform duration-500"
@@ -131,7 +158,7 @@ export default function CategoryPage() {
                       {game.isPopular && (
                         <div className="absolute top-2 right-2 bg-gradient-to-r from-yellow-500 to-orange-500 text-white px-2 py-1 rounded-full text-xs font-bold flex items-center shadow-lg">
                           <Star className="w-3 h-3 mr-1" />
-                          Popular
+                          {t('popular')}
                         </div>
                       )}
                     </div>
@@ -159,7 +186,7 @@ export default function CategoryPage() {
                             );
                           })}
                           {packages.length > 2 && (
-                            <div className="text-xs text-gray-500 dark:text-gray-400">+{packages.length - 2} more</div>
+                            <div className="text-xs text-gray-500 dark:text-gray-400">+{packages.length - 2} {t('more_packages')}</div>
                           )}
                         </div>
                       ) : (
@@ -171,7 +198,7 @@ export default function CategoryPage() {
                             </div>
                           ) : (
                             <span className="text-xl font-bold text-blue-600 dark:text-blue-400">
-                              {game.category === 'mobile-games' ? `Starting from ${game.price} ${game.currency}` : `${game.price} ${game.currency}`}
+                              {game.category === 'mobile-games' ? `${t('starting_from')} ${game.price} ${game.currency}` : `${game.price} ${game.currency}`}
                             </span>
                           )}
                         </div>
@@ -180,12 +207,17 @@ export default function CategoryPage() {
                       <div className="flex gap-2">
                         <Link href={`/game/${game.slug}`} className="flex-1">
                           <Button variant="outline" size="sm" className="w-full">
-                            View
+                            {t('view')}
                           </Button>
                         </Link>
-                        <Button size="sm" className="flex items-center bg-blue-600 hover:bg-blue-700 flex-1">
+                        <Button
+                          size="sm"
+                          onClick={handleBuy}
+                          disabled={isOutOfStock}
+                          className="flex items-center bg-blue-600 hover:bg-blue-700 disabled:bg-gray-500 disabled:hover:bg-gray-500 flex-1"
+                        >
                           <ShoppingCart className="w-4 h-4 mr-1" />
-                          Buy
+                          {isOutOfStock ? t('out_of_stock') : t('buy')}
                         </Button>
                       </div>
                     </CardContent>
@@ -198,17 +230,17 @@ export default function CategoryPage() {
           <div className="text-center py-12">
             <Package className="w-16 h-16 mx-auto text-gray-400 mb-4" />
             <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-              No Games Available
+              {t('no_games_available')}
             </h3>
             <p className="text-gray-600 dark:text-gray-300 mb-6">
-              There are currently no games available in this category.
+              {t('no_games_in_category')}
             </p>
             <Link
               href="/"
               className="inline-flex items-center px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
-              Browse Other Categories
+              {t('browse_other_categories')}
             </Link>
           </div>
         )}

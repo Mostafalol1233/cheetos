@@ -65,6 +65,35 @@ if (CLOUDINARY_ENABLED) {
   });
 }
 
+function normalizeImageUrl(raw) {
+  const v = String(raw || '').trim();
+  if (!v) return v;
+
+  // Keep external URLs
+  if (/^https?:\/\//i.test(v)) {
+    // Fix old broken absolute uploads URLs missing backend port
+    const m = v.match(/\/uploads\/(.+)$/i);
+    if (m) return `/uploads/${m[1]}`;
+    return v;
+  }
+
+  // Already supported paths
+  if (v.startsWith('/uploads/')) return v;
+  if (v.startsWith('/media/')) return v;
+  if (v.startsWith('/attached_assets/')) return v;
+
+  // Old paths
+  if (v.startsWith('/public/')) return v.replace(/^\/public\//, '/media/');
+
+  // If it's a bare filename or /filename, serve from /media
+  const fileName = v.replace(/^\//, '');
+  if (/\.(png|jpe?g|webp|gif|svg)$/i.test(fileName)) {
+    return `/media/${fileName}`;
+  }
+
+  return v;
+}
+
 // PostgreSQL Connection Pool - Imported from db.js
 
 // In-memory QR sessions
@@ -173,16 +202,26 @@ app.use('/assets', express.static(attachedAssetsDir));
 // Get all categories
 app.get('/api/categories', async (req, res) => {
   try {
+    // Prefer database (so seeded images work). Fallback to JSON file only if DB is empty/unavailable.
+    try {
+      const result = await pool.query('SELECT * FROM categories ORDER BY name ASC');
+      if (result?.rows?.length) {
+        return res.json(result.rows.map((c) => ({ ...c, image: normalizeImageUrl(c.image) })));
+      }
+    } catch {}
+
     const categoriesPath = path.join(__dirname, 'data', 'categories.json');
     if (fs.existsSync(categoriesPath)) {
       const data = fs.readFileSync(categoriesPath, 'utf8');
       const categories = JSON.parse(data);
-      return res.json(Array.isArray(categories) ? categories : []);
+      return res.json(
+        Array.isArray(categories)
+          ? categories.map((c) => ({ ...c, image: normalizeImageUrl(c.image) }))
+          : []
+      );
     }
-    
-    // Fallback to database if file doesn't exist
-    const result = await pool.query('SELECT * FROM categories ORDER BY name ASC');
-    res.json(result.rows || []);
+
+    res.json([]);
   } catch (err) {
     console.error('Error fetching categories:', err);
     res.status(500).json({ message: 'Failed to fetch categories', error: err.message });
@@ -192,17 +231,37 @@ app.get('/api/categories', async (req, res) => {
 // Get popular games
 app.get('/api/games/popular', async (req, res) => {
   try {
+    // Prefer database (so images and packages reflect actual DB). Fallback to JSON only if DB unavailable.
+    try {
+      const result = await pool.query(`
+        SELECT id, name, slug, description, price, currency, image, category, 
+               is_popular as "isPopular", stock, packages, package_prices as "packagePrices",
+               discount_price as "discountPrice", package_discount_prices as "packageDiscountPrices"
+        FROM games
+        WHERE is_popular = true
+        LIMIT 10
+      `);
+      if (result?.rows) {
+        const games = result.rows.map(game => ({
+          ...game,
+          image: normalizeImageUrl(game.image),
+          packages: Array.isArray(game.packages) ? game.packages : (game.packages ? JSON.parse(game.packages) : []),
+          packagePrices: Array.isArray(game.packagePrices) ? game.packagePrices : (game.packagePrices ? JSON.parse(game.packagePrices) : []),
+          packageDiscountPrices: Array.isArray(game.packageDiscountPrices) ? game.packageDiscountPrices : (game.packageDiscountPrices ? JSON.parse(game.packageDiscountPrices) : [])
+        }));
+        return res.json(games);
+      }
+    } catch {}
+
     const gamesPath = path.join(__dirname, 'data', 'games.json');
     if (fs.existsSync(gamesPath)) {
       const data = fs.readFileSync(gamesPath, 'utf8');
       const games = JSON.parse(data);
-      const popularGames = games.filter(g => g.isPopular);
-      return res.json(popularGames);
+      const popularGames = Array.isArray(games) ? games.filter(g => g.isPopular) : [];
+      return res.json(popularGames.map((g) => ({ ...g, image: normalizeImageUrl(g.image) })));
     }
 
-    // Fallback to database
-    const result = await pool.query('SELECT * FROM games WHERE "isPopular" = true OR isPopular = true LIMIT 10');
-    res.json(result.rows);
+    res.json([]);
   } catch (err) {
     console.error('Error fetching popular games:', err);
     res.status(500).json({ message: 'Failed to fetch popular games' });
@@ -424,7 +483,7 @@ async function seedProductImages() {
     let imageIndex = 0;
     for (const game of games.rows) {
       const imageName = files[imageIndex % files.length];
-      const imagePath = `/public/${imageName}`;
+      const imagePath = `/media/${imageName}`;
       
       await pool.query(
         'UPDATE games SET image = $1 WHERE id = $2',
@@ -617,6 +676,7 @@ app.get('/api/games', async (req, res) => {
     // Ensure packages and prices are arrays
     const games = result.rows.map(game => ({
       ...game,
+      image: normalizeImageUrl(game.image),
       packages: Array.isArray(game.packages) ? game.packages : (game.packages ? JSON.parse(game.packages) : []),
       packagePrices: Array.isArray(game.packagePrices) ? game.packagePrices : (game.packagePrices ? JSON.parse(game.packagePrices) : []),
       packageDiscountPrices: Array.isArray(game.packageDiscountPrices) ? game.packageDiscountPrices : (game.packageDiscountPrices ? JSON.parse(game.packageDiscountPrices) : [])
@@ -642,6 +702,7 @@ app.get('/api/games/popular', async (req, res) => {
     // Ensure packages and prices are arrays
     const games = result.rows.map(game => ({
       ...game,
+      image: normalizeImageUrl(game.image),
       packages: Array.isArray(game.packages) ? game.packages : (game.packages ? JSON.parse(game.packages) : []),
       packagePrices: Array.isArray(game.packagePrices) ? game.packagePrices : (game.packagePrices ? JSON.parse(game.packagePrices) : []),
       packageDiscountPrices: Array.isArray(game.packageDiscountPrices) ? game.packageDiscountPrices : (game.packageDiscountPrices ? JSON.parse(game.packageDiscountPrices) : [])
@@ -669,6 +730,7 @@ app.get('/api/games/category/:category', async (req, res) => {
     // Ensure packages are arrays for all games
     const games = result.rows.map(game => ({
       ...game,
+      image: normalizeImageUrl(game.image),
       packages: Array.isArray(game.packages) ? game.packages : (game.packages ? JSON.parse(game.packages) : []),
       packagePrices: Array.isArray(game.packagePrices) ? game.packagePrices : (game.packagePrices ? JSON.parse(game.packagePrices) : []),
       packageDiscountPrices: Array.isArray(game.packageDiscountPrices) ? game.packageDiscountPrices : (game.packageDiscountPrices ? JSON.parse(game.packageDiscountPrices) : [])
@@ -696,6 +758,7 @@ app.get('/api/games/id/:id', async (req, res) => {
       return res.status(404).json({ message: 'Game not found' });
     }
     const game = result.rows[0];
+    game.image = normalizeImageUrl(game.image);
     game.packages = Array.isArray(game.packages) ? game.packages : (game.packages ? JSON.parse(game.packages) : []);
     game.packagePrices = Array.isArray(game.packagePrices) ? game.packagePrices : (game.packagePrices ? JSON.parse(game.packagePrices) : []);
     game.packageDiscountPrices = Array.isArray(game.packageDiscountPrices) ? game.packageDiscountPrices : (game.packageDiscountPrices ? JSON.parse(game.packageDiscountPrices) : []);
@@ -728,6 +791,7 @@ app.get('/api/games/slug/:slug', async (req, res) => {
 
     const game = result.rows[0];
     // Ensure packages are arrays
+    game.image = normalizeImageUrl(game.image);
     game.packages = Array.isArray(game.packages) ? game.packages : (game.packages ? JSON.parse(game.packages) : []);
     game.packagePrices = Array.isArray(game.packagePrices) ? game.packagePrices : (game.packagePrices ? JSON.parse(game.packagePrices) : []);
     game.packageDiscountPrices = Array.isArray(game.packageDiscountPrices) ? game.packageDiscountPrices : (game.packageDiscountPrices ? JSON.parse(game.packageDiscountPrices) : []);
@@ -766,6 +830,7 @@ app.get('/api/games/:slug', async (req, res) => {
     
     const game = result.rows[0];
     // Ensure packages are arrays
+    game.image = normalizeImageUrl(game.image);
     game.packages = Array.isArray(game.packages) ? game.packages : (game.packages ? JSON.parse(game.packages) : []);
     game.packagePrices = Array.isArray(game.packagePrices) ? game.packagePrices : (game.packagePrices ? JSON.parse(game.packagePrices) : []);
     game.packageDiscountPrices = Array.isArray(game.packageDiscountPrices) ? game.packageDiscountPrices : (game.packageDiscountPrices ? JSON.parse(game.packageDiscountPrices) : []);
@@ -908,7 +973,7 @@ app.delete('/api/admin/games/:id', authenticateToken, async (req, res) => {
 app.get('/api/categories', async (req, res) => {
   try {
     const result = await pool.query('SELECT * FROM categories ORDER BY id DESC');
-    res.json(result.rows || []);
+    res.json((result.rows || []).map((c) => ({ ...c, image: normalizeImageUrl(c.image) })));
   } catch (err) {
     console.error('Error fetching categories:', err);
     res.status(500).json({ message: err.message, error: 'Failed to fetch categories' });

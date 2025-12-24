@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { X } from "lucide-react";
 import { SiWhatsapp } from "react-icons/si";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "@/lib/translation";
 
 interface CheckoutModalProps {
   isOpen: boolean;
@@ -28,6 +29,7 @@ export function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
   const [confirmMethod, setConfirmMethod] = useState<'whatsapp' | 'live'>('whatsapp');
   const [paymentMessage, setPaymentMessage] = useState("");
   const { toast } = useToast();
+  const { t } = useTranslation();
 
   const SELLER_WHATSAPP = import.meta.env.VITE_SELLER_WHATSAPP || "+201234567890";
 
@@ -35,20 +37,20 @@ export function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
     e.preventDefault();
     
     if (!customerName.trim() || !customerPhone.trim()) {
-      alert("Please fill in all required fields");
+      alert(t('please_fill_required'));
       return;
     }
 
     // Validate phone number format
     const fullPhone = `${countryCode}${customerPhone}`;
     if (!/^\+\d{1,3}\d{7,15}$/.test(fullPhone.replace(/\s/g, ''))) {
-      alert("Please enter a valid phone number");
+      alert(t('invalid_phone'));
       return;
     }
 
     // Generate WhatsApp message
     const orderSummary = cart
-      .map(item => `- ${item.name} x${item.quantity} — ${item.price * item.quantity} جنيه`)
+      .map(item => `- ${item.name} x${item.quantity} — ${item.price * item.quantity} ${t('egp')}`)
       .join('\n');
 
     const message = `مرحبًا 👋
@@ -57,7 +59,7 @@ export function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
 🛒 *ملخص الطلب:*
 ${orderSummary}
 
-💰 *الإجمالي:* ${getTotalPrice()} جنيه
+💰 *الإجمالي:* ${getTotalPrice()} ${t('egp')}
 💳 *طريقة الدفع:* ${paymentMethod}
 👤 *الاسم:* ${customerName}
 📱 *رقم الهاتف:* ${countryCode}${customerPhone}
@@ -81,8 +83,8 @@ ${orderSummary}
         setLocation(`/checkout/security/${transactionId}`);
       }
       toast({
-        title: "Purchase Confirmed",
-        description: `Transaction ${transactionId} for ${items.length} item(s) has been initiated. Total: ${getTotalPrice()} EGP`,
+        title: t('purchase_confirmed'),
+        description: `${t('transaction_initiated')}: ${transactionId}. ${t('total')}: ${getTotalPrice()} ${t('egp')}`,
         duration: 4000,
       });
     } catch (err) {
@@ -108,61 +110,61 @@ ${orderSummary}
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <SiWhatsapp className="text-green-500" />
-            Complete Your Order
+            {t('complete_order')}
           </DialogTitle>
           <DialogDescription>
-            Provide your contact details and payment method to create the order.
+            {t('checkout_desc')}
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Order Summary */}
           <div className="bg-muted/50 rounded-lg p-4">
-            <h4 className="font-medium mb-2">Order Summary:</h4>
+            <h4 className="font-medium mb-2">{t('order_summary')}:</h4>
             {cart.map(item => (
               <div key={item.id} className="flex justify-between text-sm">
                 <span>{item.name} x{item.quantity}</span>
-                <span>{(item.price * item.quantity).toFixed(2)} EGP</span>
+                <span>{(item.price * item.quantity).toFixed(2)} {t('egp')}</span>
               </div>
             ))}
             <div className="border-t mt-2 pt-2 font-bold">
-              Total: {getTotalPrice()} EGP
+              {t('total')}: {getTotalPrice()} {t('egp')}
             </div>
           </div>
 
           {/* Confirmation Method */}
           <div>
-            <Label>Confirmation Method *</Label>
+            <Label>{t('confirmation_method')} *</Label>
             <RadioGroup value={confirmMethod} onValueChange={(val) => setConfirmMethod(val as 'whatsapp' | 'live')} className="mt-2">
               <div className="flex items-center gap-2">
                 <RadioGroupItem id="method-whatsapp" value="whatsapp" />
-                <Label htmlFor="method-whatsapp">WhatsApp</Label>
+                <Label htmlFor="method-whatsapp">{t('whatsapp')}</Label>
               </div>
               <div className="flex items-center gap-2 mt-2">
                 <RadioGroupItem id="method-live" value="live" />
-                <Label htmlFor="method-live">Live Message (Secure)</Label>
+                <Label htmlFor="method-live">{t('live_message_secure')}</Label>
               </div>
             </RadioGroup>
             {confirmMethod === 'live' && (
-              <p className="text-xs text-muted-foreground mt-2">You will be redirected to a security page to submit your payment message and receipt.</p>
+              <p className="text-xs text-muted-foreground mt-2">{t('live_redirect_hint')}</p>
             )}
           </div>
 
           {/* Customer Information */}
           <div>
-            <Label htmlFor="name">Full Name *</Label>
+            <Label htmlFor="name">{t('full_name')} *</Label>
             <Input
               id="name"
               value={customerName}
               onChange={(e) => setCustomerName(e.target.value)}
-              placeholder="Enter your full name"
+              placeholder={t('enter_full_name')}
               required
             />
           </div>
 
           <div className="flex gap-2">
             <div className="w-24">
-              <Label>Country</Label>
+              <Label>{t('country')}</Label>
               <Select value={countryCode} onValueChange={setCountryCode}>
                 <SelectTrigger>
                   <SelectValue />
@@ -175,7 +177,7 @@ ${orderSummary}
               </Select>
             </div>
             <div className="flex-1">
-              <Label htmlFor="phone">Phone Number *</Label>
+              <Label htmlFor="phone">{t('phone_number')} *</Label>
               <Input
                 id="phone"
                 value={customerPhone}
@@ -187,7 +189,7 @@ ${orderSummary}
           </div>
 
           <div>
-            <Label>Payment Method</Label>
+            <Label>{t('payment_method')}</Label>
             <Select value={paymentMethod} onValueChange={setPaymentMethod}>
               <SelectTrigger>
                 <SelectValue />
@@ -205,43 +207,43 @@ ${orderSummary}
             <div className="mt-3 text-sm bg-muted/30 rounded-lg p-3">
               {paymentMethod === 'Orange Cash' && (
                 <div>
-                  <p className="font-medium">Transfer number:</p>
+                  <p className="font-medium">{t('transfer_number')}:</p>
                   <p className="text-foreground">01001387284</p>
                 </div>
               )}
               {paymentMethod === 'Vodafone Cash' && (
                 <div>
-                  <p className="font-medium">Transfer number:</p>
+                  <p className="font-medium">{t('transfer_number')}:</p>
                   <p className="text-foreground">01001387284</p>
                 </div>
               )}
               {paymentMethod === 'Etisalat Cash' && (
                 <div>
-                  <p className="font-medium">Transfer number:</p>
+                  <p className="font-medium">{t('transfer_number')}:</p>
                   <p className="text-foreground">01001387284</p>
                 </div>
               )}
               {paymentMethod === 'WE Pay' && (
                 <div>
-                  <p className="font-medium">Transfer numbers:</p>
+                  <p className="font-medium">{t('transfer_numbers')}:</p>
                   <p className="text-foreground">01001387284 or 01029070780</p>
                 </div>
               )}
               {paymentMethod === 'InstaPay' && (
                 <div>
-                  <p className="font-medium">Account:</p>
+                  <p className="font-medium">{t('account')}:</p>
                   <p className="text-foreground">DiaaEldeenn</p>
                 </div>
               )}
               {paymentMethod === 'PayPal' && (
                 <div>
-                  <p className="font-medium">PayPal Account:</p>
+                  <p className="font-medium">{t('paypal_account')}:</p>
                   <p className="text-foreground">support@diaaeldeen.com</p>
                 </div>
               )}
               {paymentMethod === 'Bank Transfer' && (
                 <div>
-                  <p className="font-medium">Bank:</p>
+                  <p className="font-medium">{t('bank')}:</p>
                   <p className="text-foreground">CIB Bank - Account Number: 0123456789</p>
                 </div>
               )}
@@ -255,10 +257,10 @@ ${orderSummary}
             {confirmMethod === 'whatsapp' ? (
               <>
                 <SiWhatsapp className="mr-2" />
-                Send Order via WhatsApp
+                {t('send_order_whatsapp')}
               </>
             ) : (
-              <>Proceed to Secure Confirmation</>
+              <>{t('proceed_secure_confirmation')}</>
             )}
           </Button>
         </form>

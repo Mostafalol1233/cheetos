@@ -3,6 +3,9 @@ import { Game } from '@shared/schema';
 import { Play, Star, ShoppingCart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useCart } from '@/lib/cart-context';
+import ImageWithFallback from '@/components/image-with-fallback';
+import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "@/lib/translation";
 
 interface InteractiveGamePreviewProps {
   game: Game;
@@ -13,6 +16,9 @@ export function InteractiveGamePreview({ game, onGameSelect }: InteractiveGamePr
   const [isHovered, setIsHovered] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const { addToCart } = useCart();
+  const { toast } = useToast();
+  const { t } = useTranslation();
+  const isOutOfStock = Number(game.stock) <= 0;
 
   const handlePlayPreview = () => {
     setIsPlaying(true);
@@ -21,12 +27,20 @@ export function InteractiveGamePreview({ game, onGameSelect }: InteractiveGamePr
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.stopPropagation();
+
+    if (isOutOfStock) {
+      toast({ title: t('out_of_stock'), description: t('item_unavailable'), duration: 2500 });
+      return;
+    }
+
     addToCart({
       id: game.id,
       name: game.name,
       price: parseFloat(game.price.toString()),
       image: game.image
     });
+
+    toast({ title: t('success'), description: `${game.name} ${t('added_to_cart')}`, duration: 2000 });
   };
 
   return (
@@ -48,7 +62,7 @@ export function InteractiveGamePreview({ game, onGameSelect }: InteractiveGamePr
       <div className="relative bg-card rounded-2xl overflow-hidden shadow-lg">
         {/* Game Image with Overlay */}
         <div className="relative aspect-video overflow-hidden">
-          <img
+          <ImageWithFallback
             src={game.image}
             alt={game.name}
             className={`w-full h-full object-cover transition-transform duration-700 ${
@@ -87,14 +101,15 @@ export function InteractiveGamePreview({ game, onGameSelect }: InteractiveGamePr
               <Button
                 size="sm"
                 onClick={handleAddToCart}
-                className="bg-neon-pink/90 hover:bg-neon-pink text-white rounded-full p-2"
+                disabled={isOutOfStock}
+                className="bg-neon-pink/90 hover:bg-neon-pink disabled:bg-gray-500 disabled:hover:bg-gray-500 text-white rounded-full p-2"
               >
                 <ShoppingCart className="w-4 h-4" />
               </Button>
               {game.isPopular && (
                 <div className="bg-gold-primary text-black rounded-full px-3 py-1 text-xs font-bold flex items-center gap-1">
                   <Star className="w-3 h-3" />
-                  HOT
+                  {t('hot')}
                 </div>
               )}
             </div>
@@ -105,7 +120,7 @@ export function InteractiveGamePreview({ game, onGameSelect }: InteractiveGamePr
             <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
               <div className="text-white text-center">
                 <div className="animate-spin w-8 h-8 border-4 border-gold-primary border-t-transparent rounded-full mx-auto mb-2"></div>
-                <p className="text-sm">Loading Preview...</p>
+                <p className="text-sm">{t('loading_preview')}</p>
               </div>
             </div>
           )}
@@ -115,7 +130,7 @@ export function InteractiveGamePreview({ game, onGameSelect }: InteractiveGamePr
         <div className="p-4">
           <div className="flex items-center justify-between mb-2">
             <h3 className="font-bold text-lg text-gold-primary truncate">{game.name}</h3>
-            <span className="text-neon-pink font-bold">{game.price} L.E</span>
+            <span className="text-neon-pink font-bold">{game.price} {(game as any).currency || t('egp')}</span>
           </div>
           
           <p className="text-muted-foreground text-sm mb-3 line-clamp-2">
@@ -128,7 +143,7 @@ export function InteractiveGamePreview({ game, onGameSelect }: InteractiveGamePr
           }`}>
             <div className="flex items-center gap-1">
               <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-              <span>Stock: {game.stock}</span>
+              <span>{t('stock_label')}: {game.stock}</span>
             </div>
             <div className="flex items-center gap-1">
               <Star className="w-3 h-3 text-yellow-500" />
@@ -136,7 +151,7 @@ export function InteractiveGamePreview({ game, onGameSelect }: InteractiveGamePr
             </div>
             <div className="flex items-center gap-1">
               <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-              <span>Fast Delivery</span>
+              <span>{t('fast_delivery')}</span>
             </div>
           </div>
         </div>
