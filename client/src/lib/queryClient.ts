@@ -1,7 +1,13 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
 
 // API Configuration
-export const API_BASE_URL = import.meta.env.VITE_API_URL || (typeof window !== "undefined" ? window.location.origin : "");
+const ENV_API_URL = import.meta.env.VITE_API_URL as string | undefined;
+export const API_BASE_URL = (() => {
+  if (typeof window === "undefined") return ENV_API_URL || "";
+  if (!ENV_API_URL) return window.location.origin;
+  if (window.location.protocol === "https:" && ENV_API_URL.startsWith("http://")) return window.location.origin;
+  return ENV_API_URL;
+})();
 
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
@@ -53,8 +59,24 @@ export const getQueryFn: <T>(options: {
       return data;
     }
     
-    // If expecting an array but got an object, return empty array
-    if (path.includes('/api/games') || path.includes('/api/categories')) {
+    const expectsArray =
+      path === '/api/games' ||
+      path === '/api/categories' ||
+      path === '/api/games/popular' ||
+      path.startsWith('/api/games/category/');
+
+    // If expecting an array but got an object, try to unwrap common API shapes
+    if (expectsArray) {
+      const maybeArray =
+        (data && typeof data === 'object' && Array.isArray((data as any).items) && (data as any).items) ||
+        (data && typeof data === 'object' && Array.isArray((data as any).games) && (data as any).games) ||
+        (data && typeof data === 'object' && Array.isArray((data as any).categories) && (data as any).categories) ||
+        (data && typeof data === 'object' && Array.isArray((data as any).data) && (data as any).data);
+
+      if (maybeArray) {
+        return maybeArray;
+      }
+
       console.warn(`Expected array but got:`, typeof data, data);
       return [];
     }

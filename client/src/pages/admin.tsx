@@ -8,7 +8,7 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Trash2, Edit, Plus, MessageSquare, Bell, Check, AlertCircle, Info, Search, Package, Shield, ShoppingCart } from 'lucide-react';
 import { queryClient } from '@/lib/queryClient';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Label } from '@/components/ui/label';
 
 interface Game {
@@ -741,6 +741,9 @@ export default function AdminDashboard() {
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
             <DialogTitle>Edit Game</DialogTitle>
+            <DialogDescription>
+              Update game info and image. You can paste a URL or upload an image.
+            </DialogDescription>
           </DialogHeader>
           {editingGame && (
             <div className="grid gap-4 py-4">
@@ -913,7 +916,7 @@ function SellerAlertsPanel() {
         alerts.map((a) => (
           <div key={a.id} className="flex items-center justify-between border rounded-lg p-3 text-sm">
             <div>
-              <p className="font-medium">{a.type.replace('_', ' ')}</p>
+              <p className="font-medium">{(a.type ? String(a.type) : '').replace('_', ' ') || 'alert'}</p>
               <p className="text-muted-foreground">{a.summary}</p>
               <p className="text-xs">{new Date(a.created_at).toLocaleString()}</p>
             </div>

@@ -10,6 +10,14 @@
       "destination": "http://51.75.118.165:20291/api/$1"
     },
     {
+      "source": "/uploads/(.*)",
+      "destination": "http://51.75.118.165:20291/uploads/$1"
+    },
+    {
+      "source": "/media/(.*)",
+      "destination": "http://51.75.118.165:20291/media/$1"
+    },
+    {
       "source": "/((?!api).*)",
       "destination": "/index.html"
     }

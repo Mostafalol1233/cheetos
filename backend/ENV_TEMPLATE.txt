@@ -1,0 +1,44 @@
+# Copy this file to .env and fill in your values
+
+# Database Configuration
+DATABASE_URL=postgresql://user:password@host:port/database
+# OR use individual settings:
+PGHOST=your-db-host
+PGPORT=5432
+PGUSER=your-db-user
+PGPASSWORD=your-db-password
+PGDATABASE=your-db-name
+PGHOST_IP=optional-ip-override
+
+# Server Configuration
+PORT=20291
+NODE_ENV=production
+
+# JWT Configuration
+JWT_SECRET=your_jwt_secret_key_change_this_in_production
+ADMIN_EMAIL=admin@diaaeldeen.com
+ADMIN_PASSWORD=your_admin_password
+
+# Frontend URL
+FRONTEND_URL=https://diaasadek.com
+
+# WhatsApp Configuration (Optional)
+WHATSAPP_TOKEN=your_whatsapp_token
+WHATSAPP_PHONE_NUMBER_ID=your_phone_number_id
+WHATSAPP_VERIFY_TOKEN=your_verify_token
+ADMIN_PHONE=+201234567890
+
+# CDN Configuration (Optional)
+CDN_BASE_URL=https://your-cdn-url.com
+
+# Payment Encryption (Optional - must be 32 characters)
+PAYMENT_ENCRYPTION_KEY=your_32_character_encryption_key_here
+
+# Maintenance Scripts (Optional)
+DISABLE_MAINTENANCE_SCRIPTS=false
+
+# Log Directory (Optional)
+LOG_DIR=./logs
+
+
+

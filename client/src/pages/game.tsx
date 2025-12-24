@@ -49,6 +49,7 @@ export default function GamePage() {
 
   const packages = game.packages || [];
   const packagePrices = game.packagePrices || [];
+  const categoryLabel = (game.category ? String(game.category) : "").replace('-', ' ').toUpperCase();
 
   const handleAddToCart = () => {
     const packageName = packages[selectedPackage] || "Default Package";
@@ -104,7 +105,7 @@ export default function GamePage() {
               ✓ {game.stock} In Stock
             </span>
             <span className="text-sm text-blue-600 dark:text-blue-400 font-medium bg-blue-100 dark:bg-blue-900 px-3 py-1 rounded-full">
-              {game.category.replace('-', ' ').toUpperCase()}
+              {categoryLabel || "UNKNOWN"}
             </span>
           </div>
 

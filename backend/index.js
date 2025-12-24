@@ -11,6 +11,7 @@ import { execSync } from 'child_process';
 import pkg from 'pg';
 import * as https from 'https';
 import dns from 'dns';
+import { v2 as cloudinary } from 'cloudinary';
 import { storage as memStorage } from './storage.js';
 import { startWhatsApp, getQRCode, getConnectionStatus, sendWhatsAppMessage } from './whatsapp.js';
 import requestLogger from './middleware/logger.js';
@@ -48,6 +49,21 @@ const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret_key_change_this_in
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@diaaldeen.com';
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
 const CDN_BASE_URL = process.env.CDN_BASE_URL || '';
+const CLOUDINARY_CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME || '';
+const CLOUDINARY_API_KEY = process.env.CLOUDINARY_API_KEY || '';
+const CLOUDINARY_API_SECRET = process.env.CLOUDINARY_API_SECRET || '';
+
+const CLOUDINARY_ENABLED = Boolean(
+  CLOUDINARY_CLOUD_NAME && CLOUDINARY_API_KEY && CLOUDINARY_API_SECRET
+);
+
+if (CLOUDINARY_ENABLED) {
+  cloudinary.config({
+    cloud_name: CLOUDINARY_CLOUD_NAME,
+    api_key: CLOUDINARY_API_KEY,
+    api_secret: CLOUDINARY_API_SECRET,
+  });
+}
 
 // PostgreSQL Connection Pool - Imported from db.js
 
@@ -129,9 +145,23 @@ app.use('/uploads', express.static(uploadDir));
 // Serve public assets (images, etc)
 app.use('/public', express.static(publicDir));
 app.use(express.static(publicDir));
+// Stable media path for proxying via frontend (Vercel) without colliding with frontend static assets
+app.use('/media', express.static(publicDir));
+// Serve attached_assets from multiple possible locations
 const attachedAssetsDir = path.join(__dirname, 'public', 'attached_assets');
+const rootAttachedAssetsDir = path.join(__dirname, '..', 'attached_assets');
+
+// Create directories if they don't exist
 if (!fs.existsSync(attachedAssetsDir)) {
   try { fs.mkdirSync(attachedAssetsDir, { recursive: true }); } catch {}
+}
+if (!fs.existsSync(rootAttachedAssetsDir)) {
+  try { fs.mkdirSync(rootAttachedAssetsDir, { recursive: true }); } catch {}
+}
+
+// Serve attached_assets - try root folder first, then backend/public
+if (fs.existsSync(rootAttachedAssetsDir)) {
+  app.use('/attached_assets', express.static(rootAttachedAssetsDir));
 }
 app.use('/attached_assets', express.static(attachedAssetsDir));
 app.use('/assets', express.static(attachedAssetsDir));
@@ -177,11 +207,6 @@ app.get('/api/games/popular', async (req, res) => {
     console.error('Error fetching popular games:', err);
     res.status(500).json({ message: 'Failed to fetch popular games' });
   }
-});
-
-// 404 handler for API routes (must be before errorHandler)
-app.use('/api/*', (req, res) => {
-  res.status(404).json({ message: 'API endpoint not found', path: req.path });
 });
 
 // Global Error Handler
@@ -399,7 +424,7 @@ async function seedProductImages() {
     let imageIndex = 0;
     for (const game of games.rows) {
       const imageName = files[imageIndex % files.length];
-      const imagePath = `/${imageName}`;
+      const imagePath = `/public/${imageName}`;
       
       await pool.query(
         'UPDATE games SET image = $1 WHERE id = $2',
@@ -603,7 +628,7 @@ app.get('/api/games', async (req, res) => {
   }
 });
 
-// Get popular games
+// Get popular games (must come before /api/games/:slug)
 app.get('/api/games/popular', async (req, res) => {
   try {
     const result = await pool.query(`
@@ -628,7 +653,7 @@ app.get('/api/games/popular', async (req, res) => {
   }
 });
 
-// Get games by category
+// Get games by category (must come before /api/games/:slug)
 app.get('/api/games/category/:category', async (req, res) => {
   try {
     const { category } = req.params;
@@ -637,71 +662,121 @@ app.get('/api/games/category/:category', async (req, res) => {
              is_popular as "isPopular", stock, packages, package_prices as "packagePrices",
              discount_price as "discountPrice", package_discount_prices as "packageDiscountPrices"
       FROM games 
-      WHERE category = $1 OR category_id = $1
+      WHERE category = $1 OR category_id = $1 OR slug = $1
       ORDER BY id DESC
     `, [category]);
-    res.json(result.rows);
+    
+    // Ensure packages are arrays for all games
+    const games = result.rows.map(game => ({
+      ...game,
+      packages: Array.isArray(game.packages) ? game.packages : (game.packages ? JSON.parse(game.packages) : []),
+      packagePrices: Array.isArray(game.packagePrices) ? game.packagePrices : (game.packagePrices ? JSON.parse(game.packagePrices) : []),
+      packageDiscountPrices: Array.isArray(game.packageDiscountPrices) ? game.packageDiscountPrices : (game.packageDiscountPrices ? JSON.parse(game.packageDiscountPrices) : [])
+    }));
+    
+    res.json(games);
   } catch (err) {
     console.error('Error fetching games by category:', err);
     res.status(500).json({ message: err.message });
   }
 });
 
-// Get game by slug
+// Get game by ID (must come before /api/games/:slug)
+app.get('/api/games/id/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await pool.query(`
+      SELECT id, name, slug, description, price, currency, image, category, 
+             is_popular as "isPopular", stock, packages, package_prices as "packagePrices",
+             discount_price as "discountPrice", package_discount_prices as "packageDiscountPrices"
+      FROM games 
+      WHERE id = $1
+    `, [id]);
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: 'Game not found' });
+    }
+    const game = result.rows[0];
+    game.packages = Array.isArray(game.packages) ? game.packages : (game.packages ? JSON.parse(game.packages) : []);
+    game.packagePrices = Array.isArray(game.packagePrices) ? game.packagePrices : (game.packagePrices ? JSON.parse(game.packagePrices) : []);
+    game.packageDiscountPrices = Array.isArray(game.packageDiscountPrices) ? game.packageDiscountPrices : (game.packageDiscountPrices ? JSON.parse(game.packageDiscountPrices) : []);
+    res.json(game);
+  } catch (err) {
+    console.error('Error fetching game by ID:', err);
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// Get game by slug (must come after /api/games/category/:category)
 app.get('/api/games/slug/:slug', async (req, res) => {
   try {
     const { slug } = req.params;
+    const normalizedSlug = String(slug || '').trim();
+    const compactSlug = normalizedSlug.replace(/-/g, '').toLowerCase();
     const result = await pool.query(`
       SELECT id, name, slug, description, price, currency, image, category, 
              is_popular as "isPopular", stock, packages, package_prices as "packagePrices",
              discount_price as "discountPrice", package_discount_prices as "packageDiscountPrices"
       FROM games 
       WHERE slug = $1
-    `, [slug]);
+         OR LOWER(REPLACE(slug, '-', '')) = $2
+      LIMIT 1
+    `, [normalizedSlug, compactSlug]);
     
     if (result.rows.length === 0) {
       return res.status(404).json({ message: 'Game not found' });
     }
 
-    res.json(result.rows[0]);
+    const game = result.rows[0];
+    // Ensure packages are arrays
+    game.packages = Array.isArray(game.packages) ? game.packages : (game.packages ? JSON.parse(game.packages) : []);
+    game.packagePrices = Array.isArray(game.packagePrices) ? game.packagePrices : (game.packagePrices ? JSON.parse(game.packagePrices) : []);
+    game.packageDiscountPrices = Array.isArray(game.packageDiscountPrices) ? game.packageDiscountPrices : (game.packageDiscountPrices ? JSON.parse(game.packageDiscountPrices) : []);
+    
+    res.json(game);
   } catch (err) {
     console.error('Error fetching game by slug:', err);
     res.status(500).json({ message: err.message });
   }
 });
 
+// Get game by slug (generic route - must come after specific routes)
 app.get('/api/games/:slug', async (req, res) => {
   try {
     const { slug } = req.params;
+    // Skip if it's a reserved route
+    if (slug === 'popular' || slug === 'category' || slug === 'slug' || slug === 'id') {
+      return res.status(404).json({ message: 'Invalid route' });
+    }
+
+    const normalizedSlug = String(slug || '').trim();
+    const compactSlug = normalizedSlug.replace(/-/g, '').toLowerCase();
+    
     const result = await pool.query(`
       SELECT id, name, slug, description, price, currency, image, category, 
              is_popular as "isPopular", stock, packages, package_prices as "packagePrices",
              discount_price as "discountPrice", package_discount_prices as "packageDiscountPrices"
       FROM games 
       WHERE slug = $1
-    `, [slug]);
+         OR LOWER(REPLACE(slug, '-', '')) = $2
+      LIMIT 1
+    `, [normalizedSlug, compactSlug]);
     if (result.rows.length === 0) {
       return res.status(404).json({ message: 'Game not found' });
     }
-    res.json(result.rows[0]);
+    
+    const game = result.rows[0];
+    // Ensure packages are arrays
+    game.packages = Array.isArray(game.packages) ? game.packages : (game.packages ? JSON.parse(game.packages) : []);
+    game.packagePrices = Array.isArray(game.packagePrices) ? game.packagePrices : (game.packagePrices ? JSON.parse(game.packagePrices) : []);
+    game.packageDiscountPrices = Array.isArray(game.packageDiscountPrices) ? game.packageDiscountPrices : (game.packageDiscountPrices ? JSON.parse(game.packageDiscountPrices) : []);
+    
+    res.json(game);
   } catch (err) {
     console.error('Error fetching game:', err);
     res.status(500).json({ message: err.message });
   }
 });
 
-app.get('/api/games/id/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const result = await pool.query('SELECT * FROM games WHERE id = $1', [id]);
-    if (result.rows.length === 0) {
-      return res.status(404).json({ message: 'Game not found' });
-    }
-    res.json(result.rows[0]);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-});
 
 // Create game (Admin)
 app.post('/api/admin/games', authenticateToken, imageUpload.single('image'), async (req, res) => {
@@ -738,6 +813,15 @@ app.post('/api/admin/games', authenticateToken, imageUpload.single('image'), asy
 app.put('/api/admin/games/:id', authenticateToken, imageUpload.single('image'), async (req, res) => {
   try {
     const { id } = req.params;
+    const idOrSlug = String(id || '').trim();
+    let lookup = await pool.query('SELECT id FROM games WHERE id = $1', [idOrSlug]);
+    if (lookup.rows.length === 0) {
+      lookup = await pool.query('SELECT id FROM games WHERE slug = $1', [idOrSlug]);
+    }
+    if (lookup.rows.length === 0) {
+      return res.status(404).json({ message: 'Game not found' });
+    }
+    const gameId = lookup.rows[0].id;
     const { name, slug, description, price, currency, category, isPopular, stock, discountPrice, packages, packagePrices, packageDiscountPrices } = req.body;
     const image = req.file ? `/uploads/${req.file.filename}` : req.body.image;
     
@@ -766,7 +850,7 @@ app.put('/api/admin/games/:id', authenticateToken, imageUpload.single('image'), 
     if (packageDiscountPricesJson !== undefined) { updates.push(`package_discount_prices = $${paramIndex++}`); values.push(packageDiscountPricesJson); }
     
     updates.push(`updated_at = CURRENT_TIMESTAMP`);
-    values.push(id);
+    values.push(gameId);
 
     const query = `
       UPDATE games 
@@ -794,8 +878,17 @@ app.put('/api/admin/games/:id', authenticateToken, imageUpload.single('image'), 
 app.delete('/api/admin/games/:id', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
+    const idOrSlug = String(id || '').trim();
+    let lookup = await pool.query('SELECT id FROM games WHERE id = $1', [idOrSlug]);
+    if (lookup.rows.length === 0) {
+      lookup = await pool.query('SELECT id FROM games WHERE slug = $1', [idOrSlug]);
+    }
+    if (lookup.rows.length === 0) {
+      return res.status(404).json({ message: 'Game not found' });
+    }
+    const gameId = lookup.rows[0].id;
     
-    const result = await pool.query('DELETE FROM games WHERE id = $1 RETURNING *', [id]);
+    const result = await pool.query('DELETE FROM games WHERE id = $1 RETURNING *', [gameId]);
 
     if (result.rows.length === 0) {
       return res.status(404).json({ message: 'Game not found' });
@@ -1050,17 +1143,57 @@ app.post('/api/admin/upload', authenticateToken, upload.single('file'), (req, re
       return res.status(400).json({ message: 'No file uploaded' });
     }
 
-    let fileUrl = null;
-    try {
-      if (CDN_BASE_URL) {
-        fileUrl = new URL(`/uploads/${req.file.filename}`, CDN_BASE_URL).toString();
-      } else {
+    const relativeUrl = `/uploads/${req.file.filename}`;
+
+    const fileExt = path.extname(req.file.originalname || '').toLowerCase();
+    const isImage = ['.jpg', '.jpeg', '.png', '.webp', '.gif'].includes(fileExt);
+
+    const buildAbsoluteUrl = () => {
+      try {
+        if (CDN_BASE_URL) {
+          return new URL(relativeUrl, CDN_BASE_URL).toString();
+        }
         const host = req.get('host');
         const proto = (req.headers['x-forwarded-proto'] || req.protocol || 'http');
-        fileUrl = `${proto}://${host}/uploads/${req.file.filename}`;
+        return `${proto}://${host}${relativeUrl}`;
+      } catch {
+        return null;
       }
-    } catch {
-      fileUrl = `/uploads/${req.file.filename}`;
+    };
+
+    const absoluteUrl = buildAbsoluteUrl();
+
+    // Optional: Cloudinary upload (recommended for production previews)
+    if (CLOUDINARY_ENABLED && isImage) {
+      cloudinary.uploader
+        .upload(req.file.path, {
+          folder: process.env.CLOUDINARY_FOLDER || 'gamecart',
+          resource_type: 'image',
+        })
+        .then((result) => {
+          res.json({
+            filename: req.file.filename,
+            originalname: req.file.originalname,
+            size: req.file.size,
+            url: result.secure_url,
+            absoluteUrl: result.secure_url,
+            verified: true,
+            provider: 'cloudinary',
+          });
+        })
+        .catch((err) => {
+          console.error('Cloudinary upload failed, falling back to local:', err?.message || err);
+          res.json({
+            filename: req.file.filename,
+            originalname: req.file.originalname,
+            size: req.file.size,
+            url: relativeUrl,
+            absoluteUrl,
+            verified: true,
+            provider: 'local',
+          });
+        });
+      return;
     }
     // Verify file exists
     let verified = false;
@@ -1073,7 +1206,8 @@ app.post('/api/admin/upload', authenticateToken, upload.single('file'), (req, re
       filename: req.file.filename,
       originalname: req.file.originalname,
       size: req.file.size,
-      url: fileUrl,
+      url: relativeUrl,
+      absoluteUrl,
       verified
     });
   } catch (err) {
@@ -1488,9 +1622,16 @@ app.get('/api/chat/:sessionId', async (req, res) => {
   try {
     const { sessionId } = req.params;
     const result = await pool.query('SELECT id, sender, message_encrypted, session_id, timestamp FROM chat_messages WHERE session_id = $1 ORDER BY timestamp ASC', [sessionId]);
-    const messages = result.rows.map(r => ({ id: r.id, sender: r.sender, message: '[encrypted]', sessionId: r.session_id, timestamp: new Date(r.timestamp).getTime() }));
-    res.json(messages);
+    const messages = result.rows.map(r => ({ 
+      id: r.id, 
+      sender: r.sender, 
+      message: r.message_encrypted ? '[encrypted]' : '', 
+      sessionId: r.session_id, 
+      timestamp: new Date(r.timestamp).getTime() 
+    }));
+    res.json(messages || []);
   } catch (err) {
+    console.error('Error fetching chat messages:', err);
     res.status(500).json({ message: err.message });
   }
 });
@@ -1498,9 +1639,16 @@ app.get('/api/chat/:sessionId', async (req, res) => {
 app.get('/api/chat/all', async (req, res) => {
   try {
     const result = await pool.query('SELECT id, sender, message_encrypted, session_id, timestamp FROM chat_messages ORDER BY timestamp DESC LIMIT 500');
-    const messages = result.rows.map(r => ({ id: r.id, sender: r.sender, message: '[encrypted]', sessionId: r.session_id, timestamp: new Date(r.timestamp).getTime() }));
-    res.json(messages);
+    const messages = result.rows.map(r => ({ 
+      id: r.id, 
+      sender: r.sender, 
+      message: r.message_encrypted ? '[encrypted]' : '', 
+      sessionId: r.session_id, 
+      timestamp: new Date(r.timestamp).getTime() 
+    }));
+    res.json(messages || []);
   } catch (err) {
+    console.error('Error fetching all chat messages:', err);
     res.status(500).json({ message: err.message });
   }
 });
@@ -1750,6 +1898,33 @@ const startServer = async () => {
       console.log('🔧 Running maintenance scripts...');
       try {
         const scriptsDir = path.join(__dirname, 'scripts');
+        try {
+          await pool.query('CREATE TABLE IF NOT EXISTS app_meta (key TEXT PRIMARY KEY, value TEXT, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)');
+        } catch {}
+
+        try {
+          const seedKey = 'seed_db_v1';
+          const seedRow = await pool.query('SELECT value FROM app_meta WHERE key = $1', [seedKey]);
+          const alreadySeeded = seedRow.rows?.[0]?.value === 'done';
+          if (!alreadySeeded) {
+            const seedScript = path.join(scriptsDir, 'seed-db.js');
+            if (fs.existsSync(seedScript)) {
+              console.log('   Running seed-db.js (one-time)...');
+              execSync(`node "${seedScript}"`, { stdio: 'inherit' });
+              try {
+                await pool.query(
+                  'INSERT INTO app_meta (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = CURRENT_TIMESTAMP',
+                  [seedKey, 'done']
+                );
+              } catch {}
+            }
+          } else {
+            console.log('   seed-db.js already applied. Skipping.');
+          }
+        } catch (seedErr) {
+          console.error('⚠️ Seed script error:', seedErr.message);
+        }
+
         const verifyScript = path.join(scriptsDir, 'verify-media.js');
         if (fs.existsSync(verifyScript)) {
            console.log('   Running verify-media.js...');
@@ -1798,5 +1973,10 @@ const startServer = async () => {
 };
 
 startServer();
+
+// 404 handler for API routes (must be at the end, after all routes are registered)
+app.use('/api/*', (req, res) => {
+  res.status(404).json({ message: 'API endpoint not found', path: req.path });
+});
 
 export default app;

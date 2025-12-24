@@ -14,7 +14,7 @@ export default function AdminLoginPage() {
     e.preventDefault();
     try {
       await login(email, password);
-      // Redirect will be handled by the router
+      window.location.href = "/admin";
     } catch (err) {
       console.error('Login error:', err);
     }
