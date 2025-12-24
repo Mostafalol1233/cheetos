@@ -3,8 +3,11 @@ import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { useTranslation } from "@/lib/translation";
+import { LanguageSwitcher } from "@/components/language-switcher";
 
 export default function FAQPage() {
+  const { t } = useTranslation();
   const faqs = [
     {
       question: "How do I purchase game currency or gift cards?",
@@ -46,14 +49,17 @@ export default function FAQPage() {
         <Link href="/">
           <Button variant="outline" className="mb-6">
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Home
+            {t("back_to_home")}
           </Button>
         </Link>
 
         <div className="max-w-4xl mx-auto">
-          <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">Frequently Asked Questions</h1>
+          <div className="flex items-center justify-between mb-4">
+            <h1 className="text-4xl font-bold text-gray-900 dark:text-white">{t("faq_title")}</h1>
+            <LanguageSwitcher />
+          </div>
           <p className="text-gray-600 dark:text-gray-300 mb-8 text-lg">
-            Find answers to common questions about our services, payments, and delivery.
+            {t("faq_subtitle")}
           </p>
 
           <Card>
@@ -75,11 +81,11 @@ export default function FAQPage() {
 
           <div className="mt-8 text-center">
             <p className="text-gray-600 dark:text-gray-300 mb-4">
-              Still have questions? Contact our support team!
+              {t("still_have_questions")}
             </p>
             <Link href="/support">
               <Button className="bg-blue-600 hover:bg-blue-700">
-                Contact Support
+                {t("contact_support")}
               </Button>
             </Link>
           </div>

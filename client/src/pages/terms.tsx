@@ -2,21 +2,27 @@ import { Link } from "wouter";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { useTranslation } from "@/lib/translation";
+import { LanguageSwitcher } from "@/components/language-switcher";
 
 export default function TermsPage() {
+  const { t } = useTranslation();
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-900 dark:via-blue-900 dark:to-purple-900">
       <div className="container mx-auto px-4 py-8">
         <Link href="/">
           <Button variant="outline" className="mb-6">
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Home
+            {t("back_to_home")}
           </Button>
         </Link>
 
         <div className="max-w-4xl mx-auto">
-          <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">Terms of Service</h1>
-          <p className="text-gray-600 dark:text-gray-300 mb-8">Last updated: {new Date().toLocaleDateString()}</p>
+          <div className="flex items-center justify-between mb-4">
+            <h1 className="text-4xl font-bold text-gray-900 dark:text-white">{t("terms_title")}</h1>
+            <LanguageSwitcher />
+          </div>
+          <p className="text-gray-600 dark:text-gray-300 mb-8">{t("last_updated")}: {new Date().toLocaleDateString()}</p>
 
           <Card>
             <CardContent className="p-8 space-y-6">

@@ -5,8 +5,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "@/lib/translation";
+import { LanguageSwitcher } from "@/components/language-switcher";
 
 export default function TrackOrderPage() {
+  const { t } = useTranslation();
   const [orderId, setOrderId] = useState("");
   const [orderStatus, setOrderStatus] = useState<any>(null);
   const [loading, setLoading] = useState(false);
@@ -79,14 +82,17 @@ export default function TrackOrderPage() {
         </Link>
 
         <div className="max-w-2xl mx-auto">
-          <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">Track Your Order</h1>
+          <div className="flex items-center justify-between mb-4">
+            <h1 className="text-4xl font-bold text-gray-900 dark:text-white">{t("track_order_title")}</h1>
+            <LanguageSwitcher />
+          </div>
           <p className="text-gray-600 dark:text-gray-300 mb-8">
-            Enter your order ID to check the status of your purchase.
+            {t("enter_order_id")}
           </p>
 
           <Card className="mb-6">
             <CardHeader>
-              <CardTitle>Enter Order ID</CardTitle>
+              <CardTitle>{t("order_id")}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="flex gap-2">
@@ -98,7 +104,7 @@ export default function TrackOrderPage() {
                   className="flex-1"
                 />
                 <Button onClick={handleTrackOrder} disabled={loading}>
-                  {loading ? "Tracking..." : "Track Order"}
+                  {loading ? t("tracking") : t("track_order")}
                 </Button>
               </div>
             </CardContent>
@@ -114,37 +120,37 @@ export default function TrackOrderPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Order ID</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">{t("order_id")}</p>
                   <p className="font-mono text-lg font-bold">{orderStatus.transaction?.id}</p>
                 </div>
 
                 <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Status</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">{t("status")}</p>
                   <span className={`inline-block px-3 py-1 rounded-full font-semibold ${getStatusColor(orderStatus.transaction?.status)}`}>
                     {orderStatus.transaction?.status?.toUpperCase() || "UNKNOWN"}
                   </span>
                 </div>
 
                 <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Payment Method</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">{t("payment_method")}</p>
                   <p className="font-semibold">{orderStatus.transaction?.payment_method || "N/A"}</p>
                 </div>
 
                 <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Total Amount</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">{t("total_amount")}</p>
                   <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
                     {orderStatus.transaction?.total || 0} EGP
                   </p>
                 </div>
 
                 <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Order Date</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">{t("order_date")}</p>
                   <p>{new Date(orderStatus.transaction?.created_at || Date.now()).toLocaleString()}</p>
                 </div>
 
                 {orderStatus.items && orderStatus.items.length > 0 && (
                   <div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Items</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">{t("items")}</p>
                     <div className="space-y-2">
                       {orderStatus.items.map((item: any, index: number) => (
                         <div key={index} className="flex justify-between p-2 bg-gray-50 dark:bg-gray-800 rounded">

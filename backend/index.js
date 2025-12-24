@@ -145,15 +145,15 @@ app.get('/api/categories', async (req, res) => {
     if (fs.existsSync(categoriesPath)) {
       const data = fs.readFileSync(categoriesPath, 'utf8');
       const categories = JSON.parse(data);
-      return res.json(categories);
+      return res.json(Array.isArray(categories) ? categories : []);
     }
     
     // Fallback to database if file doesn't exist
     const result = await pool.query('SELECT * FROM categories ORDER BY name ASC');
-    res.json(result.rows);
+    res.json(result.rows || []);
   } catch (err) {
     console.error('Error fetching categories:', err);
-    res.status(500).json({ message: 'Failed to fetch categories' });
+    res.status(500).json({ message: 'Failed to fetch categories', error: err.message });
   }
 });
 
@@ -1596,6 +1596,16 @@ app.post('/api/admin/alerts/:id/flag', authenticateToken, async (req, res) => {
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
+});
+
+// Test endpoint to verify API is accessible
+app.get('/api/test', (req, res) => {
+  res.json({ 
+    message: 'API is working!', 
+    timestamp: new Date().toISOString(),
+    server: 'GameCart Backend',
+    version: '1.0.0'
+  });
 });
 
 // Diagnostics: DB & Storage

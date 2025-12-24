@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { CartProvider } from "./lib/cart-context";
 import { AccessibilityProvider } from "./components/accessibility-mode";
 import { ThemeProvider } from "./components/theme-provider";
+import { TranslationProvider } from "./lib/translation";
 import { AuthProvider, useAuth } from "./lib/auth-context";
 import Home from "./pages/home";
 import GamePage from "./pages/game";
@@ -72,17 +73,19 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
-        <AuthProvider>
-          <AccessibilityProvider>
-            <TooltipProvider>
-              <CartProvider>
-                <Toaster />
-                <Router />
-                <LiveChatWidget />
-              </CartProvider>
-            </TooltipProvider>
-          </AccessibilityProvider>
-        </AuthProvider>
+        <TranslationProvider>
+          <AuthProvider>
+            <AccessibilityProvider>
+              <TooltipProvider>
+                <CartProvider>
+                  <Toaster />
+                  <Router />
+                  <LiveChatWidget />
+                </CartProvider>
+              </TooltipProvider>
+            </AccessibilityProvider>
+          </AuthProvider>
+        </TranslationProvider>
       </ThemeProvider>
     </QueryClientProvider>
   );

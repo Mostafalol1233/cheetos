@@ -29,7 +29,8 @@ const requestLogger = (req, res, next) => {
     if (url.startsWith('/api/')) {
       const statusColor = statusCode >= 500 ? '\x1b[31m' : statusCode >= 400 ? '\x1b[33m' : statusCode >= 300 ? '\x1b[36m' : '\x1b[32m';
       const resetColor = '\x1b[0m';
-      console.log(`${statusColor}${method} ${url} ${statusCode}${resetColor} ${duration}ms`);
+      const statusText = statusCode >= 500 ? 'ERROR' : statusCode >= 400 ? 'WARN' : statusCode >= 300 ? 'REDIR' : 'OK';
+      console.log(`${statusColor}${method} ${url} ${statusCode} ${statusText}${resetColor} ${duration}ms`);
     }
     
     const logMessage = `[${new Date().toISOString()}] ${method} ${url} ${statusCode} ${duration}ms - ${ip} - ${userAgent}\n`;
