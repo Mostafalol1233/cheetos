@@ -569,6 +569,28 @@ async function initializeDatabase() {
     await pool.query(`ALTER TABLE whatsapp_messages ADD COLUMN IF NOT EXISTS is_group BOOLEAN DEFAULT false`);
     // Seller alerts: archiving
     await pool.query(`ALTER TABLE seller_alerts ADD COLUMN IF NOT EXISTS archived BOOLEAN DEFAULT false`);
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS interaction_metrics (
+        id VARCHAR(60) PRIMARY KEY,
+        event_type VARCHAR(50) NOT NULL,
+        element VARCHAR(120),
+        page VARCHAR(200),
+        success BOOLEAN DEFAULT true,
+        error TEXT,
+        ua TEXT,
+        ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS performance_metrics (
+        id VARCHAR(60) PRIMARY KEY,
+        name VARCHAR(60) NOT NULL,
+        value DOUBLE PRECISION,
+        page VARCHAR(200),
+        ua TEXT,
+        ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
     // Admin audit logs
     await pool.query(`
       CREATE TABLE IF NOT EXISTS admin_audit_logs (
@@ -578,6 +600,67 @@ async function initializeDatabase() {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `);
+
+    // Site settings (logo, header, navigation, locale)
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS site_settings (
+        id VARCHAR(50) PRIMARY KEY,
+        logo_url TEXT,
+        header_bg_url TEXT,
+        nav_links JSONB DEFAULT '[]',
+        default_locale VARCHAR(10) DEFAULT 'en',
+        version INTEGER DEFAULT 1,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+    await pool.query(`INSERT INTO site_settings (id) VALUES ('site') ON CONFLICT (id) DO NOTHING`);
+
+    // Translations
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS translations (
+        id VARCHAR(50) PRIMARY KEY,
+        lang VARCHAR(10) NOT NULL,
+        key TEXT NOT NULL,
+        value TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_translations_lang ON translations(lang)`);
+    await pool.query(`CREATE UNIQUE INDEX IF NOT EXISTS uniq_translations_lang_key ON translations(lang, key)`);
+
+    // Contact messages
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS contact_messages (
+        id VARCHAR(50) PRIMARY KEY,
+        name VARCHAR(100),
+        email VARCHAR(120),
+        phone VARCHAR(40),
+        subject VARCHAR(160),
+        message TEXT NOT NULL,
+        status VARCHAR(20) DEFAULT 'new',
+        spam_score INTEGER DEFAULT 0,
+        read BOOLEAN DEFAULT false,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    // Promotions countdowns
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS countdowns (
+        id VARCHAR(50) PRIMARY KEY,
+        title VARCHAR(120) NOT NULL,
+        target_at TIMESTAMP NOT NULL,
+        image_url TEXT,
+        text TEXT,
+        styles JSONB DEFAULT '{}',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    // Hot deals flag on games
+    await pool.query(`ALTER TABLE games ADD COLUMN IF NOT EXISTS hot_deal BOOLEAN DEFAULT false`);
 
     // Game cards table
     await pool.query(`
@@ -977,6 +1060,23 @@ app.delete('/api/admin/game-cards/:id', authenticateToken, async (req, res) => {
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
+});
+
+// ===================== HOT DEALS =====================
+app.get('/api/games/hot-deals', async (req, res) => {
+  try {
+    const rows = await pool.query('SELECT id, name, slug, image, price, currency FROM games WHERE hot_deal = true ORDER BY updated_at DESC');
+    res.json(rows.rows.map(g => ({ ...g, image: normalizeImageUrl(g.image) })));
+  } catch (err) { res.status(500).json({ message: err.message }); }
+});
+
+app.put('/api/admin/games/:id/hotdeal', authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params; const { hot } = req.body || {};
+    const rows = await pool.query('UPDATE games SET hot_deal = $1 WHERE id = $2 OR slug = $2 RETURNING id, name, slug, hot_deal', [Boolean(hot), id]);
+    if (!rows.rows.length) return res.status(404).json({ message: 'Game not found' });
+    res.json(rows.rows[0]);
+  } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
 app.post('/api/admin/game-cards/bulk', authenticateToken, async (req, res) => {
@@ -2066,6 +2166,112 @@ app.post('/api/admin/upload', authenticateToken, upload.single('file'), (req, re
   }
 });
 
+// ===================== SITE SETTINGS & MEDIA =====================
+app.get('/api/public/settings/site', async (req, res) => {
+  try {
+    const rows = await pool.query('SELECT * FROM site_settings WHERE id = $1', ['site']);
+    const s = rows.rows[0] || {};
+    s.logo_url = normalizeImageUrl(s.logo_url);
+    s.header_bg_url = normalizeImageUrl(s.header_bg_url);
+    res.json(s);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+app.put('/api/admin/settings/site', authenticateToken, async (req, res) => {
+  try {
+    const { default_locale, nav_links, version } = req.body || {};
+    await pool.query(
+      'UPDATE site_settings SET default_locale = COALESCE($1, default_locale), nav_links = COALESCE($2, nav_links), version = COALESCE($3, version), updated_at = CURRENT_TIMESTAMP WHERE id = $4',
+      [default_locale || null, nav_links || null, version || null, 'site']
+    );
+    const rows = await pool.query('SELECT * FROM site_settings WHERE id = $1', ['site']);
+    const s = rows.rows[0] || {};
+    s.logo_url = normalizeImageUrl(s.logo_url);
+    s.header_bg_url = normalizeImageUrl(s.header_bg_url);
+    res.json(s);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+const logoUpload = multer({ storage, limits: { fileSize: 5 * 1024 * 1024 } });
+app.post('/api/admin/settings/site/logo', authenticateToken, logoUpload.single('file'), async (req, res) => {
+  try {
+    const bodyPath = (req.body && (req.body.image_path || req.body.path)) || null;
+    let url = null;
+    if (req.file && req.file.path) {
+      const localPath = req.file.path;
+      url = `/uploads/${req.file.filename}`;
+      if (CLOUDINARY_ENABLED) {
+        try {
+          const result = await cloudinary.uploader.upload(localPath, { folder: process.env.CLOUDINARY_FOLDER || 'gamecart/site', resource_type: 'image' });
+          url = result.secure_url;
+        } catch {}
+      }
+    } else if (typeof bodyPath === 'string' && bodyPath.trim()) {
+      const src = bodyPath.trim();
+      const ext = path.extname(src) || '.png';
+      const filename = `logo-${Date.now()}-${Math.round(Math.random()*1e9)}${ext}`;
+      const dest = path.join(uploadDir, filename);
+      try {
+        fs.copyFileSync(src, dest);
+        url = `/uploads/${filename}`;
+        if (CLOUDINARY_ENABLED) {
+          try {
+            const result = await cloudinary.uploader.upload(dest, { folder: process.env.CLOUDINARY_FOLDER || 'gamecart/site', resource_type: 'image' });
+            url = result.secure_url;
+            try { fs.unlinkSync(dest); } catch {}
+          } catch {}
+        }
+      } catch {}
+    }
+    if (!url) return res.status(400).json({ message: 'file or image_path required' });
+    await pool.query('UPDATE site_settings SET logo_url = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2', [url, 'site']);
+    res.json({ logo_url: normalizeImageUrl(url) });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+const headerUpload = multer({ storage, limits: { fileSize: 20 * 1024 * 1024 } });
+app.post('/api/admin/settings/site/header', authenticateToken, headerUpload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ message: 'file required' });
+    const { width, height, crop } = req.body || {};
+    const localPath = req.file.path;
+    let url = `/uploads/${req.file.filename}`;
+    if (CLOUDINARY_ENABLED) {
+      try {
+        const opts = { folder: process.env.CLOUDINARY_FOLDER || 'gamecart/site', resource_type: 'image' };
+        if (width && height) Object.assign(opts, { transformation: [{ width: Number(width), height: Number(height), crop: String(crop || 'fill') }] });
+        const result = await cloudinary.uploader.upload(localPath, opts);
+        url = result.secure_url;
+      } catch {}
+    }
+    await pool.query('UPDATE site_settings SET header_bg_url = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2', [url, 'site']);
+    res.json({ header_bg_url: normalizeImageUrl(url) });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+app.get('/api/public/navigation', async (req, res) => {
+  try {
+    const rows = await pool.query('SELECT nav_links FROM site_settings WHERE id = $1', ['site']);
+    res.json(rows.rows[0]?.nav_links || []);
+  } catch (err) { res.status(500).json({ message: err.message }); }
+});
+
+app.put('/api/admin/navigation', authenticateToken, async (req, res) => {
+  try {
+    const { nav_links } = req.body || {};
+    await pool.query('UPDATE site_settings SET nav_links = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2', [nav_links || [], 'site']);
+    res.json({ ok: true });
+  } catch (err) { res.status(500).json({ message: err.message }); }
+});
+
 app.post('/api/transactions/checkout', async (req, res) => {
   try {
     const { customerName, customerPhone, paymentMethod, items } = req.body;
@@ -2115,6 +2321,44 @@ app.post('/api/transactions/checkout', async (req, res) => {
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
+});
+
+// ===================== METRICS & MONITORING =====================
+app.post('/api/metrics/interaction', async (req, res) => {
+  try {
+    const { event_type, element, page, success, error, ua } = req.body || {};
+    const id = `im_${Date.now()}_${Math.random().toString(36).slice(2,9)}`;
+    await pool.query(
+      'INSERT INTO interaction_metrics (id, event_type, element, page, success, error, ua) VALUES ($1, $2, $3, $4, $5, $6, $7)',
+      [id, String(event_type||'unknown').slice(0,50), String(element||'').slice(0,120), String(page||'').slice(0,200), Boolean(success!==false), error||null, String(ua||'').slice(0,500)]
+    );
+    res.status(201).json({ ok: true });
+  } catch (err) { res.status(500).json({ message: err.message }); }
+});
+
+app.post('/api/metrics/perf', async (req, res) => {
+  try {
+    const { entries, ua } = req.body || {};
+    if (Array.isArray(entries)) {
+      for (const e of entries) {
+        const id = `pm_${Date.now()}_${Math.random().toString(36).slice(2,9)}`;
+        await pool.query(
+          'INSERT INTO performance_metrics (id, name, value, page, ua) VALUES ($1, $2, $3, $4, $5)',
+          [id, String(e.name||'').slice(0,60), Number(e.value)||0, String(e.page||'').slice(0,200), String(ua||'').slice(0,500)]
+        );
+      }
+    }
+    res.status(201).json({ ok: true });
+  } catch (err) { res.status(500).json({ message: err.message }); }
+});
+
+app.get('/api/admin/metrics/summary', authenticateToken, async (req, res) => {
+  try {
+    const byType = await pool.query('SELECT event_type, COUNT(*) AS count FROM interaction_metrics GROUP BY event_type ORDER BY count DESC');
+    const byPage = await pool.query('SELECT page, COUNT(*) AS count FROM interaction_metrics GROUP BY page ORDER BY count DESC LIMIT 20');
+    const perf = await pool.query('SELECT name, AVG(value) AS avg, MAX(value) AS max FROM performance_metrics GROUP BY name');
+    res.json({ interactionsByType: byType.rows, interactionsByPage: byPage.rows, performance: perf.rows });
+  } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
 app.get('/api/transactions/:id', async (req, res) => {
@@ -2629,6 +2873,51 @@ app.post('/api/chat/message', async (req, res) => {
   }
 });
 
+// ===================== TRANSLATIONS =====================
+app.get('/api/translations/:lang', async (req, res) => {
+  try {
+    const { lang } = req.params;
+    const rows = await pool.query('SELECT key, value FROM translations WHERE lang = $1', [lang]);
+    const dict = {};
+    for (const r of rows.rows) dict[r.key] = r.value || '';
+    res.json(dict);
+  } catch (err) { res.status(500).json({ message: err.message }); }
+});
+
+app.post('/api/admin/translations', authenticateToken, async (req, res) => {
+  try {
+    const { lang, entries } = req.body || {};
+    if (!lang || !Array.isArray(entries)) return res.status(400).json({ message: 'lang and entries[] required' });
+    for (const e of entries) {
+      await pool.query(
+        'INSERT INTO translations (id, lang, key, value) VALUES ($1, $2, $3, $4) ON CONFLICT (lang, key) DO UPDATE SET value = EXCLUDED.value, updated_at = CURRENT_TIMESTAMP',
+        [`tr_${Date.now()}_${Math.random().toString(36).slice(2,9)}`, lang, String(e.key), String(e.value || '')]
+      );
+    }
+    res.json({ ok: true });
+  } catch (err) { res.status(500).json({ message: err.message }); }
+});
+
+app.put('/api/admin/translations/:lang/:key', authenticateToken, async (req, res) => {
+  try {
+    const { lang, key } = req.params;
+    const { value } = req.body || {};
+    await pool.query(
+      'INSERT INTO translations (id, lang, key, value) VALUES ($1, $2, $3, $4) ON CONFLICT (lang, key) DO UPDATE SET value = EXCLUDED.value, updated_at = CURRENT_TIMESTAMP',
+      [`tr_${Date.now()}`, lang, key, String(value || '')]
+    );
+    res.json({ ok: true });
+  } catch (err) { res.status(500).json({ message: err.message }); }
+});
+
+app.delete('/api/admin/translations/:lang/:key', authenticateToken, async (req, res) => {
+  try {
+    const { lang, key } = req.params;
+    await pool.query('DELETE FROM translations WHERE lang = $1 AND key = $2', [lang, key]);
+    res.json({ ok: true });
+  } catch (err) { res.status(500).json({ message: err.message }); }
+});
+
 app.get('/api/admin/whatsapp/messages', authenticateToken, async (req, res) => {
   try {
     const { sessionId, q } = req.query;
@@ -2905,9 +3194,9 @@ const startServer = async () => {
         return copyLocalToUploads(localPath);
       }
       const items = [
-        { slugs: ['call-of-duty-mobile','cod-mobile','codm','callofdutymobile'], file: 'D:\\GameCart-1\\callofduty-new-image.jpg' },
+        { slugs: ['call-of-duty-mobile','cod-mobile','codm','callofdutymobile','call-of-duty'], file: 'D:\\GameCart-1\\callofduty-new-image.jpg' },
         { slugs: ['free-fire','freefire'], file: 'D:\\GameCart-1\\free-fire-newimage.jpg' },
-        { slugs: ['roblox'], file: 'D:\\GameCart-1\\images\\roblox.webp' },
+        { slugs: ['roblox'], file: 'D:\\GameCart-1\\roblox-new-image.jpg' }
       ];
       for (const it of items) {
         const url = await uploadFromLocal(it.file);
@@ -2919,7 +3208,7 @@ const startServer = async () => {
         }
       }
       try {
-        const baseDir = 'D\\GameCart-1\\images';
+        const baseDir = 'D:\\GameCart-1\\images';
         if (fs.existsSync(baseDir)) {
           const files = fs.readdirSync(baseDir).filter(f => /\.(jpg|jpeg|png|webp|gif)$/i.test(f));
           const allGamesRes = await pool.query('SELECT id, slug, name FROM games');
