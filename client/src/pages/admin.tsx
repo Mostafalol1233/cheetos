@@ -1107,6 +1107,7 @@ function LogoManagementPanel() {
   const [smallLogoUrl, setSmallLogoUrl] = useState('/attached_assets/small-image-logo.png');
   const [largeLogoUrl, setLargeLogoUrl] = useState('/attached_assets/large-image-logo.png');
   const [faviconUrl, setFaviconUrl] = useState('/images/cropped-favicon1-32x32.png');
+  const [previewInfo, setPreviewInfo] = useState("");
 
   // Fetch logo config
   const { data: config } = useQuery({
@@ -1160,33 +1161,65 @@ function LogoManagementPanel() {
   const handleImageUpload = async (type: 'small' | 'large' | 'favicon') => {
     const input = document.createElement('input');
     input.type = 'file';
-    input.accept = 'image/*';
+    input.accept = 'image/png, image/svg+xml';
     input.onchange = async (e) => {
       const file = (e.target as HTMLInputElement).files?.[0];
       if (!file) return;
-
-      const formData = new FormData();
-      formData.append('file', file);
-
-      try {
-        const token = localStorage.getItem('adminToken');
-        const res = await fetch('/api/admin/upload', {
-          method: 'POST',
-          headers: token ? { Authorization: `Bearer ${token}` } : {},
-          body: formData
-        });
-        const data = await res.json();
-        if (data.url) {
-          if (type === 'small') setSmallLogoUrl(data.url);
-          else if (type === 'large') setLargeLogoUrl(data.url);
-          else if (type === 'favicon') setFaviconUrl(data.url);
-        }
-      } catch (err) {
-        alert('Upload failed');
+      const isSvg = file.type === 'image/svg+xml' || file.name.toLowerCase().endsWith('.svg');
+      let uploadBlob: Blob = file;
+      if (!isSvg) {
+        const url = URL.createObjectURL(file);
+        const img = new Image();
+        img.onload = async () => {
+          setPreviewInfo(`${img.naturalWidth}x${img.naturalHeight}px`);
+          const recommendedW = 300, recommendedH = 100;
+          if (img.naturalWidth !== recommendedW || img.naturalHeight !== recommendedH) {
+            const shouldResize = window.confirm(`Recommended logo size is ${recommendedW}x${recommendedH}. Resize now?`);
+            if (shouldResize) {
+              const canvas = document.createElement('canvas');
+              canvas.width = recommendedW; canvas.height = recommendedH;
+              const ctx = canvas.getContext('2d');
+              if (ctx) {
+                ctx.clearRect(0,0,recommendedW,recommendedH);
+                ctx.drawImage(img, 0, 0, recommendedW, recommendedH);
+                const dataUrl = canvas.toDataURL('image/png');
+                const res = await fetch(dataUrl);
+                uploadBlob = await res.blob();
+              }
+            }
+          }
+          await doUpload(uploadBlob, type);
+          URL.revokeObjectURL(url);
+        };
+        img.onerror = async () => { await doUpload(uploadBlob, type); };
+        img.src = url;
+        return;
       }
+      await doUpload(uploadBlob, type);
     };
     input.click();
   };
+
+  async function doUpload(blob: Blob, type: 'small'|'large'|'favicon') {
+    const formData = new FormData();
+    formData.append('file', blob, `logo-${type}.${blob.type === 'image/svg+xml' ? 'svg' : 'png'}`);
+    try {
+      const token = localStorage.getItem('adminToken');
+      const res = await fetch('/api/admin/upload', {
+        method: 'POST',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        body: formData
+      });
+      const data = await res.json();
+      if (data.url) {
+        if (type === 'small') setSmallLogoUrl(data.url);
+        else if (type === 'large') setLargeLogoUrl(data.url);
+        else if (type === 'favicon') setFaviconUrl(data.url);
+      }
+    } catch (err) {
+      alert('Upload failed');
+    }
+  }
 
   return (
     <Card className="bg-card/50 border-gold-primary/30">
@@ -1194,6 +1227,7 @@ function LogoManagementPanel() {
         <CardTitle>Logo Settings</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
+        <div className="text-xs text-muted-foreground">Recommended size: 300x100px (PNG). SVG supported. {previewInfo && `(Selected: ${previewInfo})`}</div>
         <div>
           <Label>Small Logo (Header)</Label>
           <div className="flex gap-2 mt-2">

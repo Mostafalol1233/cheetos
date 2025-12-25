@@ -273,6 +273,123 @@ Returns:
 }
 ```
 
+### 🖼️ Logo Configuration
+
+#### Get Logo Config
+```http
+GET /api/admin/logo/config
+Authorization: Bearer <JWT>
+```
+Returns current logo URLs:
+```json
+{
+  "id": "logo_1",
+  "smallLogoUrl": "/attached_assets/small-image-logo.png",
+  "largeLogoUrl": "/attached_assets/large-image-logo.png",
+  "faviconUrl": "/images/cropped-favicon1-32x32.png"
+}
+```
+
+#### Update Logo Config
+```http
+PUT /api/admin/logo/config
+Authorization: Bearer <JWT>
+Content-Type: application/json
+
+{
+  "smallLogoUrl": "/uploads/logo-small.png",
+  "largeLogoUrl": "/uploads/logo-large.png",
+  "faviconUrl": "/uploads/favicon.svg"
+}
+```
+Returns the updated record.
+
+Notes:
+- Use `POST /api/admin/upload` to upload PNG/SVG files before saving their URLs here.
+- Recommended logo dimensions: `300x100px` for raster PNGs.
+
+### 💬 Live Chat
+
+#### Get Session Messages
+```http
+GET /api/chat/:sessionId
+```
+Returns latest messages for a session. Public payload omits content for encrypted storage:
+```json
+[
+  {
+    "id": "cm_...",
+    "sender": "user",
+    "message": "[encrypted]",
+    "sessionId": "session_...",
+    "timestamp": 1730...
+  }
+]
+```
+
+#### Send Message
+```http
+POST /api/chat/message
+Content-Type: application/json
+
+{
+  "sender": "user", // or "support" (requires Bearer token)
+  "message": "Hello",
+  "sessionId": "session_..."
+}
+```
+Returns:
+```json
+{ "id": "cm_..." }
+```
+
+#### Get All Messages (latest 500)
+```http
+GET /api/chat/all
+```
+Returns most recent messages across sessions. For decrypted admin view:
+```http
+GET /api/admin/chat/:sessionId
+Authorization: Bearer <JWT>
+```
+
+### 🧩 Chat Widget Configuration
+
+#### Get Widget Config (Public)
+```http
+GET /api/chat-widget/config
+```
+Returns:
+```json
+{
+  "enabled": true,
+  "iconUrl": "/images/message-icon.svg",
+  "welcomeMessage": "Hello! How can we help you?",
+  "position": "bottom-right"
+}
+```
+
+#### Update Widget Config (Admin)
+```http
+PUT /api/admin/chat-widget/config
+Authorization: Bearer <JWT>
+Content-Type: application/json
+
+{
+  "enabled": true,
+  "iconUrl": "/images/message-icon.svg",
+  "welcomeMessage": "Hello! How can we help you?",
+  "position": "bottom-right"
+}
+```
+Returns the updated configuration.
+
+### 📸 Image Upload Notes
+- Accepted image types: `.jpg`, `.jpeg`, `.png`, `.webp`, `.svg`
+- Image upload size limit: `10MB` (images) / `50MB` (generic files)
+- Response includes a usable `url` under `/uploads/`
+- For SVG favicons, prefer vector upload to avoid raster scaling
+
 ### 🏥 Health Check
 ```http
 GET /api/health

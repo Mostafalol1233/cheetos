@@ -26,6 +26,9 @@ export function LiveChatWidget() {
   const [inputMessage, setInputMessage] = useState('');
   const [sessionId] = useState(() => `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const [isUserTyping, setIsUserTyping] = useState(false);
+  const [isSupportTyping, setIsSupportTyping] = useState(false);
+  const [search, setSearch] = useState('');
 
   // Fetch chat widget config
   const { data: config } = useQuery<ChatWidgetConfig>({
@@ -55,14 +58,27 @@ export function LiveChatWidget() {
   const autoReplyMutation = useMutation({
     mutationFn: async (message: string) => {
       // Simulate support response
+      setIsSupportTyping(true);
       await new Promise(resolve => setTimeout(resolve, 1500));
-      return message;
+      setIsSupportTyping(false);
+      // Simple triggers for common queries
+      const lc = message.toLowerCase();
+      if (lc.includes('price')) {
+        return 'Our prices are listed on each game page. Look for the "Starting from" label.';
+      }
+      if (lc.includes('delivery') || lc.includes('time')) {
+        return 'Most digital products are delivered instantly after payment confirmation.';
+      }
+      if (lc.includes('payment') || lc.includes('method')) {
+        return 'We accept Vodafone Cash, Orange Cash, Etisalat Cash, WE Pay, InstaPay, Bank Transfer, and PayPal.';
+      }
+      return 'Thank you for contacting Diaa Eldeen! Our support team will get back to you soon. 🎮';
     },
-    onSuccess: async () => {
+    onSuccess: async (replyText) => {
       // Add auto-reply message
       await apiRequest('POST', '/api/chat/message', {
         sender: 'support',
-        message: 'Thank you for contacting Diaa Eldeen! Our support team will get back to you soon. 🎮',
+        message: String(replyText),
         sessionId
       });
       queryClient.invalidateQueries({ queryKey: [`/api/chat/${sessionId}`] });
@@ -93,6 +109,13 @@ export function LiveChatWidget() {
       sendMutation.mutate(inputMessage);
     }
   };
+
+  useEffect(() => {
+    if (!inputMessage) { setIsUserTyping(false); return; }
+    setIsUserTyping(true);
+    const t = setTimeout(() => setIsUserTyping(false), 1000);
+    return () => clearTimeout(t);
+  }, [inputMessage]);
 
   // Auto-scroll to bottom
   useEffect(() => {
@@ -160,13 +183,13 @@ export function LiveChatWidget() {
           {/* Messages Area */}
           <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
             <div className="space-y-4">
-              {messages.length === 0 ? (
+              {(messages.filter(m => !search || m.message.toLowerCase().includes(search.toLowerCase()))).length === 0 ? (
                 <div className="text-center text-muted-foreground py-8">
                   <MessageCircle className="w-12 h-12 mx-auto mb-2 opacity-50" />
                   <p>Start a conversation with our support team!</p>
                 </div>
               ) : (
-                messages.map((msg: ChatMessage) => (
+                messages.filter(m => !search || m.message.toLowerCase().includes(search.toLowerCase())).map((msg: ChatMessage) => (
                   <div
                     key={msg.id}
                     className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
@@ -189,12 +212,30 @@ export function LiveChatWidget() {
                   </div>
                 ))
               )}
+              {(isUserTyping || isSupportTyping) && (
+                <div className="flex justify-start">
+                  <div className="px-4 py-2 rounded-lg bg-muted/50 text-muted-foreground rounded-bl-none">
+                    <span className="inline-flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 bg-current rounded-full animate-bounce" />
+                      <span className="w-1.5 h-1.5 bg-current rounded-full animate-bounce [animation-delay:0.15s]" />
+                      <span className="w-1.5 h-1.5 bg-current rounded-full animate-bounce [animation-delay:0.3s]" />
+                      <span className="text-xs ml-2">{isSupportTyping ? 'Support is typing...' : 'Typing...'}</span>
+                    </span>
+                  </div>
+                </div>
+              )}
             </div>
           </ScrollArea>
 
           {/* Input Area */}
           <div className="border-t border-gold-primary/30 p-4 bg-muted/20">
             <form onSubmit={handleSendMessage} className="flex gap-2">
+              <Input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search messages..."
+                className="flex-1 border-gold-primary/30"
+              />
               <Input
                 value={inputMessage}
                 onChange={(e) => setInputMessage(e.target.value)}

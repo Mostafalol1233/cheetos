@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Gamepad2, Zap, Headphones, Shield, Tag, Flame } from "lucide-react";
 import { SiTelegram, SiTiktok, SiYoutube, SiFacebook, SiWhatsapp } from "react-icons/si";
 
@@ -13,6 +13,36 @@ import { useTranslation } from "@/lib/translation";
 export default function Home() {
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const { t } = useTranslation();
+  const [daysLeft, setDaysLeft] = useState<number>(() => {
+    const target = new Date('2026-01-01T00:00:00Z').getTime();
+    const now = Date.now();
+    return Math.max(0, Math.ceil((target - now) / (1000 * 60 * 60 * 24)));
+  });
+  const [pulseKey, setPulseKey] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const target = new Date('2026-01-01T00:00:00Z').getTime();
+      const now = Date.now();
+      const newDays = Math.max(0, Math.ceil((target - now) / (1000 * 60 * 60 * 24)));
+      if (newDays !== daysLeft) {
+        setDaysLeft(newDays);
+        setPulseKey((k) => k + 1);
+      }
+    }, 60 * 1000);
+    return () => clearInterval(interval);
+  }, [daysLeft]);
+
+  const shareCountdown = async () => {
+    const text = `${daysLeft} days left until 2026! Join me on Diaa Eldeen 🎮`;
+    const url = window.location.origin;
+    if ((navigator as any).share) {
+      try { await (navigator as any).share({ title: 'Countdown to 2026', text, url }); } catch {}
+      return;
+    }
+    const twitter = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`;
+    window.open(twitter, '_blank');
+  };
 
   return (
     <div className="min-h-screen text-foreground font-gaming overflow-x-hidden custom-cursor bg-gradient-to-b from-darker-bg dark:via-gray-900 dark:to-black via-gray-50 to-white animate-fade-in">
@@ -50,6 +80,34 @@ export default function Home() {
         {/* Decorative Particles */}
         <div className="absolute top-1/4 left-1/4 w-2 h-2 bg-gold-primary rounded-full animate-float"></div>
         <div className="absolute bottom-1/3 right-1/3 w-3 h-3 bg-neon-pink rounded-full animate-float animation-delay-1000"></div>
+      </section>
+
+      {/* Countdown to 2026 */}
+      <section className="container mx-auto px-4 py-10">
+        <div className="flex flex-col md:flex-row items-center justify-between gap-6 bg-card/50 border border-gold-primary/30 rounded-2xl p-6">
+          <div className="flex items-center gap-4">
+            <Flame className="w-10 h-10 text-neon-pink animate-twinkle" />
+            <div>
+              <div className="text-2xl md:text-3xl font-bold">
+                <span key={pulseKey} className="inline-block animate-fade-in">{daysLeft}</span> days left until 2026
+              </div>
+              <p className="text-muted-foreground text-sm">Stay tuned for New Year offers and friend collaborations.</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={shareCountdown}
+              className="px-4 py-2 rounded-full bg-gradient-to-r from-gold-primary to-neon-pink text-black font-semibold hover:scale-105 transition-transform"
+            >
+              Share with a friend
+            </button>
+            <a
+              href="#"
+              onClick={(e) => { e.preventDefault(); shareCountdown(); }}
+              className="text-neon-pink underline-offset-4 hover:underline"
+            >Invite now</a>
+          </div>
+        </div>
       </section>
 
       {/* Shopping Categories */}

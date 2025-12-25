@@ -470,7 +470,7 @@ const imageUpload = multer({
   storage,
   limits: { fileSize: 10 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
-    const allowed = ['.jpg', '.jpeg', '.png', '.webp'];
+    const allowed = ['.jpg', '.jpeg', '.png', '.webp', '.svg'];
     const ext = path.extname(file.originalname).toLowerCase();
     if (allowed.includes(ext)) cb(null, true); else cb(new Error('Unsupported image type'));
   }
@@ -2045,6 +2045,17 @@ app.put('/api/admin/logo/config', authenticateToken, async (req, res) => {
     res.json(result.rows[0]);
   } catch (err) {
     console.error('Error updating logo config:', err);
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// Generic admin image upload (PNG, SVG)
+app.post('/api/admin/upload', authenticateToken, imageUpload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ message: 'No file uploaded' });
+    const url = normalizeImageUrl(`/uploads/${req.file.filename}`);
+    res.status(201).json({ url });
+  } catch (err) {
     res.status(500).json({ message: err.message });
   }
 });
