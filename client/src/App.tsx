@@ -13,6 +13,7 @@ import Home from "./pages/home";
 import GamePage from "./pages/game";
 import AdminDashboard from "./pages/admin";
 import AdminLoginPage from "./pages/admin-login";
+import AdminPackagesPage from "./pages/admin-packages";
 import CategoryPage from "./pages/category";
 import GamesPage from "./pages/games";
 import SupportPage from "./pages/support";
@@ -58,6 +59,7 @@ function ProtectedAdminRoute() {
         <Route path="/support" component={SupportPage} />
         <Route path="/checkout/security/:id" component={CheckoutSecurityPage} />
         <Route path="/admin/login" component={AdminLoginPage} />
+        <Route path="/admin/packages/:gameId" component={AdminPackagesPage} />
         {/* QR login removed */}
         <Route path="/admin" component={ProtectedAdminRoute} />
         <Route path="/category/:slug" component={CategoryPage} />

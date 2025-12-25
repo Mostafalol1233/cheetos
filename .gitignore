@@ -1,4 +1,4 @@
-﻿# runtime logs
+﻿﻿# runtime logs
 backend/logs/*.log
 
 # ignore seeders if they cause permission issues / are generated

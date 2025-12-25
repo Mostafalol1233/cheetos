@@ -11,7 +11,8 @@ import { execSync } from 'child_process';
 import pkg from 'pg';
 import * as https from 'https';
 import dns from 'dns';
-import { v2 as cloudinary } from 'cloudinary';
+import cloudinaryModule from 'cloudinary';
+const cloudinary = cloudinaryModule.v2 || cloudinaryModule;
 import { storage as memStorage } from './storage.js';
 import { startWhatsApp, getQRCode, getConnectionStatus, sendWhatsAppMessage } from './whatsapp.js';
 import requestLogger from './middleware/logger.js';
@@ -42,7 +43,8 @@ if (!fs.existsSync(pgModulePath) || !fs.existsSync(baileysModulePath)) {
 }
 
 const app = express();
-const PORT = process.env.PORT || 3001;
+const envPort = Number(process.env.PORT || 0);
+const PORT = envPort && envPort !== 5173 ? envPort : 3001;
 
 // JWT Configuration
 const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret_key_change_this_in_production';
@@ -80,18 +82,52 @@ function normalizeImageUrl(raw) {
   // Already supported paths
   if (v.startsWith('/uploads/')) return v;
   if (v.startsWith('/media/')) return v;
+  if (v.startsWith('/images/')) return v;
   if (v.startsWith('/attached_assets/')) return v;
 
   // Old paths
-  if (v.startsWith('/public/')) return v.replace(/^\/public\//, '/media/');
+  if (v.startsWith('/public/')) return v.replace(/^\/public\//, '/images/');
 
-  // If it's a bare filename or /filename, serve from /media
+  // If it's a bare filename or /filename, check if it exists in images directory first
   const fileName = v.replace(/^\//, '');
-  if (/\.(png|jpe?g|webp|gif|svg)$/i.test(fileName)) {
+  if (/\.(png|jpe?g|webp|gif|svg|ico)$/i.test(fileName)) {
+    // Check if file exists in images directory
+    const imagePath = path.join(imagesDir, fileName);
+    if (fs.existsSync(imagePath)) {
+      return `/images/${fileName}`;
+    }
+    // Fallback to media
     return `/media/${fileName}`;
   }
 
   return v;
+}
+
+function coerceJsonArray(value) {
+  if (value === undefined || value === null) return [];
+  if (Array.isArray(value)) return value;
+  if (typeof value === 'string') {
+    const s = value.trim();
+    if (!s) return [];
+    // Handle the case where string is "[object Object]" - this means it was incorrectly stringified
+    if (s === '[object Object]') return [];
+    try {
+      const parsed = JSON.parse(s);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  }
+  // PostgreSQL JSONB returns objects directly - if it's an object, try to extract array-like structure
+  if (typeof value === 'object') {
+    // If it's already an array-like object (has numeric keys), convert it
+    if (value.constructor === Object && Object.keys(value).every(k => !isNaN(Number(k)))) {
+      return Object.values(value);
+    }
+    // If it's a JSONB object that should be an array, return empty array
+    return [];
+  }
+  return [];
 }
 
 // PostgreSQL Connection Pool - Imported from db.js
@@ -159,6 +195,8 @@ app.use('/api/admin', adminRateLimiter);
 // Static file serving
 const uploadDir = path.join(__dirname, 'uploads');
 const publicDir = path.join(__dirname, 'public'); // Changed from ../public to ./public
+// Images directory from root
+const imagesDir = path.join(__dirname, '..', 'images');
 
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
@@ -166,6 +204,80 @@ if (!fs.existsSync(uploadDir)) {
 
 if (!fs.existsSync(publicDir)) {
   fs.mkdirSync(publicDir, { recursive: true });
+}
+
+if (!fs.existsSync(imagesDir)) {
+  try { fs.mkdirSync(imagesDir, { recursive: true }); } catch {}
+}
+
+async function useProvidedImage(req) {
+  try {
+    const url = (req.body && (req.body.image_url || req.body.imageUrl || req.body.image)) || null;
+    const pth = (req.body && (req.body.image_path || req.body.imagePath)) || null;
+    
+    // If file is uploaded, try Cloudinary first if enabled
+    if (req.file && req.file.filename) {
+      const localPath = req.file.path;
+      
+      // Try Cloudinary upload if enabled
+      if (CLOUDINARY_ENABLED) {
+        try {
+          const result = await cloudinary.uploader.upload(localPath, {
+            folder: process.env.CLOUDINARY_FOLDER || 'gamecart/games',
+            resource_type: 'image',
+            transformation: [
+              { width: 800, height: 800, crop: 'limit', quality: 'auto' }
+            ]
+          });
+          // Clean up local file after successful Cloudinary upload
+          try { fs.unlinkSync(localPath); } catch {}
+          return result.secure_url;
+        } catch (cloudinaryErr) {
+          console.error('Cloudinary upload failed, using local:', cloudinaryErr?.message || cloudinaryErr);
+          // Log error to alerts
+          try {
+            const alertId = `al_${Date.now()}`;
+            const summary = `Cloudinary upload failed for ${req.file?.originalname || req.file?.filename}: ${String(cloudinaryErr?.message || cloudinaryErr).substring(0, 180)}`;
+            await pool.query('INSERT INTO seller_alerts (id, type, summary) VALUES ($1, $2, $3)', [alertId, 'upload_error', summary]);
+          } catch {}
+          // Fall back to local file
+          return normalizeImageUrl(`/uploads/${req.file.filename}`);
+        }
+      }
+      
+      // No Cloudinary, use local
+      return normalizeImageUrl(`/uploads/${req.file.filename}`);
+    }
+    
+    if (typeof url === 'string' && url.trim()) {
+      return normalizeImageUrl(url.trim());
+    }
+    
+    if (typeof pth === 'string' && pth.trim()) {
+      const src = pth.trim();
+      const ext = path.extname(src) || '.jpg';
+      const filename = `image-${Date.now()}-${Math.round(Math.random()*1e9)}${ext}`;
+      const dest = path.join(uploadDir, filename);
+      try { 
+        fs.copyFileSync(src, dest);
+        // Try Cloudinary upload if enabled
+        if (CLOUDINARY_ENABLED) {
+          try {
+            const result = await cloudinary.uploader.upload(dest, {
+              folder: process.env.CLOUDINARY_FOLDER || 'gamecart/games',
+              resource_type: 'image'
+            });
+            fs.unlinkSync(dest);
+            return result.secure_url;
+          } catch {}
+        }
+        return normalizeImageUrl(`/uploads/${filename}`); 
+      } catch {}
+    }
+  } catch (err) {
+    console.error('Error in useProvidedImage:', err);
+  }
+  return null;
 }
 
 // Serve uploaded files
@@ -176,6 +288,12 @@ app.use('/public', express.static(publicDir));
 app.use(express.static(publicDir));
 // Stable media path for proxying via frontend (Vercel) without colliding with frontend static assets
 app.use('/media', express.static(publicDir));
+const mediaAssetsDir = path.join(publicDir, 'assets');
+const generatedImagesDir = path.join(publicDir, 'generated_images');
+try { if (!fs.existsSync(mediaAssetsDir)) fs.mkdirSync(mediaAssetsDir, { recursive: true }); } catch {}
+try { if (!fs.existsSync(generatedImagesDir)) fs.mkdirSync(generatedImagesDir, { recursive: true }); } catch {}
+app.use('/media/assets', express.static(mediaAssetsDir));
+app.use('/media/generated_images', express.static(generatedImagesDir));
 // Serve attached_assets from multiple possible locations
 const attachedAssetsDir = path.join(__dirname, 'public', 'attached_assets');
 const rootAttachedAssetsDir = path.join(__dirname, '..', 'attached_assets');
@@ -194,6 +312,42 @@ if (fs.existsSync(rootAttachedAssetsDir)) {
 }
 app.use('/attached_assets', express.static(attachedAssetsDir));
 app.use('/assets', express.static(attachedAssetsDir));
+
+// Serve images from D:\GameCart-1\images directory
+if (fs.existsSync(imagesDir)) {
+  app.use('/images', express.static(imagesDir));
+  // Also serve from /media for compatibility, but prioritize images directory
+  app.use('/media', express.static(imagesDir));
+}
+
+// Serve favicon and logo files from images directory if they exist
+app.get('/favicon.ico', (req, res) => {
+  const faviconPath = path.join(imagesDir, 'cropped-favicon1-32x32.png');
+  if (fs.existsSync(faviconPath)) {
+    return res.sendFile(faviconPath);
+  }
+  res.status(404).end();
+});
+
+// Serve logo files from images or attached_assets
+app.get('/attached_assets/ninja-gaming-logo.png', (req, res) => {
+  // Try images directory first
+  const logoPath1 = path.join(imagesDir, 'ninja-gaming-logo.png');
+  if (fs.existsSync(logoPath1)) {
+    return res.sendFile(logoPath1);
+  }
+  // Try attached_assets
+  const logoPath2 = path.join(rootAttachedAssetsDir, 'ninja-gaming-logo.png');
+  if (fs.existsSync(logoPath2)) {
+    return res.sendFile(logoPath2);
+  }
+  // Try backend/public/attached_assets
+  const logoPath3 = path.join(attachedAssetsDir, 'ninja-gaming-logo.png');
+  if (fs.existsSync(logoPath3)) {
+    return res.sendFile(logoPath3);
+  }
+  res.status(404).json({ message: 'Logo not found' });
+});
 
 // ===============================================
 // API ENDPOINTS (Added as requested)
@@ -304,7 +458,7 @@ async function initializeDatabase() {
         id VARCHAR(50) PRIMARY KEY,
         name VARCHAR(255) NOT NULL,
         slug VARCHAR(255) UNIQUE NOT NULL,
-        description TEXT,
+        description TEXT NOT NULL DEFAULT '',
         price DECIMAL(10, 2) DEFAULT 0,
         currency VARCHAR(10) DEFAULT 'EGP',
         image VARCHAR(255),
@@ -318,6 +472,33 @@ async function initializeDatabase() {
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `);
+    
+    // Ensure description column has NOT NULL constraint and default
+    await pool.query(`
+      DO $$ 
+      BEGIN
+        -- Add default if column doesn't have one
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns 
+          WHERE table_name = 'games' 
+          AND column_name = 'description' 
+          AND column_default IS NOT NULL
+        ) THEN
+          ALTER TABLE games ALTER COLUMN description SET DEFAULT '';
+        END IF;
+        
+        -- Update existing null descriptions
+        UPDATE games SET description = '' WHERE description IS NULL;
+        
+        -- Add NOT NULL constraint if it doesn't exist
+        BEGIN
+          ALTER TABLE games ALTER COLUMN description SET NOT NULL;
+        EXCEPTION WHEN OTHERS THEN
+          -- Constraint might already exist, ignore
+          NULL;
+        END;
+      END $$;
+    `);
 
     // Additional fields requested
     await pool.query(`ALTER TABLE games ADD COLUMN IF NOT EXISTS category_id VARCHAR(50)`);
@@ -325,6 +506,41 @@ async function initializeDatabase() {
     await pool.query(`ALTER TABLE games ADD COLUMN IF NOT EXISTS image_url TEXT`);
     await pool.query(`ALTER TABLE games ADD COLUMN IF NOT EXISTS discount_price DECIMAL(10, 2)`);
     await pool.query(`ALTER TABLE games ADD COLUMN IF NOT EXISTS package_discount_prices JSONB DEFAULT '[]'`);
+    
+    // Live chat widget configuration
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS chat_widget_config (
+        id VARCHAR(50) PRIMARY KEY DEFAULT 'widget_1',
+        enabled BOOLEAN DEFAULT true,
+        icon_url TEXT,
+        welcome_message TEXT,
+        position VARCHAR(20) DEFAULT 'bottom-right',
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+    
+    // Initialize chat widget config if not exists
+    await pool.query(`
+      INSERT INTO chat_widget_config (id, enabled, icon_url, welcome_message, position)
+      SELECT 'widget_1', true, '/images/message-icon.svg', 'Hello! How can we help you?', 'bottom-right'
+      WHERE NOT EXISTS (SELECT 1 FROM chat_widget_config WHERE id = 'widget_1');
+    `);
+
+    // Chat messages: read receipts
+    await pool.query(`ALTER TABLE chat_messages ADD COLUMN IF NOT EXISTS read BOOLEAN DEFAULT false`);
+    // WhatsApp messages: group flag
+    await pool.query(`ALTER TABLE whatsapp_messages ADD COLUMN IF NOT EXISTS is_group BOOLEAN DEFAULT false`);
+    // Seller alerts: archiving
+    await pool.query(`ALTER TABLE seller_alerts ADD COLUMN IF NOT EXISTS archived BOOLEAN DEFAULT false`);
+    // Admin audit logs
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS admin_audit_logs (
+        id VARCHAR(50) PRIMARY KEY,
+        action VARCHAR(50) NOT NULL,
+        summary TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
 
     // Game cards table
     await pool.query(`
@@ -433,7 +649,8 @@ async function initializeDatabase() {
         sender VARCHAR(20) NOT NULL,
         message_encrypted TEXT NOT NULL,
         session_id VARCHAR(100) NOT NULL,
-        timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        read BOOLEAN DEFAULT false
       );
     `);
 
@@ -444,9 +661,13 @@ async function initializeDatabase() {
         summary TEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         read BOOLEAN DEFAULT false,
-        flagged BOOLEAN DEFAULT false
+        flagged BOOLEAN DEFAULT false,
+        archived BOOLEAN DEFAULT false
       );
     `);
+
+    await pool.query(`ALTER TABLE chat_messages ADD COLUMN IF NOT EXISTS read BOOLEAN DEFAULT false`);
+    await pool.query(`ALTER TABLE seller_alerts ADD COLUMN IF NOT EXISTS archived BOOLEAN DEFAULT false`);
 
     console.log('✓ Database tables initialized');
   } catch (err) {
@@ -528,6 +749,55 @@ app.get('/api/admin/verify', authenticateToken, async (req, res) => {
   }
 });
 
+// Admin Logout
+app.post('/api/admin/logout', authenticateToken, async (req, res) => {
+  try {
+    // JWT tokens are stateless, so logout is handled client-side by removing the token
+    // This endpoint just confirms the logout
+    res.json({ message: 'Logged out successfully' });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// User Login/Sign In for Chat
+app.post('/api/auth/login', async (req, res) => {
+  try {
+    const { name, phone, email } = req.body;
+    
+    if (!name || !phone) {
+      return res.status(400).json({ message: 'Name and phone are required' });
+    }
+    
+    // Create or get user
+    let userResult = await pool.query('SELECT id, name, phone FROM users WHERE phone = $1', [phone]);
+    let userId;
+    
+    if (userResult.rows.length === 0) {
+      userId = `user_${Date.now()}_${Math.random().toString(36).slice(2,9)}`;
+      await pool.query('INSERT INTO users (id, name, phone) VALUES ($1, $2, $3)', [userId, name, phone]);
+    } else {
+      userId = userResult.rows[0].id;
+      // Update name if provided
+      if (name !== userResult.rows[0].name) {
+        await pool.query('UPDATE users SET name = $1 WHERE id = $2', [name, userId]);
+      }
+    }
+    
+    // Generate session token for chat
+    const sessionToken = jwt.sign({ userId, name, phone }, JWT_SECRET, { expiresIn: '30d' });
+    
+    res.json({ 
+      token: sessionToken, 
+      user: { id: userId, name, phone },
+      message: 'Login successful' 
+    });
+  } catch (err) {
+    console.error('User login error:', err);
+    res.status(500).json({ message: err.message });
+  }
+});
+
 // QR Auth: Start session
 app.post('/api/auth/qr/start', async (req, res) => {
   try {
@@ -602,8 +872,20 @@ app.get('/api/admin/game-cards', authenticateToken, async (req, res) => {
     const page = Math.max(1, parseInt(req.query.page)) || 1;
     const limit = Math.min(100, Math.max(1, parseInt(req.query.limit))) || 20;
     const offset = (page - 1) * limit;
-    const rows = await pool.query('SELECT * FROM game_cards ORDER BY created_at DESC LIMIT $1 OFFSET $2', [limit, offset]);
-    const total = await pool.query('SELECT COUNT(*) as count FROM game_cards');
+    let query = 'SELECT * FROM game_cards WHERE 1=1';
+    const params = [];
+    if (req.query.game_id) { params.push(req.query.game_id); query += ` AND game_id = $${params.length}`; }
+    if (req.query.is_used === 'true' || req.query.is_used === 'false') { params.push(req.query.is_used === 'true'); query += ` AND is_used = $${params.length}`; }
+    if (req.query.q) { params.push(`%${String(req.query.q)}%`); query += ` AND card_code ILIKE $${params.length}`; }
+    query += ' ORDER BY created_at DESC LIMIT $' + (params.length + 1) + ' OFFSET $' + (params.length + 2);
+    params.push(limit, offset);
+    const rows = await pool.query(query, params);
+    let countQuery = 'SELECT COUNT(*) as count FROM game_cards WHERE 1=1';
+    const countParams = [];
+    if (req.query.game_id) { countParams.push(req.query.game_id); countQuery += ` AND game_id = $${countParams.length}`; }
+    if (req.query.is_used === 'true' || req.query.is_used === 'false') { countParams.push(req.query.is_used === 'true'); countQuery += ` AND is_used = $${countParams.length}`; }
+    if (req.query.q) { countParams.push(`%${String(req.query.q)}%`); countQuery += ` AND card_code ILIKE $${countParams.length}`; }
+    const total = await pool.query(countQuery, countParams);
     res.json({ items: rows.rows, page, limit, total: parseInt(total.rows[0].count) });
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -617,8 +899,17 @@ app.post('/api/admin/game-cards', authenticateToken, async (req, res) => {
     if (!game_id || !card_code) {
       return res.status(400).json({ message: 'Invalid card data' });
     }
+    // Validate game exists
+    const gameCheck = await pool.query('SELECT id FROM games WHERE id = $1', [game_id]);
+    if (gameCheck.rows.length === 0) return res.status(400).json({ message: 'Invalid game_id' });
+    // Validate code length
+    if (card_code.length < 5 || card_code.length > 200) return res.status(400).json({ message: 'Invalid card_code length' });
+    // Prevent duplicates
+    const dup = await pool.query('SELECT id FROM game_cards WHERE game_id = $1 AND card_code = $2', [game_id, card_code]);
+    if (dup.rows.length) return res.status(409).json({ message: 'Duplicate card_code' });
     const id = `card_${Date.now()}`;
     await pool.query('INSERT INTO game_cards (id, game_id, card_code) VALUES ($1, $2, $3)', [id, game_id, card_code]);
+    try { const auditId = `aa_${Date.now()}`; await pool.query('INSERT INTO admin_audit_logs (id, action, summary) VALUES ($1, $2, $3)', [auditId, 'create_card', `Card created for ${game_id}`]); } catch {}
     res.status(201).json({ id, game_id, card_code, is_used: false });
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -632,6 +923,7 @@ app.put('/api/admin/game-cards/:id', authenticateToken, async (req, res) => {
     const card_code = req.body?.card_code ? sanitizeString(req.body.card_code) : undefined;
     const result = await pool.query('UPDATE game_cards SET is_used = COALESCE($1, is_used), card_code = COALESCE($2, card_code) WHERE id = $3 RETURNING *', [is_used, card_code, id]);
     if (result.rows.length === 0) return res.status(404).json({ message: 'Card not found' });
+    try { const auditId = `aa_${Date.now()}`; await pool.query('INSERT INTO admin_audit_logs (id, action, summary) VALUES ($1, $2, $3)', [auditId, 'update_card', `Card ${id} updated`]); } catch {}
     res.json(result.rows[0]);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -643,7 +935,34 @@ app.delete('/api/admin/game-cards/:id', authenticateToken, async (req, res) => {
     const { id } = req.params;
     const result = await pool.query('DELETE FROM game_cards WHERE id = $1 RETURNING *', [id]);
     if (result.rows.length === 0) return res.status(404).json({ message: 'Card not found' });
+    try { const auditId = `aa_${Date.now()}`; await pool.query('INSERT INTO admin_audit_logs (id, action, summary) VALUES ($1, $2, $3)', [auditId, 'delete_card', `Card ${id} deleted`]); } catch {}
     res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+app.post('/api/admin/game-cards/bulk', authenticateToken, async (req, res) => {
+  try {
+    const { items } = req.body || {};
+    if (!Array.isArray(items) || items.length === 0) return res.status(400).json({ message: 'items array required' });
+    let created = 0, skipped = 0, errors = 0;
+    for (const it of items) {
+      try {
+        const game_id = String(it.game_id || '').trim();
+        const card_code = sanitizeString(it.card_code);
+        if (!game_id || !card_code || card_code.length < 5) { errors++; continue; }
+        const gameCheck = await pool.query('SELECT id FROM games WHERE id = $1', [game_id]);
+        if (gameCheck.rows.length === 0) { errors++; continue; }
+        const dup = await pool.query('SELECT id FROM game_cards WHERE game_id = $1 AND card_code = $2', [game_id, card_code]);
+        if (dup.rows.length) { skipped++; continue; }
+        const id = `card_${Date.now()}_${Math.random().toString(36).slice(2,9)}`;
+        await pool.query('INSERT INTO game_cards (id, game_id, card_code) VALUES ($1, $2, $3)', [id, game_id, card_code]);
+        created++;
+      } catch { errors++; }
+    }
+    try { const auditId = `aa_${Date.now()}`; await pool.query('INSERT INTO admin_audit_logs (id, action, summary) VALUES ($1, $2, $3)', [auditId, 'bulk_cards', `Bulk cards: created=${created}, skipped=${skipped}, errors=${errors}`]); } catch {}
+    res.json({ created, skipped, errors });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -678,9 +997,9 @@ app.get('/api/games', async (req, res) => {
     const games = result.rows.map(game => ({
       ...game,
       image: normalizeImageUrl(game.image),
-      packages: Array.isArray(game.packages) ? game.packages : (game.packages ? JSON.parse(game.packages) : []),
-      packagePrices: Array.isArray(game.packagePrices) ? game.packagePrices : (game.packagePrices ? JSON.parse(game.packagePrices) : []),
-      packageDiscountPrices: Array.isArray(game.packageDiscountPrices) ? game.packageDiscountPrices : (game.packageDiscountPrices ? JSON.parse(game.packageDiscountPrices) : [])
+      packages: coerceJsonArray(game.packages),
+      packagePrices: coerceJsonArray(game.packagePrices),
+      packageDiscountPrices: coerceJsonArray(game.packageDiscountPrices)
     }));
     res.json(games);
   } catch (err) {
@@ -704,9 +1023,9 @@ app.get('/api/games/popular', async (req, res) => {
     const games = result.rows.map(game => ({
       ...game,
       image: normalizeImageUrl(game.image),
-      packages: Array.isArray(game.packages) ? game.packages : (game.packages ? JSON.parse(game.packages) : []),
-      packagePrices: Array.isArray(game.packagePrices) ? game.packagePrices : (game.packagePrices ? JSON.parse(game.packagePrices) : []),
-      packageDiscountPrices: Array.isArray(game.packageDiscountPrices) ? game.packageDiscountPrices : (game.packageDiscountPrices ? JSON.parse(game.packageDiscountPrices) : [])
+      packages: coerceJsonArray(game.packages),
+      packagePrices: coerceJsonArray(game.packagePrices),
+      packageDiscountPrices: coerceJsonArray(game.packageDiscountPrices)
     }));
     res.json(games);
   } catch (err) {
@@ -732,9 +1051,9 @@ app.get('/api/games/category/:category', async (req, res) => {
     const games = result.rows.map(game => ({
       ...game,
       image: normalizeImageUrl(game.image),
-      packages: Array.isArray(game.packages) ? game.packages : (game.packages ? JSON.parse(game.packages) : []),
-      packagePrices: Array.isArray(game.packagePrices) ? game.packagePrices : (game.packagePrices ? JSON.parse(game.packagePrices) : []),
-      packageDiscountPrices: Array.isArray(game.packageDiscountPrices) ? game.packageDiscountPrices : (game.packageDiscountPrices ? JSON.parse(game.packageDiscountPrices) : [])
+      packages: coerceJsonArray(game.packages),
+      packagePrices: coerceJsonArray(game.packagePrices),
+      packageDiscountPrices: coerceJsonArray(game.packageDiscountPrices)
     }));
     
     res.json(games);
@@ -760,9 +1079,9 @@ app.get('/api/games/id/:id', async (req, res) => {
     }
     const game = result.rows[0];
     game.image = normalizeImageUrl(game.image);
-    game.packages = Array.isArray(game.packages) ? game.packages : (game.packages ? JSON.parse(game.packages) : []);
-    game.packagePrices = Array.isArray(game.packagePrices) ? game.packagePrices : (game.packagePrices ? JSON.parse(game.packagePrices) : []);
-    game.packageDiscountPrices = Array.isArray(game.packageDiscountPrices) ? game.packageDiscountPrices : (game.packageDiscountPrices ? JSON.parse(game.packageDiscountPrices) : []);
+    game.packages = coerceJsonArray(game.packages);
+    game.packagePrices = coerceJsonArray(game.packagePrices);
+    game.packageDiscountPrices = coerceJsonArray(game.packageDiscountPrices);
     res.json(game);
   } catch (err) {
     console.error('Error fetching game by ID:', err);
@@ -793,9 +1112,9 @@ app.get('/api/games/slug/:slug', async (req, res) => {
     const game = result.rows[0];
     // Ensure packages are arrays
     game.image = normalizeImageUrl(game.image);
-    game.packages = Array.isArray(game.packages) ? game.packages : (game.packages ? JSON.parse(game.packages) : []);
-    game.packagePrices = Array.isArray(game.packagePrices) ? game.packagePrices : (game.packagePrices ? JSON.parse(game.packagePrices) : []);
-    game.packageDiscountPrices = Array.isArray(game.packageDiscountPrices) ? game.packageDiscountPrices : (game.packageDiscountPrices ? JSON.parse(game.packageDiscountPrices) : []);
+    game.packages = coerceJsonArray(game.packages);
+    game.packagePrices = coerceJsonArray(game.packagePrices);
+    game.packageDiscountPrices = coerceJsonArray(game.packageDiscountPrices);
     
     res.json(game);
   } catch (err) {
@@ -832,9 +1151,9 @@ app.get('/api/games/:slug', async (req, res) => {
     const game = result.rows[0];
     // Ensure packages are arrays
     game.image = normalizeImageUrl(game.image);
-    game.packages = Array.isArray(game.packages) ? game.packages : (game.packages ? JSON.parse(game.packages) : []);
-    game.packagePrices = Array.isArray(game.packagePrices) ? game.packagePrices : (game.packagePrices ? JSON.parse(game.packagePrices) : []);
-    game.packageDiscountPrices = Array.isArray(game.packageDiscountPrices) ? game.packageDiscountPrices : (game.packageDiscountPrices ? JSON.parse(game.packageDiscountPrices) : []);
+    game.packages = coerceJsonArray(game.packages);
+    game.packagePrices = coerceJsonArray(game.packagePrices);
+    game.packageDiscountPrices = coerceJsonArray(game.packageDiscountPrices);
     
     res.json(game);
   } catch (err) {
@@ -848,7 +1167,7 @@ app.get('/api/games/:slug', async (req, res) => {
 app.post('/api/admin/games', authenticateToken, imageUpload.single('image'), async (req, res) => {
   try {
     const { name, slug, description, price, currency, category, isPopular, stock, discountPrice, packages, packagePrices, packageDiscountPrices } = req.body;
-    const image = req.file ? normalizeImageUrl(`/uploads/${req.file.filename}`) : null;
+    const image = await useProvidedImage(req);
     const id = `game_${Date.now()}`;
     
     // Generate slug if not provided
@@ -872,10 +1191,29 @@ app.post('/api/admin/games', authenticateToken, imageUpload.single('image'), asy
       }
       return [v];
     };
+    
+    // Handle packages - if it's an array of objects, extract the arrays
+    let packagesArr, packagePricesArr, packageDiscountPricesArr;
+    
+    if (packages && Array.isArray(packages) && packages.length > 0 && typeof packages[0] === 'object') {
+      // Packages are objects: [{amount, price, discountPrice, image}, ...]
+      packagesArr = packages.map(p => String(p.amount || p.name || ''));
+      packagePricesArr = packages.map(p => Number(p.price || 0));
+      packageDiscountPricesArr = packages.map(p => (p.discountPrice ? Number(p.discountPrice) : null));
+    } else {
+      // Legacy format: separate arrays
+      packagesArr = normalizeToArray(packages);
+      packagePricesArr = normalizeToArray(packagePrices);
+      packageDiscountPricesArr = normalizeToArray(packageDiscountPrices);
+    }
 
-    const packagesArr = normalizeToArray(packages);
-    const packagePricesArr = normalizeToArray(packagePrices);
-    const packageDiscountPricesArr = normalizeToArray(packageDiscountPrices);
+    // Ensure description is never null or undefined - use empty string as fallback
+    const safeDescription = (description !== null && description !== undefined) ? String(description).trim() : '';
+
+    // Validate required fields
+    if (!name || !name.trim()) {
+      return res.status(400).json({ message: 'Game name is required' });
+    }
 
     const result = await pool.query(
       `INSERT INTO games (id, name, slug, description, price, currency, image, category, is_popular, stock, discount_price, packages, package_prices, package_discount_prices) 
@@ -883,7 +1221,7 @@ app.post('/api/admin/games', authenticateToken, imageUpload.single('image'), asy
        RETURNING id, name, slug, description, price, currency, image, category, is_popular as "isPopular", stock, 
                  discount_price as "discountPrice", packages, package_prices as "packagePrices", 
                  package_discount_prices as "packageDiscountPrices"`,
-      [id, name, finalSlug, description, Number(price) || 0, currency || 'EGP', image, category, isPop, Number(stock) || 100, 
+      [id, name.trim(), finalSlug, safeDescription, Number(price) || 0, currency || 'EGP', image || '/media/placeholder.jpg', category || 'other', isPop, Number(stock) || 100, 
        discountPrice ? Number(discountPrice) : null, packagesArr, packagePricesArr, packageDiscountPricesArr]
     );
 
@@ -908,8 +1246,8 @@ app.put('/api/admin/games/:id', authenticateToken, imageUpload.single('image'), 
     }
     const gameId = lookup.rows[0].id;
     const { name, slug, description, price, currency, category, isPopular, stock, discountPrice, packages, packagePrices, packageDiscountPrices } = req.body;
-    const imageRaw = req.file ? `/uploads/${req.file.filename}` : req.body.image;
-    const image = imageRaw !== undefined ? normalizeImageUrl(imageRaw) : undefined;
+    let newImage = await useProvidedImage(req);
+    const image = newImage !== null ? newImage : (req.body.image !== undefined ? normalizeImageUrl(req.body.image) : undefined);
     
     const isPop = String(isPopular) === 'true';
 
@@ -940,19 +1278,39 @@ app.put('/api/admin/games/:id', authenticateToken, imageUpload.single('image'), 
     const values = [];
     let paramIndex = 1;
 
-    if (name !== undefined) { updates.push(`name = $${paramIndex++}`); values.push(name); }
-    if (slug !== undefined) { updates.push(`slug = $${paramIndex++}`); values.push(slug); }
-    if (description !== undefined) { updates.push(`description = $${paramIndex++}`); values.push(description); }
-    if (price !== undefined) { updates.push(`price = $${paramIndex++}`); values.push(Number(price) || 0); }
-    if (currency !== undefined) { updates.push(`currency = $${paramIndex++}`); values.push(currency); }
-    if (image !== undefined) { updates.push(`image = $${paramIndex++}`); values.push(image); }
-    if (category !== undefined) { updates.push(`category = $${paramIndex++}`); values.push(category); }
-    if (isPopular !== undefined) { updates.push(`is_popular = $${paramIndex++}`); values.push(isPop); }
-    if (stock !== undefined) { updates.push(`stock = $${paramIndex++}`); values.push(Number(stock) || 0); }
+    if (name !== undefined && name !== null) { updates.push(`name = $${paramIndex++}`); values.push(String(name).trim()); }
+    if (slug !== undefined && slug !== null) { updates.push(`slug = $${paramIndex++}`); values.push(slug); }
+    if (description !== undefined) { 
+      // Ensure description is never null - use empty string as fallback
+      const safeDescription = (description !== null) ? String(description).trim() : '';
+      updates.push(`description = $${paramIndex++}`); 
+      values.push(safeDescription); 
+    }
+    if (price !== undefined && price !== null) { updates.push(`price = $${paramIndex++}`); values.push(Number(price) || 0); }
+    if (currency !== undefined && currency !== null) { updates.push(`currency = $${paramIndex++}`); values.push(currency); }
+    if (image !== undefined && image !== null) { updates.push(`image = $${paramIndex++}`); values.push(image); }
+    if (category !== undefined && category !== null) { updates.push(`category = $${paramIndex++}`); values.push(category); }
+    if (isPopular !== undefined && isPopular !== null) { updates.push(`is_popular = $${paramIndex++}`); values.push(isPop); }
+    if (stock !== undefined && stock !== null) { updates.push(`stock = $${paramIndex++}`); values.push(Number(stock) || 0); }
     if (discountPrice !== undefined) { updates.push(`discount_price = $${paramIndex++}`); values.push(discountPrice ? Number(discountPrice) : null); }
     if (packagesArr !== undefined) { updates.push(`packages = $${paramIndex++}`); values.push(packagesArr); }
     if (packagePricesArr !== undefined) { updates.push(`package_prices = $${paramIndex++}`); values.push(packagePricesArr); }
     if (packageDiscountPricesArr !== undefined) { updates.push(`package_discount_prices = $${paramIndex++}`); values.push(packageDiscountPricesArr); }
+    
+    // If no updates, return current game data
+    if (updates.length === 0) {
+      const currentGame = await pool.query('SELECT id, name, slug, description, price, currency, image, category, is_popular as "isPopular", stock, discount_price as "discountPrice", packages, package_prices as "packagePrices", package_discount_prices as "packageDiscountPrices" FROM games WHERE id = $1', [gameId]);
+      if (currentGame.rows.length === 0) {
+        return res.status(404).json({ message: 'Game not found' });
+      }
+      const row = currentGame.rows[0];
+      row.image = normalizeImageUrl(row.image);
+      row.packages = coerceJsonArray(row.packages);
+      row.packagePrices = coerceJsonArray(row.packagePrices);
+      row.packageDiscountPrices = coerceJsonArray(row.packageDiscountPrices);
+      return res.json(row);
+    }
+    
     values.push(gameId);
 
     const query = `
@@ -972,9 +1330,9 @@ app.put('/api/admin/games/:id', authenticateToken, imageUpload.single('image'), 
 
     const row = result.rows[0];
     row.image = normalizeImageUrl(row.image);
-    row.packages = Array.isArray(row.packages) ? row.packages : (row.packages ? JSON.parse(row.packages) : []);
-    row.packagePrices = Array.isArray(row.packagePrices) ? row.packagePrices : (row.packagePrices ? JSON.parse(row.packagePrices) : []);
-    row.packageDiscountPrices = Array.isArray(row.packageDiscountPrices) ? row.packageDiscountPrices : (row.packageDiscountPrices ? JSON.parse(row.packageDiscountPrices) : []);
+    row.packages = coerceJsonArray(row.packages);
+    row.packagePrices = coerceJsonArray(row.packagePrices);
+    row.packageDiscountPrices = coerceJsonArray(row.packageDiscountPrices);
     res.json(row);
   } catch (err) {
     console.error('Error updating game:', err);
@@ -1062,19 +1420,47 @@ app.put('/api/admin/categories/:id', authenticateToken, upload.single('image'), 
   try {
     const { id } = req.params;
     const { name, slug, description, gradient, icon } = req.body;
-    const image = req.file ? `/uploads/${req.file.filename}` : req.body.image;
-
-    const result = await pool.query(
-      'UPDATE categories SET name = $1, slug = $2, description = $3, image = $4, gradient = $5, icon = $6 WHERE id = $7 RETURNING *',
-      [name, slug, description, image, gradient, icon, id]
-    );
-
-    if (result.rows.length === 0) {
+    
+    // Get current category
+    const current = await pool.query('SELECT * FROM categories WHERE id = $1', [id]);
+    if (current.rows.length === 0) {
       return res.status(404).json({ message: 'Category not found' });
     }
+    
+    const currentCat = current.rows[0];
+    
+    // Build dynamic update query
+    const updates = [];
+    const values = [];
+    let paramIndex = 1;
+    
+    if (name !== undefined && name !== null) { updates.push(`name = $${paramIndex++}`); values.push(String(name).trim()); }
+    if (slug !== undefined && slug !== null) { updates.push(`slug = $${paramIndex++}`); values.push(slug); }
+    if (description !== undefined) { updates.push(`description = $${paramIndex++}`); values.push(description !== null ? String(description).trim() : ''); }
+    if (gradient !== undefined && gradient !== null) { updates.push(`gradient = $${paramIndex++}`); values.push(gradient); }
+    if (icon !== undefined && icon !== null) { updates.push(`icon = $${paramIndex++}`); values.push(icon); }
+    
+    // Handle image
+    if (req.file) {
+      updates.push(`image = $${paramIndex++}`);
+      values.push(normalizeImageUrl(`/uploads/${req.file.filename}`));
+    } else if (req.body.image !== undefined) {
+      updates.push(`image = $${paramIndex++}`);
+      values.push(normalizeImageUrl(req.body.image));
+    }
+    
+    if (updates.length === 0) {
+      return res.json(currentCat);
+    }
+    
+    values.push(id);
+    
+    const query = `UPDATE categories SET ${updates.join(', ')} WHERE id = $${paramIndex} RETURNING *`;
+    const result = await pool.query(query, values);
 
     res.json(result.rows[0]);
   } catch (err) {
+    console.error('Error updating category:', err);
     res.status(500).json({ message: err.message });
   }
 });
@@ -1244,6 +1630,235 @@ app.get('/api/admin/export', authenticateToken, async (req, res) => {
   }
 });
 
+// ===================== PACKAGE MANAGEMENT =====================
+
+// Get packages for a game
+app.get('/api/admin/games/:id/packages', authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await pool.query(
+      'SELECT packages, package_prices as "packagePrices", package_discount_prices as "packageDiscountPrices" FROM games WHERE id = $1',
+      [id]
+    );
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: 'Game not found' });
+    }
+    
+    const game = result.rows[0];
+    // Convert to package objects if needed
+    const packages = coerceJsonArray(game.packages);
+    const prices = coerceJsonArray(game.packagePrices);
+    const discountPrices = coerceJsonArray(game.packageDiscountPrices);
+    
+    // If packages are strings, convert to objects
+    const packageObjects = packages.map((pkg, index) => {
+      if (typeof pkg === 'object' && pkg !== null) {
+        return pkg; // Already an object
+      }
+      return {
+        amount: String(pkg || ''),
+        price: Number(prices[index] || 0),
+        discountPrice: discountPrices[index] ? Number(discountPrices[index]) : null,
+        image: null
+      };
+    });
+    
+    res.json(packageObjects);
+  } catch (err) {
+    console.error('Error fetching packages:', err);
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// Update packages for a game
+app.put('/api/admin/games/:id/packages', authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { packages } = req.body; // Array of package objects: [{amount, price, discountPrice, image}, ...]
+    
+    if (!Array.isArray(packages)) {
+      return res.status(400).json({ message: 'Packages must be an array' });
+    }
+    
+    // Validate game exists
+    const gameCheck = await pool.query('SELECT id FROM games WHERE id = $1', [id]);
+    if (gameCheck.rows.length === 0) {
+      return res.status(404).json({ message: 'Game not found' });
+    }
+    
+    // Extract arrays from package objects
+    const amounts = packages.map(p => String(p.amount || ''));
+    const prices = packages.map(p => Number(p.price || 0));
+    const discountPrices = packages.map(p => (p.discountPrice ? Number(p.discountPrice) : null));
+    
+    await pool.query(
+      'UPDATE games SET packages = $1, package_prices = $2, package_discount_prices = $3 WHERE id = $4',
+      [amounts, prices, discountPrices, id]
+    );
+    
+    res.json({ message: 'Packages updated successfully', packages });
+  } catch (err) {
+    console.error('Error updating packages:', err);
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// Get games by category (for category management)
+app.get('/api/admin/categories/:id/games', authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await pool.query(
+      'SELECT id, name, slug, category, category_id FROM games WHERE category = $1 OR category_id = $1 ORDER BY name ASC',
+      [id]
+    );
+    res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// Update game category assignment
+app.put('/api/admin/games/:gameId/category', authenticateToken, async (req, res) => {
+  try {
+    const { gameId } = req.params;
+    const { categoryId, category } = req.body;
+    
+    const updates = [];
+    const values = [];
+    let paramIndex = 1;
+    
+    if (categoryId !== undefined) {
+      updates.push(`category_id = $${paramIndex++}`);
+      values.push(categoryId);
+    }
+    if (category !== undefined) {
+      updates.push(`category = $${paramIndex++}`);
+      values.push(category);
+    }
+    
+    if (updates.length === 0) {
+      return res.status(400).json({ message: 'No category provided' });
+    }
+    
+    values.push(gameId);
+    
+    const result = await pool.query(
+      `UPDATE games SET ${updates.join(', ')} WHERE id = $${paramIndex} RETURNING id, name, category, category_id`,
+      values
+    );
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: 'Game not found' });
+    }
+    
+    res.json(result.rows[0]);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// ===================== CHAT WIDGET CONFIGURATION =====================
+
+// Get chat widget config
+app.get('/api/admin/chat-widget/config', authenticateToken, async (req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM chat_widget_config WHERE id = $1', ['widget_1']);
+    if (result.rows.length === 0) {
+      return res.json({
+        id: 'widget_1',
+        enabled: true,
+        iconUrl: '/images/message-icon.svg',
+        welcomeMessage: 'Hello! How can we help you?',
+        position: 'bottom-right'
+      });
+    }
+    res.json({
+      id: result.rows[0].id,
+      enabled: result.rows[0].enabled,
+      iconUrl: result.rows[0].icon_url,
+      welcomeMessage: result.rows[0].welcome_message,
+      position: result.rows[0].position
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// Update chat widget config
+app.put('/api/admin/chat-widget/config', authenticateToken, async (req, res) => {
+  try {
+    const { enabled, iconUrl, welcomeMessage, position } = req.body;
+    
+    const result = await pool.query(
+      `UPDATE chat_widget_config 
+       SET enabled = COALESCE($1, enabled),
+           icon_url = COALESCE($2, icon_url),
+           welcome_message = COALESCE($3, welcome_message),
+           position = COALESCE($4, position),
+           updated_at = CURRENT_TIMESTAMP
+       WHERE id = 'widget_1'
+       RETURNING *`,
+      [enabled, iconUrl, welcomeMessage, position]
+    );
+    
+    if (result.rows.length === 0) {
+      // Create if doesn't exist
+      await pool.query(
+        'INSERT INTO chat_widget_config (id, enabled, icon_url, welcome_message, position) VALUES ($1, $2, $3, $4, $5)',
+        ['widget_1', enabled !== undefined ? enabled : true, iconUrl || '/images/message-icon.svg', welcomeMessage || 'Hello! How can we help you?', position || 'bottom-right']
+      );
+      const newResult = await pool.query('SELECT * FROM chat_widget_config WHERE id = $1', ['widget_1']);
+      return res.json({
+        id: newResult.rows[0].id,
+        enabled: newResult.rows[0].enabled,
+        iconUrl: newResult.rows[0].icon_url,
+        welcomeMessage: newResult.rows[0].welcome_message,
+        position: newResult.rows[0].position
+      });
+    }
+    
+    res.json({
+      id: result.rows[0].id,
+      enabled: result.rows[0].enabled,
+      iconUrl: result.rows[0].icon_url,
+      welcomeMessage: result.rows[0].welcome_message,
+      position: result.rows[0].position
+    });
+  } catch (err) {
+    console.error('Error updating chat widget config:', err);
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// Get chat widget config (public endpoint for frontend)
+app.get('/api/chat-widget/config', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM chat_widget_config WHERE id = $1', ['widget_1']);
+    if (result.rows.length === 0) {
+      return res.json({
+        enabled: true,
+        iconUrl: '/images/message-icon.svg',
+        welcomeMessage: 'Hello! How can we help you?',
+        position: 'bottom-right'
+      });
+    }
+    res.json({
+      enabled: result.rows[0].enabled,
+      iconUrl: result.rows[0].icon_url,
+      welcomeMessage: result.rows[0].welcome_message,
+      position: result.rows[0].position
+    });
+  } catch (err) {
+    res.json({
+      enabled: true,
+      iconUrl: '/images/message-icon.svg',
+      welcomeMessage: 'Hello! How can we help you?',
+      position: 'bottom-right'
+    });
+  }
+});
+
 // Upload file
 app.post('/api/admin/upload', authenticateToken, upload.single('file'), (req, res) => {
   try {
@@ -1291,6 +1906,16 @@ app.post('/api/admin/upload', authenticateToken, upload.single('file'), (req, re
         })
         .catch((err) => {
           console.error('Cloudinary upload failed, falling back to local:', err?.message || err);
+          try {
+            const alertId = `al_${Date.now()}`;
+            const summary = `Cloudinary upload failed for ${req.file?.originalname || req.file?.filename}: ${String(err?.message || err).substring(0,180)}`;
+            pool.query('INSERT INTO seller_alerts (id, type, summary) VALUES ($1, $2, $3)', [alertId, 'upload_error', summary]).catch(()=>{});
+            const auditId = `aa_${Date.now()}`;
+            pool.query('INSERT INTO admin_audit_logs (id, action, summary) VALUES ($1, $2, $3)', [auditId, 'upload_error', summary]).catch(()=>{});
+            if (process.env.ADMIN_PHONE) {
+              sendWhatsAppMessage(process.env.ADMIN_PHONE, `⚠️ Upload failed: ${summary}`).catch(()=>{});
+            }
+          } catch {}
           res.json({
             filename: req.file.filename,
             originalname: req.file.originalname,
@@ -1341,6 +1966,13 @@ app.post('/api/transactions/checkout', async (req, res) => {
       [transactionId, userId, paymentMethod || 'Unknown', total, 'pending']
     );
     for (const it of items) {
+      // Validate game exists before inserting transaction item
+      const gameCheck = await pool.query('SELECT id FROM games WHERE id = $1', [it.id]);
+      if (gameCheck.rows.length === 0) {
+        console.warn(`Game ${it.id} not found, skipping transaction item`);
+        continue;
+      }
+      
       const itemId = `txi_${Date.now()}_${Math.random().toString(36).slice(2,9)}`;
       await pool.query(
         'INSERT INTO transaction_items (id, transaction_id, game_id, quantity, price) VALUES ($1, $2, $3, $4, $5)',
@@ -1398,6 +2030,24 @@ function encryptMessage(plain) {
   const enc = Buffer.concat([cipher.update(plain, 'utf8'), cipher.final()]);
   const tag = cipher.getAuthTag();
   return JSON.stringify({ iv: iv.toString('hex'), tag: tag.toString('hex'), data: enc.toString('hex') });
+}
+
+function decryptMessage(payload) {
+  try {
+    if (!payload) return '';
+    const key = (process.env.PAYMENT_ENCRYPTION_KEY || '').padEnd(32, '0').slice(0, 32);
+    if (!key.trim()) return '[encrypted]';
+    const obj = typeof payload === 'string' ? JSON.parse(payload) : payload;
+    const iv = Buffer.from(String(obj.iv || ''), 'hex');
+    const tag = Buffer.from(String(obj.tag || ''), 'hex');
+    const data = Buffer.from(String(obj.data || ''), 'hex');
+    const decipher = crypto.createDecipheriv('aes-256-gcm', Buffer.from(key), iv);
+    decipher.setAuthTag(tag);
+    const dec = Buffer.concat([decipher.update(data), decipher.final()]);
+    return dec.toString('utf8');
+  } catch {
+    return '[encrypted]';
+  }
 }
 
 function httpsPostJson(url, headers, body) {
@@ -1460,7 +2110,7 @@ app.post('/api/transactions/confirm', receiptUpload.single('receipt'), async (re
 });
 
 // Alerts
-app.get('/api/admin/alerts', authenticateToken, async (req, res) => {
+app.get('/api/admin/alerts/mem', authenticateToken, async (req, res) => {
   try {
     const { status, type, q } = req.query;
     let alerts = await memStorage.getSellerAlerts();
@@ -1484,7 +2134,7 @@ app.get('/api/admin/alerts', authenticateToken, async (req, res) => {
   }
 });
 
-app.put('/api/admin/alerts/:id/read', authenticateToken, async (req, res) => {
+app.put('/api/admin/alerts/mem/:id/read', authenticateToken, async (req, res) => {
   await memStorage.markSellerAlertRead(req.params.id);
   res.json({ success: true });
 });
@@ -1678,6 +2328,15 @@ app.post('/api/admin/whatsapp/send', authenticateToken, async (req, res) => {
   }
 });
 
+app.get('/api/admin/whatsapp/contacts', authenticateToken, async (req, res) => {
+  try {
+    const rows = await pool.query('SELECT id, name, phone FROM users ORDER BY name ASC');
+    res.json(rows.rows);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 // Webhook verification
 app.get('/api/whatsapp/webhook', (req, res) => {
   const mode = req.query['hub.mode'];
@@ -1715,6 +2374,18 @@ app.post('/api/whatsapp/webhook', async (req, res) => {
         const alertId = `al_${Date.now()}_${Math.random().toString(36).slice(2,9)}`;
         const summary = `New WhatsApp message from ${from}: ${text.substring(0, 120)}`;
         await pool.query('INSERT INTO seller_alerts (id, type, summary) VALUES ($1, $2, $3)', [alertId, 'whatsapp_message', summary]);
+        // Forward to admin and seller phones
+        const adminPhone = process.env.ADMIN_PHONE;
+        const sellerPhones = (process.env.SELLER_PHONES || '').split(',').map(p => p.trim()).filter(p => p);
+        const phonesToNotify = adminPhone ? [adminPhone, ...sellerPhones] : sellerPhones;
+        
+        for (const phone of phonesToNotify) {
+          try {
+            await sendWhatsAppMessage(phone, `📱 New WhatsApp message from ${from}:\n${text.substring(0, 200)}`);
+          } catch (err) {
+            console.error(`Failed to forward WhatsApp message to ${phone}:`, err.message);
+          }
+        }
       }
     }
     res.sendStatus(200);
@@ -1761,26 +2432,145 @@ app.get('/api/chat/all', async (req, res) => {
   }
 });
 
+app.get('/api/admin/chat/:sessionId', authenticateToken, async (req, res) => {
+  try {
+    const { sessionId } = req.params;
+    const result = await pool.query(
+      'SELECT id, sender, message_encrypted, session_id, timestamp, read FROM chat_messages WHERE session_id = $1 ORDER BY timestamp ASC',
+      [sessionId]
+    );
+    const messages = result.rows.map(r => ({
+      id: r.id,
+      sender: r.sender,
+      message: decryptMessage(r.message_encrypted),
+      sessionId: r.session_id,
+      timestamp: new Date(r.timestamp).getTime(),
+      read: Boolean(r.read)
+    }));
+    res.json(messages || []);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 app.post('/api/chat/message', async (req, res) => {
   try {
     const { sender, message, sessionId } = req.body;
     if (!sender || !message || !sessionId) return res.status(400).json({ message: 'sender, message, sessionId required' });
+
+    if (sender === 'support') {
+      const authHeader = req.headers['authorization'];
+      const token = authHeader && String(authHeader).split(' ')[1];
+      if (!token) return res.status(401).json({ message: 'Access token required' });
+      try {
+        jwt.verify(token, JWT_SECRET);
+      } catch {
+        return res.status(403).json({ message: 'Invalid or expired token' });
+      }
+    }
+
     const id = `cm_${Date.now()}_${Math.random().toString(36).slice(2,9)}`;
     await pool.query('INSERT INTO chat_messages (id, sender, message_encrypted, session_id) VALUES ($1, $2, $3, $4)', [
       id, sender, encryptMessage(String(message)), sessionId
     ]);
+    
+    // When admin replies, mark all unread messages in this session as read
+    if (sender === 'support') {
+      await pool.query('UPDATE chat_messages SET read = true WHERE session_id = $1 AND read = false', [sessionId]);
+    }
+    
     if (sender === 'user') {
       const alertId = `al_${Date.now()}_${Math.random().toString(36).slice(2,9)}`;
       const summary = `Website message in ${sessionId}: ${String(message).substring(0, 120)}`;
       await pool.query('INSERT INTO seller_alerts (id, type, summary) VALUES ($1, $2, $3)', [alertId, 'website_message', summary]);
+      
+      // Forward to seller WhatsApp numbers if configured
+      const sellerPhones = (process.env.SELLER_PHONES || '').split(',').map(p => p.trim()).filter(p => p);
+      if (sellerPhones.length > 0) {
+        const forwardMessage = `💬 New chat message from ${sessionId}:\n${String(message).substring(0, 200)}`;
+        for (const phone of sellerPhones) {
+          try {
+            await sendWhatsAppMessage(phone, forwardMessage);
+          } catch (err) {
+            console.error(`Failed to forward message to ${phone}:`, err.message);
+          }
+        }
+      }
     }
+    
     if (sender === 'support' && sessionId.startsWith('wa_') && WHATSAPP_TOKEN && WHATSAPP_PHONE_NUMBER_ID) {
       const to = sessionId.replace('wa_', '');
       const url = `https://graph.facebook.com/v19.0/${WHATSAPP_PHONE_NUMBER_ID}/messages`;
       const payload = { messaging_product: 'whatsapp', to, type: 'text', text: { body: String(message) } };
       try { await httpsPostJson(url, { Authorization: `Bearer ${WHATSAPP_TOKEN}` }, payload); } catch {}
     }
+    
     res.status(201).json({ id });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+app.get('/api/admin/whatsapp/messages', authenticateToken, async (req, res) => {
+  try {
+    const { sessionId, q } = req.query;
+    let query = 'SELECT id, wa_message_id, direction, from_phone, to_phone, message_encrypted, timestamp, session_id, status, is_group FROM whatsapp_messages WHERE 1=1';
+    const params = [];
+    if (sessionId) {
+      params.push(String(sessionId));
+      query += ` AND session_id = $${params.length}`;
+    }
+    if (q) {
+      params.push(`%${String(q)}%`);
+      query += ` AND message_encrypted::text ILIKE $${params.length}`;
+    }
+    query += ' ORDER BY timestamp DESC LIMIT 500';
+    const result = await pool.query(query, params);
+    res.json(result.rows.map(r => ({
+      id: r.id,
+      waMessageId: r.wa_message_id,
+      direction: r.direction,
+      fromPhone: r.from_phone,
+      toPhone: r.to_phone,
+      message: decryptMessage(r.message_encrypted),
+      timestamp: new Date(r.timestamp).getTime(),
+      sessionId: r.session_id,
+      status: r.status,
+      isGroup: Boolean(r.is_group)
+    })));
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+app.put('/api/admin/chat/:sessionId/read', authenticateToken, async (req, res) => {
+  try {
+    const { sessionId } = req.params;
+    await pool.query('UPDATE chat_messages SET read = true WHERE session_id = $1', [sessionId]);
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+app.get('/api/admin/chat/sessions', authenticateToken, async (req, res) => {
+  try {
+    const rows = await pool.query(`
+      SELECT session_id as id,
+             MIN(timestamp) as started_at,
+             MAX(timestamp) as last_activity,
+             SUM(CASE WHEN read = false THEN 1 ELSE 0 END) as unread_count
+      FROM chat_messages
+      GROUP BY session_id
+      ORDER BY last_activity DESC
+      LIMIT 500
+    `);
+    res.json(rows.rows.map(r => ({
+      id: r.id,
+      startedAt: new Date(r.started_at).getTime(),
+      lastActivity: new Date(r.last_activity).getTime(),
+      unreadCount: parseInt(r.unread_count || 0)
+    })));
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -1811,6 +2601,13 @@ app.get('/api/admin/alerts', authenticateToken, async (req, res) => {
       params.push(`%${q}%`);
     }
 
+    // Archiving filter
+    if (req.query.archived === 'true') {
+      query += ' AND archived = true';
+    } else if (req.query.archived === 'false') {
+      query += ' AND archived = false';
+    }
+
     query += ' ORDER BY created_at DESC LIMIT 200';
     
     const result = await pool.query(query, params);
@@ -1835,6 +2632,16 @@ app.put('/api/admin/alerts/:id/read', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
     await pool.query('UPDATE seller_alerts SET read = true WHERE id = $1', [id]);
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+app.put('/api/admin/alerts/:id/archive', authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    await pool.query('UPDATE seller_alerts SET archived = true WHERE id = $1', [id]);
     res.json({ ok: true });
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -1884,6 +2691,21 @@ app.get('/api/admin/db/diagnose', authenticateToken, async (req, res) => {
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
+});
+
+app.get('/api/admin/selftest', authenticateToken, async (req, res) => {
+  const results = { ok: true, checks: [] };
+  async function check(name, fn) {
+    try { const out = await fn(); results.checks.push({ name, ok: true, out }); }
+    catch (err) { results.ok = false; results.checks.push({ name, ok: false, error: err.message }); }
+  }
+  await check('categories', async () => (await pool.query('SELECT COUNT(*) as c FROM categories')).rows[0]);
+  await check('games', async () => (await pool.query('SELECT COUNT(*) as c FROM games')).rows[0]);
+  await check('popular_games', async () => (await pool.query('SELECT COUNT(*) as c FROM games WHERE is_popular = true')).rows[0]);
+  await check('uploads_writable', async () => { const f = path.join(uploadDir, 'selftest.tmp'); fs.writeFileSync(f, 'x'); fs.unlinkSync(f); return { ok: true }; });
+  await check('chat_sessions', async () => (await pool.query('SELECT COUNT(DISTINCT session_id) as c FROM chat_messages')).rows[0]);
+  await check('alerts', async () => (await pool.query('SELECT COUNT(*) as c FROM seller_alerts')).rows[0]);
+  res.json(results);
 });
 
 app.get('/api/admin/storage/health', authenticateToken, (req, res) => {
@@ -1941,6 +2763,68 @@ const startServer = async () => {
       console.log('✅ Uploads directory is writable');
     } catch (err) {
       console.error('❌ Uploads directory error:', err.message);
+    }
+    async function applyImageOverrides() {
+      function copyLocalToUploads(localPath) {
+        try {
+          if (!fs.existsSync(localPath)) return null;
+          const ext = path.extname(localPath) || '.jpg';
+          const filename = `image-${Date.now()}-${Math.round(Math.random()*1e9)}${ext}`;
+          const dest = path.join(uploadDir, filename);
+          fs.copyFileSync(localPath, dest);
+          return normalizeImageUrl(`/uploads/${filename}`);
+        } catch {
+          return null;
+        }
+      }
+      async function uploadFromLocal(localPath) {
+        if (CLOUDINARY_ENABLED) {
+          try {
+            const result = await cloudinary.uploader.upload(localPath, { folder: process.env.CLOUDINARY_FOLDER || 'gamecart/games', resource_type: 'image' });
+            return result.secure_url;
+          } catch {}
+        }
+        return copyLocalToUploads(localPath);
+      }
+      const items = [
+        { slugs: ['call-of-duty-mobile','cod-mobile','codm','callofdutymobile'], file: 'D:\\GameCart-1\\callofduty-new-image.jpg' },
+        { slugs: ['free-fire','freefire'], file: 'D:\\GameCart-1\\free-fire-newimage.jpg' },
+        { slugs: ['roblox'], file: 'D:\\GameCart-1\\images\\roblox.webp' },
+      ];
+      for (const it of items) {
+        const url = await uploadFromLocal(it.file);
+        if (!url) continue;
+        for (const s of it.slugs) {
+          try {
+            await pool.query(`UPDATE games SET image = $1 WHERE slug = $2 OR LOWER(REPLACE(slug, '-', '')) = LOWER(REPLACE($2, '-', ''))`, [url, s]);
+          } catch {}
+        }
+      }
+      try {
+        const baseDir = 'D\\GameCart-1\\images';
+        if (fs.existsSync(baseDir)) {
+          const files = fs.readdirSync(baseDir).filter(f => /\.(jpg|jpeg|png|webp|gif)$/i.test(f));
+          const allGamesRes = await pool.query('SELECT id, slug, name FROM games');
+          const allGames = allGamesRes.rows || [];
+          const norm = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+          for (const f of files) {
+            const localPath = path.join(baseDir, f);
+            const base = f.replace(/\.[^.]+$/, '');
+            const nb = norm(base);
+            const url = await uploadFromLocal(localPath);
+            if (!url) continue;
+            for (const g of allGames) {
+              const ns = norm(g.slug);
+              const nn = norm(g.name);
+              if (ns.includes(nb) || nb.includes(ns) || nn.includes(nb) || nb.includes(nn)) {
+                try {
+                  await pool.query('UPDATE games SET image = $1 WHERE id = $2', [url, g.id]);
+                } catch {}
+              }
+            }
+          }
+        }
+      } catch {}
     }
     
     // 3. Autoload startup modules
@@ -2063,6 +2947,16 @@ const startServer = async () => {
       }
     } catch {}
 
+    app.post('/api/maintenance/images/override', async (req, res) => {
+      try {
+        await applyImageOverrides();
+        res.json({ ok: true });
+      } catch (err) {
+        res.status(500).json({ ok: false, message: err.message });
+      }
+    });
+
+    await applyImageOverrides();
     app.listen(PORT, () => {
       console.log('\n╔════════════════════════════════════════╗');
       console.log('║     GameCart Backend Server             ║');

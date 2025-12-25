@@ -226,9 +226,13 @@ export default function AdminDashboard() {
   // Send reply mutation
   const replyMutation = useMutation({
     mutationFn: async () => {
+      const token = localStorage.getItem('adminToken');
       const res = await fetch('/api/chat/message', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
         body: JSON.stringify({
           sender: 'support',
           message: replyMessage,
@@ -240,6 +244,48 @@ export default function AdminDashboard() {
     onSuccess: () => {
       setReplyMessage('');
       refetchChats();
+      queryClient.invalidateQueries({ queryKey: [`/api/admin/chat/${selectedSession}`] });
+    }
+  });
+
+  // Delete category mutation
+  const deleteCategoryMutation = useMutation({
+    mutationFn: async (categoryId: string) => {
+      const token = localStorage.getItem('adminToken');
+      const res = await fetch(`/api/admin/categories/${categoryId}`, {
+        method: 'DELETE',
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+      });
+      if (!res.ok) throw new Error('Failed to delete category');
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/categories'] });
+    }
+  });
+
+  // Update category mutation
+  const updateCategoryMutation = useMutation({
+    mutationFn: async (data: { id: string; name?: string; slug?: string; description?: string; gradient?: string; icon?: string; image?: string }) => {
+      const token = localStorage.getItem('adminToken');
+      const formData = new FormData();
+      if (data.name) formData.append('name', data.name);
+      if (data.slug) formData.append('slug', data.slug);
+      if (data.description) formData.append('description', data.description);
+      if (data.gradient) formData.append('gradient', data.gradient);
+      if (data.icon) formData.append('icon', data.icon);
+      if (data.image) formData.append('image', data.image);
+      
+      const res = await fetch(`/api/admin/categories/${data.id}`, {
+        method: 'PUT',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        body: formData
+      });
+      if (!res.ok) throw new Error('Failed to update category');
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/categories'] });
     }
   });
 
@@ -266,7 +312,22 @@ export default function AdminDashboard() {
     }
   };
 
-  const sessionChats = selectedSession ? allChats.filter((msg: ChatMessage) => msg.sessionId === selectedSession) : [];
+  // Fetch chat messages for selected session
+  const { data: sessionMessages = [] } = useQuery<ChatMessage[]>({
+    queryKey: [`/api/admin/chat/${selectedSession}`],
+    enabled: !!selectedSession && activeTab === 'chats',
+    refetchInterval: 2000,
+    queryFn: async () => {
+      const token = localStorage.getItem('adminToken');
+      const res = await fetch(`/api/admin/chat/${selectedSession}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+      });
+      if (!res.ok) throw new Error('Failed to fetch messages');
+      return res.json();
+    }
+  });
+
+  const sessionChats = sessionMessages;
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -298,8 +359,9 @@ export default function AdminDashboard() {
         <h1 className="text-3xl font-bold text-gold-primary mb-8">Diaa Eldeen Admin Dashboard</h1>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-6">
+          <TabsList className="grid w-full grid-cols-7">
             <TabsTrigger value="games">Games & Products</TabsTrigger>
+            <TabsTrigger value="packages">Packages</TabsTrigger>
             <TabsTrigger value="categories">Categories</TabsTrigger>
             <TabsTrigger value="cards">Game Cards</TabsTrigger>
             <TabsTrigger value="chats">Support Chat</TabsTrigger>
@@ -469,6 +531,35 @@ export default function AdminDashboard() {
             </div>
           </TabsContent>
 
+          {/* Packages Tab */}
+          <TabsContent value="packages" className="space-y-6">
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-bold text-foreground">Manage Packages</h2>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {games.map((game: Game) => (
+                <Card key={game.id} className="bg-card/50 border-gold-primary/30">
+                  <CardHeader>
+                    <CardTitle className="text-lg">{game.name}</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <Button
+                      variant="outline"
+                      className="w-full"
+                      onClick={() => {
+                        window.location.href = `/admin/packages/${game.id}`;
+                      }}
+                    >
+                      <Package className="w-4 h-4 mr-2" />
+                      Manage Packages
+                    </Button>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </TabsContent>
+
           {/* Categories Tab */}
           <TabsContent value="categories" className="space-y-6">
             <div className="flex justify-between items-center">
@@ -489,11 +580,30 @@ export default function AdminDashboard() {
                     <p className="text-sm text-muted-foreground">ID: {cat.id}</p>
                     <p className="text-sm text-muted-foreground">Slug: {cat.slug}</p>
                     <div className="flex gap-2">
-                      <Button variant="outline" size="sm" className="flex-1">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="flex-1"
+                        onClick={() => {
+                          const name = prompt('Category name:', cat.name);
+                          if (name) {
+                            updateCategoryMutation.mutate({ id: cat.id, name });
+                          }
+                        }}
+                      >
                         <Edit className="w-4 h-4 mr-2" />
                         Edit
                       </Button>
-                      <Button variant="destructive" size="sm" className="flex-1">
+                      <Button 
+                        variant="destructive" 
+                        size="sm" 
+                        className="flex-1"
+                        onClick={() => {
+                          if (confirm(`Are you sure you want to delete "${cat.name}"?`)) {
+                            deleteCategoryMutation.mutate(cat.id);
+                          }
+                        }}
+                      >
                         <Trash2 className="w-4 h-4" />
                       </Button>
                     </div>
@@ -850,7 +960,17 @@ export default function AdminDashboard() {
 }
 
 function WhatsAppConnectionPanel() {
-  const { data: cfg } = useQuery<{ connected: boolean; phoneNumberId: string | null }>({ queryKey: ['/api/admin/whatsapp/config'] });
+  const { data: cfg } = useQuery<{ connected: boolean; phoneNumberId: string | null }>({
+    queryKey: ['/api/admin/whatsapp/config'],
+    queryFn: async () => {
+      const token = localStorage.getItem('adminToken');
+      const res = await fetch('/api/admin/whatsapp/config', {
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+      });
+      if (!res.ok) throw new Error('Failed to fetch WhatsApp config');
+      return res.json();
+    }
+  });
   const [to, setTo] = useState('');
   const [text, setText] = useState('Hello from Diaa Eldeen!');
   const sendMutation = useMutation({

@@ -155,8 +155,8 @@ export default function GamesPage() {
                     {/* Card glow effect */}
                     <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/0 via-cyan-500/0 to-cyan-500/0 group-hover:from-cyan-500/10 group-hover:via-cyan-500/5 group-hover:to-cyan-500/10 transition-all duration-300 pointer-events-none"></div>
                     
-                    {/* Game Image */}
-                    <div className="relative rounded-lg overflow-hidden border border-cyan-400/20 bg-gray-800 h-48 mb-3 flex items-center justify-center">
+                    {/* Game Image - Square Icon Only */}
+                    <div className="relative rounded-lg overflow-hidden border border-cyan-400/20 bg-gray-800 aspect-square mb-3 flex items-center justify-center">
                       <ImageWithFallback
                         src={game.image}
                         alt={game.name}
@@ -170,57 +170,7 @@ export default function GamesPage() {
                       )}
                     </div>
 
-                    {/* Game Info */}
-                    <div className="relative z-10 mb-3">
-                      <h3 className="font-bold text-white mb-2 text-lg line-clamp-1">{game.name}</h3>
-                      
-                      {/* Card Amounts/Packages */}
-                      {packages.length > 0 ? (
-                        <div className="mb-2 space-y-1">
-                          {packages.slice(0, 2).map((pkg: string, idx: number) => {
-                            const pkgPrice = packagePrices[idx] || game.price;
-                            const pkgDiscountPrice = packageDiscountPrices[idx] || null;
-                            const hasPkgDiscount = pkgDiscountPrice && parseFloat(pkgDiscountPrice) > 0;
-                            
-                            return (
-                              <div key={idx} className="flex items-center justify-between text-xs">
-                                <span className="text-cyan-300/80">{pkg}</span>
-                                <div className="flex items-center gap-1">
-                                  {hasPkgDiscount && (
-                                    <span className="text-red-400 line-through text-[10px]">{pkgPrice} {game.currency}</span>
-                                  )}
-                                  <span className="text-cyan-400 font-bold">{hasPkgDiscount ? pkgDiscountPrice : pkgPrice} {game.currency}</span>
-                                </div>
-                              </div>
-                            );
-                          })}
-                          {packages.length > 2 && (
-                            <div className="text-xs text-cyan-300/60">+{packages.length - 2} {t('more_packages')}</div>
-                          )}
-                        </div>
-                      ) : (
-                        <div className="mb-2">
-                          <div className="flex items-center justify-between">
-                            {hasDiscount ? (
-                              <>
-                                <span className="text-red-400 line-through text-sm">{mainPrice} {game.currency}</span>
-                                <span className="text-cyan-400 font-bold text-lg">{discountPrice} {game.currency}</span>
-                              </>
-                            ) : (
-                              <span className="text-cyan-400 font-bold text-lg">{mainPrice} {game.currency}</span>
-                            )}
-                          </div>
-                        </div>
-                      )}
-                      
-                      <div className="flex items-center justify-between">
-                        <span className={`text-xs px-2 py-1 rounded ${isOutOfStock ? 'text-red-200 bg-red-500/10' : 'text-cyan-300/70 bg-cyan-400/10'}`}>
-                          {isOutOfStock ? t('out_of_stock') : `${t('in_stock_prefix')}: ${game.stock}`}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Action Buttons */}
+                    {/* Action Buttons - View and Delete */}
                     <div className="relative z-10 flex gap-2">
                       <Link href={`/game/${game.slug}`} className="flex-1">
                         <Button

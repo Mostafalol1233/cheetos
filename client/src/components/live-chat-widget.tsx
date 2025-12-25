@@ -13,12 +13,36 @@ interface ChatMessage {
   timestamp: number;
 }
 
+interface ChatWidgetConfig {
+  enabled: boolean;
+  iconUrl: string;
+  welcomeMessage: string;
+  position: string;
+}
+
 export function LiveChatWidget() {
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
   const [inputMessage, setInputMessage] = useState('');
   const [sessionId] = useState(() => `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+
+  // Fetch chat widget config
+  const { data: config } = useQuery<ChatWidgetConfig>({
+    queryKey: ['/api/chat-widget/config'],
+    queryFn: async () => {
+      const res = await fetch('/api/chat-widget/config');
+      return res.json();
+    },
+    staleTime: 60000, // Cache for 1 minute
+  });
+
+  const widgetConfig = config || {
+    enabled: true,
+    iconUrl: '/images/message-icon.svg',
+    welcomeMessage: 'Hello! How can we help you?',
+    position: 'bottom-right'
+  };
 
   // Fetch chat messages
   const { data: messages = [] } = useQuery<ChatMessage[]>({
@@ -86,14 +110,37 @@ export function LiveChatWidget() {
     return () => window.removeEventListener('open-live-chat', handler);
   }, []);
 
+  if (!widgetConfig.enabled) {
+    return null;
+  }
+
   if (!isOpen) {
     return (
-      <Button
-        onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 right-6 rounded-full w-14 h-14 bg-gradient-to-r from-gold-primary to-neon-pink hover:scale-110 transition-transform duration-300 shadow-lg z-40 flex items-center justify-center"
-      >
-        <MessageCircle className="w-6 h-6 text-white" />
-      </Button>
+      <div className={`fixed ${widgetConfig.position === 'bottom-right' ? 'bottom-6 right-6' : 'bottom-6 left-6'} z-40`}>
+        <button
+          onClick={() => setIsOpen(true)}
+          className="w-20 h-20 rounded-lg bg-gradient-to-r from-gold-primary to-neon-pink hover:scale-110 transition-transform duration-300 shadow-lg relative overflow-hidden group"
+        >
+          {/* Square image background */}
+          <img 
+            src={widgetConfig.iconUrl || '/images/message-icon.svg'} 
+            alt="Chat" 
+            className="w-full h-full object-cover"
+            onError={(e) => {
+              (e.target as HTMLImageElement).src = '/images/message-icon.svg';
+            }}
+          />
+          {/* Black text overlay */}
+          <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center text-white text-center px-1">
+            <p className="text-[10px] font-bold leading-tight">Diaa Eldeen</p>
+            <p className="text-[9px] font-semibold leading-tight">Support</p>
+          </div>
+          {/* Bottom text */}
+          <div className="absolute bottom-0 left-0 right-0 bg-black/80 text-white text-[8px] font-medium py-0.5 text-center">
+            We typically reply in minutes
+          </div>
+        </button>
+      </div>
     );
   }
 
@@ -103,7 +150,7 @@ export function LiveChatWidget() {
       <div className="bg-gradient-to-r from-gold-primary/20 to-neon-pink/20 border-b border-gold-primary/30 p-4 flex items-center justify-between">
         <div>
           <h3 className="font-bold text-foreground">Diaa Eldeen Support</h3>
-          <p className="text-xs text-muted-foreground">We typically reply in minutes</p>
+          <p className="text-xs text-muted-foreground">{widgetConfig.welcomeMessage || 'We typically reply in minutes'}</p>
         </div>
         <div className="flex gap-2">
           <Button
