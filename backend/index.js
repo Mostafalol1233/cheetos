@@ -326,6 +326,17 @@ app.get('/favicon.ico', (req, res) => {
   if (fs.existsSync(faviconPath)) {
     return res.sendFile(faviconPath);
   }
+  // Try other favicon locations
+  const altPaths = [
+    path.join(publicDir, 'favicon.ico'),
+    path.join(attachedAssetsDir, 'favicon.ico'),
+    path.join(rootAttachedAssetsDir, 'favicon.ico')
+  ];
+  for (const altPath of altPaths) {
+    if (fs.existsSync(altPath)) {
+      return res.sendFile(altPath);
+    }
+  }
   res.status(404).end();
 });
 
@@ -346,7 +357,22 @@ app.get('/attached_assets/ninja-gaming-logo.png', (req, res) => {
   if (fs.existsSync(logoPath3)) {
     return res.sendFile(logoPath3);
   }
+  // Try backend/public
+  const logoPath4 = path.join(publicDir, 'ninja-gaming-logo.png');
+  if (fs.existsSync(logoPath4)) {
+    return res.sendFile(logoPath4);
+  }
   res.status(404).json({ message: 'Logo not found' });
+});
+
+// Serve any image from images directory
+app.get('/images/:filename', (req, res) => {
+  const filename = req.params.filename;
+  const imagePath = path.join(imagesDir, filename);
+  if (fs.existsSync(imagePath)) {
+    return res.sendFile(imagePath);
+  }
+  res.status(404).json({ message: 'Image not found' });
 });
 
 // ===============================================
@@ -1636,10 +1662,19 @@ app.get('/api/admin/export', authenticateToken, async (req, res) => {
 app.get('/api/admin/games/:id/packages', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
-    const result = await pool.query(
+    // Try by ID first, then by slug
+    let result = await pool.query(
       'SELECT packages, package_prices as "packagePrices", package_discount_prices as "packageDiscountPrices" FROM games WHERE id = $1',
       [id]
     );
+    
+    if (result.rows.length === 0) {
+      // Try by slug
+      result = await pool.query(
+        'SELECT packages, package_prices as "packagePrices", package_discount_prices as "packageDiscountPrices" FROM games WHERE slug = $1',
+        [id]
+      );
+    }
     
     if (result.rows.length === 0) {
       return res.status(404).json({ message: 'Game not found' });
@@ -1653,7 +1688,7 @@ app.get('/api/admin/games/:id/packages', authenticateToken, async (req, res) => 
     
     // If packages are strings, convert to objects
     const packageObjects = packages.map((pkg, index) => {
-      if (typeof pkg === 'object' && pkg !== null) {
+      if (typeof pkg === 'object' && pkg !== null && pkg.amount) {
         return pkg; // Already an object
       }
       return {
@@ -1681,11 +1716,15 @@ app.put('/api/admin/games/:id/packages', authenticateToken, async (req, res) => 
       return res.status(400).json({ message: 'Packages must be an array' });
     }
     
-    // Validate game exists
-    const gameCheck = await pool.query('SELECT id FROM games WHERE id = $1', [id]);
+    // Validate game exists - try by ID first, then by slug
+    let gameCheck = await pool.query('SELECT id FROM games WHERE id = $1', [id]);
+    if (gameCheck.rows.length === 0) {
+      gameCheck = await pool.query('SELECT id FROM games WHERE slug = $1', [id]);
+    }
     if (gameCheck.rows.length === 0) {
       return res.status(404).json({ message: 'Game not found' });
     }
+    const actualGameId = gameCheck.rows[0].id;
     
     // Extract arrays from package objects
     const amounts = packages.map(p => String(p.amount || ''));
@@ -1694,10 +1733,28 @@ app.put('/api/admin/games/:id/packages', authenticateToken, async (req, res) => 
     
     await pool.query(
       'UPDATE games SET packages = $1, package_prices = $2, package_discount_prices = $3 WHERE id = $4',
-      [amounts, prices, discountPrices, id]
+      [amounts, prices, discountPrices, actualGameId]
     );
     
-    res.json({ message: 'Packages updated successfully', packages });
+    // Return updated packages
+    const updatedResult = await pool.query(
+      'SELECT packages, package_prices as "packagePrices", package_discount_prices as "packageDiscountPrices" FROM games WHERE id = $1',
+      [actualGameId]
+    );
+    
+    const updatedGame = updatedResult.rows[0];
+    const updatedPackages = coerceJsonArray(updatedGame.packages);
+    const updatedPrices = coerceJsonArray(updatedGame.packagePrices);
+    const updatedDiscountPrices = coerceJsonArray(updatedGame.packageDiscountPrices);
+    
+    const packageObjects = updatedPackages.map((pkg, index) => ({
+      amount: typeof pkg === 'string' ? pkg : (pkg?.amount || ''),
+      price: Number(updatedPrices[index] || 0),
+      discountPrice: updatedDiscountPrices[index] ? Number(updatedDiscountPrices[index]) : null,
+      image: null
+    }));
+    
+    res.json({ message: 'Packages updated successfully', packages: packageObjects });
   } catch (err) {
     console.error('Error updating packages:', err);
     res.status(500).json({ message: err.message });

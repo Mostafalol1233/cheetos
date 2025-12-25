@@ -359,12 +359,13 @@ export default function AdminDashboard() {
         <h1 className="text-3xl font-bold text-gold-primary mb-8">Diaa Eldeen Admin Dashboard</h1>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-7">
+          <TabsList className="grid w-full grid-cols-8">
             <TabsTrigger value="games">Games & Products</TabsTrigger>
             <TabsTrigger value="packages">Packages</TabsTrigger>
             <TabsTrigger value="categories">Categories</TabsTrigger>
             <TabsTrigger value="cards">Game Cards</TabsTrigger>
             <TabsTrigger value="chats">Support Chat</TabsTrigger>
+            <TabsTrigger value="chat-widget">Chat Widget</TabsTrigger>
             <TabsTrigger value="whatsapp">WhatsApp</TabsTrigger>
             <TabsTrigger value="alerts">
               Alerts
@@ -818,6 +819,15 @@ export default function AdminDashboard() {
             </div>
           </TabsContent>
 
+          {/* Chat Widget Config Tab */}
+          <TabsContent value="chat-widget" className="space-y-6">
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-bold text-foreground">Live Chat Widget Configuration</h2>
+            </div>
+
+            <ChatWidgetConfigPanel />
+          </TabsContent>
+
           {/* WhatsApp Tab */}
           <TabsContent value="whatsapp" className="space-y-6">
             <h2 className="text-2xl font-bold text-foreground mb-2">WhatsApp Integration</h2>
@@ -956,6 +966,121 @@ export default function AdminDashboard() {
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+function ChatWidgetConfigPanel() {
+  const [enabled, setEnabled] = useState(true);
+  const [iconUrl, setIconUrl] = useState('/images/message-icon.svg');
+  const [welcomeMessage, setWelcomeMessage] = useState('Hello! How can we help you?');
+  const [position, setPosition] = useState('bottom-right');
+
+  // Fetch config
+  const { data: config } = useQuery({
+    queryKey: ['/api/admin/chat-widget/config'],
+    queryFn: async () => {
+      const token = localStorage.getItem('adminToken');
+      const res = await fetch('/api/admin/chat-widget/config', {
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+      });
+      if (!res.ok) throw new Error('Failed to fetch config');
+      return res.json();
+    },
+    onSuccess: (data) => {
+      if (data) {
+        setEnabled(data.enabled !== false);
+        setIconUrl(data.iconUrl || '/images/message-icon.svg');
+        setWelcomeMessage(data.welcomeMessage || 'Hello! How can we help you?');
+        setPosition(data.position || 'bottom-right');
+      }
+    }
+  });
+
+  // Update config mutation
+  const updateConfigMutation = useMutation({
+    mutationFn: async (configData: any) => {
+      const token = localStorage.getItem('adminToken');
+      const res = await fetch('/api/admin/chat-widget/config', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify(configData)
+      });
+      if (!res.ok) throw new Error('Failed to update config');
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/chat-widget/config'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/chat-widget/config'] });
+    }
+  });
+
+  const handleSave = () => {
+    updateConfigMutation.mutate({
+      enabled,
+      iconUrl,
+      welcomeMessage,
+      position
+    });
+  };
+
+  return (
+    <Card className="bg-card/50 border-gold-primary/30">
+      <CardHeader>
+        <CardTitle>Widget Settings</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="flex items-center justify-between">
+          <Label>Enable Widget</Label>
+          <input
+            type="checkbox"
+            checked={enabled}
+            onChange={(e) => setEnabled(e.target.checked)}
+            className="w-4 h-4"
+          />
+        </div>
+        <div>
+          <Label>Icon URL</Label>
+          <Input
+            value={iconUrl}
+            onChange={(e) => setIconUrl(e.target.value)}
+            placeholder="/images/message-icon.svg"
+          />
+          {iconUrl && (
+            <div className="mt-2 border rounded p-2">
+              <img src={iconUrl} alt="Icon preview" className="w-16 h-16 object-contain" onError={(e) => {
+                (e.target as HTMLImageElement).style.display = 'none';
+              }} />
+            </div>
+          )}
+        </div>
+        <div>
+          <Label>Welcome Message</Label>
+          <Input
+            value={welcomeMessage}
+            onChange={(e) => setWelcomeMessage(e.target.value)}
+            placeholder="Hello! How can we help you?"
+          />
+        </div>
+        <div>
+          <Label>Position</Label>
+          <Select value={position} onValueChange={setPosition}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="bottom-right">Bottom Right</SelectItem>
+              <SelectItem value="bottom-left">Bottom Left</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <Button onClick={handleSave} disabled={updateConfigMutation.isPending} className="bg-gold-primary">
+          Save Configuration
+        </Button>
+      </CardContent>
+    </Card>
   );
 }
 

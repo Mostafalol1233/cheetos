@@ -1,13 +1,14 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useRoute } from 'wouter';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
-import { ArrowLeft, Plus, Trash2, Save } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Save, Upload } from 'lucide-react';
 import { queryClient } from '@/lib/queryClient';
 import { Link } from 'wouter';
+import ImageWithFallback from '@/components/image-with-fallback';
 
 interface Package {
   amount: string;
@@ -44,12 +45,32 @@ export default function AdminPackagesPage() {
         headers: token ? { Authorization: `Bearer ${token}` } : {}
       });
       if (!res.ok) throw new Error('Failed to fetch packages');
-      return res.json();
-    },
-    onSuccess: (data) => {
-      setPackages(data);
+      const data = await res.json();
+      return Array.isArray(data) ? data : [];
     }
   });
+
+  // Update packages when data loads
+  useEffect(() => {
+    if (gamePackages && gamePackages.length > 0) {
+      setPackages(gamePackages);
+    } else if (game && packages.length === 0 && gamePackages.length === 0) {
+      // Try to get packages from game data if API returns empty
+      const gamePackagesArray = Array.isArray(game.packages) ? game.packages : [];
+      const gamePrices = Array.isArray(game.packagePrices) ? game.packagePrices : [];
+      const gameDiscountPrices = Array.isArray((game as any).packageDiscountPrices) ? (game as any).packageDiscountPrices : [];
+      
+      if (gamePackagesArray.length > 0) {
+        const initialPackages = gamePackagesArray.map((pkg: any, index: number) => ({
+          amount: typeof pkg === 'string' ? pkg : (pkg?.amount || ''),
+          price: Number(gamePrices[index] || 0),
+          discountPrice: gameDiscountPrices[index] ? Number(gameDiscountPrices[index]) : null,
+          image: null
+        }));
+        setPackages(initialPackages);
+      }
+    }
+  }, [gamePackages, game]);
 
   // Update packages mutation
   const updatePackagesMutation = useMutation({
@@ -126,6 +147,20 @@ export default function AdminPackagesPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
+                {/* Package Image Preview */}
+                {pkg.image && (
+                  <div className="mb-4">
+                    <Label>Package Image Preview</Label>
+                    <div className="mt-2 border rounded-lg p-2 bg-muted/20">
+                      <ImageWithFallback
+                        src={pkg.image}
+                        alt={`Package ${index + 1}`}
+                        className="w-full h-32 object-contain rounded"
+                      />
+                    </div>
+                  </div>
+                )}
+                
                 <div>
                   <Label>Amount (e.g., "10000 ZP")</Label>
                   <Input
@@ -150,6 +185,14 @@ export default function AdminPackagesPage() {
                     value={pkg.discountPrice || ''}
                     onChange={(e) => handleUpdatePackage(index, 'discountPrice', e.target.value ? parseFloat(e.target.value) : null)}
                     placeholder="250"
+                  />
+                </div>
+                <div>
+                  <Label>Image URL (optional)</Label>
+                  <Input
+                    value={pkg.image || ''}
+                    onChange={(e) => handleUpdatePackage(index, 'image', e.target.value)}
+                    placeholder="https://example.com/image.jpg or /images/image.jpg"
                   />
                 </div>
               </CardContent>

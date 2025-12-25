@@ -150,58 +150,22 @@ export default function GamesPage() {
               const discountPrice = hasDiscount ? parseFloat(game.discountPrice.toString()) : null;
               
               return (
-                <div key={game.id} className="relative group">
-                  <div className="relative rounded-2xl overflow-hidden border-2 border-cyan-400/30 bg-gradient-to-b from-gray-900 to-black p-4 shadow-lg hover:shadow-2xl hover:shadow-cyan-500/50 transition-all duration-300 hover:border-cyan-400/60">
-                    {/* Card glow effect */}
-                    <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/0 via-cyan-500/0 to-cyan-500/0 group-hover:from-cyan-500/10 group-hover:via-cyan-500/5 group-hover:to-cyan-500/10 transition-all duration-300 pointer-events-none"></div>
-                    
-                    {/* Game Image - Square Icon Only */}
-                    <div className="relative rounded-lg overflow-hidden border border-cyan-400/20 bg-gray-800 aspect-square mb-3 flex items-center justify-center">
-                      <ImageWithFallback
-                        src={game.image}
-                        alt={game.name}
-                        className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-500"
-                      />
-                      {game.isPopular && (
-                        <div className="absolute top-2 right-2 bg-gradient-to-r from-cyan-400 to-blue-500 text-black px-2 py-1 rounded-full text-xs font-bold flex items-center shadow-lg">
-                          <Star className="w-3 h-3 mr-1" />
-                          {t('popular')}
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Action Buttons - View and Delete */}
-                    <div className="relative z-10 flex gap-2">
-                      <Link href={`/game/${game.slug}`} className="flex-1">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="w-full border-cyan-400/50 text-cyan-400 hover:bg-cyan-400/10 hover:text-cyan-300"
-                        >
-                          {t('view')}
-                        </Button>
-                      </Link>
-                      <Button
-                        onClick={() => handleAddToCart(game)}
-                        disabled={isAdding || isOutOfStock}
-                        size="sm"
-                        className="flex-1 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-black font-semibold gap-1"
-                      >
-                        {isAdding ? (
-                          <>
-                            <Check className="w-4 h-4" />
-                            {t('added')}
-                          </>
-                        ) : (
-                          <>
-                            <ShoppingCart className="w-4 h-4" />
-                            {t('add')}
-                          </>
-                        )}
-                      </Button>
-                    </div>
+                <Link key={game.id} href={`/game/${game.slug}`} className="relative group cursor-pointer">
+                  {/* Transparent background - just the image */}
+                  <div className="relative aspect-square overflow-hidden rounded-lg transition-transform duration-300 hover:scale-105">
+                    <ImageWithFallback
+                      src={game.image}
+                      alt={game.name}
+                      className="w-full h-full object-contain"
+                    />
+                    {game.isPopular && (
+                      <div className="absolute top-2 right-2 bg-gradient-to-r from-cyan-400 to-blue-500 text-black px-2 py-1 rounded-full text-xs font-bold flex items-center shadow-lg z-10">
+                        <Star className="w-3 h-3 mr-1" />
+                        {t('popular')}
+                      </div>
+                    )}
                   </div>
-                </div>
+                </Link>
               );
             })}
           </div>

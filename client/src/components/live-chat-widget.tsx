@@ -119,26 +119,9 @@ export function LiveChatWidget() {
       <div className={`fixed ${widgetConfig.position === 'bottom-right' ? 'bottom-6 right-6' : 'bottom-6 left-6'} z-40`}>
         <button
           onClick={() => setIsOpen(true)}
-          className="w-20 h-20 rounded-lg bg-gradient-to-r from-gold-primary to-neon-pink hover:scale-110 transition-transform duration-300 shadow-lg relative overflow-hidden group"
+          className="w-16 h-16 rounded-full bg-gradient-to-r from-gold-primary to-neon-pink hover:scale-110 transition-transform duration-300 shadow-lg flex items-center justify-center relative overflow-hidden"
         >
-          {/* Square image background */}
-          <img 
-            src={widgetConfig.iconUrl || '/images/message-icon.svg'} 
-            alt="Chat" 
-            className="w-full h-full object-cover"
-            onError={(e) => {
-              (e.target as HTMLImageElement).src = '/images/message-icon.svg';
-            }}
-          />
-          {/* Black text overlay */}
-          <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center text-white text-center px-1">
-            <p className="text-[10px] font-bold leading-tight">Diaa Eldeen</p>
-            <p className="text-[9px] font-semibold leading-tight">Support</p>
-          </div>
-          {/* Bottom text */}
-          <div className="absolute bottom-0 left-0 right-0 bg-black/80 text-white text-[8px] font-medium py-0.5 text-center">
-            We typically reply in minutes
-          </div>
+          <MessageCircle className="w-6 h-6 text-white" />
         </button>
       </div>
     );
