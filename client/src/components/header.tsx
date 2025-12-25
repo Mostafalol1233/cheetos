@@ -54,6 +54,16 @@ export function Header({ onCartClick }: HeaderProps) {
                     alt="Diaa Eldeen Logo"
                     className="w-10 h-10 md:w-12 md:h-12 object-contain"
                   />
+                  {/* Christmas Hat Overlay */}
+                  <div className={`absolute -top-2 left-1/2 -translate-x-1/2 transition-opacity duration-300 ${theme === 'dark' ? 'opacity-100' : 'opacity-80'}`}>
+                    <svg width="24" height="20" viewBox="0 0 24 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      {/* Hat */}
+                      <path d="M12 0L14 6L18 4L16 8L20 8L15 10L20 12L12 10L4 12L9 10L4 8L8 8L6 4L10 6L12 0Z" fill={theme === 'dark' ? '#FFD700' : '#8B4513'} />
+                      <path d="M12 8L10 12L14 12L12 8Z" fill={theme === 'dark' ? '#FFA500' : '#654321'} />
+                      {/* Pom-pom */}
+                      <circle cx="12" cy="2" r="2" fill={theme === 'dark' ? '#FFFFFF' : '#FF0000'} />
+                    </svg>
+                  </div>
                 </div>
               </div>
               <div className="hidden sm:block">

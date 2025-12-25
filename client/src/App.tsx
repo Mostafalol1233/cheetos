@@ -30,6 +30,7 @@ import { LiveChatWidget } from "@/components/live-chat-widget";
 import { Header } from "@/components/header";
 import { CartSidebar } from "@/components/cart-sidebar";
 import { CheckoutModal } from "@/components/checkout-modal";
+import { ChristmasSnow } from "@/components/christmas-snow";
 
 // Protected admin route component
 function ProtectedAdminRoute() {
@@ -106,6 +107,7 @@ function AppShell() {
       ) : null}
 
       <LiveChatWidget />
+      <ChristmasSnow />
     </>
   );
 }

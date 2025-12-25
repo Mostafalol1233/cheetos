@@ -84,9 +84,9 @@ export function PopularGames() {
                 <div className="relative flex-1 h-56 mb-3">
                   <div className="relative rounded-lg overflow-hidden border border-cyan-400/20 bg-gray-800 w-full h-full flex items-center justify-center">
                     <ImageWithFallback
-                      src={game.image}
+                      src={game.image || ''}
                       alt={game.name}
-                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                      className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-500"
                     />
                     {game.isPopular && (
                       <div className="absolute top-2 right-2 bg-gradient-to-r from-cyan-400 to-blue-500 text-black px-2 py-1 rounded-full text-xs font-bold flex items-center shadow-lg">

@@ -533,6 +533,17 @@ async function initializeDatabase() {
     await pool.query(`ALTER TABLE games ADD COLUMN IF NOT EXISTS discount_price DECIMAL(10, 2)`);
     await pool.query(`ALTER TABLE games ADD COLUMN IF NOT EXISTS package_discount_prices JSONB DEFAULT '[]'`);
     
+    // Logo configuration
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS logo_config (
+        id TEXT PRIMARY KEY DEFAULT 'logo_1',
+        small_logo_url TEXT NOT NULL DEFAULT '/attached_assets/small-image-logo.png',
+        large_logo_url TEXT NOT NULL DEFAULT '/attached_assets/large-image-logo.png',
+        favicon_url TEXT NOT NULL DEFAULT '/images/cropped-favicon1-32x32.png',
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    
     // Live chat widget configuration
     await pool.query(`
       CREATE TABLE IF NOT EXISTS chat_widget_config (
@@ -1884,6 +1895,56 @@ app.put('/api/admin/chat-widget/config', authenticateToken, async (req, res) => 
     });
   } catch (err) {
     console.error('Error updating chat widget config:', err);
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// ===================== LOGO CONFIGURATION =====================
+
+// Get logo config
+app.get('/api/admin/logo/config', authenticateToken, async (req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM logo_config WHERE id = $1', ['logo_1']);
+    if (result.rows.length === 0) {
+      return res.json({
+        id: 'logo_1',
+        smallLogoUrl: '/attached_assets/small-image-logo.png',
+        largeLogoUrl: '/attached_assets/large-image-logo.png',
+        faviconUrl: '/images/cropped-favicon1-32x32.png'
+      });
+    }
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error('Error fetching logo config:', err);
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// Update logo config
+app.put('/api/admin/logo/config', authenticateToken, async (req, res) => {
+  try {
+    const { smallLogoUrl, largeLogoUrl, faviconUrl } = req.body;
+    
+    const result = await pool.query(
+      `UPDATE logo_config 
+       SET small_logo_url = $1, large_logo_url = $2, favicon_url = $3, updated_at = NOW()
+       WHERE id = 'logo_1'
+       RETURNING *`,
+      [smallLogoUrl, largeLogoUrl, faviconUrl]
+    );
+    
+    if (result.rows.length === 0) {
+      await pool.query(
+        'INSERT INTO logo_config (id, small_logo_url, large_logo_url, favicon_url) VALUES ($1, $2, $3, $4)',
+        ['logo_1', smallLogoUrl, largeLogoUrl, faviconUrl]
+      );
+      const newResult = await pool.query('SELECT * FROM logo_config WHERE id = $1', ['logo_1']);
+      return res.json(newResult.rows[0]);
+    }
+    
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error('Error updating logo config:', err);
     res.status(500).json({ message: err.message });
   }
 });

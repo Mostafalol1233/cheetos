@@ -47,6 +47,7 @@ interface Alert {
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('games');
+  const [searchGameTerm, setSearchGameTerm] = useState('');
   const [editingGame, setEditingGame] = useState<Game | null>(null);
   const [selectedSession, setSelectedSession] = useState<string | null>(null);
   const [replyMessage, setReplyMessage] = useState('');
@@ -59,9 +60,16 @@ export default function AdminDashboard() {
   const [alertSearch, setAlertSearch] = useState('');
 
   // Fetch games
-  const { data: games = [] } = useQuery<Game[]>({
+  const { data: allGames = [] } = useQuery<Game[]>({
     queryKey: ['/api/games'],
   });
+
+  // Filter games based on search
+  const games = allGames.filter((game: Game) => 
+    !searchGameTerm || 
+    game.name.toLowerCase().includes(searchGameTerm.toLowerCase()) ||
+    game.slug?.toLowerCase().includes(searchGameTerm.toLowerCase())
+  );
 
   // Fetch categories
   const { data: categories = [] } = useQuery<Category[]>({
@@ -359,13 +367,14 @@ export default function AdminDashboard() {
         <h1 className="text-3xl font-bold text-gold-primary mb-8">Diaa Eldeen Admin Dashboard</h1>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-8">
+          <TabsList className="grid w-full grid-cols-9">
             <TabsTrigger value="games">Games & Products</TabsTrigger>
             <TabsTrigger value="packages">Packages</TabsTrigger>
             <TabsTrigger value="categories">Categories</TabsTrigger>
             <TabsTrigger value="cards">Game Cards</TabsTrigger>
             <TabsTrigger value="chats">Support Chat</TabsTrigger>
             <TabsTrigger value="chat-widget">Chat Widget</TabsTrigger>
+            <TabsTrigger value="logo">Logo</TabsTrigger>
             <TabsTrigger value="whatsapp">WhatsApp</TabsTrigger>
             <TabsTrigger value="alerts">
               Alerts
@@ -479,6 +488,16 @@ export default function AdminDashboard() {
                 <Plus className="w-4 h-4 mr-2" />
                 Add New Game
               </Button>
+            </div>
+
+            {/* Search Games */}
+            <div className="mb-4">
+              <Input
+                placeholder="Search games by name or slug..."
+                value={searchGameTerm}
+                onChange={(e) => setSearchGameTerm(e.target.value)}
+                className="max-w-md"
+              />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -1078,6 +1097,165 @@ function ChatWidgetConfigPanel() {
         </div>
         <Button onClick={handleSave} disabled={updateConfigMutation.isPending} className="bg-gold-primary">
           Save Configuration
+        </Button>
+      </CardContent>
+    </Card>
+  );
+}
+
+function LogoManagementPanel() {
+  const [smallLogoUrl, setSmallLogoUrl] = useState('/attached_assets/small-image-logo.png');
+  const [largeLogoUrl, setLargeLogoUrl] = useState('/attached_assets/large-image-logo.png');
+  const [faviconUrl, setFaviconUrl] = useState('/images/cropped-favicon1-32x32.png');
+
+  // Fetch logo config
+  const { data: config } = useQuery({
+    queryKey: ['/api/admin/logo/config'],
+    queryFn: async () => {
+      const token = localStorage.getItem('adminToken');
+      const res = await fetch('/api/admin/logo/config', {
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+      });
+      if (!res.ok) throw new Error('Failed to fetch logo config');
+      return res.json();
+    },
+    onSuccess: (data) => {
+      if (data) {
+        setSmallLogoUrl(data.smallLogoUrl || data.small_logo_url || '/attached_assets/small-image-logo.png');
+        setLargeLogoUrl(data.largeLogoUrl || data.large_logo_url || '/attached_assets/large-image-logo.png');
+        setFaviconUrl(data.faviconUrl || data.favicon_url || '/images/cropped-favicon1-32x32.png');
+      }
+    }
+  });
+
+  // Update logo config mutation
+  const updateLogoMutation = useMutation({
+    mutationFn: async (logoData: any) => {
+      const token = localStorage.getItem('adminToken');
+      const res = await fetch('/api/admin/logo/config', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify(logoData)
+      });
+      if (!res.ok) throw new Error('Failed to update logo config');
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/logo/config'] });
+      alert('Logo updated successfully! Please refresh the page to see changes.');
+    }
+  });
+
+  const handleSave = () => {
+    updateLogoMutation.mutate({
+      smallLogoUrl,
+      largeLogoUrl,
+      faviconUrl
+    });
+  };
+
+  const handleImageUpload = async (type: 'small' | 'large' | 'favicon') => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.onchange = async (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (!file) return;
+
+      const formData = new FormData();
+      formData.append('file', file);
+
+      try {
+        const token = localStorage.getItem('adminToken');
+        const res = await fetch('/api/admin/upload', {
+          method: 'POST',
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+          body: formData
+        });
+        const data = await res.json();
+        if (data.url) {
+          if (type === 'small') setSmallLogoUrl(data.url);
+          else if (type === 'large') setLargeLogoUrl(data.url);
+          else if (type === 'favicon') setFaviconUrl(data.url);
+        }
+      } catch (err) {
+        alert('Upload failed');
+      }
+    };
+    input.click();
+  };
+
+  return (
+    <Card className="bg-card/50 border-gold-primary/30">
+      <CardHeader>
+        <CardTitle>Logo Settings</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div>
+          <Label>Small Logo (Header)</Label>
+          <div className="flex gap-2 mt-2">
+            <Input
+              value={smallLogoUrl}
+              onChange={(e) => setSmallLogoUrl(e.target.value)}
+              placeholder="/attached_assets/small-image-logo.png"
+            />
+            <Button onClick={() => handleImageUpload('small')} variant="outline">
+              Upload
+            </Button>
+          </div>
+          {smallLogoUrl && (
+            <div className="mt-2 border rounded p-2">
+              <img src={smallLogoUrl} alt="Small logo preview" className="h-16 object-contain" onError={(e) => {
+                (e.target as HTMLImageElement).style.display = 'none';
+              }} />
+            </div>
+          )}
+        </div>
+        <div>
+          <Label>Large Logo</Label>
+          <div className="flex gap-2 mt-2">
+            <Input
+              value={largeLogoUrl}
+              onChange={(e) => setLargeLogoUrl(e.target.value)}
+              placeholder="/attached_assets/large-image-logo.png"
+            />
+            <Button onClick={() => handleImageUpload('large')} variant="outline">
+              Upload
+            </Button>
+          </div>
+          {largeLogoUrl && (
+            <div className="mt-2 border rounded p-2">
+              <img src={largeLogoUrl} alt="Large logo preview" className="h-32 object-contain" onError={(e) => {
+                (e.target as HTMLImageElement).style.display = 'none';
+              }} />
+            </div>
+          )}
+        </div>
+        <div>
+          <Label>Favicon</Label>
+          <div className="flex gap-2 mt-2">
+            <Input
+              value={faviconUrl}
+              onChange={(e) => setFaviconUrl(e.target.value)}
+              placeholder="/images/cropped-favicon1-32x32.png"
+            />
+            <Button onClick={() => handleImageUpload('favicon')} variant="outline">
+              Upload
+            </Button>
+          </div>
+          {faviconUrl && (
+            <div className="mt-2 border rounded p-2">
+              <img src={faviconUrl} alt="Favicon preview" className="h-8 w-8 object-contain" onError={(e) => {
+                (e.target as HTMLImageElement).style.display = 'none';
+              }} />
+            </div>
+          )}
+        </div>
+        <Button onClick={handleSave} disabled={updateLogoMutation.isPending} className="bg-gold-primary">
+          Save Logo Configuration
         </Button>
       </CardContent>
     </Card>
