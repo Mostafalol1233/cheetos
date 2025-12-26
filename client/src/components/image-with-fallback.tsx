@@ -1,12 +1,15 @@
 import { useEffect, useState } from "react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function ImageWithFallback({ src, alt, className }: { src: string; alt: string; className?: string }) {
   const [current, setCurrent] = useState<string>(src);
   const [errorCount, setErrorCount] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     setCurrent(src);
     setErrorCount(0);
+    setIsLoading(true);
   }, [src]);
 
   const normalizeImageSrc = (imgSrc: string): string => {
@@ -31,6 +34,10 @@ export default function ImageWithFallback({ src, alt, className }: { src: string
     return `/${imgSrc}`;
   };
 
+  const isSupportedFormat = (imgSrc: string): boolean => {
+    return /\.(png|jpg|jpeg|svg|webp)$/i.test(imgSrc) || /^https?:\/\//i.test(imgSrc) || /^data:image\//i.test(imgSrc);
+  };
+
   const onError = () => {
     if (errorCount === 0) {
       // Try with normalized URL
@@ -41,24 +48,40 @@ export default function ImageWithFallback({ src, alt, className }: { src: string
         return;
       }
     }
-    
-    // Final fallback
+    setIsLoading(false);
     const svg = encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='400' height='300'><rect width='100%' height='100%' fill='#111'/><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' fill='#888' font-size='20'>Image unavailable</text></svg>`);
     setCurrent(`data:image/svg+xml,${svg}`);
+  };
+  
+  const onLoad: React.ReactEventHandler<HTMLImageElement> = (e) => {
+    const img = e.currentTarget;
+    if (!isSupportedFormat(current)) {
+      onError();
+      return;
+    }
+    if (img.naturalWidth < 200 || img.naturalHeight < 200) {
+      onError();
+      return;
+    }
+    setIsLoading(false);
   };
   
   const normalizedSrc = normalizeImageSrc(current);
   
   return (
-    <img 
-      src={normalizedSrc} 
-      alt={alt} 
-      className={className} 
-      loading="lazy" 
-      onError={onError}
-      crossOrigin="anonymous"
-      data-testid="game-image"
-      data-src={src}
-    />
+    <>
+      {isLoading && <Skeleton className={`${className} bg-gray-800`} />}
+      <img 
+        src={normalizedSrc} 
+        alt={alt} 
+        className={`${className} ${isLoading ? 'hidden' : ''}`} 
+        loading="lazy" 
+        onLoad={onLoad}
+        onError={onError}
+        crossOrigin="anonymous"
+        data-testid="game-image"
+        data-src={src}
+      />
+    </>
   );
 }

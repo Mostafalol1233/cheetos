@@ -54,6 +54,9 @@ const CDN_BASE_URL = process.env.CDN_BASE_URL || '';
 const CLOUDINARY_CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME || '';
 const CLOUDINARY_API_KEY = process.env.CLOUDINARY_API_KEY || '';
 const CLOUDINARY_API_SECRET = process.env.CLOUDINARY_API_SECRET || '';
+// Image behavior flags
+const ENABLE_IMAGE_SEEDING = String(process.env.ENABLE_IMAGE_SEEDING || '').toLowerCase() === 'true';
+const ENABLE_IMAGE_OVERRIDES = String(process.env.ENABLE_IMAGE_OVERRIDES || '').toLowerCase() === 'true';
 
 const CLOUDINARY_ENABLED = Boolean(
   CLOUDINARY_CLOUD_NAME && CLOUDINARY_API_KEY && CLOUDINARY_API_SECRET
@@ -3281,7 +3284,7 @@ const startServer = async () => {
     if (isConnected) {
       try {
         if (typeof initializeDatabase === 'function') await initializeDatabase();
-        if (typeof seedProductImages === 'function') await seedProductImages();
+        if (ENABLE_IMAGE_SEEDING && typeof seedProductImages === 'function') await seedProductImages();
       } catch (dbErr) {
         console.error('⚠️ Database initialization warning:', dbErr.message);
       }
@@ -3489,6 +3492,7 @@ const startServer = async () => {
 
     app.post('/api/maintenance/images/override', async (req, res) => {
       try {
+        if (!ENABLE_IMAGE_OVERRIDES) return res.status(400).json({ ok: false, message: 'Image overrides disabled' });
         await applyImageOverrides();
         res.json({ ok: true });
       } catch (err) {
@@ -3496,7 +3500,11 @@ const startServer = async () => {
       }
     });
 
-    await applyImageOverrides();
+    if (ENABLE_IMAGE_OVERRIDES) {
+      await applyImageOverrides();
+    } else {
+      console.log('⏭️  Image override on startup disabled (ENABLE_IMAGE_OVERRIDES != true)');
+    }
     app.listen(PORT, () => {
       console.log('\n╔════════════════════════════════════════╗');
       console.log('║     GameCart Backend Server             ║');

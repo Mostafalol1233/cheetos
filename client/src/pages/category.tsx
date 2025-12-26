@@ -79,28 +79,28 @@ export default function CategoryPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-900 dark:via-blue-900 dark:to-purple-900">
+    <div className="min-h-screen bg-gradient-to-b from-darker-bg dark:from-gray-900 dark:via-gray-800 dark:to-black via-white to-gray-50">
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-8">
           <Link
             href="/"
-            className="inline-flex items-center text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors mb-4"
+            className="inline-flex items-center text-muted-foreground hover:text-gold-primary transition-colors mb-4"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
             {t('back_to_home')}
           </Link>
           
-          <div className={`relative overflow-hidden rounded-3xl bg-gradient-to-br ${category.gradient} p-8 mb-8`}>
-            <div className="absolute inset-0 bg-black/20"></div>
+          <div className={`relative overflow-hidden rounded-3xl bg-gradient-to-br ${category.gradient} p-12 mb-8 shadow-xl`}>
+            <div className="absolute inset-0 bg-black/30"></div>
             <ImageWithFallback
               src={category.image}
               alt={`${category.name} category`}
-              className="absolute inset-0 w-full h-full object-cover opacity-70"
+              className="absolute inset-0 w-full h-full object-cover opacity-60"
             />
             <div className="relative z-10">
-              <h1 className="text-4xl font-bold text-white mb-2">{category.name}</h1>
-              <p className="text-white/90 text-lg">{category.description}</p>
+              <h1 className="text-5xl font-black text-white mb-3 drop-shadow-lg">{category.name}</h1>
+              <p className="text-white/95 text-lg drop-shadow">{category.description}</p>
             </div>
           </div>
         </div>
@@ -108,11 +108,14 @@ export default function CategoryPage() {
         {/* Games Grid */}
         {games.length > 0 ? (
           <div>
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-                {t('available_games')} ({games.length})
-              </h2>
-              <div className="flex items-center text-gray-600 dark:text-gray-300">
+            <div className="flex items-center justify-between mb-8">
+              <div>
+                <h2 className="text-3xl font-bold text-foreground mb-1 flex items-center">
+                  <span className="w-2 h-2 bg-gold-primary rounded-full mr-3"></span>
+                  {t('available_games')} ({games.length})
+                </h2>
+              </div>
+              <div className="flex items-center text-muted-foreground bg-card/50 px-4 py-2 rounded-full">
                 <Search className="w-4 h-4 mr-2" />
                 <span>{games.length} {t('games_found')}</span>
               </div>
@@ -148,22 +151,22 @@ export default function CategoryPage() {
                 };
 
                 return (
-                  <Card key={game.id} className="overflow-hidden hover:shadow-lg hover:scale-105 transition-all duration-300">
-                    <div className="aspect-[4/3] relative overflow-hidden">
+                  <Card key={game.id} className="overflow-hidden border-gold-primary/10 hover:border-gold-primary/50 hover:shadow-xl hover:scale-105 transition-all duration-300 group">
+                    <div className="aspect-[4/3] relative overflow-hidden bg-gradient-to-br from-muted to-card">
                       <ImageWithFallback
                         src={game.image}
                         alt={game.name}
-                        className="w-full h-full object-cover hover:scale-110 transition-transform duration-500"
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                       />
                       {game.isPopular && (
-                        <div className="absolute top-2 right-2 bg-gradient-to-r from-yellow-500 to-orange-500 text-white px-2 py-1 rounded-full text-xs font-bold flex items-center shadow-lg">
+                        <div className="absolute top-3 right-3 bg-gradient-to-r from-gold-primary to-neon-pink text-white px-3 py-1 rounded-full text-xs font-bold flex items-center shadow-lg">
                           <Star className="w-3 h-3 mr-1" />
                           {t('popular')}
                         </div>
                       )}
                     </div>
                     <CardContent className="p-4">
-                      <h3 className="font-bold text-lg mb-2 text-gray-900 dark:text-white">{game.name}</h3>
+                      <h3 className="font-bold text-lg mb-3 text-foreground">{game.name}</h3>
                       
                       {/* Card Amounts/Packages */}
                       {packages.length > 0 ? (
@@ -204,22 +207,12 @@ export default function CategoryPage() {
                         </div>
                       )}
                       
-                      <div className="flex gap-2">
-                        <Link href={`/game/${game.slug}`} className="flex-1">
-                          <Button variant="outline" size="sm" className="w-full">
-                            {t('view')}
-                          </Button>
-                        </Link>
-                        <Button
-                          size="sm"
-                          onClick={handleBuy}
-                          disabled={isOutOfStock}
-                          className="flex items-center bg-blue-600 hover:bg-blue-700 disabled:bg-gray-500 disabled:hover:bg-gray-500 flex-1"
-                        >
-                          <ShoppingCart className="w-4 h-4 mr-1" />
-                          {isOutOfStock ? t('out_of_stock') : t('buy')}
+                      <Link href={`/game/${game.slug}`} className="w-full block">
+                        <Button size="sm" className="w-full bg-gradient-to-r from-gold-primary to-neon-pink hover:shadow-lg text-white disabled:bg-muted disabled:hover:bg-muted transition-all">
+                          <ShoppingCart className="w-4 h-4 mr-2" />
+                          {isOutOfStock ? t('out_of_stock') : t('view_packages')}
                         </Button>
-                      </div>
+                      </Link>
                     </CardContent>
                   </Card>
                 );

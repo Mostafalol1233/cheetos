@@ -45,32 +45,32 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen text-foreground font-gaming overflow-x-hidden custom-cursor bg-gradient-to-b from-darker-bg dark:via-gray-900 dark:to-black via-gray-50 to-white animate-fade-in">
+    <div className="min-h-screen text-foreground font-gaming overflow-x-hidden custom-cursor bg-gradient-to-b from-darker-bg dark:from-gray-900 dark:via-gray-800 dark:to-black via-white to-gray-50 animate-fade-in">
 
       {/* Hero Section */}
       <section className="relative w-full h-[500px] flex items-center justify-center overflow-hidden">
         {/* Background Image/Gradient */}
-        <div className="absolute inset-0 bg-gradient-to-r from-darker-bg dark:via-purple-900/40 dark:to-darker-bg via-blue-50 to-purple-50 z-0"></div>
+        <div className="absolute inset-0 bg-gradient-to-r from-darker-bg dark:via-blue-900/30 dark:to-darker-bg via-blue-100 to-indigo-100 z-0"></div>
         <div className="absolute inset-0 bg-[url('/attached_assets/large-image-logo.png')] bg-cover bg-center opacity-20 dark:opacity-20 mix-blend-overlay animate-pulse"></div>
         
         {/* Content */}
         <div className="relative z-10 text-center px-4 max-w-4xl mx-auto">
-          <h1 className="text-4xl md:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-gold-primary via-gray-900 dark:via-white to-neon-pink mb-6 drop-shadow-[0_0_15px_rgba(255,204,51,0.5)] animate-fade-in">
+          <h1 className="text-4xl md:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-gold-primary via-blue-600 dark:via-cyan-400 to-neon-pink mb-6 drop-shadow-[0_0_20px_rgba(52,152,219,0.4)] animate-fade-in">
             {t('hero_title')}
           </h1>
-          <p className="text-xl md:text-2xl text-gray-700 dark:text-gray-300 mb-8 font-light tracking-wide animate-fade-in animation-delay-500">
+          <p className="text-lg md:text-xl text-gray-600 dark:text-gray-200 mb-8 font-light tracking-wide animate-fade-in animation-delay-500 max-w-2xl mx-auto">
             {t('hero_subtitle')}
           </p>
           <div className="flex justify-center gap-4 animate-fade-in animation-delay-1000">
             <button 
               onClick={() => document.getElementById('categories')?.scrollIntoView({ behavior: 'smooth' })}
-              className="px-8 py-3 bg-gradient-to-r from-gold-primary to-gold-secondary text-black font-bold rounded-full hover:scale-105 transition-transform shadow-[0_0_20px_rgba(255,204,51,0.4)]"
+              className="px-8 py-3 bg-gradient-to-r from-gold-primary to-gold-secondary text-white font-bold rounded-full hover:scale-110 transition-all shadow-[0_0_25px_rgba(52,152,219,0.5)] hover:shadow-[0_0_35px_rgba(52,152,219,0.7)]"
             >
               {t('shop_now')}
             </button>
             <button 
               onClick={() => window.location.href='/games'}
-              className="px-8 py-3 border border-neon-pink/50 text-neon-pink font-bold rounded-full hover:bg-neon-pink/10 transition-colors backdrop-blur-sm"
+              className="px-8 py-3 border-2 border-neon-pink text-neon-pink font-bold rounded-full hover:bg-neon-pink hover:text-white transition-all backdrop-blur-sm shadow-[0_0_15px_rgba(185,255,255,0.3)]"
             >
               {t('view_all_games')}
             </button>
@@ -82,16 +82,16 @@ export default function Home() {
         <div className="absolute bottom-1/3 right-1/3 w-3 h-3 bg-neon-pink rounded-full animate-float animation-delay-1000"></div>
       </section>
 
-      {/* Countdown */}
+      {/* Countdown to 2026 */}
       <section className="container mx-auto px-4 py-10">
-        <div className="flex flex-col md:flex-row items-center justify-between gap-6 bg-card/50 border border-gold-primary/30 rounded-2xl p-6">
+        <div className="flex flex-col md:flex-row items-center justify-between gap-6 bg-gradient-to-r from-card/70 to-card/50 dark:from-card/80 dark:to-card/60 border border-gold-primary/25 rounded-2xl p-8 backdrop-blur-sm shadow-lg">
           <div className="flex items-center gap-4">
             <Flame className="w-10 h-10 text-neon-pink animate-twinkle" />
             <div>
               <div className="text-2xl md:text-3xl font-bold">
-                <span key={pulseKey} className="inline-block animate-fade-in">{daysLeft}</span> days left
+                <span key={pulseKey} className="inline-block animate-fade-in">{daysLeft}</span> days left until 2026
               </div>
-              <p className="text-muted-foreground text-sm">{countdownText}</p>
+              <p className="text-muted-foreground text-sm">Stay tuned for New Year offers and friend collaborations.</p>
             </div>
           </div>
           <div className="flex items-center gap-3">
@@ -121,28 +121,28 @@ export default function Home() {
       {/* Features Section */}
       <section className="container mx-auto px-4 py-16">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 text-center">
-          <div className="flex flex-col items-center">
-            <div className="bg-gradient-to-br from-gold-primary to-gold-secondary w-16 h-16 rounded-full flex items-center justify-center mb-4 animate-float">
-              <Zap className="text-darker-bg text-2xl" />
+          <div className="flex flex-col items-center group">
+            <div className="bg-gradient-to-br from-gold-primary to-neon-pink w-16 h-16 rounded-full flex items-center justify-center mb-4 animate-float shadow-lg group-hover:shadow-xl transition-shadow">
+              <Zap className="text-white text-2xl" />
             </div>
-            <h3 className="text-gray-900 dark:text-white font-semibold mb-2">Fast Delivery</h3>
-            <p className="text-gray-600 dark:text-gray-400 text-sm">{t('features_fast_delivery_desc')}</p>
+            <h3 className="text-foreground font-semibold mb-2">Fast Delivery</h3>
+            <p className="text-muted-foreground text-sm">{t('features_fast_delivery_desc')}</p>
           </div>
           
-          <div className="flex flex-col items-center">
-            <div className="bg-gradient-to-br from-gold-primary to-gold-secondary w-16 h-16 rounded-full flex items-center justify-center mb-4 animate-float animation-delay-500">
-              <Headphones className="text-darker-bg text-2xl" />
+          <div className="flex flex-col items-center group">
+            <div className="bg-gradient-to-br from-neon-pink to-gold-primary w-16 h-16 rounded-full flex items-center justify-center mb-4 animate-float animation-delay-500 shadow-lg group-hover:shadow-xl transition-shadow">
+              <Headphones className="text-white text-2xl" />
             </div>
-            <h3 className="text-gray-900 dark:text-white font-semibold mb-2">Online Support</h3>
-            <p className="text-gray-600 dark:text-gray-400 text-sm">{t('features_online_support_desc')}</p>
+            <h3 className="text-foreground font-semibold mb-2">Online Support</h3>
+            <p className="text-muted-foreground text-sm">{t('features_online_support_desc')}</p>
           </div>
           
-          <div className="flex flex-col items-center">
-            <div className="bg-gradient-to-br from-gold-primary to-gold-secondary w-16 h-16 rounded-full flex items-center justify-center mb-4 animate-float animation-delay-1000">
-              <Shield className="text-darker-bg text-2xl" />
+          <div className="flex flex-col items-center group">
+            <div className="bg-gradient-to-br from-gold-primary to-gold-secondary w-16 h-16 rounded-full flex items-center justify-center mb-4 animate-float animation-delay-1000 shadow-lg group-hover:shadow-xl transition-shadow">
+              <Shield className="text-white text-2xl" />
             </div>
-            <h3 className="text-gray-900 dark:text-white font-semibold mb-2">Secure Payment</h3>
-            <p className="text-gray-600 dark:text-gray-400 text-sm">{t('features_secure_payment_desc')}</p>
+            <h3 className="text-foreground font-semibold mb-2">Secure Payment</h3>
+            <p className="text-muted-foreground text-sm">{t('features_secure_payment_desc')}</p>
           </div>
           
           <div className="flex flex-col items-center">

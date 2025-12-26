@@ -65,7 +65,7 @@ export function InteractiveGamePreview({ game, onGameSelect }: InteractiveGamePr
           <ImageWithFallback
             src={game.image}
             alt={game.name}
-            className={`w-full h-full object-cover transition-transform duration-700 ${
+            className={`w-full h-full object-contain transition-transform duration-700 ${
               isHovered ? 'scale-110' : 'scale-100'
             }`}
           />

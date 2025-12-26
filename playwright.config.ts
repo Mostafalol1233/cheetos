@@ -13,7 +13,7 @@ export default defineConfig({
     video: 'off'
   },
   webServer: {
-    command: 'cross-env ENABLE_WHATSAPP=false npm run dev',
+    command: 'npx vite --port 5173',
     url: 'http://localhost:5173',
     reuseExistingServer: true,
     timeout: 120_000

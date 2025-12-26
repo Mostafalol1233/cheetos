@@ -1,10 +1,11 @@
 import { Link } from "wouter";
-import { Facebook, Twitter, Instagram, Youtube, Mail, Phone, MapPin } from "lucide-react";
+import { Facebook, Youtube, Mail, Phone, MapPin } from "lucide-react";
+import { SiTelegram, SiTiktok } from "react-icons/si";
 
 export function Footer() {
   return (
-    <footer className="bg-card border-t border-border mt-auto">
-      <div className="container mx-auto px-4 py-12">
+    <footer className="bg-card border-t border-gold-primary/15 mt-auto">
+      <div className="container mx-auto px-4 py-16">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {/* Brand Column */}
           <div className="space-y-4">
@@ -30,16 +31,13 @@ export function Footer() {
                 <Facebook className="w-5 h-5" />
               </a>
               <a href="https://tiktok.com/@diaa_eldeen" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-gold-primary transition-colors hover:scale-110 transform duration-200">
-                <div className="w-5 h-5 flex items-center justify-center font-bold">Tk</div>
-              </a>
-              <a href="https://www.instagram.com" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-gold-primary transition-colors hover:scale-110 transform duration-200">
-                <Instagram className="w-5 h-5" />
+                <SiTiktok className="w-5 h-5" />
               </a>
               <a href="https://www.youtube.com/@bemora-site" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-gold-primary transition-colors hover:scale-110 transform duration-200">
                 <Youtube className="w-5 h-5" />
               </a>
               <a href="https://t.me/diaaeldeen" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-gold-primary transition-colors hover:scale-110 transform duration-200">
-                <div className="w-5 h-5 flex items-center justify-center font-bold">Tg</div>
+                <SiTelegram className="w-5 h-5" />
               </a>
             </div>
           </div>
@@ -48,7 +46,7 @@ export function Footer() {
           <div>
             <h3 className="text-lg font-bold text-foreground mb-6 relative inline-block">
               Quick Links
-              <span className="absolute -bottom-2 left-0 w-12 h-1 bg-gold-primary rounded-full"></span>
+              <span className="absolute -bottom-2 left-0 w-16 h-1.5 bg-gradient-to-r from-gold-primary to-neon-pink rounded-full"></span>
             </h3>
             <ul className="space-y-3">
               <li>
@@ -78,7 +76,7 @@ export function Footer() {
           <div>
             <h3 className="text-lg font-bold text-foreground mb-6 relative inline-block">
               Support
-              <span className="absolute -bottom-2 left-0 w-12 h-1 bg-neon-pink rounded-full"></span>
+              <span className="absolute -bottom-2 left-0 w-16 h-1.5 bg-gradient-to-r from-neon-pink to-gold-primary rounded-full"></span>
             </h3>
             <ul className="space-y-3">
               <li>
