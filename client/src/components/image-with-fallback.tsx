@@ -57,6 +57,8 @@ export default function ImageWithFallback({ src, alt, className }: { src: string
       loading="lazy" 
       onError={onError}
       crossOrigin="anonymous"
+      data-testid="game-image"
+      data-src={src}
     />
   );
 }

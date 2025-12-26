@@ -82,16 +82,16 @@ export default function Home() {
         <div className="absolute bottom-1/3 right-1/3 w-3 h-3 bg-neon-pink rounded-full animate-float animation-delay-1000"></div>
       </section>
 
-      {/* Countdown to 2026 */}
+      {/* Countdown */}
       <section className="container mx-auto px-4 py-10">
         <div className="flex flex-col md:flex-row items-center justify-between gap-6 bg-card/50 border border-gold-primary/30 rounded-2xl p-6">
           <div className="flex items-center gap-4">
             <Flame className="w-10 h-10 text-neon-pink animate-twinkle" />
             <div>
               <div className="text-2xl md:text-3xl font-bold">
-                <span key={pulseKey} className="inline-block animate-fade-in">{daysLeft}</span> days left until 2026
+                <span key={pulseKey} className="inline-block animate-fade-in">{daysLeft}</span> days left
               </div>
-              <p className="text-muted-foreground text-sm">Stay tuned for New Year offers and friend collaborations.</p>
+              <p className="text-muted-foreground text-sm">{countdownText}</p>
             </div>
           </div>
           <div className="flex items-center gap-3">

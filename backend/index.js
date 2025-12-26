@@ -1819,56 +1819,79 @@ app.get('/api/admin/games/:id/packages', authenticateToken, async (req, res) => 
 
 // Update packages for a game
 app.put('/api/admin/games/:id/packages', authenticateToken, async (req, res) => {
+  const client = await pool.connect();
   try {
     const { id } = req.params;
-    const { packages } = req.body; // Array of package objects: [{amount, price, discountPrice, image}, ...]
+    const { packages } = req.body;
     
     if (!Array.isArray(packages)) {
       return res.status(400).json({ message: 'Packages must be an array' });
     }
     
+    // Basic validation and sanitization
+    const sanitized = packages.map((p) => ({
+      amount: String((p && p.amount) ? p.amount : '').trim(),
+      price: Number((p && p.price) ? p.price : 0),
+      discountPrice: (p && p.discountPrice !== undefined && p.discountPrice !== null) ? Number(p.discountPrice) : null,
+      image: null
+    }));
+    // Validate amounts and prices
+    for (const pkg of sanitized) {
+      if (!pkg.amount) {
+        return res.status(400).json({ message: 'Each package must have a non-empty amount' });
+      }
+      if (isNaN(pkg.price) || pkg.price < 0) {
+        return res.status(400).json({ message: 'Each package must have a valid non-negative price' });
+      }
+      if (pkg.discountPrice !== null && (isNaN(pkg.discountPrice) || pkg.discountPrice < 0)) {
+        return res.status(400).json({ message: 'discountPrice must be null or a valid non-negative number' });
+      }
+    }
+    
     // Validate game exists - try by ID first, then by slug
-    let gameCheck = await pool.query('SELECT id FROM games WHERE id = $1', [id]);
+    let gameCheck = await client.query('SELECT id FROM games WHERE id = $1', [id]);
     if (gameCheck.rows.length === 0) {
-      gameCheck = await pool.query('SELECT id FROM games WHERE slug = $1', [id]);
+      gameCheck = await client.query('SELECT id FROM games WHERE slug = $1', [id]);
     }
     if (gameCheck.rows.length === 0) {
       return res.status(404).json({ message: 'Game not found' });
     }
     const actualGameId = gameCheck.rows[0].id;
-    
-    // Extract arrays from package objects
-    const amounts = packages.map(p => String(p.amount || ''));
-    const prices = packages.map(p => Number(p.price || 0));
-    const discountPrices = packages.map(p => (p.discountPrice ? Number(p.discountPrice) : null));
-    
-    await pool.query(
-      'UPDATE games SET packages = $1, package_prices = $2, package_discount_prices = $3 WHERE id = $4',
-      [amounts, prices, discountPrices, actualGameId]
+
+    // Extract arrays for JSONB columns and ensure same length
+    const amounts = sanitized.map(p => p.amount);
+    const prices = sanitized.map(p => p.price);
+    const discountPrices = sanitized.map(p => p.discountPrice);
+    while (discountPrices.length < amounts.length) discountPrices.push(null);
+
+    await client.query('BEGIN');
+    await client.query(
+      'UPDATE games SET packages = $1::jsonb, package_prices = $2::jsonb, package_discount_prices = $3::jsonb, updated_at = CURRENT_TIMESTAMP WHERE id = $4',
+      [JSON.stringify(amounts), JSON.stringify(prices), JSON.stringify(discountPrices), actualGameId]
     );
-    
-    // Return updated packages
-    const updatedResult = await pool.query(
+    const updatedResult = await client.query(
       'SELECT packages, package_prices as "packagePrices", package_discount_prices as "packageDiscountPrices" FROM games WHERE id = $1',
       [actualGameId]
     );
-    
+    await client.query('COMMIT');
+
     const updatedGame = updatedResult.rows[0];
     const updatedPackages = coerceJsonArray(updatedGame.packages);
     const updatedPrices = coerceJsonArray(updatedGame.packagePrices);
     const updatedDiscountPrices = coerceJsonArray(updatedGame.packageDiscountPrices);
-    
     const packageObjects = updatedPackages.map((pkg, index) => ({
       amount: typeof pkg === 'string' ? pkg : (pkg?.amount || ''),
       price: Number(updatedPrices[index] || 0),
       discountPrice: updatedDiscountPrices[index] ? Number(updatedDiscountPrices[index]) : null,
       image: null
     }));
-    
     res.json({ message: 'Packages updated successfully', packages: packageObjects });
   } catch (err) {
+    try { await client.query('ROLLBACK'); } catch {}
     console.error('Error updating packages:', err);
-    res.status(500).json({ message: err.message });
+    res.status(500).json({ message: 'Failed to update packages', error: err.message });
+  } finally {
+    client.release();
   }
 });
 
@@ -2055,6 +2078,103 @@ app.post('/api/admin/upload', authenticateToken, imageUpload.single('file'), asy
     if (!req.file) return res.status(400).json({ message: 'No file uploaded' });
     const url = normalizeImageUrl(`/uploads/${req.file.filename}`);
     res.status(201).json({ url });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// Public logo config for frontend
+app.get('/api/logo/config', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT small_logo_url, large_logo_url, favicon_url FROM logo_config WHERE id = $1', ['logo_1']);
+    if (result.rows.length === 0) {
+      return res.json({
+        smallLogoUrl: '/attached_assets/small-image-logo.png',
+        largeLogoUrl: '/attached_assets/large-image-logo.png',
+        faviconUrl: '/images/cropped-favicon1-32x32.png'
+      });
+    }
+    const row = result.rows[0];
+    res.json({
+      smallLogoUrl: normalizeImageUrl(row.small_logo_url || '/attached_assets/small-image-logo.png'),
+      largeLogoUrl: normalizeImageUrl(row.large_logo_url || '/attached_assets/large-image-logo.png'),
+      faviconUrl: normalizeImageUrl(row.favicon_url || '/images/cropped-favicon1-32x32.png')
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// Countdown endpoints
+app.get('/api/countdown/current', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT id, title, target_at, text FROM countdowns ORDER BY updated_at DESC LIMIT 1');
+    if (result.rows.length === 0) {
+      return res.json({ id: 'newyear_2026', title: 'Countdown to 2026', targetAt: '2026-01-01T00:00:00Z', text: 'Stay tuned for New Year offers and friend collaborations.' });
+    }
+    const row = result.rows[0];
+    res.json({ id: row.id, title: row.title, targetAt: new Date(row.target_at).toISOString(), text: row.text || '' });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+app.put('/api/admin/countdown', authenticateToken, async (req, res) => {
+  try {
+    const { id, title, targetAt, text } = req.body || {};
+    if (!targetAt || isNaN(Date.parse(String(targetAt)))) {
+      return res.status(400).json({ message: 'Invalid targetAt ISO date' });
+    }
+    const countdownId = id || 'newyear_2026';
+    const result = await pool.query(
+      `INSERT INTO countdowns (id, title, target_at, text, updated_at)
+       VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP)
+       ON CONFLICT (id) DO UPDATE SET title = EXCLUDED.title, target_at = EXCLUDED.target_at, text = EXCLUDED.text, updated_at = CURRENT_TIMESTAMP
+       RETURNING id, title, target_at, text`,
+      [countdownId, String(title || 'Countdown'), new Date(targetAt), String(text || '')]
+    );
+    try { await pool.query('INSERT INTO admin_audit_logs (id, action, summary) VALUES ($1, $2, $3)', [`al_${Date.now()}_${Math.random().toString(36).slice(2,9)}`, 'countdown_update', `Updated countdown ${countdownId} to ${targetAt}`]); } catch {}
+    const row = result.rows[0];
+    res.json({ id: row.id, title: row.title, targetAt: new Date(row.target_at).toISOString(), text: row.text || '' });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// Hot deals priority column
+await pool.query('ALTER TABLE games ADD COLUMN IF NOT EXISTS hot_deal_priority INTEGER DEFAULT 0');
+
+// Hot deals endpoints
+app.get('/api/hot-deals', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT id, name, image, hot_deal, hot_deal_priority FROM games WHERE hot_deal = true ORDER BY hot_deal_priority ASC, updated_at DESC');
+    res.json(result.rows.map(r => ({ ...r, image: normalizeImageUrl(r.image) })));
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+app.put('/api/admin/hot-deals/order', authenticateToken, async (req, res) => {
+  try {
+    const { ids } = req.body || {};
+    if (!Array.isArray(ids)) return res.status(400).json({ message: 'ids[] required' });
+    let priority = 0;
+    for (const gameId of ids) {
+      await pool.query('UPDATE games SET hot_deal = true, hot_deal_priority = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2', [priority++, gameId]);
+    }
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+app.put('/api/admin/games/:id/hot-deal', authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { hotDeal, priority } = req.body || {};
+    const result = await pool.query('UPDATE games SET hot_deal = COALESCE($1, hot_deal), hot_deal_priority = COALESCE($2, hot_deal_priority), updated_at = CURRENT_TIMESTAMP WHERE id = $3 RETURNING id, hot_deal, hot_deal_priority', [hotDeal, priority, id]);
+    if (result.rows.length === 0) return res.status(404).json({ message: 'Game not found' });
+    res.json(result.rows[0]);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -2818,7 +2938,9 @@ app.get('/api/admin/chat/:sessionId', authenticateToken, async (req, res) => {
       message: decryptMessage(r.message_encrypted),
       sessionId: r.session_id,
       timestamp: new Date(r.timestamp).getTime(),
-      read: Boolean(r.read)
+      read: Boolean(r.read),
+      delivered: true,
+      status: Boolean(r.read) ? 'read' : 'delivered'
     }));
     res.json(messages || []);
   } catch (err) {

@@ -1,11 +1,12 @@
 import { Link } from "wouter";
+import { useEffect, useState } from "react";
 import { ShoppingCart, Sun, Moon, Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AccessibilityToolbar } from "@/components/accessibility-mode";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { useCart } from "@/lib/cart-context";
 import { useTheme } from "@/components/theme-provider";
-import { useState, useEffect } from "react";
+// removed duplicate import
 import { useTranslation } from "@/lib/translation";
 
 interface HeaderProps {
@@ -19,6 +20,7 @@ export function Header({ onCartClick }: HeaderProps) {
   const { t } = useTranslation();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [logoSrc, setLogoSrc] = useState<string>("/attached_assets/small-image-logo.png");
 
   // Handle scroll effect
   useEffect(() => {
@@ -27,6 +29,20 @@ export function Header({ onCartClick }: HeaderProps) {
     };
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  // Fetch public logo config
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch('/api/logo/config');
+        if (res.ok) {
+          const data = await res.json();
+          const url = (data.smallLogoUrl || '/attached_assets/small-image-logo.png') + `?v=${Date.now()}`;
+          setLogoSrc(url);
+        }
+      } catch {}
+    })();
   }, []);
 
   const toggleTheme = () => {
@@ -50,7 +66,7 @@ export function Header({ onCartClick }: HeaderProps) {
               <div className="relative">
                 <div className="w-12 h-12 md:w-14 md:h-14 rounded-xl flex items-center justify-center overflow-hidden bg-black transition-transform transform group-hover:scale-105 duration-300 border border-gold-primary/30 shadow-[0_0_15px_rgba(255,204,51,0.2)]">
                   <img 
-                    src="/attached_assets/small-image-logo.png" 
+                    src={logoSrc}
                     alt="Diaa Eldeen Logo"
                     className="w-10 h-10 md:w-12 md:h-12 object-contain"
                   />

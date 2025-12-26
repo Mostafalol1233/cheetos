@@ -367,7 +367,7 @@ export default function AdminDashboard() {
         <h1 className="text-3xl font-bold text-gold-primary mb-8">Diaa Eldeen Admin Dashboard</h1>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-9">
+          <TabsList className="grid w-full grid-cols-10">
             <TabsTrigger value="games">Games & Products</TabsTrigger>
             <TabsTrigger value="packages">Packages</TabsTrigger>
             <TabsTrigger value="categories">Categories</TabsTrigger>
@@ -376,6 +376,7 @@ export default function AdminDashboard() {
             <TabsTrigger value="chat-widget">Chat Widget</TabsTrigger>
             <TabsTrigger value="logo">Logo</TabsTrigger>
             <TabsTrigger value="whatsapp">WhatsApp</TabsTrigger>
+            <TabsTrigger value="preview-home">Home Preview</TabsTrigger>
             <TabsTrigger value="alerts">
               Alerts
               {alerts.some(a => !a.read) && (
@@ -788,7 +789,7 @@ export default function AdminDashboard() {
                     <CardContent className="flex-1 flex flex-col">
                       <ScrollArea className="flex-1 mb-4 p-4 border rounded-lg border-gold-primary/20">
                         <div className="space-y-3">
-                          {sessionChats.map((msg: ChatMessage) => (
+                          {sessionChats.map((msg: any) => (
                             <div
                               key={msg.id}
                               className={`p-3 rounded-lg ${
@@ -802,6 +803,7 @@ export default function AdminDashboard() {
                               <p className="text-xs opacity-60 mt-1">
                                 {new Date(msg.timestamp).toLocaleTimeString()}
                               </p>
+                              <p className="text-[10px] mt-1 opacity-70">Status: {msg.status || (msg.read ? 'read' : 'delivered')}</p>
                             </div>
                           ))}
                         </div>
@@ -845,6 +847,26 @@ export default function AdminDashboard() {
             </div>
 
             <ChatWidgetConfigPanel />
+          </TabsContent>
+
+          {/* Logo Management Tab */}
+          <TabsContent value="logo" className="space-y-6">
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-bold text-foreground">Logo Management</h2>
+            </div>
+
+            <LogoManagementPanel />
+          </TabsContent>
+
+          {/* Live Home Preview */}
+          <TabsContent value="preview-home" className="space-y-6">
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-bold text-foreground">Live Preview: Home</h2>
+              <Button variant="outline" onClick={() => window.dispatchEvent(new Event('logo-updated'))}>Refresh</Button>
+            </div>
+            <div className="rounded-lg border overflow-hidden">
+              <iframe title="Home Preview" src="/" className="w-full h-[800px] bg-background" />
+            </div>
           </TabsContent>
 
           {/* WhatsApp Tab */}
@@ -1144,9 +1166,14 @@ function LogoManagementPanel() {
       if (!res.ok) throw new Error('Failed to update logo config');
       return res.json();
     },
-    onSuccess: () => {
+    onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/logo/config'] });
-      alert('Logo updated successfully! Please refresh the page to see changes.');
+      const ts = Date.now();
+      if (data?.small_logo_url || data?.smallLogoUrl) setSmallLogoUrl(`${data.small_logo_url || data.smallLogoUrl}?v=${ts}`);
+      if (data?.large_logo_url || data?.largeLogoUrl) setLargeLogoUrl(`${data.large_logo_url || data.largeLogoUrl}?v=${ts}`);
+      if (data?.favicon_url || data?.faviconUrl) setFaviconUrl(`${data.favicon_url || data.faviconUrl}?v=${ts}`);
+      window.dispatchEvent(new Event('logo-updated'));
+      alert('Logo updated successfully!');
     }
   });
 

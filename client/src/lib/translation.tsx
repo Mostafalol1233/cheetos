@@ -178,6 +178,8 @@ const translations: Record<Language, Record<string, string>> = {
     "loading_popular_games": "Loading popular games...",
     "standard_package_available": "Standard Package Available",
     "in_stock_prefix": "In Stock",
+    "view_details": "View Details",
+    "preview": "Preview",
   },
   ar: {
     // Common
@@ -347,6 +349,8 @@ const translations: Record<Language, Record<string, string>> = {
     "loading_popular_games": "جاري تحميل الألعاب الأكثر طلباً...",
     "standard_package_available": "باقة قياسية متاحة",
     "in_stock_prefix": "المتوفر",
+    "view_details": "عرض التفاصيل",
+    "preview": "معاينة",
   }
 };
 
