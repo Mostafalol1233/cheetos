@@ -70,12 +70,38 @@ if (CLOUDINARY_ENABLED) {
   });
 }
 
+function isCatboxUrl(url) {
+  try {
+    const u = new URL(String(url || '').trim());
+    return u.hostname === 'files.catbox.moe' || u.hostname === 'catbox.moe';
+  } catch {
+    return false;
+  }
+}
+
+async function validateCatboxUrl(url) {
+  if (!isCatboxUrl(url)) return { ok: false, status: 0, message: 'URL is not a catbox.moe link' };
+  return new Promise((resolve) => {
+    try {
+      const u = new URL(url);
+      const req = https.request({ method: 'HEAD', hostname: u.hostname, path: u.pathname + (u.search || ''), timeout: 8000 }, (res) => {
+        resolve({ ok: res.statusCode && res.statusCode >= 200 && res.statusCode < 400, status: res.statusCode || 0, message: `HEAD ${res.statusCode}` });
+      });
+      req.on('error', (err) => resolve({ ok: false, status: 0, message: err.message }));
+      req.end();
+    } catch (err) {
+      resolve({ ok: false, status: 0, message: err.message });
+    }
+  });
+}
+
 function normalizeImageUrl(raw) {
   const v = String(raw || '').trim();
   if (!v) return v;
 
   // Keep external URLs
   if (/^https?:\/\//i.test(v)) {
+    if (isCatboxUrl(v)) return v;
     // Fix old broken absolute uploads URLs missing backend port
     const m = v.match(/\/uploads\/(.+)$/i);
     if (m) return `/uploads/${m[1]}`;
@@ -535,6 +561,18 @@ async function initializeDatabase() {
     await pool.query(`ALTER TABLE games ADD COLUMN IF NOT EXISTS image_url TEXT`);
     await pool.query(`ALTER TABLE games ADD COLUMN IF NOT EXISTS discount_price DECIMAL(10, 2)`);
     await pool.query(`ALTER TABLE games ADD COLUMN IF NOT EXISTS package_discount_prices JSONB DEFAULT '[]'`);
+    
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS image_assets (
+        id VARCHAR(50) PRIMARY KEY,
+        url TEXT NOT NULL,
+        original_filename TEXT,
+        source TEXT DEFAULT 'catbox',
+        related_type TEXT,
+        related_id TEXT,
+        uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
     
     // Logo configuration
     await pool.query(`
@@ -2736,7 +2774,345 @@ app.post('/api/admin/import-cards', authenticateToken, async (req, res) => {
   }
 });
 
+function buildMultipartWithFile(fields, filePath, filename) {
+  const boundary = '----TraeForm' + Math.random().toString(36).slice(2);
+  const chunks = [];
+  for (const [k, v] of Object.entries(fields)) {
+    chunks.push(Buffer.from(`--${boundary}\r\nContent-Disposition: form-data; name="${k}"\r\n\r\n${v}\r\n`));
+  }
+  const fileBuf = fs.readFileSync(filePath);
+  const fname = filename || path.basename(filePath);
+  chunks.push(Buffer.from(`--${boundary}\r\nContent-Disposition: form-data; name="fileToUpload"; filename="${fname}"\r\nContent-Type: application/octet-stream\r\n\r\n`));
+  chunks.push(fileBuf);
+  chunks.push(Buffer.from(`\r\n--${boundary}--\r\n`));
+  return { boundary, body: Buffer.concat(chunks) };
+}
 
+async function catboxFileUploadFromLocal(filePath, filename) {
+  const mp = buildMultipartWithFile({ reqtype: 'fileupload' }, filePath, filename);
+  return new Promise((resolve, reject) => {
+    const req = https.request({
+      method: 'POST',
+      hostname: 'catbox.moe',
+      path: '/user/api.php',
+      headers: { 'Content-Type': `multipart/form-data; boundary=${mp.boundary}`, 'Content-Length': mp.body.length },
+      timeout: 20000
+    }, (res) => {
+      const bufs = [];
+      res.on('data', (d) => bufs.push(d));
+      res.on('end', () => {
+        const body = Buffer.concat(bufs).toString('utf8').trim();
+        if (res.statusCode >= 200 && res.statusCode < 300 && body.startsWith('https://')) {
+          resolve({ ok: true, url: body });
+        } else {
+          resolve({ ok: false, status: res.statusCode, message: body });
+        }
+      });
+    });
+    req.on('error', reject);
+    req.write(mp.body);
+    req.end();
+  });
+}
+
+// Accept and store Catbox image URLs with metadata, then apply to game/category
+app.post('/api/admin/images/catbox-url', authenticateToken, async (req, res) => {
+  try {
+    const { url, type, id, filename } = req.body || {};
+    const urlStr = String(url || '').trim();
+    if (!urlStr) return res.status(400).json({ message: 'url required' });
+    if (!type || !id) return res.status(400).json({ message: 'type and id required' });
+    const valid = await validateCatboxUrl(urlStr);
+    if (!valid.ok) {
+      const alertId = `al_${Date.now()}_${Math.random().toString(36).slice(2,9)}`;
+      await pool.query('INSERT INTO seller_alerts (id, type, summary) VALUES ($1, $2, $3)', [
+        alertId, 'image_error', `Invalid Catbox URL (${valid.status}): ${urlStr}`
+      ]);
+      return res.status(400).json({ message: 'Invalid Catbox URL', status: valid.status, details: valid.message });
+    }
+    const assetId = `img_${Date.now()}_${Math.random().toString(36).slice(2,9)}`;
+    await pool.query(
+      'INSERT INTO image_assets (id, url, original_filename, source, related_type, related_id) VALUES ($1, $2, $3, $4, $5, $6)',
+      [assetId, urlStr, filename || null, 'catbox', type, id]
+    );
+    let updated = null;
+    if (type === 'game') {
+      const r = await pool.query('UPDATE games SET image = $1, image_url = $1 WHERE id = $2 OR slug = $2 RETURNING id, name, slug, image', [urlStr, id]);
+      updated = r.rows[0] || null;
+    } else if (type === 'category') {
+      const r = await pool.query('UPDATE categories SET image = $1 WHERE id = $2 OR slug = $2 RETURNING id, name, slug, image', [urlStr, id]);
+      updated = r.rows[0] || null;
+    } else {
+      return res.status(400).json({ message: 'type must be game or category' });
+    }
+    res.json({ id: assetId, url: urlStr, updated });
+  } catch (err) {
+    console.error('catbox-url submission failed:', err.message);
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// Migrate existing images to Catbox using URL upload API
+async function httpsPostForm(hostname, pathUrl, form) {
+  const boundary = '----TraeForm' + Math.random().toString(36).slice(2);
+  const payload = Object.entries(form).map(([k, v]) => {
+    return `--${boundary}\r\nContent-Disposition: form-data; name="${k}"\r\n\r\n${v}\r\n`;
+  }).join('') + `--${boundary}--\r\n`;
+  return new Promise((resolve, reject) => {
+    const req = https.request({
+      method: 'POST', hostname, path: pathUrl,
+      headers: { 'Content-Type': `multipart/form-data; boundary=${boundary}`, 'Content-Length': Buffer.byteLength(payload) },
+      timeout: 15000
+    }, (res) => {
+      const chunks = [];
+      res.on('data', (d) => chunks.push(d));
+      res.on('end', () => resolve({ status: res.statusCode || 0, body: Buffer.concat(chunks).toString('utf8') }));
+    });
+    req.on('error', reject);
+    req.write(payload);
+    req.end();
+  });
+}
+
+async function uploadUrlToCatbox(srcUrl) {
+  const resp = await httpsPostForm('catbox.moe', '/user/api.php', { reqtype: 'urlupload', url: srcUrl });
+  const body = String(resp.body || '').trim();
+  if (resp.status >= 200 && resp.status < 300 && body.startsWith('https://')) {
+    return { ok: true, url: body };
+  }
+  return { ok: false, status: resp.status, message: body || 'Upload failed' };
+}
+
+app.post('/api/admin/images/migrate-to-catbox', authenticateToken, async (req, res) => {
+  try {
+    const siteBase = process.env.BACKEND_URL || `http://localhost:${PORT}`;
+    const toFullUrl = (p) => {
+      const s = String(p || '').trim();
+      if (!s) return null;
+      if (/^https?:\/\//i.test(s)) return s;
+      return `${siteBase}${s}`.replace(/\/\/+/g, '/').replace(/^http:\//, 'http://');
+    };
+    const results = { games: 0, categories: 0, errors: 0, updated: 0 };
+    const gRows = await pool.query('SELECT id, slug, image FROM games');
+    for (const g of gRows.rows) {
+      const img = normalizeImageUrl(g.image);
+      if (img && !isCatboxUrl(img)) {
+        try {
+          const full = toFullUrl(img);
+          const up = await uploadUrlToCatbox(full);
+          if (up.ok) {
+            await pool.query('UPDATE games SET image = $1, image_url = $1 WHERE id = $2', [up.url, g.id]);
+            const assetId = `img_${Date.now()}_${Math.random().toString(36).slice(2,9)}`;
+            await pool.query('INSERT INTO image_assets (id, url, source, related_type, related_id) VALUES ($1, $2, $3, $4, $5)', [assetId, up.url, 'catbox', 'game', g.id]);
+            results.updated++;
+          } else {
+            results.errors++;
+          }
+        } catch {
+          results.errors++;
+        }
+        results.games++;
+      }
+    }
+    const cRows = await pool.query('SELECT id, slug, image FROM categories');
+    for (const c of cRows.rows) {
+      const img = normalizeImageUrl(c.image);
+      if (img && !isCatboxUrl(img)) {
+        try {
+          const full = toFullUrl(img);
+          const up = await uploadUrlToCatbox(full);
+          if (up.ok) {
+            await pool.query('UPDATE categories SET image = $1 WHERE id = $2', [up.url, c.id]);
+            const assetId = `img_${Date.now()}_${Math.random().toString(36).slice(2,9)}`;
+            await pool.query('INSERT INTO image_assets (id, url, source, related_type, related_id) VALUES ($1, $2, $3, $4, $5)', [assetId, up.url, 'catbox', 'category', c.id]);
+            results.updated++;
+          } else {
+            results.errors++;
+          }
+        } catch {
+          results.errors++;
+        }
+        results.categories++;
+      }
+    }
+    res.json({ ok: true, ...results });
+  } catch (err) {
+    console.error('Migration to catbox failed:', err.message);
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// Batch upload handler supporting files and URLs with destination selection
+const batchUpload = multer({ storage }).array('files', 50);
+app.post('/api/admin/images/upload-batch', authenticateToken, (req, res) => {
+  batchUpload(req, res, async (err) => {
+    if (err) return res.status(400).json({ message: err.message });
+    try {
+      const storageDest = String(req.body.storage || 'local').toLowerCase();
+      const type = String(req.body.type || '').toLowerCase();
+      const relatedId = req.body.id || null;
+      const subdir = String(req.body.dir || '').replace(/[^a-z0-9/_-]/gi, '').replace(/^\//, '');
+      const urls = (() => { try { return JSON.parse(req.body.urls || '[]'); } catch { return []; } })();
+      const files = Array.isArray(req.files) ? req.files : [];
+      const results = [];
+      async function applyRelated(url) {
+        if (type === 'game' && relatedId) await pool.query('UPDATE games SET image = $1, image_url = $1 WHERE id = $2 OR slug = $2', [url, relatedId]);
+        if (type === 'category' && relatedId) await pool.query('UPDATE categories SET image = $1 WHERE id = $2 OR slug = $2', [url, relatedId]);
+      }
+      for (const f of files) {
+        try {
+          let finalUrl = null;
+          if (storageDest === 'cloudinary' && CLOUDINARY_ENABLED) {
+            const r = await cloudinary.uploader.upload(f.path, { folder: process.env.CLOUDINARY_FOLDER || 'gamecart/uploads', resource_type: 'image' });
+            finalUrl = r.secure_url;
+            try { fs.unlinkSync(f.path); } catch {}
+          } else if (storageDest === 'catbox') {
+            const r = await catboxFileUploadFromLocal(f.path, f.originalname);
+            finalUrl = r.ok ? r.url : null;
+            try { fs.unlinkSync(f.path); } catch {}
+            if (!r.ok) throw new Error(r.message || 'catbox upload failed');
+          } else {
+            const targetDir = subdir ? path.join(uploadDir, subdir) : uploadDir;
+            try { if (!fs.existsSync(targetDir)) fs.mkdirSync(targetDir, { recursive: true }); } catch {}
+            const dest = path.join(targetDir, f.filename);
+            fs.copyFileSync(f.path, dest);
+            finalUrl = normalizeImageUrl(path.join('/uploads', subdir || '', f.filename).replace(/\\/g, '/'));
+            try { fs.unlinkSync(f.path); } catch {}
+          }
+          await pool.query('INSERT INTO image_assets (id, url, original_filename, source, related_type, related_id) VALUES ($1, $2, $3, $4, $5, $6)', [
+            `img_${Date.now()}_${Math.random().toString(36).slice(2,9)}`, finalUrl, f.originalname || null, storageDest, type || null, relatedId || null
+          ]);
+          await applyRelated(finalUrl);
+          results.push({ filename: f.originalname, url: finalUrl, ok: true });
+        } catch (e) {
+          results.push({ filename: f.originalname, error: e.message, ok: false });
+        }
+      }
+      for (const u of urls) {
+        try {
+          const src = String(u || '').trim();
+          if (!src) continue;
+          let finalUrl = null;
+          if (storageDest === 'cloudinary' && CLOUDINARY_ENABLED) {
+            const r = await cloudinary.uploader.upload(src, { folder: process.env.CLOUDINARY_FOLDER || 'gamecart/uploads', resource_type: 'image' });
+            finalUrl = r.secure_url;
+          } else if (storageDest === 'catbox') {
+            const up = await uploadUrlToCatbox(src);
+            if (!up.ok) throw new Error(up.message || 'catbox url upload failed');
+            finalUrl = up.url;
+          } else {
+            const name = `url-${Date.now()}-${Math.random().toString(36).slice(2,9)}.jpg`;
+            const targetDir = subdir ? path.join(uploadDir, subdir) : uploadDir;
+            try { if (!fs.existsSync(targetDir)) fs.mkdirSync(targetDir, { recursive: true }); } catch {}
+            const dest = path.join(targetDir, name);
+            finalUrl = normalizeImageUrl(path.join('/uploads', subdir || '', name).replace(/\\/g, '/'));
+            try {
+              const r = await httpsGetToFile(src, dest);
+              if (!r.ok) throw new Error(r.message || 'download failed');
+            } catch (e) {
+              throw e;
+            }
+          }
+          await pool.query('INSERT INTO image_assets (id, url, source, related_type, related_id) VALUES ($1, $2, $3, $4, $5)', [
+            `img_${Date.now()}_${Math.random().toString(36).slice(2,9)}`, finalUrl, storageDest, type || null, relatedId || null
+          ]);
+          await applyRelated(finalUrl);
+          results.push({ url: finalUrl, ok: true });
+        } catch (e) {
+          results.push({ url: u, error: e.message, ok: false });
+        }
+      }
+      res.json({ results });
+    } catch (e) {
+      res.status(500).json({ message: e.message });
+    }
+  });
+});
+
+function httpsGetToFile(srcUrl, destPath) {
+  return new Promise((resolve) => {
+    try {
+      const u = new URL(srcUrl);
+      const out = fs.createWriteStream(destPath);
+      const req = https.request({ method: 'GET', hostname: u.hostname, path: u.pathname + (u.search || ''), timeout: 15000 }, (res) => {
+        if (res.statusCode >= 200 && res.statusCode < 300) {
+          res.pipe(out);
+          out.on('finish', () => resolve({ ok: true }));
+        } else {
+          resolve({ ok: false, message: `GET ${res.statusCode}` });
+        }
+      });
+      req.on('error', (err) => resolve({ ok: false, message: err.message }));
+      req.end();
+    } catch (err) {
+      resolve({ ok: false, message: err.message });
+    }
+  });
+}
+
+app.post('/api/admin/images/scan-site', authenticateToken, async (req, res) => {
+  try {
+    const { url, storage, type, id } = req.body || {};
+    const base = String(url || '').trim();
+    if (!base) return res.status(400).json({ message: 'url required' });
+    const u = new URL(base);
+    const htmlResp = await new Promise((resolve) => {
+      const reqH = https.request({ method: 'GET', hostname: u.hostname, path: u.pathname + (u.search || ''), timeout: 15000 }, (r) => {
+        const bufs = [];
+        r.on('data', (d) => bufs.push(d));
+        r.on('end', () => resolve({ status: r.statusCode, body: Buffer.concat(bufs).toString('utf8') }));
+      });
+      reqH.on('error', (err) => resolve({ status: 0, body: '' }));
+      reqH.end();
+    });
+    const body = String(htmlResp.body || '');
+    const imgs = [];
+    const imgRegex = /<img[^>]+src=["']([^"']+)["']/gi;
+    let m;
+    while ((m = imgRegex.exec(body))) { imgs.push(m[1]); }
+    const bgRegex = /url\((["']?)([^"')]+)\1\)/gi;
+    while ((m = bgRegex.exec(body))) { imgs.push(m[2]); }
+    const abs = imgs.map((p) => {
+      try {
+        const s = String(p || '').trim();
+        if (!s) return null;
+        if (/^https?:\/\//i.test(s)) return s;
+        return new URL(s, base).toString();
+      } catch { return null; }
+    }).filter(Boolean);
+    const results = [];
+    for (const src of abs) {
+      try {
+        let finalUrl = src;
+        const dest = String(storage || 'none').toLowerCase();
+        if (dest === 'cloudinary' && CLOUDINARY_ENABLED) {
+          const r = await cloudinary.uploader.upload(src, { folder: process.env.CLOUDINARY_FOLDER || 'gamecart/scans', resource_type: 'image' });
+          finalUrl = r.secure_url;
+        } else if (dest === 'catbox') {
+          const up = await uploadUrlToCatbox(src);
+          if (!up.ok) throw new Error(up.message || 'catbox url upload failed');
+          finalUrl = up.url;
+        } else if (dest === 'local') {
+          const name = `scan-${Date.now()}-${Math.random().toString(36).slice(2,9)}.jpg`;
+          const destPath = path.join(uploadDir, name);
+          const dl = await httpsGetToFile(src, destPath);
+          if (!dl.ok) throw new Error(dl.message || 'download failed');
+          finalUrl = normalizeImageUrl(`/uploads/${name}`);
+        }
+        const aid = `img_${Date.now()}_${Math.random().toString(36).slice(2,9)}`;
+        await pool.query('INSERT INTO image_assets (id, url, source, related_type, related_id) VALUES ($1, $2, $3, $4, $5)', [
+          aid, finalUrl, dest || 'scan', type || null, id || null
+        ]);
+        results.push({ src, url: finalUrl, ok: true });
+      } catch (e) {
+        results.push({ src, error: e.message, ok: false });
+      }
+    }
+    res.json({ count: abs.length, results });
+  } catch (e) {
+    res.status(500).json({ message: e.message });
+  }
+});
 function sendSMS(phone, text) {
   console.log('SMS to', phone, ':', text);
 }

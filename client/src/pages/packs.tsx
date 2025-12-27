@@ -8,13 +8,13 @@ import { useCart } from "@/lib/cart-context";
 import ImageWithFallback from "@/components/image-with-fallback";
 
 export default function PacksPage() {
-  const { data: games = [], isLoading } = useQuery({ queryKey: ["/api/games"] });
+  const { data: games = [], isLoading } = useQuery<any[]>({ queryKey: ["/api/games"] });
   const { addToCart } = useCart();
 
   // Aggregate packs from all games for demo; adapt to /api/packs if available
   const packs = React.useMemo(() => {
     const out: any[] = [];
-    (games || []).forEach((g: any) => {
+    (games || ([] as any[])).forEach((g: any) => {
       if (Array.isArray(g.packages) && g.packages.length > 0) {
         g.packages.forEach((pkg: string, idx: number) => {
           out.push({

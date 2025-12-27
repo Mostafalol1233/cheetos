@@ -383,6 +383,8 @@ export default function AdminDashboard() {
                 <span className="ml-2 w-2 h-2 bg-red-500 rounded-full animate-pulse" />
               )}
             </TabsTrigger>
+            <TabsTrigger value="catbox-upload">Catbox Image Upload</TabsTrigger>
+            <TabsTrigger value="image-manager">Image Manager</TabsTrigger>
           </TabsList>
 
           {/* Alerts Tab */}
@@ -479,6 +481,30 @@ export default function AdminDashboard() {
                 )}
               </div>
             </div>
+          </TabsContent>
+
+          {/* Catbox Image Upload */}
+          <TabsContent value="catbox-upload" className="space-y-6">
+            <Card className="bg-card/50 border-gold-primary/30">
+              <CardHeader>
+                <CardTitle>Submit Catbox.moe Image URL</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <CatboxUploadPanel allGames={allGames} categories={categories} />
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Image Manager */}
+          <TabsContent value="image-manager" className="space-y-6">
+            <Card className="bg-card/50 border-gold-primary/30">
+              <CardHeader>
+                <CardTitle>Upload & Scan</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <ImageManagerPanel />
+              </CardContent>
+            </Card>
           </TabsContent>
 
           {/* Games Tab */}
@@ -1006,6 +1032,227 @@ export default function AdminDashboard() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+    </div>
+  );
+}
+
+function CatboxUploadPanel({ allGames, categories }: { allGames: Game[]; categories: Category[] }) {
+  const [url, setUrl] = useState('');
+  const [type, setType] = useState<'game' | 'category'>('game');
+  const [targetId, setTargetId] = useState<string>('');
+  const [resultUrl, setResultUrl] = useState<string>('');
+  const [error, setError] = useState<string>('');
+  const [preview, setPreview] = useState<string>('');
+  useEffect(() => { setPreview(url); }, [url]);
+  useEffect(() => {
+    if (type === 'game' && allGames.length && !targetId) setTargetId(allGames[0]?.id || '');
+    if (type === 'category' && categories.length && !targetId) setTargetId(categories[0]?.id || '');
+  }, [type, allGames, categories]);
+  const submit = async () => {
+    setError(''); setResultUrl('');
+    const token = typeof window !== 'undefined' ? localStorage.getItem('adminToken') : null;
+    try {
+      const res = await fetch('/api/admin/images/catbox-url', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: JSON.stringify({ url, type, id: targetId, filename: undefined })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data?.message || 'Submission failed');
+        return;
+      }
+      setResultUrl(data?.url || '');
+    } catch (err: any) {
+      setError(err?.message || 'Network error');
+    }
+  };
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div>
+          <Label>Catbox URL</Label>
+          <Input value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://files.catbox.moe/xxxxxx.png" />
+        </div>
+        <div>
+          <Label>Apply To</Label>
+          <Select value={type} onValueChange={(v) => setType(v as any)}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="game">Game</SelectItem>
+              <SelectItem value="category">Category</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div>
+          <Label>{type === 'game' ? 'Game' : 'Category'}</Label>
+          <Select value={targetId} onValueChange={setTargetId}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {type === 'game'
+                ? allGames.map((g) => <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>)
+                : categories.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)
+              }
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+      {preview && (
+        <div className="border rounded p-3">
+          <img src={preview} alt="Preview" className="max-h-64 object-contain mx-auto" onError={(e) => ((e.target as HTMLImageElement).style.display = 'none')} />
+        </div>
+      )}
+      <div className="flex gap-2">
+        <Button onClick={submit} className="bg-gold-primary">Submit</Button>
+        {resultUrl && <span className="text-sm text-muted-foreground">Applied URL: {resultUrl}</span>}
+      </div>
+      {error && <div className="text-red-500 text-sm">{error}</div>}
+    </div>
+  );
+}
+
+function ImageManagerPanel() {
+  const [files, setFiles] = useState<File[]>([]);
+  const [urlsText, setUrlsText] = useState('');
+  const [storage, setStorage] = useState<'cloudinary' | 'local' | 'catbox'>('local');
+  const [progress, setProgress] = useState<number>(0);
+  const [results, setResults] = useState<Array<{ name?: string; url?: string; error?: string; ok: boolean }>>([]);
+  const [scanUrl, setScanUrl] = useState('');
+  useEffect(() => {
+    const onPaste = (e: ClipboardEvent) => {
+      const items = e.clipboardData?.items || [];
+      const newFiles: File[] = [];
+      for (const it of items as any) {
+        if (it.kind === 'file') {
+          const f = it.getAsFile?.();
+          if (f) newFiles.push(f);
+        }
+      }
+      if (newFiles.length) setFiles(prev => [...prev, ...newFiles]);
+    };
+    window.addEventListener('paste', onPaste as any);
+    return () => { window.removeEventListener('paste', onPaste as any); };
+  }, []);
+  const onDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    const dt = e.dataTransfer;
+    const f = Array.from(dt.files || []);
+    if (f.length) setFiles(prev => [...prev, ...f]);
+  };
+  const onDragOver = (e: React.DragEvent) => e.preventDefault();
+  const chooseFiles = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.multiple = true;
+    input.accept = 'image/*';
+    input.onchange = (e) => {
+      const target = e.target as HTMLInputElement;
+      const f = Array.from(target.files || []);
+      if (f.length) setFiles(prev => [...prev, ...f]);
+    };
+    input.click();
+  };
+  const chooseFolder = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.setAttribute('webkitdirectory', 'true');
+    input.onchange = (e) => {
+      const target = e.target as HTMLInputElement;
+      const f = Array.from(target.files || []);
+      const imgs = f.filter(ff => /.(png|jpe?g|webp|gif|svg)$/i.test(ff.name));
+      if (imgs.length) setFiles(prev => [...prev, ...imgs]);
+    };
+    input.click();
+  };
+  const uploadBatch = async () => {
+    setResults([]); setProgress(0);
+    const token = typeof window !== 'undefined' ? localStorage.getItem('adminToken') : null;
+    if (files.length) {
+      const form = new FormData();
+      files.forEach(f => form.append('files', f));
+      form.append('storage', storage);
+      const res = await fetch('/api/admin/images/upload-batch', {
+        method: 'POST',
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+        body: form
+      });
+      const data = await res.json();
+      const items = Array.isArray(data?.results) ? data.results : [];
+      setResults(items);
+      setProgress(100);
+    } else {
+      const urls = urlsText.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+      const res = await fetch('/api/admin/images/upload-batch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: JSON.stringify({ storage, urls })
+      });
+      const data = await res.json();
+      const items = Array.isArray(data?.results) ? data.results : [];
+      setResults(items);
+      setProgress(100);
+    }
+  };
+  const scanSite = async () => {
+    setResults([]); setProgress(0);
+    const token = typeof window !== 'undefined' ? localStorage.getItem('adminToken') : null;
+    const res = await fetch('/api/admin/images/scan-site', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+      body: JSON.stringify({ url: scanUrl, storage })
+    });
+    const data = await res.json();
+    const items = Array.isArray(data?.results) ? data.results : [];
+    setResults(items);
+    setProgress(100);
+  };
+  return (
+    <div className="space-y-4">
+      <div className="flex gap-3 items-center">
+        <Label>Destination</Label>
+        <Select value={storage} onValueChange={(v) => setStorage(v as any)}>
+          <SelectTrigger className="w-[200px]"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="local">Local</SelectItem>
+            <SelectItem value="cloudinary">Cloudinary</SelectItem>
+            <SelectItem value="catbox">Catbox</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      <div
+        className="border-dashed border-2 rounded-lg p-6 text-center bg-muted/40"
+        onDrop={onDrop}
+        onDragOver={onDragOver}
+      >
+        <div className="mb-2">Drag & drop images here</div>
+        <div className="flex gap-2 justify-center">
+          <Button variant="outline" onClick={chooseFiles}>Select Files</Button>
+          <Button variant="outline" onClick={chooseFolder}>Upload Folder</Button>
+        </div>
+      </div>
+      <div>
+        <Label>Paste URLs (one per line)</Label>
+        <Input value={urlsText} onChange={(e) => setUrlsText(e.target.value)} placeholder="https://example.com/a.jpg" />
+      </div>
+      <div className="flex gap-2">
+        <Button onClick={uploadBatch} className="bg-blue-600">Upload</Button>
+        <div className="text-sm text-muted-foreground">Progress {progress}%</div>
+      </div>
+      <div>
+        <Label>Scan Website</Label>
+        <div className="flex gap-2">
+          <Input value={scanUrl} onChange={(e) => setScanUrl(e.target.value)} placeholder="https://example.com" />
+          <Button onClick={scanSite} className="bg-gold-primary">Scan & Save</Button>
+        </div>
+      </div>
+      <div className="space-y-2">
+        {results.map((r, i) => (
+          <div key={i} className={`flex items-center justify-between rounded border p-2 ${r.ok ? 'border-green-500/30' : 'border-red-500/30'}`}>
+            <div className="truncate">{r.name || r.url || r.error}</div>
+            {r.url && <img src={r.url} alt="" className="w-10 h-10 object-contain rounded" />}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

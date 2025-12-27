@@ -54,7 +54,9 @@ export default function GameDetails() {
     if (!game) return;
     
     setSelectedPackage(packageName);
-    setSelectedPrice(parseFloat(game.price));
+    const base = parseFloat(String(game.price));
+    const discounted = game.discountPrice ? parseFloat(String(game.discountPrice)) : NaN;
+    setSelectedPrice(!isNaN(discounted) && discounted > 0 ? discounted : base);
   };
 
   if (!match) return null;
@@ -169,6 +171,9 @@ export default function GameDetails() {
                 {game.packages && game.packages.length > 0 ? (
                   game.packages.map((pkg: string, index: number) => {
                     const price = game.packagePrices && game.packagePrices[index] ? game.packagePrices[index] : game.price;
+                    const pkgDiscount = game.packageDiscountPrices && game.packageDiscountPrices[index] ? game.packageDiscountPrices[index] : null;
+                    const hasPkgDiscount = pkgDiscount && parseFloat(String(pkgDiscount)) > 0;
+                    const displayPrice = hasPkgDiscount ? pkgDiscount! : price;
                     const isSelected = selectedPackage === pkg;
                     
                     return (
@@ -176,8 +181,8 @@ export default function GameDetails() {
                         key={index}
                         onClick={() => {
                            setSelectedPackage(pkg);
-                           setSelectedPrice(parseFloat(price));
-                        }}
+                           setSelectedPrice(parseFloat(String(displayPrice)));
+                         }}
                         className={`relative p-3 rounded-xl border-2 transition-all duration-200 flex flex-col items-center justify-center text-center h-28 group ${
                           isSelected 
                             ? 'border-gold-primary bg-gold-primary/10 shadow-lg scale-105 z-10' 
@@ -186,7 +191,14 @@ export default function GameDetails() {
                       >
                         <h4 className="font-bold text-sm mb-1 line-clamp-2">{pkg}</h4>
                         <div className="text-gold-primary font-bold mt-auto">
-                           {price} {game.currency}
+                          {hasPkgDiscount ? (
+                            <span className="inline-flex items-center gap-2">
+                              <span className="line-through opacity-70 text-muted-foreground">{price} {game.currency}</span>
+                              <span>{displayPrice} {game.currency}</span>
+                            </span>
+                          ) : (
+                            <span>{price} {game.currency}</span>
+                          )}
                         </div>
                         {isSelected && (
                           <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-gold-primary shadow-[0_0_8px_rgba(255,215,0,0.8)] animate-pulse"></div>
@@ -213,7 +225,14 @@ export default function GameDetails() {
                       </div>
                       <div className="text-right">
                         <div className="text-2xl font-bold text-gold-primary">
-                          {game.price}
+                          {game.discountPrice && parseFloat(String(game.discountPrice)) > 0 ? (
+                            <span className="inline-flex items-center gap-2">
+                              <span className="line-through opacity-70 text-muted-foreground">{game.price}</span>
+                              <span>{game.discountPrice}</span>
+                            </span>
+                          ) : (
+                            <span>{game.price}</span>
+                          )}
                         </div>
                         <div className="text-xs text-muted-foreground">
                           {game.currency}
@@ -231,7 +250,7 @@ export default function GameDetails() {
                 size="lg"
               >
                 <ShoppingCart className="mr-2 h-5 w-5" />
-                {addingToCart ? "Added to Cart!" : `Add to Cart - $${game.price}`}
+                {addingToCart ? "Added to Cart!" : `Add to Cart - $${selectedPrice || parseFloat(String(game.discountPrice || game.price))}`}
               </Button>
             </div>
 
