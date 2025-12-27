@@ -18,6 +18,7 @@ import { startWhatsApp, getQRCode, getConnectionStatus, sendWhatsAppMessage } fr
 import requestLogger from './middleware/logger.js';
 import errorHandler from './middleware/error.js';
 import pool, { checkConnection, preferIPv4 } from './db.js';
+import { initImageProcessor } from './image-processor.js';
 
 dotenv.config();
 
@@ -244,42 +245,32 @@ async function useProvidedImage(req) {
     const url = (req.body && (req.body.image_url || req.body.imageUrl || req.body.image)) || null;
     const pth = (req.body && (req.body.image_path || req.body.imagePath)) || null;
     
-    // If file is uploaded, try Cloudinary first if enabled
+    // Catbox exclusive hosting
     if (req.file && req.file.filename) {
       const localPath = req.file.path;
-      
-      // Try Cloudinary upload if enabled
-      if (CLOUDINARY_ENABLED) {
+      try {
+        const r = await catboxFileUploadFromLocal(localPath, req.file.originalname || req.file.filename);
+        try { fs.unlinkSync(localPath); } catch {}
+        if (r.ok) return r.url;
+        throw new Error(r.message || 'catbox upload failed');
+      } catch (err) {
         try {
-          const result = await cloudinary.uploader.upload(localPath, {
-            folder: process.env.CLOUDINARY_FOLDER || 'gamecart/games',
-            resource_type: 'image',
-            transformation: [
-              { width: 800, height: 800, crop: 'limit', quality: 'auto' }
-            ]
-          });
-          // Clean up local file after successful Cloudinary upload
-          try { fs.unlinkSync(localPath); } catch {}
-          return result.secure_url;
-        } catch (cloudinaryErr) {
-          console.error('Cloudinary upload failed, using local:', cloudinaryErr?.message || cloudinaryErr);
-          // Log error to alerts
-          try {
-            const alertId = `al_${Date.now()}`;
-            const summary = `Cloudinary upload failed for ${req.file?.originalname || req.file?.filename}: ${String(cloudinaryErr?.message || cloudinaryErr).substring(0, 180)}`;
-            await pool.query('INSERT INTO seller_alerts (id, type, summary) VALUES ($1, $2, $3)', [alertId, 'upload_error', summary]);
-          } catch {}
-          // Fall back to local file
-          return normalizeImageUrl(`/uploads/${req.file.filename}`);
-        }
+          const alertId = `al_${Date.now()}`;
+          const summary = `Catbox upload failed for ${req.file?.originalname || req.file?.filename}: ${String(err?.message || err).substring(0, 180)}`;
+          await pool.query('INSERT INTO seller_alerts (id, type, summary) VALUES ($1, $2, $3)', [alertId, 'upload_error', summary]);
+        } catch {}
+        return null;
       }
-      
-      // No Cloudinary, use local
-      return normalizeImageUrl(`/uploads/${req.file.filename}`);
     }
     
     if (typeof url === 'string' && url.trim()) {
-      return normalizeImageUrl(url.trim());
+      const u = url.trim();
+      if (isCatboxUrl(u)) return u;
+      try {
+        const up = await uploadUrlToCatbox(u);
+        if (up.ok) return up.url;
+      } catch {}
+      return null;
     }
     
     if (typeof pth === 'string' && pth.trim()) {
@@ -289,18 +280,10 @@ async function useProvidedImage(req) {
       const dest = path.join(uploadDir, filename);
       try { 
         fs.copyFileSync(src, dest);
-        // Try Cloudinary upload if enabled
-        if (CLOUDINARY_ENABLED) {
-          try {
-            const result = await cloudinary.uploader.upload(dest, {
-              folder: process.env.CLOUDINARY_FOLDER || 'gamecart/games',
-              resource_type: 'image'
-            });
-            fs.unlinkSync(dest);
-            return result.secure_url;
-          } catch {}
-        }
-        return normalizeImageUrl(`/uploads/${filename}`); 
+        const r = await catboxFileUploadFromLocal(dest, path.basename(src));
+        try { fs.unlinkSync(dest); } catch {}
+        if (r.ok) return r.url;
+        return null; 
       } catch {}
     }
   } catch (err) {
@@ -458,7 +441,7 @@ app.get('/api/games/popular', async (req, res) => {
           packagePrices: Array.isArray(game.packagePrices) ? game.packagePrices : (game.packagePrices ? JSON.parse(game.packagePrices) : []),
           packageDiscountPrices: Array.isArray(game.packageDiscountPrices) ? game.packageDiscountPrices : (game.packageDiscountPrices ? JSON.parse(game.packageDiscountPrices) : [])
         }));
-        return res.json(games);
+        return res.json(games.map(g => ({ ...g, stock: 100 })));
       }
     } catch {}
 
@@ -467,7 +450,7 @@ app.get('/api/games/popular', async (req, res) => {
       const data = fs.readFileSync(gamesPath, 'utf8');
       const games = JSON.parse(data);
       const popularGames = Array.isArray(games) ? games.filter(g => g.isPopular) : [];
-      return res.json(popularGames.map((g) => ({ ...g, image: normalizeImageUrl(g.image) })));
+      return res.json(popularGames.map((g) => ({ ...g, image: normalizeImageUrl(g.image), stock: 100 })));
     }
 
     res.json([]);
@@ -1179,7 +1162,7 @@ app.get('/api/games', async (req, res) => {
       packagePrices: coerceJsonArray(game.packagePrices),
       packageDiscountPrices: coerceJsonArray(game.packageDiscountPrices)
     }));
-    res.json(games);
+    res.json(games.map(g => ({ ...g, stock: 100 })));
   } catch (err) {
     console.error('Error fetching games:', err);
     res.status(500).json({ message: err.message, error: 'Failed to fetch games' });
@@ -1205,7 +1188,7 @@ app.get('/api/games/popular', async (req, res) => {
       packagePrices: coerceJsonArray(game.packagePrices),
       packageDiscountPrices: coerceJsonArray(game.packageDiscountPrices)
     }));
-    res.json(games);
+    res.json(games.map(g => ({ ...g, stock: 100 })));
   } catch (err) {
     console.error('Error fetching popular games:', err);
     res.status(500).json({ message: err.message, error: 'Failed to fetch popular games' });
@@ -2952,7 +2935,10 @@ app.post('/api/admin/images/upload-batch', authenticateToken, (req, res) => {
   batchUpload(req, res, async (err) => {
     if (err) return res.status(400).json({ message: err.message });
     try {
-      const storageDest = String(req.body.storage || 'local').toLowerCase();
+      const storageDest = String(req.body.storage || 'catbox').toLowerCase();
+      if (storageDest !== 'catbox') {
+        return res.status(400).json({ message: 'Only catbox storage is allowed' });
+      }
       const type = String(req.body.type || '').toLowerCase();
       const relatedId = req.body.id || null;
       const subdir = String(req.body.dir || '').replace(/[^a-z0-9/_-]/gi, '').replace(/^\//, '');
@@ -2966,25 +2952,14 @@ app.post('/api/admin/images/upload-batch', authenticateToken, (req, res) => {
       for (const f of files) {
         try {
           let finalUrl = null;
-          if (storageDest === 'cloudinary' && CLOUDINARY_ENABLED) {
-            const r = await cloudinary.uploader.upload(f.path, { folder: process.env.CLOUDINARY_FOLDER || 'gamecart/uploads', resource_type: 'image' });
-            finalUrl = r.secure_url;
-            try { fs.unlinkSync(f.path); } catch {}
-          } else if (storageDest === 'catbox') {
+          {
             const r = await catboxFileUploadFromLocal(f.path, f.originalname);
             finalUrl = r.ok ? r.url : null;
             try { fs.unlinkSync(f.path); } catch {}
             if (!r.ok) throw new Error(r.message || 'catbox upload failed');
-          } else {
-            const targetDir = subdir ? path.join(uploadDir, subdir) : uploadDir;
-            try { if (!fs.existsSync(targetDir)) fs.mkdirSync(targetDir, { recursive: true }); } catch {}
-            const dest = path.join(targetDir, f.filename);
-            fs.copyFileSync(f.path, dest);
-            finalUrl = normalizeImageUrl(path.join('/uploads', subdir || '', f.filename).replace(/\\/g, '/'));
-            try { fs.unlinkSync(f.path); } catch {}
           }
           await pool.query('INSERT INTO image_assets (id, url, original_filename, source, related_type, related_id) VALUES ($1, $2, $3, $4, $5, $6)', [
-            `img_${Date.now()}_${Math.random().toString(36).slice(2,9)}`, finalUrl, f.originalname || null, storageDest, type || null, relatedId || null
+            `img_${Date.now()}_${Math.random().toString(36).slice(2,9)}`, finalUrl, f.originalname || null, 'catbox', type || null, relatedId || null
           ]);
           await applyRelated(finalUrl);
           results.push({ filename: f.originalname, url: finalUrl, ok: true });
@@ -2997,28 +2972,13 @@ app.post('/api/admin/images/upload-batch', authenticateToken, (req, res) => {
           const src = String(u || '').trim();
           if (!src) continue;
           let finalUrl = null;
-          if (storageDest === 'cloudinary' && CLOUDINARY_ENABLED) {
-            const r = await cloudinary.uploader.upload(src, { folder: process.env.CLOUDINARY_FOLDER || 'gamecart/uploads', resource_type: 'image' });
-            finalUrl = r.secure_url;
-          } else if (storageDest === 'catbox') {
+          {
             const up = await uploadUrlToCatbox(src);
             if (!up.ok) throw new Error(up.message || 'catbox url upload failed');
             finalUrl = up.url;
-          } else {
-            const name = `url-${Date.now()}-${Math.random().toString(36).slice(2,9)}.jpg`;
-            const targetDir = subdir ? path.join(uploadDir, subdir) : uploadDir;
-            try { if (!fs.existsSync(targetDir)) fs.mkdirSync(targetDir, { recursive: true }); } catch {}
-            const dest = path.join(targetDir, name);
-            finalUrl = normalizeImageUrl(path.join('/uploads', subdir || '', name).replace(/\\/g, '/'));
-            try {
-              const r = await httpsGetToFile(src, dest);
-              if (!r.ok) throw new Error(r.message || 'download failed');
-            } catch (e) {
-              throw e;
-            }
           }
           await pool.query('INSERT INTO image_assets (id, url, source, related_type, related_id) VALUES ($1, $2, $3, $4, $5)', [
-            `img_${Date.now()}_${Math.random().toString(36).slice(2,9)}`, finalUrl, storageDest, type || null, relatedId || null
+            `img_${Date.now()}_${Math.random().toString(36).slice(2,9)}`, finalUrl, 'catbox', type || null, relatedId || null
           ]);
           await applyRelated(finalUrl);
           results.push({ url: finalUrl, ok: true });
@@ -3142,6 +3102,44 @@ app.post('/api/admin/transactions/:id/respond', authenticateToken, async (req, r
 });
 
 // ===================== WHATSAPP INTEGRATION =====================
+
+// Content management
+const contentHistoryFile = path.join(__dirname, '..', 'data', 'site-content-history.json');
+const contentFile = path.join(__dirname, '..', 'data', 'site-content.json');
+function loadJson(p) {
+  try { if (fs.existsSync(p)) return JSON.parse(fs.readFileSync(p, 'utf-8')); } catch {}
+  return null;
+}
+function saveJson(p, data) {
+  try { fs.writeFileSync(p, JSON.stringify(data, null, 2)); } catch {}
+}
+app.get('/api/content', async (req, res) => {
+  try {
+    const current = loadJson(contentFile) || {};
+    res.json({ ok: true, content: current });
+  } catch (e) {
+    res.status(500).json({ ok: false, message: e.message });
+  }
+});
+app.put('/api/admin/content', authenticateToken, async (req, res) => {
+  try {
+    const { title, description, link } = req.body || {};
+    const t = String(title || '').trim();
+    const d = String(description || '').trim();
+    const l = String(link || '').trim();
+    if (!t || t.length > 120) return res.status(400).json({ ok: false, message: 'Invalid title' });
+    if (!d || d.length > 2000) return res.status(400).json({ ok: false, message: 'Invalid description' });
+    if (!/^https?:\/\//i.test(l)) return res.status(400).json({ ok: false, message: 'Invalid link' });
+    const current = { title: t, description: d, link: l, version: Date.now() };
+    saveJson(contentFile, current);
+    const hist = loadJson(contentHistoryFile) || [];
+    hist.push({ ...current, saved_at: Date.now() });
+    saveJson(contentHistoryFile, hist);
+    res.json({ ok: true, content: current });
+  } catch (e) {
+    res.status(500).json({ ok: false, message: e.message });
+  }
+});
 
 // Baileys QR Integration
 app.get('/api/admin/whatsapp/qr', authenticateToken, (req, res) => {
@@ -3715,11 +3713,15 @@ const startServer = async () => {
         { slugs: ['roblox'], file: 'D:\\GameCart-1\\roblox-new-image.jpg' }
       ];
       for (const it of items) {
-        const url = await uploadFromLocal(it.file);
+        const up = await catboxFileUploadFromLocal(it.file, path.basename(it.file));
+        const url = up && up.ok ? up.url : null;
         if (!url) continue;
         for (const s of it.slugs) {
           try {
-            await pool.query(`UPDATE games SET image = $1 WHERE slug = $2 OR LOWER(REPLACE(slug, '-', '')) = LOWER(REPLACE($2, '-', ''))`, [url, s]);
+            const cur = await pool.query(`SELECT id, image FROM games WHERE slug = $1 OR LOWER(REPLACE(slug, '-', '')) = LOWER(REPLACE($1, '-', ''))`, [s]);
+            const row = cur.rows[0];
+            if (row && isCatboxUrl(row.image)) continue;
+            await pool.query(`UPDATE games SET image = $1, image_url = $1 WHERE slug = $2 OR LOWER(REPLACE(slug, '-', '')) = LOWER(REPLACE($2, '-', ''))`, [url, s]);
           } catch {}
         }
       }
@@ -3727,21 +3729,23 @@ const startServer = async () => {
         const baseDir = 'D:\\GameCart-1\\images';
         if (fs.existsSync(baseDir)) {
           const files = fs.readdirSync(baseDir).filter(f => /\.(jpg|jpeg|png|webp|gif)$/i.test(f));
-          const allGamesRes = await pool.query('SELECT id, slug, name FROM games');
+          const allGamesRes = await pool.query('SELECT id, slug, name, image FROM games');
           const allGames = allGamesRes.rows || [];
           const norm = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
           for (const f of files) {
             const localPath = path.join(baseDir, f);
             const base = f.replace(/\.[^.]+$/, '');
             const nb = norm(base);
-            const url = await uploadFromLocal(localPath);
+            const up = await catboxFileUploadFromLocal(localPath, path.basename(localPath));
+            const url = up && up.ok ? up.url : null;
             if (!url) continue;
             for (const g of allGames) {
               const ns = norm(g.slug);
               const nn = norm(g.name);
               if (ns.includes(nb) || nb.includes(ns) || nn.includes(nb) || nb.includes(nn)) {
                 try {
-                  await pool.query('UPDATE games SET image = $1 WHERE id = $2', [url, g.id]);
+                  if (isCatboxUrl(g.image)) continue;
+                  await pool.query('UPDATE games SET image = $1, image_url = $1 WHERE id = $2', [url, g.id]);
                 } catch {}
               }
             }
@@ -3896,6 +3900,27 @@ const startServer = async () => {
       
       console.log('Startup complete\n');
     });
+
+    // Start image processor asynchronously (does not block server startup)
+    try {
+      initImageProcessor({
+        app,
+        pool,
+        memStorage,
+        paths: {
+          imagesDir,
+          publicDir,
+          generatedImagesDir,
+          assetsDir: path.join(publicDir, 'assets'),
+          attachedAssetsDir,
+          rootAttachedAssetsDir,
+          uploadDir
+        }
+      });
+      console.log('🖼️  Image processor initialized (async)');
+    } catch (err) {
+      console.warn('⚠️  Image processor failed to initialize:', err.message);
+    }
   } catch (err) {
     console.error('Failed to start server:', err.message);
     process.exit(1);

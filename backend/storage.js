@@ -70,7 +70,7 @@ export class MemStorage {
     categoryData.forEach(cat => this.categories.set(cat.id, cat));
     this.saveData("categories", this.categories);
 
-    const randomStock = () => Math.floor(Math.random() * 71) + 30;
+    const randomStock = () => 100;
 
     const gameData = [
       { id: "crossfire", name: "CROSSFIRE", slug: "crossfire", description: "ZP Points & Weapons", price: "50.00", currency: "EGP", image: "/attached_assets/generated_images/crossfire_tactical_game_artwork.png", category: "online-games", isPopular: true, stock: randomStock(), packages: ["1000 ZP", "5000 ZP"], packagePrices: ["50.00", "240.00"], discountPrice: null, packageDiscountPrices: ["45.00", "220.00"] },

@@ -10,6 +10,8 @@ import { Trash2, Edit, Plus, MessageSquare, Bell, Check, AlertCircle, Info, Sear
 import { queryClient } from '@/lib/queryClient';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { useToast } from '@/hooks/use-toast';
 
 interface Game {
   id: string;
@@ -342,24 +344,122 @@ export default function AdminDashboard() {
     if (!file) return;
 
     const formData = new FormData();
-    formData.append('file', file);
+    formData.append('files', file);
+    formData.append('storage', 'catbox');
+    if (editingGame?.id) {
+      formData.append('type', 'game');
+      formData.append('id', editingGame.id);
+    }
 
     try {
       const token = localStorage.getItem('adminToken');
-      const res = await fetch('/api/admin/upload', {
+      const res = await fetch('/api/admin/images/upload-batch', {
         method: 'POST',
         headers: token ? { Authorization: `Bearer ${token}` } : undefined,
         body: formData
       });
       const data = await res.json();
-      if (data.url && editingGame) {
-        setEditingGame({ ...editingGame, image: data.url });
+      const first = Array.isArray(data.results) ? data.results[0] : null;
+      if (first?.url && editingGame) {
+        setEditingGame({ ...editingGame, image: first.url });
       }
     } catch (err) {
       console.error('Upload failed', err);
       alert('Upload failed');
     }
   };
+
+  function ContentEditorPanel() {
+    const { toast } = useToast();
+    const { data: content } = useQuery<{ ok: boolean; content: { title?: string; description?: string; link?: string } }>({
+      queryKey: ['/api/content'],
+    });
+    const [title, setTitle] = useState(content?.content?.title || '');
+    const [description, setDescription] = useState(content?.content?.description || '');
+    const [link, setLink] = useState(content?.content?.link || '');
+    useEffect(() => {
+      setTitle(content?.content?.title || '');
+      setDescription(content?.content?.description || '');
+      setLink(content?.content?.link || '');
+    }, [content?.content?.title, content?.content?.description, content?.content?.link]);
+    const saveMutation = useMutation({
+      mutationFn: async () => {
+        const token = localStorage.getItem('adminToken');
+        const res = await fetch('/api/admin/content', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+          body: JSON.stringify({ title, description, link })
+        });
+        return await res.json();
+      },
+      onSuccess: (resp) => {
+        if (resp?.ok) {
+          toast({ title: 'Saved', description: 'Content updated', duration: 1500 });
+          queryClient.invalidateQueries({ queryKey: ['/api/content'] });
+        } else {
+          toast({ title: 'Error', description: resp?.message || 'Failed to save', duration: 2000 });
+        }
+      }
+    });
+    const isValidTitle = title.trim().length > 0 && title.trim().length <= 120;
+    const isValidDesc = description.trim().length > 0 && description.trim().length <= 2000;
+    const isValidLink = /^https?:\/\//i.test(link.trim());
+    return (
+      <div className="space-y-4">
+        <div className="grid grid-cols-4 items-center gap-4">
+          <Label className="text-right">Title</Label>
+          <Input
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            className="col-span-3"
+          />
+        </div>
+        <div className="grid grid-cols-4 items-start gap-4">
+          <Label className="text-right">Description</Label>
+          <Textarea
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            className="col-span-3 h-32"
+          />
+        </div>
+        <div className="grid grid-cols-4 items-center gap-4">
+          <Label className="text-right">Link</Label>
+          <Input
+            value={link}
+            onChange={(e) => setLink(e.target.value)}
+            placeholder="https://example.com"
+            className="col-span-3"
+          />
+        </div>
+        <div className="flex items-center gap-4">
+          <Button
+            onClick={() => saveMutation.mutate()}
+            disabled={!isValidTitle || !isValidDesc || !isValidLink || saveMutation.isPending}
+            className="bg-gold-primary hover:bg-gold-primary/80"
+          >
+            Save
+          </Button>
+          <div className="text-xs text-muted-foreground">
+            {!isValidTitle ? 'Invalid title. ' : ''}
+            {!isValidDesc ? 'Invalid description. ' : ''}
+            {!isValidLink ? 'Invalid link.' : ''}
+          </div>
+        </div>
+        <div className="mt-6">
+          <h3 className="text-sm font-semibold mb-2">Live Preview</h3>
+          <Card className="bg-card/40 border-gold-primary/20">
+            <CardContent className="p-4">
+              <div className="text-xl font-bold">{title || 'Title'}</div>
+              <div className="text-sm text-muted-foreground mt-2 whitespace-pre-line">{description || 'Description'}</div>
+              <div className="mt-2 text-xs">
+                <a href={link || '#'} className="text-gold-primary underline">{link || 'Link'}</a>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background p-8">
@@ -384,7 +484,8 @@ export default function AdminDashboard() {
               )}
             </TabsTrigger>
             <TabsTrigger value="catbox-upload">Catbox Image Upload</TabsTrigger>
-            <TabsTrigger value="image-manager">Image Manager</TabsTrigger>
+          <TabsTrigger value="image-manager">Image Manager</TabsTrigger>
+          <TabsTrigger value="content">Content</TabsTrigger>
           </TabsList>
 
           {/* Alerts Tab */}
@@ -503,6 +604,18 @@ export default function AdminDashboard() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <ImageManagerPanel />
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Content Tab */}
+          <TabsContent value="content" className="space-y-6">
+            <Card className="bg-card/50 border-gold-primary/30">
+              <CardHeader>
+                <CardTitle>Main Page Content</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <ContentEditorPanel />
               </CardContent>
             </Card>
           </TabsContent>

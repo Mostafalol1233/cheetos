@@ -39,22 +39,8 @@ export default function ImageWithFallback({ src, alt, className, width, height, 
   };
 
   const onError = () => {
-    if (errorCount === 0) {
-      // Try with normalized URL (strip domain if asset hosted elsewhere)
-      const normalized = normalizeImageSrc(src);
-      if (normalized !== current) {
-        setCurrent(normalized);
-        setErrorCount(1);
-        return;
-      }
-    }
-
     setIsLoading(false);
-
-    // Use a local placeholder image bundled with the app to avoid broken icon previews
-    // Fallback to an existing image in /images to ensure the browser can load it.
-    const localPlaceholder = "/images/cropped-favicon1-270x270.png";
-    setCurrent(localPlaceholder);
+    setErrorCount(errorCount + 1);
   };
   
   const onLoad: React.ReactEventHandler<HTMLImageElement> = (e) => {
