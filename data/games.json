@@ -1,0 +1,379 @@
+[
+  {
+    "id": "crossfire",
+    "name": "CROSSFIRE",
+    "slug": "crossfire",
+    "description": "ZP Points & Weapons",
+    "price": "50.00",
+    "currency": "EGP",
+    "image": "/attached_assets/generated_images/crossfire_tactical_game_artwork.png",
+    "category": "online-games",
+    "isPopular": true,
+    "stock": 97,
+    "packages": [
+      "1000 ZP",
+      "5000 ZP"
+    ],
+    "packagePrices": [
+      "50.00",
+      "240.00"
+    ],
+    "discountPrice": null,
+    "packageDiscountPrices": [
+      "45.00",
+      "220.00"
+    ]
+  },
+  {
+    "id": "freefire",
+    "name": "FREE FIRE",
+    "slug": "freefire",
+    "description": "Diamonds & Battle Pass",
+    "price": "90.00",
+    "currency": "EGP",
+    "image": "/attached_assets/FREE_FIRE.jpg",
+    "category": "mobile-games",
+    "isPopular": true,
+    "stock": 56,
+    "packages": [
+      "100 Diamonds"
+    ],
+    "packagePrices": [
+      "90.00"
+    ],
+    "discountPrice": null,
+    "packageDiscountPrices": [
+      "80.00"
+    ]
+  },
+  {
+    "id": "pubg",
+    "name": "PUBG MOBILE",
+    "slug": "pubg-mobile",
+    "description": "UC Currency & Royal Pass",
+    "price": "29.99",
+    "currency": "EGP",
+    "image": "/attached_assets/generated_images/pubg_mobile_battle_royale_scene.png",
+    "category": "mobile-games",
+    "isPopular": true,
+    "stock": 69,
+    "packages": [
+      "60 UC"
+    ],
+    "packagePrices": [
+      "29.99"
+    ],
+    "discountPrice": "24.99",
+    "packageDiscountPrices": [
+      "24.99"
+    ]
+  },
+  {
+    "id": "roblox",
+    "name": "ROBLOX",
+    "slug": "roblox",
+    "description": "Robux Currency & Premium",
+    "price": "250.00",
+    "currency": "EGP",
+    "image": "/attached_assets/ROBLOX.png",
+    "category": "online-games",
+    "isPopular": true,
+    "stock": 52,
+    "packages": [
+      "400 Robux"
+    ],
+    "packagePrices": [
+      "250.00"
+    ],
+    "discountPrice": "230.00",
+    "packageDiscountPrices": [
+      "230.00"
+    ]
+  },
+  {
+    "id": "lol",
+    "name": "LEAGUE OF LEGENDS",
+    "slug": "league-of-legends",
+    "description": "RP Points",
+    "price": "125.00",
+    "currency": "EGP",
+    "image": "/attached_assets/LEAGUE_OF_LEGENDS.png",
+    "category": "online-games",
+    "isPopular": true,
+    "stock": 42,
+    "packages": [
+      "650 RP"
+    ],
+    "packagePrices": [
+      "125.00"
+    ],
+    "discountPrice": null,
+    "packageDiscountPrices": [
+      "115.00"
+    ]
+  },
+  {
+    "id": "callofduty",
+    "name": "CALL OF DUTY",
+    "slug": "call-of-duty",
+    "description": "COD Points & Battle Pass",
+    "price": "250.00",
+    "currency": "EGP",
+    "image": "/attached_assets/generated_images/call_of_duty_modern_warfare_soldier.png",
+    "category": "online-games",
+    "isPopular": true,
+    "stock": 67,
+    "packages": [
+      "1000 COD Points"
+    ],
+    "packagePrices": [
+      "250.00"
+    ],
+    "discountPrice": null,
+    "packageDiscountPrices": [
+      "230.00"
+    ]
+  },
+  {
+    "id": "valorant",
+    "name": "VALORANT",
+    "slug": "valorant",
+    "description": "VP Points & Battle Pass",
+    "price": "200.00",
+    "currency": "EGP",
+    "image": "/attached_assets/VALORANT.jpg",
+    "category": "online-games",
+    "isPopular": true,
+    "stock": 35,
+    "packages": [
+      "475 VP"
+    ],
+    "packagePrices": [
+      "200.00"
+    ],
+    "discountPrice": "180.00",
+    "packageDiscountPrices": [
+      "180.00"
+    ]
+  },
+  {
+    "id": "cod-mobile",
+    "name": "COD MOBILE",
+    "slug": "cod-mobile",
+    "description": "CP Points & Battle Pass",
+    "price": "150.00",
+    "currency": "EGP",
+    "image": "/attached_assets/COD_MOBILE.png",
+    "category": "mobile-games",
+    "isPopular": true,
+    "stock": 60,
+    "packages": [
+      "320 CP"
+    ],
+    "packagePrices": [
+      "150.00"
+    ],
+    "discountPrice": null,
+    "packageDiscountPrices": [
+      "140.00"
+    ]
+  },
+  {
+    "id": "apex",
+    "name": "APEX LEGENDS",
+    "slug": "apex-legends",
+    "description": "Apex Coins & Battle Pass",
+    "price": "280.00",
+    "currency": "EGP",
+    "image": "/attached_assets/APEX_LEGENDS.png",
+    "category": "online-games",
+    "isPopular": true,
+    "stock": 87,
+    "packages": [
+      "1000 Apex Coins"
+    ],
+    "packagePrices": [
+      "280.00"
+    ],
+    "discountPrice": null,
+    "packageDiscountPrices": null
+  },
+  {
+    "id": "clash-royale",
+    "name": "CLASH ROYALE",
+    "slug": "clash-royale",
+    "description": "Gems & Gold",
+    "price": "40.00",
+    "currency": "EGP",
+    "image": "/attached_assets/CLASH_ROYALE.jpg",
+    "category": "mobile-games",
+    "isPopular": true,
+    "stock": 62,
+    "packages": [
+      "80 Gems"
+    ],
+    "packagePrices": [
+      "40.00"
+    ],
+    "discountPrice": null,
+    "packageDiscountPrices": [
+      "35.00"
+    ]
+  },
+  {
+    "id": "clash-clans",
+    "name": "CLASH OF CLANS",
+    "slug": "clash-of-clans",
+    "description": "Gems & Gold Pass",
+    "price": "40.00",
+    "currency": "EGP",
+    "image": "/attached_assets/CLASH_OF_CLANS.webp",
+    "category": "mobile-games",
+    "isPopular": true,
+    "stock": 73,
+    "packages": [
+      "80 Gems"
+    ],
+    "packagePrices": [
+      "40.00"
+    ],
+    "discountPrice": null,
+    "packageDiscountPrices": [
+      "36.00"
+    ]
+  },
+  {
+    "id": "fortnite",
+    "name": "FORTNITE",
+    "slug": "fortnite",
+    "description": "V-Bucks & Battle Pass",
+    "price": "200.00",
+    "currency": "EGP",
+    "image": "/attached_assets/FORTNITE.jpg",
+    "category": "online-games",
+    "isPopular": false,
+    "stock": 81,
+    "packages": [
+      "1000 V-Bucks"
+    ],
+    "packagePrices": [
+      "200.00"
+    ],
+    "discountPrice": "180.00",
+    "packageDiscountPrices": [
+      "180.00"
+    ]
+  },
+  {
+    "id": "minecraft",
+    "name": "MINECRAFT",
+    "slug": "minecraft",
+    "description": "Minecoins & Realms",
+    "price": "100.00",
+    "currency": "EGP",
+    "image": "/attached_assets/MINECRAFT.png",
+    "category": "online-games",
+    "isPopular": false,
+    "stock": 81,
+    "packages": [
+      "320 Minecoins"
+    ],
+    "packagePrices": [
+      "100.00"
+    ],
+    "discountPrice": "90.00",
+    "packageDiscountPrices": [
+      "90.00"
+    ]
+  },
+  {
+    "id": "gta5",
+    "name": "GTA V ONLINE",
+    "slug": "gta-v-online",
+    "description": "Shark Cards & Premium",
+    "price": "300.00",
+    "currency": "EGP",
+    "image": "/attached_assets/OIP_1754946009491.jpg",
+    "category": "online-games",
+    "isPopular": true,
+    "stock": 41,
+    "packages": [
+      "$100,000 Red Shark Card"
+    ],
+    "packagePrices": [
+      "300.00"
+    ],
+    "discountPrice": null,
+    "packageDiscountPrices": null
+  },
+  {
+    "id": "steam",
+    "name": "STEAM WALLET",
+    "slug": "steam-wallet",
+    "description": "Steam Wallet Codes",
+    "price": "500.00",
+    "currency": "EGP",
+    "image": "/attached_assets/image_1754945109051.png",
+    "category": "gift-cards",
+    "isPopular": true,
+    "stock": 95,
+    "packages": null,
+    "packagePrices": null,
+    "discountPrice": null,
+    "packageDiscountPrices": null
+  },
+  {
+    "id": "playstore",
+    "name": "GOOGLE PLAY STORE",
+    "slug": "google-play-store",
+    "description": "Google Play Gift Cards",
+    "price": "250.00",
+    "currency": "EGP",
+    "image": "/attached_assets/image_1754945106383.png",
+    "category": "gift-cards",
+    "isPopular": true,
+    "stock": 98,
+    "packages": null,
+    "packagePrices": null,
+    "discountPrice": null,
+    "packageDiscountPrices": null
+  },
+  {
+    "id": "playstation",
+    "name": "PLAYSTATION STORE",
+    "slug": "playstation-store",
+    "description": "PlayStation Store Gift Cards",
+    "price": "500.00",
+    "currency": "EGP",
+    "image": "/attached_assets/image_1754945102153.png",
+    "category": "gift-cards",
+    "isPopular": true,
+    "stock": 72,
+    "packages": null,
+    "packagePrices": null,
+    "discountPrice": null,
+    "packageDiscountPrices": null
+  },
+  {
+    "id": "netflix",
+    "name": "NETFLIX",
+    "slug": "netflix",
+    "description": "Netflix Subscription Cards",
+    "price": "200.00",
+    "currency": "EGP",
+    "image": "/attached_assets/OIP_1754945924514.jpg",
+    "category": "online-games",
+    "isPopular": true,
+    "stock": 80,
+    "packages": [
+      "1 Month Subscription"
+    ],
+    "packagePrices": [
+      "200.00"
+    ],
+    "discountPrice": "180.00",
+    "packageDiscountPrices": [
+      "180.00"
+    ]
+  }
+]

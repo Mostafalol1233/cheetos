@@ -2183,7 +2183,11 @@ app.put('/api/admin/countdown', authenticateToken, async (req, res) => {
 });
 
 // Hot deals priority column
-await pool.query('ALTER TABLE games ADD COLUMN IF NOT EXISTS hot_deal_priority INTEGER DEFAULT 0');
+(async () => {
+  try {
+    await pool.query('ALTER TABLE games ADD COLUMN IF NOT EXISTS hot_deal_priority INTEGER DEFAULT 0');
+  } catch {}
+})();
 
 // Hot deals endpoints
 app.get('/api/hot-deals', async (req, res) => {

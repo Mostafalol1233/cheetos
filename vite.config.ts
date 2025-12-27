@@ -34,20 +34,11 @@ export default defineConfig({
       deny: ["**/.*"],
     },
     proxy: {
-      '/': {
-        target: 'http://localhost:3001',
-        changeOrigin: true,
-        bypass: (req) => {
-          // Don't proxy API calls and static assets, let Vite serve them
-          if (req && req.url && req.url.startsWith('/api')) {
-            return null;
-          }
-          // Images from backend public folder
-          if (req && req.url && req.url.match(/\.(jpg|jpeg|png|gif|webp|svg)$/i)) {
-            return null;
-          }
-        }
-      }
+      "/api": { target: "http://localhost:3001", changeOrigin: true },
+      "/uploads": { target: "http://localhost:3001", changeOrigin: true },
+      "/media": { target: "http://localhost:3001", changeOrigin: true },
+      "/images": { target: "http://localhost:3001", changeOrigin: true },
+      "/attached_assets": { target: "http://localhost:3001", changeOrigin: true }
     }
   },
 });
