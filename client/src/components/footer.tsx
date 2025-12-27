@@ -13,7 +13,7 @@ export function Footer() {
               <div className="flex items-center space-x-2 cursor-pointer group">
                 <div className="w-10 h-10 rounded-lg bg-black flex items-center justify-center border border-gold-primary/20 group-hover:border-gold-primary/50 transition-colors">
                   <img 
-                    src="https://res.cloudinary.com/dznqaewj4/image/upload/v1/gaming-store/logo/small-logo.png" 
+                    src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Crect fill='%23ffd700' width='200' height='200' rx='10'/%3E%3Ctext x='50%25' y='50%25' font-size='60' font-weight='bold' fill='%23000' text-anchor='middle' dy='.3em'%3EDG%3C/text%3E%3C/svg%3E" 
                     alt="Logo" 
                     className="w-8 h-8 object-contain"
                   />

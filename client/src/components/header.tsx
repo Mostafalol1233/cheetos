@@ -50,7 +50,7 @@ export function Header({ onCartClick }: HeaderProps) {
               <div className="relative">
                 <div className="w-12 h-12 md:w-14 md:h-14 rounded-xl flex items-center justify-center overflow-hidden bg-black transition-transform transform group-hover:scale-110 duration-300 border border-gold-primary/40 shadow-[0_0_20px_rgba(52,152,219,0.3)]">
                   <img 
-                    src="https://res.cloudinary.com/dznqaewj4/image/upload/v1/gaming-store/logo/gmz-white-logo.svg" 
+                    src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Crect fill='%23ffd700' width='200' height='200' rx='20'/%3E%3Ctext x='50%25' y='50%25' font-size='80' font-weight='bold' fill='%23000' text-anchor='middle' dy='.3em'%3EDG%3C/text%3E%3C/svg%3E" 
                     alt="Diaa Eldeen Logo"
                     className="w-10 h-10 md:w-12 md:h-12 object-contain"
                   />
