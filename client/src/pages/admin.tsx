@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -1027,15 +1027,20 @@ function ChatWidgetConfigPanel() {
       if (!res.ok) throw new Error('Failed to fetch config');
       return res.json();
     },
-    onSuccess: (data) => {
-      if (data) {
-        setEnabled(data.enabled !== false);
-        setIconUrl(data.iconUrl || '/images/message-icon.svg');
-        setWelcomeMessage(data.welcomeMessage || 'Hello! How can we help you?');
-        setPosition(data.position || 'bottom-right');
-      }
-    }
+    select: (data: any) => data,
+    refetchOnWindowFocus: false,
+    gcTime: Infinity,
+    staleTime: Infinity,
   });
+  useEffect(() => {
+    const data: any = config;
+    if (data) {
+      setEnabled(data.enabled !== false);
+      setIconUrl(data.iconUrl || '/images/message-icon.svg');
+      setWelcomeMessage(data.welcomeMessage || 'Hello! How can we help you?');
+      setPosition(data.position || 'bottom-right');
+    }
+  }, [config]);
 
   // Update config mutation
   const updateConfigMutation = useMutation({
@@ -1132,7 +1137,7 @@ function LogoManagementPanel() {
   const [previewInfo, setPreviewInfo] = useState("");
 
   // Fetch logo config
-  const { data: config } = useQuery({
+  const { data: logoConfig } = useQuery({
     queryKey: ['/api/admin/logo/config'],
     queryFn: async () => {
       const token = localStorage.getItem('adminToken');
@@ -1142,14 +1147,19 @@ function LogoManagementPanel() {
       if (!res.ok) throw new Error('Failed to fetch logo config');
       return res.json();
     },
-    onSuccess: (data) => {
-      if (data) {
-        setSmallLogoUrl(data.smallLogoUrl || data.small_logo_url || '/attached_assets/small-image-logo.png');
-        setLargeLogoUrl(data.largeLogoUrl || data.large_logo_url || '/attached_assets/large-image-logo.png');
-        setFaviconUrl(data.faviconUrl || data.favicon_url || '/images/cropped-favicon1-32x32.png');
-      }
-    }
+    select: (data: any) => data,
+    refetchOnWindowFocus: false,
+    gcTime: Infinity,
+    staleTime: Infinity,
   });
+  useEffect(() => {
+    const data: any = logoConfig;
+    if (data) {
+      setSmallLogoUrl(data.smallLogoUrl || data.small_logo_url || '/attached_assets/small-image-logo.png');
+      setLargeLogoUrl(data.largeLogoUrl || data.large_logo_url || '/attached_assets/large-image-logo.png');
+      setFaviconUrl(data.faviconUrl || data.favicon_url || '/images/cropped-favicon1-32x32.png');
+    }
+  }, [logoConfig]);
 
   // Update logo config mutation
   const updateLogoMutation = useMutation({

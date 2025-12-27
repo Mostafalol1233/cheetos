@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 
-export default function ImageWithFallback({ src, alt, className }: { src: string; alt: string; className?: string }) {
+export default function ImageWithFallback({ src, alt, className, width, height, sizes }: { src: string; alt: string; className?: string; width?: number; height?: number; sizes?: string }) {
   const [current, setCurrent] = useState<string>(src);
   const [errorCount, setErrorCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
@@ -59,11 +59,7 @@ export default function ImageWithFallback({ src, alt, className }: { src: string
       onError();
       return;
     }
-    if (img.naturalWidth < 200 || img.naturalHeight < 200) {
-      onError();
-      return;
-    }
-    setIsLoading(false);
+        setIsLoading(false);
   };
   
   const normalizedSrc = normalizeImageSrc(current);
@@ -76,6 +72,10 @@ export default function ImageWithFallback({ src, alt, className }: { src: string
         alt={alt} 
         className={`${className} ${isLoading ? 'hidden' : ''}`} 
         loading="lazy" 
+        decoding="async"
+        width={width}
+        height={height}
+        sizes={sizes}
         onLoad={onLoad}
         onError={onError}
         crossOrigin="anonymous"

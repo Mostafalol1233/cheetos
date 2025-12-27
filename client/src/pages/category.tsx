@@ -128,7 +128,7 @@ export default function CategoryPage() {
                 const packageDiscountPrices = Array.isArray((game as any).packageDiscountPrices) ? (game as any).packageDiscountPrices : [];
                 const hasDiscount = game.discountPrice && parseFloat(game.discountPrice.toString()) > 0;
                 const mainPrice = parseFloat(game.price.toString());
-                const discountPrice = hasDiscount ? parseFloat(game.discountPrice.toString()) : null;
+                const discountPrice = hasDiscount && game.discountPrice !== null ? parseFloat(String(game.discountPrice)) : null;
                 
                 const isOutOfStock = Number(game.stock) <= 0;
 

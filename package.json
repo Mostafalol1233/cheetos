@@ -4,9 +4,9 @@
   "type": "module",
   "license": "MIT",
   "scripts": {
-    "dev": "cross-env NODE_ENV=development tsx server/index.ts",
-    "build": "vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist",
-    "start": "cross-env NODE_ENV=production node dist/index.js",
+    "dev": "vite",
+    "build": "vite build",
+    "start": "cross-env NODE_ENV=production node backend/index.js",
     "deploy": "npm run build && npm run start",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",

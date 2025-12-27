@@ -154,7 +154,7 @@ export default function GamesPage() {
               const packageDiscountPrices = Array.isArray((game as any).packageDiscountPrices) ? (game as any).packageDiscountPrices : [];
               const hasDiscount = game.discountPrice && parseFloat(game.discountPrice.toString()) > 0;
               const mainPrice = parseFloat(game.price.toString());
-              const discountPrice = hasDiscount ? parseFloat(game.discountPrice.toString()) : null;
+              const discountPrice = hasDiscount && game.discountPrice !== null ? parseFloat(String(game.discountPrice)) : null;
               
               return (
                 <Link key={game.id} href={`/game/${game.slug}`} className="relative group cursor-pointer">
@@ -251,7 +251,7 @@ function GamePreviewDialog({ open, onOpenChange, game, onAdd, mode, onModeChange
   const packagePrices = Array.isArray(game.packagePrices) ? game.packagePrices : [];
   const hasDiscount = game.discountPrice && parseFloat(game.discountPrice.toString()) > 0;
   const mainPrice = parseFloat(game.price.toString());
-  const discountPrice = hasDiscount ? parseFloat(game.discountPrice.toString()) : null;
+  const discountPrice = hasDiscount && game.discountPrice !== null ? parseFloat(String(game.discountPrice)) : null;
   const isOutOfStock = Number(game.stock) <= 0;
 
   const [scale, setScale] = useState(1);
