@@ -50,8 +50,8 @@ export function Header({ onCartClick }: HeaderProps) {
               <div className="relative">
                 <div className="w-12 h-12 md:w-14 md:h-14 rounded-xl flex items-center justify-center overflow-hidden bg-black transition-transform transform group-hover:scale-110 duration-300 border border-gold-primary/40 shadow-[0_0_20px_rgba(52,152,219,0.3)]">
                   <img 
-                    src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Crect fill='%23ffd700' width='200' height='200' rx='20'/%3E%3Ctext x='50%25' y='50%25' font-size='80' font-weight='bold' fill='%23000' text-anchor='middle' dy='.3em'%3EDG%3C/text%3E%3C/svg%3E" 
-                    alt="Diaa Eldeen Logo"
+                    src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Cdefs%3E%3ClinearGradient id='grad' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' style='stop-color:%23ffd700;stop-opacity:1'/%3E%3Cstop offset='100%25' style='stop-color:%23ffed4e;stop-opacity:1'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='100' cy='100' r='95' fill='url(%23grad)' stroke='%23000' stroke-width='3'/%3E%3Ctext x='50%25' y='55%25' font-family='Arial,sans-serif' font-size='65' font-weight='bold' fill='%23000' text-anchor='middle' dy='.35em'%3EDS%3C/text%3E%3Ccircle cx='100' cy='150' r='8' fill='%23000'/%3E%3C/svg%3E" 
+                    alt="Diaa Sadek Logo"
                     className="w-10 h-10 md:w-12 md:h-12 object-contain"
                   />
                   {/* Christmas Hat Overlay */}
@@ -68,7 +68,7 @@ export function Header({ onCartClick }: HeaderProps) {
               </div>
               <div className="hidden sm:block">
                 <h1 className="text-xl md:text-2xl font-black tracking-tight bg-gradient-to-r from-gold-primary to-neon-pink bg-clip-text text-transparent group-hover:from-gold-secondary group-hover:to-neon-blue transition-all duration-300">
-                  Diaa Eldeen
+                  Diaa Sadek
                 </h1>
                 <p className="text-xs font-medium text-muted-foreground group-hover:text-gold-primary transition-colors uppercase tracking-widest">{t("premium_store")}</p>
               </div>

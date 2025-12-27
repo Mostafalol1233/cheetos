@@ -95,12 +95,12 @@ export default function GamesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black dark">
       <div className="container mx-auto px-4 py-8">
         <div className="mb-8">
           <Link
             href="/"
-            className="inline-flex items-center text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors mb-4"
+            className="inline-flex items-center text-gray-300 hover:text-white transition-colors mb-4"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
             {t('back_to_home')}

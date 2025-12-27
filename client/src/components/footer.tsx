@@ -13,13 +13,13 @@ export function Footer() {
               <div className="flex items-center space-x-2 cursor-pointer group">
                 <div className="w-10 h-10 rounded-lg bg-black flex items-center justify-center border border-gold-primary/20 group-hover:border-gold-primary/50 transition-colors">
                   <img 
-                    src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Crect fill='%23ffd700' width='200' height='200' rx='10'/%3E%3Ctext x='50%25' y='50%25' font-size='60' font-weight='bold' fill='%23000' text-anchor='middle' dy='.3em'%3EDG%3C/text%3E%3C/svg%3E" 
-                    alt="Logo" 
+                    src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Cdefs%3E%3ClinearGradient id='grad2' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' style='stop-color:%23ffd700;stop-opacity:1'/%3E%3Cstop offset='100%25' style='stop-color:%23ffed4e;stop-opacity:1'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='100' cy='100' r='95' fill='url(%23grad2)' stroke='%23000' stroke-width='2'/%3E%3Ctext x='50%25' y='55%25' font-family='Arial,sans-serif' font-size='55' font-weight='bold' fill='%23000' text-anchor='middle' dy='.35em'%3EDS%3C/text%3E%3Ccircle cx='100' cy='150' r='6' fill='%23000'/%3E%3C/svg%3E" 
+                    alt="Diaa Sadek Logo" 
                     className="w-8 h-8 object-contain"
                   />
                 </div>
                 <span className="text-xl font-bold bg-gradient-to-r from-gold-primary to-neon-pink bg-clip-text text-transparent">
-                  Diaa Eldeen
+                  Diaa Sadek
                 </span>
               </div>
             </Link>

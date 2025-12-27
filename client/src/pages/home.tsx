@@ -19,6 +19,17 @@ export default function Home() {
     return Math.max(0, Math.ceil((target - now) / (1000 * 60 * 60 * 24)));
   });
   const [pulseKey, setPulseKey] = useState(0);
+  
+  const shareCountdown = async () => {
+    const text = `${daysLeft} days left until 2026! Join me on Diaa Sadek 🎮`;
+    const url = window.location.origin;
+    if ((navigator as any).share) {
+      try { await (navigator as any).share({ title: 'Countdown to 2026', text, url }); } catch {}
+      return;
+    }
+    const twitter = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`;
+    window.open(twitter, '_blank');
+  };
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -33,16 +44,6 @@ export default function Home() {
     return () => clearInterval(interval);
   }, [daysLeft]);
 
-  const shareCountdown = async () => {
-    const text = `${daysLeft} days left until 2026! Join me on Diaa Eldeen 🎮`;
-    const url = window.location.origin;
-    if ((navigator as any).share) {
-      try { await (navigator as any).share({ title: 'Countdown to 2026', text, url }); } catch {}
-      return;
-    }
-    const twitter = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`;
-    window.open(twitter, '_blank');
-  };
 
   return (
     <div className="min-h-screen text-foreground font-gaming overflow-x-hidden custom-cursor bg-gradient-to-b from-darker-bg dark:from-gray-900 dark:via-gray-800 dark:to-black via-white to-gray-50 animate-fade-in">

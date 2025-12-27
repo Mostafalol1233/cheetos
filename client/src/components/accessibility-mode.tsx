@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react';
-import { Monitor, Sun, Moon, Eye, EyeOff, Type, Contrast } from 'lucide-react';
+import { Monitor, Sun, Moon, Eye, EyeOff, Type, Contrast, Wind } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -171,7 +171,7 @@ export function AccessibilityToolbar() {
           className="justify-between"
         >
           <div className="flex items-center gap-2">
-            <Monitor className="w-4 h-4" />
+            <Wind className="w-4 h-4" />
             Reduce Motion
           </div>
           <div className={`w-4 h-4 rounded border ${
