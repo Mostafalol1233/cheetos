@@ -4,49 +4,49 @@ const paymentMethods = [
   { 
     id: "visa", 
     name: "Visa", 
-    image: "/attached_assets/image_32_1754945434846.png",
+    image: "https://res.cloudinary.com/dznqaewj4/image/upload/v1/gaming-store/payments/visa.png",
     color: "text-blue-600" 
   },
   { 
     id: "mastercard", 
     name: "Mastercard", 
-    image: "/attached_assets/image_31_1754945434846.png",
+    image: "https://res.cloudinary.com/dznqaewj4/image/upload/v1/gaming-store/payments/mastercard.png",
     color: "text-red-500" 
   },
   { 
     id: "vodafone", 
     name: "Vodafone Cash", 
-    image: "/attached_assets/image_33_1754945434846.png",
+    image: "https://res.cloudinary.com/dznqaewj4/image/upload/v1/gaming-store/payments/vodafone.png",
     color: "text-red-600" 
   },
   { 
     id: "orange", 
     name: "Orange Money", 
-    image: "/attached_assets/image_36_1754945434846.png",
+    image: "https://res.cloudinary.com/dznqaewj4/image/upload/v1/gaming-store/payments/orange.png",
     color: "text-orange-500" 
   },
   { 
     id: "etisalat", 
     name: "Etisalat Cash", 
-    image: "/attached_assets/image_34_1754945434846.png",
+    image: "https://res.cloudinary.com/dznqaewj4/image/upload/v1/gaming-store/payments/etisalat.png",
     color: "text-green-500" 
   },
   { 
     id: "instapay", 
     name: "InstaPay", 
-    image: "/attached_assets/image_29_1754945434846.png",
+    image: "https://res.cloudinary.com/dznqaewj4/image/upload/v1/gaming-store/payments/instapay.png",
     color: "text-blue-500" 
   },
   { 
     id: "cib", 
     name: "CIB Bank", 
-    image: "/attached_assets/image_30_1754945434846.png",
+    image: "https://res.cloudinary.com/dznqaewj4/image/upload/v1/gaming-store/payments/cib.png",
     color: "text-blue-700" 
   },
   { 
     id: "we", 
     name: "WE Pay", 
-    image: "/attached_assets/image_35_1754945434846.png",
+    image: "https://res.cloudinary.com/dznqaewj4/image/upload/v1/gaming-store/payments/we.png",
     color: "text-purple-500" 
   },
 ];

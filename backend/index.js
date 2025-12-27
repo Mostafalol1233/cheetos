@@ -2975,6 +2975,72 @@ app.post('/api/admin/images/upload-batch', authenticateToken, (req, res) => {
   });
 });
 
+// Cloudinary upload endpoint
+const cloudinaryUpload = multer({ storage }).single('file');
+app.post('/api/admin/images/upload-cloudinary', authenticateToken, (req, res) => {
+  cloudinaryUpload(req, res, async (err) => {
+    if (err) return res.status(400).json({ message: err.message });
+    try {
+      if (!req.file) return res.status(400).json({ message: 'No file provided' });
+      if (!CLOUDINARY_ENABLED) return res.status(500).json({ message: 'Cloudinary not configured' });
+      
+      const filePath = req.file.path;
+      const fileName = req.file.originalname.replace(/\.[^/.]+$/, '');
+      const type = String(req.body.type || '').toLowerCase();
+      const relatedId = req.body.id || null;
+      
+      try {
+        const fileBuffer = fs.readFileSync(filePath);
+        const uploadStream = new Promise((resolve, reject) => {
+          const stream = cloudinary.uploader.upload_stream(
+            {
+              folder: 'gaming-store',
+              resource_type: 'auto',
+              public_id: `${type}_${Date.now()}_${fileName.slice(0, 20)}`
+            },
+            (error, result) => {
+              if (error) reject(error);
+              else resolve(result);
+            }
+          );
+          stream.end(fileBuffer);
+        });
+        
+        const result = await uploadStream;
+        const imageUrl = result.secure_url;
+        
+        // Update database if needed
+        if (type === 'game' && relatedId) {
+          await pool.query('UPDATE games SET image = $1, image_url = $1 WHERE id = $2 OR slug = $2', [imageUrl, relatedId]);
+        } else if (type === 'category' && relatedId) {
+          await pool.query('UPDATE categories SET image = $1 WHERE id = $2 OR slug = $2', [imageUrl, relatedId]);
+        }
+        
+        // Store in image assets
+        await pool.query('INSERT INTO image_assets (id, url, original_filename, source, related_type, related_id) VALUES ($1, $2, $3, $4, $5, $6)', [
+          `img_${Date.now()}_${Math.random().toString(36).slice(2,9)}`,
+          imageUrl,
+          req.file.originalname,
+          'cloudinary',
+          type || null,
+          relatedId || null
+        ]);
+        
+        // Clean up temp file
+        try { fs.unlinkSync(filePath); } catch {}
+        
+        res.json({ url: imageUrl, publicId: result.public_id, ok: true });
+      } catch (uploadErr) {
+        try { fs.unlinkSync(filePath); } catch {}
+        throw uploadErr;
+      }
+    } catch (e) {
+      console.error('Cloudinary upload failed:', e);
+      res.status(500).json({ message: e.message });
+    }
+  });
+});
+
 function httpsGetToFile(srcUrl, destPath) {
   return new Promise((resolve) => {
     try {

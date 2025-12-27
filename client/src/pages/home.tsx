@@ -51,7 +51,7 @@ export default function Home() {
       <section className="relative w-full h-[500px] flex items-center justify-center overflow-hidden">
         {/* Background Image/Gradient */}
         <div className="absolute inset-0 bg-gradient-to-r from-darker-bg dark:via-blue-900/30 dark:to-darker-bg via-blue-100 to-indigo-100 z-0"></div>
-        <div className="absolute inset-0 bg-[url('/attached_assets/large-image-logo.png')] bg-cover bg-center opacity-20 dark:opacity-20 mix-blend-overlay animate-pulse"></div>
+        <div className="absolute inset-0 bg-gradient-to-r from-gold-primary/10 via-transparent to-neon-pink/10 opacity-20 dark:opacity-20 mix-blend-overlay animate-pulse"></div>
         
         {/* Content */}
         <div className="relative z-10 text-center px-4 max-w-4xl mx-auto">

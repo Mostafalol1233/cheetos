@@ -13,7 +13,7 @@ export function Footer() {
               <div className="flex items-center space-x-2 cursor-pointer group">
                 <div className="w-10 h-10 rounded-lg bg-black flex items-center justify-center border border-gold-primary/20 group-hover:border-gold-primary/50 transition-colors">
                   <img 
-                    src="/attached_assets/small-image-logo.png" 
+                    src="https://res.cloudinary.com/dznqaewj4/image/upload/v1/gaming-store/logo/small-logo.png" 
                     alt="Logo" 
                     className="w-8 h-8 object-contain"
                   />

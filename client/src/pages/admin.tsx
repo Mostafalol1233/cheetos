@@ -344,8 +344,7 @@ export default function AdminDashboard() {
     if (!file) return;
 
     const formData = new FormData();
-    formData.append('files', file);
-    formData.append('storage', 'catbox');
+    formData.append('file', file);
     if (editingGame?.id) {
       formData.append('type', 'game');
       formData.append('id', editingGame.id);
@@ -353,15 +352,16 @@ export default function AdminDashboard() {
 
     try {
       const token = localStorage.getItem('adminToken');
-      const res = await fetch('/api/admin/images/upload-batch', {
+      const res = await fetch('/api/admin/images/upload-cloudinary', {
         method: 'POST',
         headers: token ? { Authorization: `Bearer ${token}` } : undefined,
         body: formData
       });
       const data = await res.json();
-      const first = Array.isArray(data.results) ? data.results[0] : null;
-      if (first?.url && editingGame) {
-        setEditingGame({ ...editingGame, image: first.url });
+      if (data.url && editingGame) {
+        setEditingGame({ ...editingGame, image: data.url });
+      } else if (data.url) {
+        alert('Image uploaded: ' + data.url);
       }
     } catch (err) {
       console.error('Upload failed', err);
