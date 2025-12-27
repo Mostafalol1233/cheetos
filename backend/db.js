@@ -12,6 +12,9 @@ function buildPoolConfig() {
   const overrideHost = process.env.PGHOST_IP || '';
   const useObject = Boolean(overrideHost);
 
+  // Determine if SSL should be used based on connection string
+  const useSSL = connStr.includes('sslmode=require') || connStr.includes('neon.tech');
+  
   if (useObject && connStr) {
     try {
       const u = new URL(connStr);
@@ -21,7 +24,7 @@ function buildPoolConfig() {
         user: decodeURIComponent(u.username || process.env.PGUSER || ''),
         password: decodeURIComponent(u.password || process.env.PGPASSWORD || ''),
         database: (u.pathname || '').replace('/', '') || process.env.PGDATABASE || 'postgres',
-        ssl: { rejectUnauthorized: false },
+        ssl: useSSL ? { rejectUnauthorized: false } : false,
         connectionTimeoutMillis: 10000,
         idleTimeoutMillis: 30000,
         max: 20,
@@ -33,7 +36,7 @@ function buildPoolConfig() {
 
   return {
     connectionString: connStr,
-    ssl: { rejectUnauthorized: false },
+    ssl: useSSL ? { rejectUnauthorized: false } : false,
     connectionTimeoutMillis: 10000,
     idleTimeoutMillis: 30000,
     max: 20,

@@ -22,26 +22,8 @@ import { initImageProcessor } from './image-processor.js';
 
 dotenv.config();
 
-// Auto-install dependencies if node_modules is missing
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const nodeModulesPath = path.join(__dirname, 'node_modules');
-const pgModulePath = path.join(nodeModulesPath, 'pg');
-const baileysModulePath = path.join(nodeModulesPath, '@whiskeysockets', 'baileys');
-
-if (!fs.existsSync(pgModulePath) || !fs.existsSync(baileysModulePath)) {
-  console.log('📦 Installing dependencies...');
-  try {
-    execSync('npm install', { 
-      cwd: __dirname, 
-      stdio: 'inherit' 
-    });
-    console.log('✓ Dependencies installed successfully\n');
-  } catch (err) {
-    console.error('✗ Failed to install dependencies:', err.message);
-    process.exit(1);
-  }
-}
 
 const app = express();
 const envPort = Number(process.env.PORT || 0);
