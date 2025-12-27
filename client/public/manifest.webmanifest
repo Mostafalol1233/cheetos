@@ -8,13 +8,13 @@
   "description": "Premium gaming store for digital currencies and gift cards.",
   "icons": [
     {
-      "src": "/attached_assets/ninja-gaming-logo.png",
+      "src": "/images/cropped-favicon1-192x192.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "/attached_assets/ninja-gaming-logo.png",
-      "sizes": "512x512",
+      "src": "/images/cropped-favicon1-270x270.png",
+      "sizes": "270x270",
       "type": "image/png"
     }
   ]

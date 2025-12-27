@@ -52,11 +52,14 @@ export function ProductPackCard({
       {/* Product image */}
       {image && (
         <div className="mb-3 flex w-full items-center justify-center">
-          <div className="relative flex h-16 w-16 items-center justify-center overflow-hidden rounded-xl bg-muted/40 ring-1 ring-border/70">
+          <div className="relative flex h-20 w-20 items-center justify-center overflow-hidden rounded-xl bg-muted/40 ring-1 ring-border/70">
             <ImageWithFallback
               src={image}
               alt={name}
               className="h-full w-full object-contain transition-transform duration-200 group-hover:scale-105"
+              width={96}
+              height={96}
+              sizes="(max-width: 640px) 48px, 96px"
             />
           </div>
         </div>
@@ -77,7 +80,7 @@ export function ProductPackCard({
                 {originalPrice} {currency}
               </span>
             )}
-            <span className="bg-gradient-to-r from-destructive to-primary bg-clip-text text-lg font-extrabold text-transparent">
+            <span className="text-destructive font-extrabold text-lg">
               {finalPrice} {currency}
             </span>
           </div>
@@ -114,10 +117,7 @@ export function ProductPackGrid({ packs, onSelectPack }: ProductPackGridProps) {
   }
 
   return (
-    <div
-      className="grid gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4"
-      aria-label="Available packages"
-    >
+    <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4" aria-label="Available packages">
       {packs.map((pack) => (
         <ProductPackCard
           key={pack.id}

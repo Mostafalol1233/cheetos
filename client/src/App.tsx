@@ -16,6 +16,7 @@ import AdminLoginPage from "./pages/admin-login";
 import AdminPackagesPage from "./pages/admin-packages";
 import CategoryPage from "./pages/category";
 import GamesPage from "./pages/games";
+import PacksPage from "./pages/packs";
 import SupportPage from "./pages/support";
 import CheckoutSecurityPage from "./pages/checkout-security";
 import NotFound from "@/pages/not-found";
@@ -57,6 +58,7 @@ function ProtectedAdminRoute() {
       <Switch>
         <Route path="/" component={Home} />
         <Route path="/games" component={GamesPage} />
+        <Route path="/packs" component={PacksPage} />
         <Route path="/support" component={SupportPage} />
         <Route path="/checkout/security/:id" component={CheckoutSecurityPage} />
         <Route path="/admin/login" component={AdminLoginPage} />

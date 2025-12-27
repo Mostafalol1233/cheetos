@@ -40,7 +40,7 @@ export default function ImageWithFallback({ src, alt, className, width, height, 
 
   const onError = () => {
     if (errorCount === 0) {
-      // Try with normalized URL
+      // Try with normalized URL (strip domain if asset hosted elsewhere)
       const normalized = normalizeImageSrc(src);
       if (normalized !== current) {
         setCurrent(normalized);
@@ -48,9 +48,13 @@ export default function ImageWithFallback({ src, alt, className, width, height, 
         return;
       }
     }
+
     setIsLoading(false);
-    const svg = encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='400' height='300'><rect width='100%' height='100%' fill='#111'/><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' fill='#888' font-size='20'>Image unavailable</text></svg>`);
-    setCurrent(`data:image/svg+xml,${svg}`);
+
+    // Use a local placeholder image bundled with the app to avoid broken icon previews
+    // Fallback to an existing image in /images to ensure the browser can load it.
+    const localPlaceholder = "/images/cropped-favicon1-270x270.png";
+    setCurrent(localPlaceholder);
   };
   
   const onLoad: React.ReactEventHandler<HTMLImageElement> = (e) => {
