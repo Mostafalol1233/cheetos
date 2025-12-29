@@ -356,6 +356,31 @@ app.get('/manifest.webmanifest', (req, res) => {
   res.sendFile(file);
 });
 
+// ===================== CONTACT INFO (ENV) =====================
+app.get('/api/contact-info', async (req, res) => {
+  try {
+    const instapayRaw = String(process.env.instapay || '').trim();
+    const cashRaw = String(process.env.cash_numbers || '').trim();
+    const paypalRaw = String(process.env.paypal || '').trim();
+    const normalizePhone = (p) => {
+      const digits = String(p || '').replace(/[^\d+]/g, '');
+      if (!digits) return null;
+      const withPlus = digits.startsWith('+') ? digits : (digits.startsWith('0') ? `+2${digits}` : `+${digits}`);
+      return /^\+\d{7,15}$/.test(withPlus.replace(/\s/g, '')) ? withPlus : null;
+    };
+    const instapay = normalizePhone(instapayRaw);
+    const cashNumbers = cashRaw.split(',').map(s => normalizePhone(s)).filter(Boolean);
+    const paypal = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(paypalRaw) ? paypalRaw : null;
+    res.json({
+      instapay: instapay || null,
+      cash_numbers: cashNumbers,
+      paypal: paypal || null
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 // Serve favicon and logo files from images directory if they exist
 app.get('/favicon.ico', (req, res) => {
   const faviconPath = path.join(imagesDir, 'cropped-favicon1-32x32.png');
@@ -3352,6 +3377,91 @@ app.get('/api/chat/:sessionId', async (req, res) => {
     res.json(messages || []);
   } catch (err) {
     console.error('Error fetching chat messages:', err);
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// ===================== ADMIN: USERS =====================
+app.get('/api/admin/users', authenticateToken, async (req, res) => {
+  try {
+    const { q, page = '1', limit = '20' } = req.query;
+    const pg = Math.max(1, parseInt(String(page))) || 1;
+    const lm = Math.min(200, Math.max(1, parseInt(String(limit)))) || 20;
+    const offset = (pg - 1) * lm;
+    let sql = 'SELECT id, name, phone, created_at FROM users WHERE 1=1';
+    const params = [];
+    if (q) { params.push(`%${String(q)}%`); sql += ` AND (name ILIKE $${params.length} OR phone ILIKE $${params.length})`; }
+    sql += ` ORDER BY created_at DESC LIMIT $${params.length + 1} OFFSET $${params.length + 2}`;
+    params.push(lm, offset);
+    const rows = await pool.query(sql, params);
+    const countRes = await pool.query('SELECT COUNT(*) AS count FROM users');
+    res.json({ items: rows.rows, page: pg, limit: lm, total: parseInt(countRes.rows[0].count) });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+app.get('/api/admin/users/export', authenticateToken, async (req, res) => {
+  try {
+    const rows = await pool.query('SELECT id, name, phone, created_at FROM users ORDER BY created_at DESC');
+    const header = 'id,name,phone,created_at';
+    const csv = [header, ...rows.rows.map(r => `${r.id},${JSON.stringify(r.name)},${JSON.stringify(r.phone)},${new Date(r.created_at).toISOString()}`)].join('\n');
+    res.type('text/csv');
+    res.send(csv);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// ===================== ADMIN: INTERACTIONS =====================
+app.get('/api/admin/interactions', authenticateToken, async (req, res) => {
+  try {
+    const { event_type, q, page = '1', limit = '50' } = req.query;
+    const pg = Math.max(1, parseInt(String(page))) || 1;
+    const lm = Math.min(500, Math.max(1, parseInt(String(limit)))) || 50;
+    const offset = (pg - 1) * lm;
+    let sql = 'SELECT id, event_type, element, page, success, error, ua, ts FROM interaction_metrics WHERE 1=1';
+    const params = [];
+    if (event_type) { params.push(event_type); sql += ` AND event_type = $${params.length}`; }
+    if (q) { params.push(`%${String(q)}%`); sql += ` AND (element ILIKE $${params.length} OR page ILIKE $${params.length} OR error ILIKE $${params.length})`; }
+    sql += ` ORDER BY ts DESC LIMIT $${params.length + 1} OFFSET $${params.length + 2}`;
+    params.push(lm, offset);
+    const rows = await pool.query(sql, params);
+    res.json({ items: rows.rows, page: pg, limit: lm });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+app.get('/api/admin/interactions/export', authenticateToken, async (req, res) => {
+  try {
+    const rows = await pool.query('SELECT id, event_type, element, page, success, error, ua, ts FROM interaction_metrics ORDER BY ts DESC LIMIT 1000');
+    const header = 'id,event_type,element,page,success,error,ua,ts';
+    const csv = [header, ...rows.rows.map(r => `${r.id},${JSON.stringify(r.event_type)},${JSON.stringify(r.element)},${JSON.stringify(r.page)},${r.success},${JSON.stringify(r.error || '')},${JSON.stringify(r.ua || '')},${new Date(r.ts).toISOString()}`)].join('\n');
+    res.type('text/csv');
+    res.send(csv);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// ===================== ADMIN: CONFIRMATION DETAIL =====================
+app.get('/api/admin/confirmations/:id', authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const r = await pool.query('SELECT c.id, c.transaction_id, c.message_encrypted, c.receipt_url, c.created_at, t.user_id, u.name, u.phone FROM payment_confirmations c LEFT JOIN transactions t ON c.transaction_id = t.id LEFT JOIN users u ON t.user_id = u.id WHERE c.id = $1', [id]);
+    if (r.rows.length === 0) return res.status(404).json({ message: 'Not found' });
+    const row = r.rows[0];
+    res.json({
+      id: row.id,
+      transactionId: row.transaction_id,
+      message: decryptMessage(row.message_encrypted),
+      receiptUrl: row.receipt_url,
+      createdAt: new Date(row.created_at).getTime(),
+      user: { id: row.user_id || null, name: row.name || '', phone: row.phone || '' },
+      sessionId: row.phone ? `wa_${row.phone.replace(/[^\d]/g, '')}` : null
+    });
+  } catch (err) {
     res.status(500).json({ message: err.message });
   }
 });

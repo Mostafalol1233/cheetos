@@ -12,6 +12,7 @@ import { useState, useEffect } from "react";
 import Home from "./pages/home";
 import GamePage from "./pages/game";
 import AdminDashboard from "./pages/admin";
+import AdminConfirmationPage from "./pages/admin-confirmation";
 import AdminLoginPage from "./pages/admin-login";
 import AdminPackagesPage from "./pages/admin-packages";
 import CategoryPage from "./pages/category";
@@ -65,6 +66,7 @@ function ProtectedAdminRoute() {
         <Route path="/admin/packages/:gameId" component={AdminPackagesPage} />
         {/* QR login removed */}
         <Route path="/admin" component={ProtectedAdminRoute} />
+        <Route path="/admin/confirmation/:id" component={AdminConfirmationPage} />
         <Route path="/category/:slug" component={CategoryPage} />
         <Route path="/game/:slug" component={GamePage} />
         <Route path="/faq" component={FAQPage} />

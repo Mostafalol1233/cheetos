@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'wouter';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -549,12 +550,14 @@ export default function AdminDashboard() {
           <ScrollArea className="w-full whitespace-nowrap rounded-md border">
         <TabsList className="flex w-full justify-start p-0 h-auto bg-transparent overflow-x-auto whitespace-nowrap">
           <TabsTrigger value="games" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Games & Products</TabsTrigger>
+          <TabsTrigger value="users" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Users</TabsTrigger>
           <TabsTrigger value="packages" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Packages</TabsTrigger>
           <TabsTrigger value="categories" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Categories</TabsTrigger>
           <TabsTrigger value="cards" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Game Cards</TabsTrigger>
           <TabsTrigger value="orders" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Orders</TabsTrigger>
           <TabsTrigger value="chats" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Support Chat</TabsTrigger>
           <TabsTrigger value="checkout-confirmations" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Checkout Confirmations</TabsTrigger>
+          <TabsTrigger value="interactions" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Interactions</TabsTrigger>
           <TabsTrigger value="chat-widget" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Chat Widget</TabsTrigger>
           <TabsTrigger value="logo" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Logo</TabsTrigger>
           <TabsTrigger value="whatsapp" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">WhatsApp</TabsTrigger>
@@ -669,6 +672,14 @@ export default function AdminDashboard() {
             </div>
           </TabsContent>
 
+          {/* Users Tab */}
+          <TabsContent value="users" className="space-y-6">
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-bold text-foreground">Users</h2>
+            </div>
+            <UsersPanel />
+          </TabsContent>
+
           <TabsContent value="orders" className="space-y-6">
             <div className="flex justify-between items-center">
               <h2 className="text-2xl font-bold text-foreground">Orders</h2>
@@ -685,17 +696,19 @@ export default function AdminDashboard() {
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {confirmations.map((c) => (
-                    <div key={c.id} className="rounded-lg border p-3 flex flex-col gap-2">
-                      <div className="text-xs text-muted-foreground">#{c.id}</div>
-                      <div className="text-sm">Order: <span className="font-mono">{c.transactionId}</span></div>
-                      <div className="text-sm">Message: <span>{c.message || '—'}</span></div>
-                      {c.receiptUrl ? (
-                        <a href={c.receiptUrl} target="_blank" rel="noopener noreferrer" className="block">
-                          <img src={c.receiptUrl} alt="" className="w-full h-32 object-contain rounded" />
-                        </a>
-                      ) : null}
-                      <div className="text-xs text-muted-foreground">{new Date(c.createdAt).toLocaleString()}</div>
-                    </div>
+                    <Link href={`/admin/confirmation/${c.id}`}>
+                      <div key={c.id} className="rounded-lg border p-3 flex flex-col gap-2 hover:bg-muted/40 cursor-pointer">
+                        <div className="text-xs text-muted-foreground">#{c.id}</div>
+                        <div className="text-sm">Order: <span className="font-mono">{c.transactionId}</span></div>
+                        <div className="text-sm">Message: <span>{c.message || '—'}</span></div>
+                        {c.receiptUrl ? (
+                          <a href={c.receiptUrl} target="_blank" rel="noopener noreferrer" className="block">
+                            <img src={c.receiptUrl} alt="" className="w-full h-32 object-contain rounded" />
+                          </a>
+                        ) : null}
+                        <div className="text-xs text-muted-foreground">{new Date(c.createdAt).toLocaleString()}</div>
+                      </div>
+                    </Link>
                   ))}
                   {confirmations.length === 0 && (
                     <div className="text-muted-foreground">No confirmations found.</div>
@@ -703,6 +716,14 @@ export default function AdminDashboard() {
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
+          
+          {/* Interactions Tab */}
+          <TabsContent value="interactions" className="space-y-6">
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-bold text-foreground">Checkout Interactions</h2>
+            </div>
+            <InteractionsPanel />
           </TabsContent>
           {/* Catbox Image Upload */}
           <TabsContent value="catbox-upload" className="space-y-6">
@@ -1349,6 +1370,154 @@ function CatboxUploadPanel({ allGames, categories }: { allGames: Game[]; categor
       {error && <div className="text-red-500 text-sm">{error}</div>}
     </div>
   );
+  }
+
+  function UsersPanel() {
+    const [q, setQ] = useState('');
+    const [page, setPage] = useState(1);
+    const { data } = useQuery<{ items: Array<{ id: string; name: string; phone: string; created_at: string }>; page: number; limit: number; total: number }>({
+      queryKey: ['/api/admin/users', q, page],
+      enabled: activeTab === 'users',
+      queryFn: async () => {
+        const token = localStorage.getItem('adminToken');
+        const res = await fetch(`/api/admin/users?q=${encodeURIComponent(q)}&page=${page}&limit=20`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {}
+        });
+        if (!res.ok) throw new Error('Failed to fetch users');
+        return res.json();
+      }
+    });
+    const exportMutation = useMutation({
+      mutationFn: async () => {
+        const token = localStorage.getItem('adminToken');
+        const res = await fetch('/api/admin/users/export', { headers: token ? { Authorization: `Bearer ${token}` } : {} });
+        const csv = await res.text();
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = `users-${Date.now()}.csv`; a.click();
+        URL.revokeObjectURL(url);
+      }
+    });
+    const items = data?.items || [];
+    return (
+      <Card className="bg-card/50 border-gold-primary/30">
+        <CardHeader>
+          <CardTitle className="text-lg">User Directory</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="flex gap-2">
+            <Input placeholder="Search by name or phone" value={q} onChange={(e) => setQ(e.target.value)} className="max-w-md" />
+            <Button onClick={() => exportMutation.mutate()} variant="outline">Export CSV</Button>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-left">
+                  <th className="p-2">ID</th>
+                  <th className="p-2">Name</th>
+                  <th className="p-2">Phone</th>
+                  <th className="p-2">Created</th>
+                </tr>
+              </thead>
+              <tbody>
+                {items.map(u => (
+                  <tr key={u.id} className="border-t">
+                    <td className="p-2 font-mono">{u.id}</td>
+                    <td className="p-2">{u.name}</td>
+                    <td className="p-2">{u.phone}</td>
+                    <td className="p-2">{u.created_at ? new Date(u.created_at).toLocaleString() : '-'}</td>
+                  </tr>
+                ))}
+                {items.length === 0 && (
+                  <tr><td className="p-2 text-muted-foreground" colSpan={4}>No users</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  function InteractionsPanel() {
+    const [q, setQ] = useState('');
+    const [eventType, setEventType] = useState<string | undefined>(undefined);
+    const { data, refetch } = useQuery<{ items: Array<{ id: string; event_type: string; element?: string; page?: string; success: boolean; error?: string; ua?: string; ts: string }> }>({
+      queryKey: ['/api/admin/interactions', q, eventType],
+      enabled: activeTab === 'interactions',
+      queryFn: async () => {
+        const token = localStorage.getItem('adminToken');
+        const params = new URLSearchParams();
+        if (q) params.set('q', q);
+        if (eventType) params.set('event_type', eventType);
+        const res = await fetch(`/api/admin/interactions?${params.toString()}`, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
+        if (!res.ok) throw new Error('Failed to fetch interactions');
+        return res.json();
+      }
+    });
+    const exportMutation = useMutation({
+      mutationFn: async () => {
+        const token = localStorage.getItem('adminToken');
+        const res = await fetch('/api/admin/interactions/export', { headers: token ? { Authorization: `Bearer ${token}` } : {} });
+        const csv = await res.text();
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = `interactions-${Date.now()}.csv`; a.click();
+        URL.revokeObjectURL(url);
+      }
+    });
+    const items = data?.items || [];
+    return (
+      <Card className="bg-card/50 border-gold-primary/30">
+        <CardHeader>
+          <CardTitle className="text-lg">User Interactions</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="flex flex-wrap gap-2">
+            <Input placeholder="Search text or page" value={q} onChange={(e) => setQ(e.target.value)} className="max-w-md" />
+            <Select value={eventType || ''} onValueChange={(v) => setEventType(v || undefined)}>
+              <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">All Events</SelectItem>
+                <SelectItem value="click">click</SelectItem>
+                <SelectItem value="submit">submit</SelectItem>
+                <SelectItem value="view">view</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button variant="outline" onClick={() => exportMutation.mutate()}>Export CSV</Button>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-left">
+                  <th className="p-2">Event</th>
+                  <th className="p-2">Element</th>
+                  <th className="p-2">Page</th>
+                  <th className="p-2">Success</th>
+                  <th className="p-2">Time</th>
+                </tr>
+              </thead>
+              <tbody>
+                {items.map(it => (
+                  <tr key={it.id} className="border-t">
+                    <td className="p-2">{it.event_type}</td>
+                    <td className="p-2">{it.element || '-'}</td>
+                    <td className="p-2">{it.page || '-'}</td>
+                    <td className="p-2">{it.success ? 'Yes' : 'No'}</td>
+                    <td className="p-2">{it.ts ? new Date(it.ts).toLocaleString() : '-'}</td>
+                  </tr>
+                ))}
+                {items.length === 0 && (
+                  <tr><td className="p-2 text-muted-foreground" colSpan={5}>No interactions</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
+    );
   }
 
   function ImageManagerPanel() {
