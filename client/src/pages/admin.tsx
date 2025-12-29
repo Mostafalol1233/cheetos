@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Trash2, Edit, Plus, MessageSquare, Bell, Check, AlertCircle, Info, Search, Package, Shield, ShoppingCart } from 'lucide-react';
 import { queryClient } from '@/lib/queryClient';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
@@ -129,8 +129,29 @@ export default function AdminDashboard() {
 
   // Fetch all chats
   const { data: allChats = [], refetch: refetchChats } = useQuery<ChatMessage[]>({
-    queryKey: ['/api/chat/all'],
-    enabled: activeTab === 'chats'
+    queryKey: ['/api/admin/chat/all'],
+    enabled: activeTab === 'chats',
+    queryFn: async () => {
+      const token = localStorage.getItem('adminToken');
+      const res = await fetch('/api/admin/chat/all', {
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+      });
+      if (!res.ok) throw new Error('Failed to fetch chats');
+      return res.json();
+    }
+  });
+
+  const { data: confirmations = [] } = useQuery<Array<{ id: string; transactionId: string; message: string; receiptUrl: string; createdAt: number }>>({
+    queryKey: ['/api/admin/confirmations'],
+    enabled: activeTab === 'checkout-confirmations',
+    queryFn: async () => {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('adminToken') : null;
+      const res = await fetch('/api/admin/confirmations', {
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined
+      });
+      if (!res.ok) throw new Error('Failed to fetch confirmations');
+      return await res.json();
+    }
   });
 
   // Delete game mutation
@@ -467,26 +488,30 @@ export default function AdminDashboard() {
         <h1 className="text-3xl font-bold text-gold-primary mb-8">Diaa Eldeen Admin Dashboard</h1>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-10">
-            <TabsTrigger value="games">Games & Products</TabsTrigger>
-            <TabsTrigger value="packages">Packages</TabsTrigger>
-            <TabsTrigger value="categories">Categories</TabsTrigger>
-            <TabsTrigger value="cards">Game Cards</TabsTrigger>
-            <TabsTrigger value="chats">Support Chat</TabsTrigger>
-            <TabsTrigger value="chat-widget">Chat Widget</TabsTrigger>
-            <TabsTrigger value="logo">Logo</TabsTrigger>
-            <TabsTrigger value="whatsapp">WhatsApp</TabsTrigger>
-            <TabsTrigger value="preview-home">Home Preview</TabsTrigger>
-            <TabsTrigger value="alerts">
-              Alerts
-              {alerts.some(a => !a.read) && (
-                <span className="ml-2 w-2 h-2 bg-red-500 rounded-full animate-pulse" />
-              )}
-            </TabsTrigger>
-            <TabsTrigger value="catbox-upload">Catbox Image Upload</TabsTrigger>
-          <TabsTrigger value="image-manager">Image Manager</TabsTrigger>
-          <TabsTrigger value="content">Content</TabsTrigger>
-          </TabsList>
+          <ScrollArea className="w-full whitespace-nowrap rounded-md border">
+        <TabsList className="flex w-full justify-start p-0 h-auto bg-transparent overflow-x-auto whitespace-nowrap">
+          <TabsTrigger value="games" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Games & Products</TabsTrigger>
+          <TabsTrigger value="packages" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Packages</TabsTrigger>
+          <TabsTrigger value="categories" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Categories</TabsTrigger>
+          <TabsTrigger value="cards" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Game Cards</TabsTrigger>
+          <TabsTrigger value="chats" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Support Chat</TabsTrigger>
+          <TabsTrigger value="checkout-confirmations" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Checkout Confirmations</TabsTrigger>
+          <TabsTrigger value="chat-widget" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Chat Widget</TabsTrigger>
+          <TabsTrigger value="logo" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Logo</TabsTrigger>
+          <TabsTrigger value="whatsapp" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">WhatsApp</TabsTrigger>
+          <TabsTrigger value="preview-home" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Home Preview</TabsTrigger>
+          <TabsTrigger value="alerts" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">
+            Alerts
+            {alerts.some(a => !a.read) && (
+              <span className="ml-2 w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+            )}
+          </TabsTrigger>
+          <TabsTrigger value="catbox-upload" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Catbox Image Upload</TabsTrigger>
+          <TabsTrigger value="image-manager" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Image Manager</TabsTrigger>
+          <TabsTrigger value="content" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Content</TabsTrigger>
+        </TabsList>
+            <ScrollBar orientation="horizontal" />
+          </ScrollArea>
 
           {/* Alerts Tab */}
           <TabsContent value="alerts" className="space-y-6">
@@ -584,6 +609,34 @@ export default function AdminDashboard() {
             </div>
           </TabsContent>
 
+          <TabsContent value="checkout-confirmations" className="space-y-6">
+            <h2 className="text-2xl font-bold text-foreground">Checkout Confirmations</h2>
+            <Card className="bg-card/50 border-gold-primary/30">
+              <CardHeader>
+                <CardTitle className="text-lg">Recent Submissions</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {confirmations.map((c) => (
+                    <div key={c.id} className="rounded-lg border p-3 flex flex-col gap-2">
+                      <div className="text-xs text-muted-foreground">#{c.id}</div>
+                      <div className="text-sm">Order: <span className="font-mono">{c.transactionId}</span></div>
+                      <div className="text-sm">Message: <span>{c.message || '—'}</span></div>
+                      {c.receiptUrl ? (
+                        <a href={c.receiptUrl} target="_blank" rel="noopener noreferrer" className="block">
+                          <img src={c.receiptUrl} alt="" className="w-full h-32 object-contain rounded" />
+                        </a>
+                      ) : null}
+                      <div className="text-xs text-muted-foreground">{new Date(c.createdAt).toLocaleString()}</div>
+                    </div>
+                  ))}
+                  {confirmations.length === 0 && (
+                    <div className="text-muted-foreground">No confirmations found.</div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
           {/* Catbox Image Upload */}
           <TabsContent value="catbox-upload" className="space-y-6">
             <Card className="bg-card/50 border-gold-primary/30">

@@ -129,10 +129,30 @@ export function Footer() {
         <div className="border-t border-border mt-12 pt-8 flex flex-col md:flex-row justify-between items-center text-sm text-muted-foreground">
           <p>© {new Date().getFullYear()} Diaa Eldeen. All rights reserved.</p>
           <div className="flex space-x-6 mt-4 md:mt-0">
-            <img src="https://static-00.iconduck.com/assets.00/paypal-icon-2048x1214-8v796p0r.png" alt="PayPal" className="h-6 hover:scale-110 transition-all" />
-            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/2a/Mastercard-logo.svg/1280px-Mastercard-logo.svg.png" alt="Mastercard" className="h-6 hover:scale-110 transition-all" />
-            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Visa_Inc._logo.svg/2560px-Visa_Inc._logo.svg.png" alt="Visa" className="h-6 hover:scale-110 transition-all" />
-            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/f/fa/Vodafone_2017_logo.svg/1200px-Vodafone_2017_logo.svg.png" alt="Vodafone Cash" className="h-6 hover:scale-110 transition-all" />
+            {/* PayPal */}
+            <img 
+              src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 32'%3E%3Cpath fill='%23003087' d='M11.6 11.6h-3.4l-.8 5.2h3.4c2.8 0 4.2-1.4 4.2-3.8 0-2.4-1.6-1.4-3.4-1.4z'/%3E%3Cpath fill='%23003087' d='M4.4 25.8h4.6l.6-3.8h2.6c3.8 0 6.6-1.8 6.6-6.4 0-4.4-3-6.4-7.4-6.4H4.4l-3.2 20.6h3.2z'/%3E%3Cpath fill='%23009cde' d='M43.2 11.6h-3.4l-.8 5.2h3.4c2.8 0 4.2-1.4 4.2-3.8 0-2.4-1.6-1.4-3.4-1.4z'/%3E%3Cpath fill='%23009cde' d='M36 25.8h4.6l.6-3.8h2.6c3.8 0 6.6-1.8 6.6-6.4 0-4.4-3-6.4-7.4-6.4H36l-3.2 20.6h3.2z'/%3E%3Cpath fill='%23003087' d='M22.8 11.6h-3.4l-.8 5.2h3.4c2.8 0 4.2-1.4 4.2-3.8 0-2.4-1.6-1.4-3.4-1.4z'/%3E%3Cpath fill='%23003087' d='M15.6 25.8h4.6l.6-3.8h2.6c3.8 0 6.6-1.8 6.6-6.4 0-4.4-3-6.4-7.4-6.4h-6.8l-3.2 20.6h3.2z'/%3E%3C/svg%3E"
+              alt="PayPal" 
+              className="h-8 w-auto hover:scale-110 transition-all bg-white rounded px-1" 
+            />
+            {/* Mastercard */}
+            <img 
+              src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 60'%3E%3Crect fill='%23EB001B' width='100' height='60' rx='4'/%3E%3Ctext x='50%25' y='50%25' font-size='16' font-weight='bold' fill='%23fff' text-anchor='middle' dy='.3em'%3EMC%3C/text%3E%3C/svg%3E" 
+              alt="Mastercard" 
+              className="h-8 w-auto hover:scale-110 transition-all shadow-sm rounded" 
+            />
+            {/* Visa */}
+            <img 
+              src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 60'%3E%3Crect fill='%231434CB' width='100' height='60' rx='4'/%3E%3Ctext x='50%25' y='50%25' font-size='20' font-weight='bold' fill='%23fff' text-anchor='middle' dy='.3em'%3EVisa%3C/text%3E%3C/svg%3E" 
+              alt="Visa" 
+              className="h-8 w-auto hover:scale-110 transition-all shadow-sm rounded" 
+            />
+            {/* Vodafone */}
+            <img 
+              src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 60'%3E%3Crect fill='%23EF0606' width='100' height='60' rx='4'/%3E%3Ctext x='50%25' y='50%25' font-size='18' font-weight='bold' fill='%23fff' text-anchor='middle' dy='.3em'%3EVF%3C/text%3E%3C/svg%3E" 
+              alt="Vodafone Cash" 
+              className="h-8 w-auto hover:scale-110 transition-all shadow-sm rounded" 
+            />
           </div>
         </div>
       </div>

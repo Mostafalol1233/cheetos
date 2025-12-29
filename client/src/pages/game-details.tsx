@@ -173,10 +173,16 @@ export default function GameDetails() {
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 {game.packages && game.packages.length > 0 ? (
                   game.packages.map((pkg: string, index: number) => {
-                    const price = game.packagePrices && game.packagePrices[index] ? game.packagePrices[index] : game.price;
-                    const pkgDiscount = game.packageDiscountPrices && game.packageDiscountPrices[index] ? game.packageDiscountPrices[index] : null;
-                    const hasPkgDiscount = pkgDiscount && parseFloat(String(pkgDiscount)) > 0;
-                    const displayPrice = hasPkgDiscount ? pkgDiscount! : price;
+                    const rawPrice = game.packagePrices && game.packagePrices[index] ? parseFloat(String(game.packagePrices[index])) : parseFloat(String(game.price));
+                    // Check both discountPrices (from games.json) and packageDiscountPrices (legacy/schema)
+                    const discountPrices = game.discountPrices || game.packageDiscountPrices || [];
+                    const rawDiscount = discountPrices[index] ? parseFloat(String(discountPrices[index])) : 0;
+                    
+                    const hasDiscount = rawDiscount > 0;
+                    // Ensure original price is the higher one, and sale price is the lower one
+                    const originalPrice = hasDiscount ? Math.max(rawPrice, rawDiscount) : rawPrice;
+                    const displayPrice = hasDiscount ? Math.min(rawPrice, rawDiscount) : rawPrice;
+                    
                     const isSelected = selectedPackage === pkg;
                     
                     return (
@@ -184,7 +190,7 @@ export default function GameDetails() {
                         key={index}
                         onClick={() => {
                            setSelectedPackage(pkg);
-                           setSelectedPrice(parseFloat(String(displayPrice)));
+                           setSelectedPrice(displayPrice);
                          }}
                         className={`relative p-3 rounded-xl border-2 transition-all duration-200 flex flex-col items-center justify-center text-center h-28 group ${
                           isSelected 
@@ -194,13 +200,13 @@ export default function GameDetails() {
                       >
                         <h4 className="font-bold text-sm mb-1 line-clamp-2">{pkg}</h4>
                         <div className="text-gold-primary font-bold mt-auto">
-                          {hasPkgDiscount ? (
+                          {hasDiscount && originalPrice !== displayPrice ? (
                             <span className="inline-flex items-center gap-2">
-                              <span className="line-through opacity-70 text-muted-foreground">{price} {game.currency}</span>
+                              <span className="line-through opacity-70 text-muted-foreground">{originalPrice} {game.currency}</span>
                               <span>{displayPrice} {game.currency}</span>
                             </span>
                           ) : (
-                            <span>{price} {game.currency}</span>
+                            <span>{displayPrice} {game.currency}</span>
                           )}
                         </div>
                         {isSelected && (
@@ -228,14 +234,22 @@ export default function GameDetails() {
                       </div>
                       <div className="text-right">
                         <div className="text-2xl font-bold text-gold-primary">
-                          {game.discountPrice && parseFloat(String(game.discountPrice)) > 0 ? (
-                            <span className="inline-flex items-center gap-2">
-                              <span className="line-through opacity-70 text-muted-foreground">{game.price}</span>
-                              <span>{game.discountPrice}</span>
-                            </span>
-                          ) : (
-                            <span>{game.price}</span>
-                          )}
+                          {(() => {
+                            const rawPrice = parseFloat(String(game.price));
+                            const rawDiscount = game.discountPrice ? parseFloat(String(game.discountPrice)) : 0;
+                            const hasDiscount = rawDiscount > 0;
+                            const originalPrice = hasDiscount ? Math.max(rawPrice, rawDiscount) : rawPrice;
+                            const displayPrice = hasDiscount ? Math.min(rawPrice, rawDiscount) : rawPrice;
+
+                            return hasDiscount && originalPrice !== displayPrice ? (
+                              <span className="inline-flex items-center gap-2">
+                                <span className="line-through opacity-70 text-muted-foreground">{originalPrice}</span>
+                                <span>{displayPrice}</span>
+                              </span>
+                            ) : (
+                              <span>{displayPrice}</span>
+                            );
+                          })()}
                         </div>
                         <div className="text-xs text-muted-foreground">
                           {game.currency}

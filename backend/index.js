@@ -18,7 +18,14 @@ import { startWhatsApp, getQRCode, getConnectionStatus, sendWhatsAppMessage } fr
 import requestLogger from './middleware/logger.js';
 import errorHandler from './middleware/error.js';
 import pool, { checkConnection, preferIPv4 } from './db.js';
-import { initImageProcessor } from './image-processor.js';
+// Optional image processor (module may not exist in some deployments)
+let initImageProcessor = null;
+try {
+  const mod = await import('./image-processor.js');
+  initImageProcessor = mod?.initImageProcessor || null;
+} catch {
+  initImageProcessor = null;
+}
 
 dotenv.config();
 
@@ -1150,7 +1157,8 @@ app.get('/api/games', async (req, res) => {
     const result = await pool.query(`
       SELECT id, name, slug, description, price, currency, image, category, 
              is_popular as "isPopular", stock, packages, package_prices as "packagePrices",
-             discount_price as "discountPrice", package_discount_prices as "packageDiscountPrices"
+             discount_price as "discountPrice", package_discount_prices as "packageDiscountPrices",
+             discount_prices as "discountPrices"
       FROM games 
       ORDER BY id DESC
     `);
@@ -1160,7 +1168,8 @@ app.get('/api/games', async (req, res) => {
       image: normalizeImageUrl(game.image),
       packages: coerceJsonArray(game.packages),
       packagePrices: coerceJsonArray(game.packagePrices),
-      packageDiscountPrices: coerceJsonArray(game.packageDiscountPrices)
+      packageDiscountPrices: coerceJsonArray(game.packageDiscountPrices),
+      discountPrices: coerceJsonArray(game.discountPrices)
     }));
     res.json(games.map(g => ({ ...g, stock: 100 })));
   } catch (err) {
@@ -1202,7 +1211,8 @@ app.get('/api/games/category/:category', async (req, res) => {
     const result = await pool.query(`
       SELECT id, name, slug, description, price, currency, image, category, 
              is_popular as "isPopular", stock, packages, package_prices as "packagePrices",
-             discount_price as "discountPrice", package_discount_prices as "packageDiscountPrices"
+             discount_price as "discountPrice", package_discount_prices as "packageDiscountPrices",
+             discount_prices as "discountPrices"
       FROM games 
       WHERE category = $1 OR category_id = $1 OR slug = $1
       ORDER BY id DESC
@@ -1214,7 +1224,8 @@ app.get('/api/games/category/:category', async (req, res) => {
       image: normalizeImageUrl(game.image),
       packages: coerceJsonArray(game.packages),
       packagePrices: coerceJsonArray(game.packagePrices),
-      packageDiscountPrices: coerceJsonArray(game.packageDiscountPrices)
+      packageDiscountPrices: coerceJsonArray(game.packageDiscountPrices),
+      discountPrices: coerceJsonArray(game.discountPrices)
     }));
     
     res.json(games);
@@ -1231,7 +1242,8 @@ app.get('/api/games/id/:id', async (req, res) => {
     const result = await pool.query(`
       SELECT id, name, slug, description, price, currency, image, category, 
              is_popular as "isPopular", stock, packages, package_prices as "packagePrices",
-             discount_price as "discountPrice", package_discount_prices as "packageDiscountPrices"
+             discount_price as "discountPrice", package_discount_prices as "packageDiscountPrices",
+             discount_prices as "discountPrices"
       FROM games 
       WHERE id = $1
     `, [id]);
@@ -1243,6 +1255,7 @@ app.get('/api/games/id/:id', async (req, res) => {
     game.packages = coerceJsonArray(game.packages);
     game.packagePrices = coerceJsonArray(game.packagePrices);
     game.packageDiscountPrices = coerceJsonArray(game.packageDiscountPrices);
+    game.discountPrices = coerceJsonArray(game.discountPrices);
     res.json(game);
   } catch (err) {
     console.error('Error fetching game by ID:', err);
@@ -2554,21 +2567,39 @@ function encryptMessage(plain) {
 }
 
 function decryptMessage(payload) {
-  try {
-    if (!payload) return '';
-    const key = (process.env.PAYMENT_ENCRYPTION_KEY || '').padEnd(32, '0').slice(0, 32);
-    if (!key.trim()) return '[encrypted]';
-    const obj = typeof payload === 'string' ? JSON.parse(payload) : payload;
-    const iv = Buffer.from(String(obj.iv || ''), 'hex');
-    const tag = Buffer.from(String(obj.tag || ''), 'hex');
-    const data = Buffer.from(String(obj.data || ''), 'hex');
-    const decipher = crypto.createDecipheriv('aes-256-gcm', Buffer.from(key), iv);
-    decipher.setAuthTag(tag);
-    const dec = Buffer.concat([decipher.update(data), decipher.final()]);
-    return dec.toString('utf8');
-  } catch {
-    return '[encrypted]';
+  if (!payload) return '';
+  let obj = payload;
+  if (typeof payload === 'string') {
+    try {
+      obj = JSON.parse(payload);
+    } catch {
+      return String(payload);
+    }
   }
+  const keys = [];
+  const currentKey = (process.env.PAYMENT_ENCRYPTION_KEY || '').padEnd(32, '0').slice(0, 32);
+  const altKey = (process.env.PAYMENT_ENCRYPTION_KEY_ALT || '').padEnd(32, '0').slice(0, 32);
+  if (currentKey.trim()) keys.push(currentKey);
+  if (altKey.trim()) keys.push(altKey);
+  keys.push(''.padEnd(32, '0'));
+  const ivHex = String(obj.iv || '');
+  const tagHex = String(obj.tag || '');
+  const dataHex = String(obj.data || '');
+  for (const key of keys) {
+    try {
+      const iv = Buffer.from(ivHex, 'hex');
+      const tag = Buffer.from(tagHex, 'hex');
+      const data = Buffer.from(dataHex, 'hex');
+      if (iv.length && tag.length && data.length) {
+        const decipher = crypto.createDecipheriv('aes-256-gcm', Buffer.from(key), iv);
+        decipher.setAuthTag(tag);
+        const dec = Buffer.concat([decipher.update(data), decipher.final()]);
+        return dec.toString('utf8');
+      }
+    } catch {
+    }
+  }
+  return '[encrypted]';
 }
 
 function httpsPostJson(url, headers, body) {
@@ -3289,6 +3320,24 @@ app.get('/api/chat/:sessionId', async (req, res) => {
   }
 });
 
+app.get('/api/admin/chat/all', authenticateToken, async (req, res) => {
+  try {
+    const result = await pool.query('SELECT id, sender, message_encrypted, session_id, timestamp, read FROM chat_messages ORDER BY timestamp DESC LIMIT 500');
+    const messages = result.rows.map(r => ({ 
+      id: r.id, 
+      sender: r.sender, 
+      message: decryptMessage(r.message_encrypted), 
+      sessionId: r.session_id, 
+      timestamp: new Date(r.timestamp).getTime(),
+      read: Boolean(r.read)
+    }));
+    res.json(messages || []);
+  } catch (err) {
+    console.error('Error fetching admin all chat messages:', err);
+    res.status(500).json({ message: err.message });
+  }
+});
+
 app.get('/api/chat/all', async (req, res) => {
   try {
     const result = await pool.query('SELECT id, sender, message_encrypted, session_id, timestamp FROM chat_messages ORDER BY timestamp DESC LIMIT 500');
@@ -3492,6 +3541,22 @@ app.get('/api/admin/chat/sessions', authenticateToken, async (req, res) => {
       lastActivity: new Date(r.last_activity).getTime(),
       unreadCount: parseInt(r.unread_count || 0)
     })));
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+app.get('/api/admin/confirmations', authenticateToken, async (req, res) => {
+  try {
+    const result = await pool.query('SELECT id, transaction_id, message_encrypted, receipt_url, created_at FROM payment_confirmations ORDER BY created_at DESC LIMIT 200');
+    const items = result.rows.map(r => ({
+      id: r.id,
+      transactionId: r.transaction_id,
+      message: decryptMessage(r.message_encrypted),
+      receiptUrl: r.receipt_url,
+      createdAt: new Date(r.created_at).getTime()
+    }));
+    res.json(items);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -3903,21 +3968,25 @@ const startServer = async () => {
 
     // Start image processor asynchronously (does not block server startup)
     try {
-      initImageProcessor({
-        app,
-        pool,
-        memStorage,
-        paths: {
-          imagesDir,
-          publicDir,
-          generatedImagesDir,
-          assetsDir: path.join(publicDir, 'assets'),
-          attachedAssetsDir,
-          rootAttachedAssetsDir,
-          uploadDir
-        }
-      });
-      console.log('🖼️  Image processor initialized (async)');
+      if (initImageProcessor) {
+        initImageProcessor({
+          app,
+          pool,
+          memStorage,
+          paths: {
+            imagesDir,
+            publicDir,
+            generatedImagesDir,
+            assetsDir: path.join(publicDir, 'assets'),
+            attachedAssetsDir,
+            rootAttachedAssetsDir,
+            uploadDir
+          }
+        });
+        console.log('🖼️  Image processor initialized (async)');
+      } else {
+        console.log('ℹ️  Image processor not available, skipping initialization');
+      }
     } catch (err) {
       console.warn('⚠️  Image processor failed to initialize:', err.message);
     }

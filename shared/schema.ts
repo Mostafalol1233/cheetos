@@ -16,6 +16,7 @@ export const games = pgTable("games", {
   stock: integer("stock").notNull().default(50),
   packages: text("packages").array(),
   packagePrices: text("package_prices").array(),
+  discountPrices: text("discount_prices").array(),
   discountPrice: decimal("discount_price", { precision: 10, scale: 2 }),
   packageDiscountPrices: text("package_discount_prices").array()
 });
