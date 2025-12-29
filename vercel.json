@@ -14,6 +14,10 @@
       "destination": "http://51.75.118.165:20291/uploads/$1"
     },
     {
+      "source": "/images/(.*)",
+      "destination": "http://51.75.118.165:20291/images/$1"
+    },
+    {
       "source": "/attached_assets/(.*)",
       "destination": "http://51.75.118.165:20291/media/$1"
     },

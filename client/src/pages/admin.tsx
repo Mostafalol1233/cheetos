@@ -154,6 +154,64 @@ export default function AdminDashboard() {
     }
   });
 
+  function OrdersPanel() {
+    const { data: orders = [] } = useQuery<Array<{ id: string; paymentMethod: string; total: number; status: string; timestamp: number; customerName: string; customerPhone: string; items: Array<{ gameId: string; quantity: number; price: number }> }>>({
+      queryKey: ['/api/admin/transactions'],
+      enabled: activeTab === 'orders',
+      refetchInterval: 3000,
+      queryFn: async () => {
+        const token = typeof window !== 'undefined' ? localStorage.getItem('adminToken') : null;
+        const res = await fetch('/api/admin/transactions', { headers: token ? { Authorization: `Bearer ${token}` } : undefined });
+        if (!res.ok) throw new Error('Failed to fetch transactions');
+        return await res.json();
+      }
+    });
+    return (
+      <Card className="bg-card/50 border-gold-primary/30">
+        <CardHeader>
+          <CardTitle className="text-lg">Recent Orders</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-left">
+                  <th className="p-2">Order</th>
+                  <th className="p-2">Customer</th>
+                  <th className="p-2">Contact</th>
+                  <th className="p-2">Timestamp</th>
+                  <th className="p-2">Payment</th>
+                  <th className="p-2">Total</th>
+                  <th className="p-2">Items</th>
+                </tr>
+              </thead>
+              <tbody>
+                {orders.map((o) => (
+                  <tr key={o.id} className="border-t">
+                    <td className="p-2 font-mono">{o.id}</td>
+                    <td className="p-2">{o.customerName || '-'}</td>
+                    <td className="p-2">{o.customerPhone || '-'}</td>
+                    <td className="p-2">{new Date(o.timestamp).toLocaleString()}</td>
+                    <td className="p-2">{o.paymentMethod}</td>
+                    <td className="p-2">{o.total} EGP</td>
+                    <td className="p-2">
+                      {o.items.length ? o.items.map(it => `${it.gameId} x${it.quantity}`).join(', ') : '-'}
+                    </td>
+                  </tr>
+                ))}
+                {orders.length === 0 && (
+                  <tr>
+                    <td colSpan={7} className="p-4 text-center text-muted-foreground">No orders</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   // Delete game mutation
   const deleteGameMutation = useMutation({
     mutationFn: async (gameId: string) => {
@@ -494,11 +552,13 @@ export default function AdminDashboard() {
           <TabsTrigger value="packages" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Packages</TabsTrigger>
           <TabsTrigger value="categories" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Categories</TabsTrigger>
           <TabsTrigger value="cards" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Game Cards</TabsTrigger>
+          <TabsTrigger value="orders" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Orders</TabsTrigger>
           <TabsTrigger value="chats" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Support Chat</TabsTrigger>
           <TabsTrigger value="checkout-confirmations" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Checkout Confirmations</TabsTrigger>
           <TabsTrigger value="chat-widget" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Chat Widget</TabsTrigger>
           <TabsTrigger value="logo" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Logo</TabsTrigger>
           <TabsTrigger value="whatsapp" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">WhatsApp</TabsTrigger>
+          <TabsTrigger value="checkout-templates" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Checkout Templates</TabsTrigger>
           <TabsTrigger value="preview-home" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Home Preview</TabsTrigger>
           <TabsTrigger value="alerts" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">
             Alerts
@@ -607,6 +667,13 @@ export default function AdminDashboard() {
                 )}
               </div>
             </div>
+          </TabsContent>
+
+          <TabsContent value="orders" className="space-y-6">
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-bold text-foreground">Orders</h2>
+            </div>
+            <OrdersPanel />
           </TabsContent>
 
           <TabsContent value="checkout-confirmations" className="space-y-6">
@@ -1041,6 +1108,13 @@ export default function AdminDashboard() {
             <ChatWidgetConfigPanel />
           </TabsContent>
 
+          <TabsContent value="checkout-templates" className="space-y-6">
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-bold text-foreground">Checkout Templates</h2>
+            </div>
+            <CheckoutTemplatesPanel />
+          </TabsContent>
+
           {/* Logo Management Tab */}
           <TabsContent value="logo" className="space-y-6">
             <div className="flex justify-between items-center">
@@ -1275,9 +1349,9 @@ function CatboxUploadPanel({ allGames, categories }: { allGames: Game[]; categor
       {error && <div className="text-red-500 text-sm">{error}</div>}
     </div>
   );
-}
+  }
 
-function ImageManagerPanel() {
+  function ImageManagerPanel() {
   const [files, setFiles] = useState<File[]>([]);
   const [urlsText, setUrlsText] = useState('');
   const [storage, setStorage] = useState<'cloudinary' | 'local' | 'catbox'>('local');
@@ -1421,9 +1495,9 @@ function ImageManagerPanel() {
       </div>
     </div>
   );
-}
+  }
 
-function ChatWidgetConfigPanel() {
+  function ChatWidgetConfigPanel() {
   const [enabled, setEnabled] = useState(true);
   const [iconUrl, setIconUrl] = useState('/images/message-icon.svg');
   const [welcomeMessage, setWelcomeMessage] = useState('Hello! How can we help you?');
@@ -1671,6 +1745,8 @@ function LogoManagementPanel() {
     }
   }
 
+  // (moved) CheckoutTemplatesPanel is defined below LogoManagementPanel
+
   return (
     <Card className="bg-card/50 border-gold-primary/30">
       <CardHeader>
@@ -1741,6 +1817,101 @@ function LogoManagementPanel() {
         <Button onClick={handleSave} disabled={updateLogoMutation.isPending} className="bg-gold-primary">
           Save Logo Configuration
         </Button>
+      </CardContent>
+    </Card>
+  );
+}
+
+function CheckoutTemplatesPanel() {
+  const { toast } = useToast();
+  const { data: templates } = useQuery<{ customerMessage: string; adminMessage: string }>({
+    queryKey: ['/api/admin/checkout/templates'],
+    queryFn: async () => {
+      const token = localStorage.getItem('adminToken');
+      const res = await fetch('/api/admin/checkout/templates', {
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+      });
+      if (!res.ok) throw new Error('Failed to fetch templates');
+      return res.json();
+    },
+    refetchOnWindowFocus: false,
+    gcTime: Infinity,
+    staleTime: Infinity
+  });
+  const [customerMessage, setCustomerMessage] = useState(templates?.customerMessage || '');
+  const [adminMessage, setAdminMessage] = useState(templates?.adminMessage || '');
+  useEffect(() => {
+    setCustomerMessage(templates?.customerMessage || '');
+    setAdminMessage(templates?.adminMessage || '');
+  }, [templates?.customerMessage, templates?.adminMessage]);
+  const saveMutation = useMutation({
+    mutationFn: async () => {
+      const token = localStorage.getItem('adminToken');
+      const res = await fetch('/api/admin/checkout/templates', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: JSON.stringify({ customerMessage, adminMessage })
+      });
+      if (!res.ok) throw new Error('Failed to save templates');
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({ title: 'Saved', description: 'Checkout templates updated', duration: 1500 });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/checkout/templates'] });
+    }
+  });
+  return (
+    <Card className="bg-card/50 border-gold-primary/30">
+      <CardHeader>
+        <CardTitle className="text-lg">Edit Templates</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        <div className="rounded border p-3 bg-muted/30">
+          <p className="text-xs text-muted-foreground">
+            Placeholders supported: {'{id}'}, {'{total}'}, {'{name}'}, {'{phone}'}, {'{items}'}
+          </p>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-2">
+            <Label>Customer Message</Label>
+            <Textarea
+              value={customerMessage}
+              onChange={(e) => setCustomerMessage(e.target.value)}
+              className="h-40"
+              placeholder="Thank you for your order #{id}! We are processing it."
+            />
+            <div className="text-xs text-muted-foreground">
+              Preview:
+              <div className="mt-1 border rounded p-2 bg-muted/20 font-mono whitespace-pre-wrap">
+                {(customerMessage || '').replace('{id}', 'TX123').replace('{total}', '999').replace('{name}', 'Alice').replace('{phone}', '+201234567890').replace('{items}', 'Game A x1, Game B x2')}
+              </div>
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label>Admin Message</Label>
+            <Textarea
+              value={adminMessage}
+              onChange={(e) => setAdminMessage(e.target.value)}
+              className="h-40"
+              placeholder="New Order #{id}\nTotal: {total} EGP\nCustomer: {name} ({phone})\nItems:\n{items}"
+            />
+            <div className="text-xs text-muted-foreground">
+              Preview:
+              <div className="mt-1 border rounded p-2 bg-muted/20 font-mono whitespace-pre-wrap">
+                {(adminMessage || '').replace('{id}', 'TX123').replace('{total}', '999').replace('{name}', 'Alice').replace('{phone}', '+201234567890').replace('{items}', 'Game A x1, Game B x2')}
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="flex gap-2">
+          <Button
+            onClick={() => saveMutation.mutate()}
+            disabled={saveMutation.isPending || !customerMessage.trim() || !adminMessage.trim()}
+            className="bg-gold-primary"
+          >
+            Save
+          </Button>
+        </div>
       </CardContent>
     </Card>
   );

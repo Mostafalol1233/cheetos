@@ -1,0 +1,4 @@
+{
+  "customerMessage": "Thank you for your order #{id}! We are processing it.",
+  "adminMessage": "New Order #{id}\nTotal: {total} EGP\nCustomer: {name} ({phone})\nItems:\n{items}"
+}
