@@ -27,7 +27,7 @@ export default function SupportPage() {
   }, []);
 
   const formatWhatsAppLink = (): string | null => {
-    const pick = contactInfo?.instapay || contactInfo?.cash_numbers?.[0] || null;
+    const pick = contactInfo?.etisalat_cash || contactInfo?.instapay || contactInfo?.cash_numbers?.[0] || null;
     if (!pick) return null;
     const digits = String(pick).replace(/[^\d]/g, "");
     if (!digits) return null;
@@ -37,6 +37,7 @@ export default function SupportPage() {
   const whatsappHref = formatWhatsAppLink();
   const telegramHref = "https://t.me/diaaeldeen1";
   const facebookHref = "https://facebook.com/diaaeldeen1";
+  const etisalatCash = contactInfo?.etisalat_cash || null;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-900 dark:via-blue-900 dark:to-purple-900">
@@ -77,6 +78,11 @@ export default function SupportPage() {
                   Start Chat
                 </Button>
               </a>
+              {etisalatCash && (
+                <p className="text-xs text-muted-foreground mt-2">
+                  Etisalat Cash: {etisalatCash}
+                </p>
+              )}
             </CardContent>
           </Card>
 

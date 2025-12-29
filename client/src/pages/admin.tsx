@@ -82,7 +82,7 @@ export default function AdminDashboard() {
   // Fetch alerts
   const { data: alerts = [] } = useQuery<Alert[]>({
     queryKey: ['/api/admin/alerts', alertStatus, alertType, alertSearch],
-    enabled: activeTab === 'alerts',
+    enabled: true,
     refetchInterval: 5000, // Real-time updates
     queryFn: async () => {
       const token = typeof window !== 'undefined' ? localStorage.getItem('adminToken') : null;
@@ -116,7 +116,7 @@ export default function AdminDashboard() {
   // Fetch game cards (admin)
   const { data: cardsResponse } = useQuery<{ items: Array<{ id: string; game_id: string; card_code: string; is_used: boolean; created_at: string }>; page: number; limit: number; total: number }>({
     queryKey: ['/api/admin/game-cards', `?page=${cardsPage}&limit=${cardsLimit}`],
-    enabled: activeTab === 'cards',
+    enabled: true,
     queryFn: async () => {
       const token = typeof window !== 'undefined' ? localStorage.getItem('adminToken') : null;
       const res = await fetch(`/api/admin/game-cards?page=${cardsPage}&limit=${cardsLimit}`,
@@ -131,7 +131,7 @@ export default function AdminDashboard() {
   // Fetch all chats
   const { data: allChats = [], refetch: refetchChats } = useQuery<ChatMessage[]>({
     queryKey: ['/api/admin/chat/all'],
-    enabled: activeTab === 'chats',
+    enabled: true,
     queryFn: async () => {
       const token = localStorage.getItem('adminToken');
       const res = await fetch('/api/admin/chat/all', {
@@ -144,7 +144,7 @@ export default function AdminDashboard() {
 
   const { data: confirmations = [] } = useQuery<Array<{ id: string; transactionId: string; message: string; receiptUrl: string; createdAt: number }>>({
     queryKey: ['/api/admin/confirmations'],
-    enabled: activeTab === 'checkout-confirmations',
+    enabled: true,
     queryFn: async () => {
       const token = typeof window !== 'undefined' ? localStorage.getItem('adminToken') : null;
       const res = await fetch('/api/admin/confirmations', {
@@ -158,7 +158,7 @@ export default function AdminDashboard() {
   function OrdersPanel() {
     const { data: orders = [] } = useQuery<Array<{ id: string; paymentMethod: string; total: number; status: string; timestamp: number; customerName: string; customerPhone: string; items: Array<{ gameId: string; quantity: number; price: number }> }>>({
       queryKey: ['/api/admin/transactions'],
-      enabled: activeTab === 'orders',
+      enabled: true,
       refetchInterval: 3000,
       queryFn: async () => {
         const token = typeof window !== 'undefined' ? localStorage.getItem('adminToken') : null;
@@ -405,7 +405,7 @@ export default function AdminDashboard() {
   // Fetch chat messages for selected session
   const { data: sessionMessages = [] } = useQuery<ChatMessage[]>({
     queryKey: [`/api/admin/chat/${selectedSession}`],
-    enabled: !!selectedSession && activeTab === 'chats',
+    enabled: !!selectedSession,
     refetchInterval: 2000,
     queryFn: async () => {
       const token = localStorage.getItem('adminToken');
@@ -1377,7 +1377,7 @@ function CatboxUploadPanel({ allGames, categories }: { allGames: Game[]; categor
     const [page, setPage] = useState(1);
     const { data } = useQuery<{ items: Array<{ id: string; name: string; phone: string; created_at: string }>; page: number; limit: number; total: number }>({
       queryKey: ['/api/admin/users', q, page],
-      enabled: activeTab === 'users',
+      enabled: true,
       queryFn: async () => {
         const token = localStorage.getItem('adminToken');
         const res = await fetch(`/api/admin/users?q=${encodeURIComponent(q)}&page=${page}&limit=20`, {
@@ -1445,7 +1445,7 @@ function CatboxUploadPanel({ allGames, categories }: { allGames: Game[]; categor
     const [eventType, setEventType] = useState<string | undefined>(undefined);
     const { data, refetch } = useQuery<{ items: Array<{ id: string; event_type: string; element?: string; page?: string; success: boolean; error?: string; ua?: string; ts: string }> }>({
       queryKey: ['/api/admin/interactions', q, eventType],
-      enabled: activeTab === 'interactions',
+      enabled: true,
       queryFn: async () => {
         const token = localStorage.getItem('adminToken');
         const params = new URLSearchParams();

@@ -362,6 +362,7 @@ app.get('/api/contact-info', async (req, res) => {
     const instapayRaw = String(process.env.instapay || '').trim();
     const cashRaw = String(process.env.cash_numbers || '').trim();
     const paypalRaw = String(process.env.paypal || '').trim();
+    const etisalatCashRaw = String(process.env.etisalat_cash || '').trim();
     const normalizePhone = (p) => {
       const digits = String(p || '').replace(/[^\d+]/g, '');
       if (!digits) return null;
@@ -371,10 +372,12 @@ app.get('/api/contact-info', async (req, res) => {
     const instapay = normalizePhone(instapayRaw);
     const cashNumbers = cashRaw.split(',').map(s => normalizePhone(s)).filter(Boolean);
     const paypal = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(paypalRaw) ? paypalRaw : null;
+    const etisalat_cash = normalizePhone(etisalatCashRaw);
     res.json({
       instapay: instapay || null,
       cash_numbers: cashNumbers,
-      paypal: paypal || null
+      paypal: paypal || null,
+      etisalat_cash: etisalat_cash || null
     });
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -1267,29 +1270,54 @@ app.get('/api/games/popular', async (req, res) => {
 
 // Get games by category (must come before /api/games/:slug)
 app.get('/api/games/category/:category', async (req, res) => {
+  const { category } = req.params;
   try {
-    const { category } = req.params;
-    const result = await pool.query(`
-      SELECT id, name, slug, description, price, currency, image, category, 
-             is_popular as "isPopular", stock, packages, package_prices as "packagePrices",
-             discount_price as "discountPrice", package_discount_prices as "packageDiscountPrices",
-             discount_prices as "discountPrices"
-      FROM games 
-      WHERE category = $1 OR category_id = $1 OR slug = $1
-      ORDER BY id DESC
-    `, [category]);
-    
-    // Ensure packages are arrays for all games
-    const games = result.rows.map(game => ({
-      ...game,
-      image: normalizeImageUrl(game.image),
-      packages: coerceJsonArray(game.packages),
-      packagePrices: coerceJsonArray(game.packagePrices),
-      packageDiscountPrices: coerceJsonArray(game.packageDiscountPrices),
-      discountPrices: coerceJsonArray(game.discountPrices)
-    }));
-    
-    res.json(games);
+    try {
+      const result = await pool.query(`
+        SELECT id, name, slug, description, price, currency, image, category, 
+               is_popular as "isPopular", stock, packages, package_prices as "packagePrices",
+               discount_price as "discountPrice", package_discount_prices as "packageDiscountPrices",
+               discount_prices as "discountPrices"
+        FROM games 
+        WHERE category = $1 OR category_id = $1 OR slug = $1
+        ORDER BY id DESC
+      `, [category]);
+      const games = result.rows.map(game => ({
+        ...game,
+        image: normalizeImageUrl(game.image),
+        packages: coerceJsonArray(game.packages),
+        packagePrices: coerceJsonArray(game.packagePrices),
+        packageDiscountPrices: coerceJsonArray(game.packageDiscountPrices),
+        discountPrices: coerceJsonArray(game.discountPrices)
+      }));
+      return res.json(games.map(g => ({ ...g, stock: 100 })));
+    } catch {}
+    // Fallback to local JSON
+    const gamesPath = path.join(__dirname, 'data', 'games.json');
+    if (fs.existsSync(gamesPath)) {
+      const data = fs.readFileSync(gamesPath, 'utf8');
+      const games = JSON.parse(data);
+      const filtered = Array.isArray(games)
+        ? games
+            .filter(g => {
+              const cat = String(g.category || '').toLowerCase();
+              const slug = String(g.slug || '').toLowerCase();
+              const q = String(category || '').toLowerCase();
+              return cat === q || slug === q;
+            })
+            .map(g => ({
+              ...g,
+              image: normalizeImageUrl(g.image),
+              packages: coerceJsonArray(g.packages),
+              packagePrices: coerceJsonArray(g.packagePrices),
+              packageDiscountPrices: coerceJsonArray(g.packageDiscountPrices),
+              discountPrices: coerceJsonArray(g.discountPrices),
+              stock: 100
+            }))
+        : [];
+      return res.json(filtered);
+    }
+    res.json([]);
   } catch (err) {
     console.error('Error fetching games by category:', err);
     res.status(500).json({ message: err.message });
