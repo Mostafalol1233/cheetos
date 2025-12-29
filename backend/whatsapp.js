@@ -49,6 +49,35 @@ export async function sendWhatsAppMessage(to, text) {
   }
 }
 
+export async function sendWhatsAppMedia(to, mediaUrl, caption) {
+  if (!sock) throw new Error("WhatsApp client not initialized");
+  if (!isConnected) throw new Error("WhatsApp not connected");
+  const cleanPhone = to.replace(/[^\d]/g, '');
+  const id = cleanPhone.includes('@s.whatsapp.net') ? cleanPhone : `${cleanPhone}@s.whatsapp.net`;
+  try {
+    const result = await sock.sendMessage(id, { image: { url: mediaUrl }, caption: caption || '' });
+    return { status: 'sent', id: result.key.id };
+  } catch (err) {
+    console.error('Failed to send WhatsApp media:', err?.message || err);
+    throw err;
+  }
+}
+
+export async function sendWithRetry(fn, maxRetries = 3) {
+  let attempt = 0;
+  let delay = 500;
+  while (attempt < maxRetries) {
+    try {
+      return await fn();
+    } catch (err) {
+      attempt++;
+      if (attempt >= maxRetries) throw err;
+      await new Promise(r => setTimeout(r, delay));
+      delay = Math.min(5000, delay * 2);
+    }
+  }
+}
+
 export async function startWhatsApp() {
   const { state, saveCreds } = await useMultiFileAuthState(AUTH_FOLDER);
   const { version, isLatest } = await fetchLatestBaileysVersion();

@@ -20,6 +20,16 @@ export default function AdminConfirmationPage() {
       return res.json();
     }
   });
+  const { data: thread } = useQuery<Array<{ id: string; sender: 'user'|'support'; message: string; timestamp: number }>>({
+    queryKey: ['/api/admin/chat', data?.sessionId],
+    enabled: Boolean(data?.sessionId),
+    queryFn: async () => {
+      const token = localStorage.getItem('adminToken');
+      const res = await fetch(`/api/admin/chat/${data?.sessionId}`, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
+      if (!res.ok) throw new Error('Failed to fetch chat');
+      return res.json();
+    }
+  });
   const [text, setText] = useState('');
   const [imageFile, setImageFile] = useState<File | null>(null);
   useEffect(() => { setText(''); setImageFile(null); }, [id]);
@@ -36,13 +46,22 @@ export default function AdminConfirmationPage() {
       }
       const to = data?.user?.phone || '';
       const token = localStorage.getItem('adminToken');
-      const payload = { to, text: mediaUrl ? `${text}\n${mediaUrl}` : text };
+      const payload = { to, text, mediaUrl };
       const res = await fetch('/api/admin/whatsapp/send', { method: 'POST', headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) }, body: JSON.stringify(payload) });
+      // Record into chat thread for secure threading
+      if (data?.sessionId) {
+        await fetch('/api/chat/message', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+          body: JSON.stringify({ sender: 'support', message: mediaUrl ? `${text}\n${mediaUrl}` : text, sessionId: data.sessionId })
+        });
+      }
       return res.json();
     },
     onSuccess: () => {
       setText(''); setImageFile(null);
       queryClient.invalidateQueries({ queryKey: ['/api/admin/confirmations', id] });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/chat', data?.sessionId] });
     }
   });
 
@@ -85,6 +104,23 @@ export default function AdminConfirmationPage() {
             )}
           </CardContent>
         </Card>
+
+        {data?.sessionId && (
+          <Card className="bg-card/50 border-gold-primary/30">
+            <CardHeader><CardTitle>Chat Thread</CardTitle></CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                {(thread || []).map(m => (
+                  <div key={m.id} className={`rounded border p-2 text-sm ${m.sender === 'support' ? 'bg-muted/30' : 'bg-muted/10'}`}>
+                    <div className="text-xs text-muted-foreground">{m.sender} — {new Date(m.timestamp).toLocaleString()}</div>
+                    <div className="whitespace-pre-wrap">{m.message}</div>
+                  </div>
+                ))}
+                {(!thread || thread.length === 0) && <div className="text-xs text-muted-foreground">No messages</div>}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         <Card className="bg-card/50 border-gold-primary/30">
           <CardHeader><CardTitle>Admin Reply</CardTitle></CardHeader>

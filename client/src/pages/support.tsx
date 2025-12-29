@@ -6,8 +6,38 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { useEffect, useState } from "react";
 
 export default function SupportPage() {
+  const [contactInfo, setContactInfo] = useState<{ instapay: string | null; cash_numbers: string[]; paypal: string | null } | null>(null);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch("/api/contact-info");
+        if (!res.ok) return;
+        const data = await res.json();
+        setContactInfo({
+          instapay: data?.instapay ?? null,
+          cash_numbers: Array.isArray(data?.cash_numbers) ? data.cash_numbers : [],
+          paypal: data?.paypal ?? null,
+        });
+      } catch {}
+    })();
+  }, []);
+
+  const formatWhatsAppLink = (): string | null => {
+    const pick = contactInfo?.instapay || contactInfo?.cash_numbers?.[0] || null;
+    if (!pick) return null;
+    const digits = String(pick).replace(/[^\d]/g, "");
+    if (!digits) return null;
+    return `https://wa.me/${digits}`;
+  };
+
+  const whatsappHref = formatWhatsAppLink();
+  const telegramHref = "https://t.me/diaaeldeen1";
+  const facebookHref = "https://facebook.com/diaaeldeen1";
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-900 dark:via-blue-900 dark:to-purple-900">
       <div className="container mx-auto px-4 py-8">
@@ -41,10 +71,12 @@ export default function SupportPage() {
             </CardHeader>
             <CardContent className="text-center">
               <p className="text-gray-600 dark:text-gray-300 mb-4">Chat with us instantly</p>
-              <Button className="w-full bg-green-600 hover:bg-green-700">
-                <SiWhatsapp className="w-4 h-4 mr-2" />
-                Start Chat
-              </Button>
+              <a href={whatsappHref ?? "#"} target="_blank" rel="noopener noreferrer" className="block">
+                <Button className="w-full bg-green-600 hover:bg-green-700" disabled={!whatsappHref}>
+                  <SiWhatsapp className="w-4 h-4 mr-2" />
+                  Start Chat
+                </Button>
+              </a>
             </CardContent>
           </Card>
 
@@ -57,10 +89,12 @@ export default function SupportPage() {
             </CardHeader>
             <CardContent className="text-center">
               <p className="text-gray-600 dark:text-gray-300 mb-4">Join our support channel</p>
-              <Button className="w-full bg-blue-500 hover:bg-blue-600">
-                <SiTelegram className="w-4 h-4 mr-2" />
-                Join Channel
-              </Button>
+              <a href={telegramHref} target="_blank" rel="noopener noreferrer" className="block">
+                <Button className="w-full bg-blue-500 hover:bg-blue-600">
+                  <SiTelegram className="w-4 h-4 mr-2" />
+                  Join Channel
+                </Button>
+              </a>
             </CardContent>
           </Card>
 
@@ -73,10 +107,12 @@ export default function SupportPage() {
             </CardHeader>
             <CardContent className="text-center">
               <p className="text-gray-600 dark:text-gray-300 mb-4">Live gaming support</p>
-              <Button className="w-full bg-indigo-600 hover:bg-indigo-700">
-                <SiDiscord className="w-4 h-4 mr-2" />
-                Join Server
-              </Button>
+              <a href={facebookHref} target="_blank" rel="noopener noreferrer" className="block">
+                <Button className="w-full bg-indigo-600 hover:bg-indigo-700">
+                  <SiDiscord className="w-4 h-4 mr-2" />
+                  Join Server
+                </Button>
+              </a>
             </CardContent>
           </Card>
         </div>

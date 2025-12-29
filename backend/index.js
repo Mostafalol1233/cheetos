@@ -14,7 +14,7 @@ import dns from 'dns';
 import cloudinaryModule from 'cloudinary';
 const cloudinary = cloudinaryModule.v2 || cloudinaryModule;
 import { storage as memStorage } from './storage.js';
-import { startWhatsApp, getQRCode, getConnectionStatus, sendWhatsAppMessage } from './whatsapp.js';
+import { startWhatsApp, getQRCode, getConnectionStatus, sendWhatsAppMessage, sendWhatsAppMedia, sendWithRetry } from './whatsapp.js';
 import requestLogger from './middleware/logger.js';
 import errorHandler from './middleware/error.js';
 import pool, { checkConnection, preferIPv4 } from './db.js';
@@ -3247,6 +3247,7 @@ app.get('/api/admin/whatsapp/status', authenticateToken, (req, res) => {
 const WHATSAPP_TOKEN = process.env.WHATSAPP_TOKEN || '';
 const WHATSAPP_PHONE_NUMBER_ID = process.env.WHATSAPP_PHONE_NUMBER_ID || '';
 const WHATSAPP_VERIFY_TOKEN = process.env.WHATSAPP_VERIFY_TOKEN || '';
+const DISABLE_WHATSAPP_CLOUD = String(process.env.DISABLE_WHATSAPP_CLOUD || 'true').toLowerCase() === 'true';
 
 app.get('/api/admin/whatsapp/config', authenticateToken, async (req, res) => {
   try {
@@ -3261,34 +3262,36 @@ app.get('/api/admin/whatsapp/config', authenticateToken, async (req, res) => {
 
 app.post('/api/admin/whatsapp/send', authenticateToken, async (req, res) => {
   try {
-    const { to, text } = req.body;
-    if (!to || !text) return res.status(400).json({ message: 'to and text required' });
+    const { to, text, mediaUrl } = req.body;
+    if (!to || (!text && !mediaUrl)) return res.status(400).json({ message: 'to and text or mediaUrl required' });
 
-    // Try Baileys first
+    // Use Baileys only (no cloud fallback)
     try {
-      const result = await sendWhatsAppMessage(to, text);
+      const result = await sendWithRetry(async () => {
+        if (mediaUrl) return await sendWhatsAppMedia(to, mediaUrl, text || '');
+        return await sendWhatsAppMessage(to, text || '');
+      }, 3);
       return res.json({ ok: true, id: result.id });
     } catch (baileysErr) {
-      console.warn('Baileys send failed, trying Cloud API:', baileysErr.message);
+      if (!DISABLE_WHATSAPP_CLOUD && WHATSAPP_TOKEN && WHATSAPP_PHONE_NUMBER_ID) {
+        // Optional Cloud fallback if explicitly enabled
+        const url = `https://graph.facebook.com/v19.0/${WHATSAPP_PHONE_NUMBER_ID}/messages`;
+        const payload = mediaUrl
+          ? { messaging_product: 'whatsapp', to, type: 'image', image: { link: mediaUrl, caption: String(text || '') } }
+          : { messaging_product: 'whatsapp', to, type: 'text', text: { body: String(text || '') } };
+        try {
+          const resp = await httpsPostJson(url, { Authorization: `Bearer ${WHATSAPP_TOKEN}` }, payload);
+          const id = `wam_${Date.now()}`;
+          await pool.query('INSERT INTO whatsapp_messages (id, direction, from_phone, to_phone, message_encrypted, status) VALUES ($1, $2, $3, $4, $5, $6)', [
+            id, 'outbound', null, to, encryptMessage(text || mediaUrl || ''), resp.status === 200 ? 'sent' : 'error'
+          ]);
+          return res.status(resp.status || 200).json({ ok: resp.status === 200, response: resp.body });
+        } catch (err) {
+          return res.status(500).json({ message: 'WhatsApp send failed (Baileys & Cloud)', error: err.message });
+        }
+      }
+      return res.status(500).json({ message: 'WhatsApp send failed', error: baileysErr.message });
     }
-
-    // Fallback to Cloud API
-    if (!WHATSAPP_TOKEN || !WHATSAPP_PHONE_NUMBER_ID) {
-      return res.status(500).json({ message: 'WhatsApp not connected (Baileys failed, Cloud API not config)' });
-    }
-    const url = `https://graph.facebook.com/v19.0/${WHATSAPP_PHONE_NUMBER_ID}/messages`;
-    const payload = {
-      messaging_product: 'whatsapp',
-      to,
-      type: 'text',
-      text: { body: text }
-    };
-    const resp = await httpsPostJson(url, { Authorization: `Bearer ${WHATSAPP_TOKEN}` }, payload);
-    const id = `wam_${Date.now()}`;
-    await pool.query('INSERT INTO whatsapp_messages (id, direction, from_phone, to_phone, message_encrypted, status) VALUES ($1, $2, $3, $4, $5, $6)', [
-      id, 'outbound', null, to, encryptMessage(text), resp.status === 200 ? 'sent' : 'error'
-    ]);
-    res.status(resp.status || 200).json({ ok: resp.status === 200, response: resp.body });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
