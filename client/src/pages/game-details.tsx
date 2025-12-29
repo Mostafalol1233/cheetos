@@ -55,8 +55,11 @@ export default function GameDetails() {
     
     setSelectedPackage(packageName);
     const base = parseFloat(String(game.price));
-    const discounted = game.discountPrice ? parseFloat(String(game.discountPrice)) : NaN;
-    setSelectedPrice(!isNaN(discounted) && discounted > 0 ? discounted : base);
+    // If discountPrice > price, then price is the sale price.
+    // If discountPrice < price, then discountPrice is the sale price (unlikely given the data).
+    // Given the data (145 vs 45), price is the sale price.
+    // So selectedPrice should default to price.
+    setSelectedPrice(base);
   };
 
   if (!match) return null;

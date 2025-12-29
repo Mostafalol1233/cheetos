@@ -27,9 +27,6 @@ import TermsPage from "./pages/terms";
 import PrivacyPage from "./pages/privacy";
 import RefundsPage from "./pages/refunds";
 import TrackOrderPage from "./pages/track-order";
-import LoginPage from "./pages/login";
-import SignupPage from "./pages/signup";
-import UserDashboardPage from "./pages/user-dashboard";
 import { LiveChatWidget } from "@/components/live-chat-widget";
 import { Header } from "@/components/header";
 import { CartSidebar } from "@/components/cart-sidebar";
@@ -70,9 +67,6 @@ function ProtectedAdminRoute() {
         <Route path="/admin" component={ProtectedAdminRoute} />
         <Route path="/category/:slug" component={CategoryPage} />
         <Route path="/game/:slug" component={GamePage} />
-        <Route path="/login" component={LoginPage} />
-        <Route path="/signup" component={SignupPage} />
-        <Route path="/user/dashboard" component={UserDashboardPage} />
         <Route path="/faq" component={FAQPage} />
         <Route path="/terms" component={TermsPage} />
         <Route path="/privacy" component={PrivacyPage} />

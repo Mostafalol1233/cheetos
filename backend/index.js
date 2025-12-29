@@ -13,7 +13,6 @@ import * as https from 'https';
 import dns from 'dns';
 import cloudinaryModule from 'cloudinary';
 const cloudinary = cloudinaryModule.v2 || cloudinaryModule;
-import sharp from 'sharp';
 import { storage as memStorage } from './storage.js';
 import { startWhatsApp, getQRCode, getConnectionStatus, sendWhatsAppMessage } from './whatsapp.js';
 import requestLogger from './middleware/logger.js';
@@ -23,8 +22,26 @@ import { initImageProcessor } from './image-processor.js';
 
 dotenv.config();
 
+// Auto-install dependencies if node_modules is missing
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+const nodeModulesPath = path.join(__dirname, 'node_modules');
+const pgModulePath = path.join(nodeModulesPath, 'pg');
+const baileysModulePath = path.join(nodeModulesPath, '@whiskeysockets', 'baileys');
+
+if (!fs.existsSync(pgModulePath) || !fs.existsSync(baileysModulePath)) {
+  console.log('📦 Installing dependencies...');
+  try {
+    execSync('npm install', { 
+      cwd: __dirname, 
+      stdio: 'inherit' 
+    });
+    console.log('✓ Dependencies installed successfully\n');
+  } catch (err) {
+    console.error('✗ Failed to install dependencies:', err.message);
+    process.exit(1);
+  }
+}
 
 const app = express();
 const envPort = Number(process.env.PORT || 0);
@@ -32,7 +49,6 @@ const PORT = envPort && envPort !== 5173 ? envPort : 3001;
 
 // JWT Configuration
 const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret_key_change_this_in_production';
-const USER_JWT_SECRET = process.env.USER_JWT_SECRET || JWT_SECRET;
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@diaaldeen.com';
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
 const CDN_BASE_URL = process.env.CDN_BASE_URL || '';
@@ -64,39 +80,6 @@ function isCatboxUrl(url) {
   }
 }
 
-function parseCookies(req) {
-  const h = req.headers['cookie'] || '';
-  const out = {};
-  h.split(';').forEach((p) => {
-    const [k, ...rest] = p.trim().split('=');
-    if (!k) return;
-    out[k] = decodeURIComponent(rest.join('=') || '');
-  });
-  return out;
-}
-
-function setCookie(res, name, value, opts = {}) {
-  const parts = [`${name}=${encodeURIComponent(value)}`];
-  if (opts.Path) parts.push(`Path=${opts.Path}`);
-  if (opts.HttpOnly) parts.push('HttpOnly');
-  if (opts.SameSite) parts.push(`SameSite=${opts.SameSite}`);
-  if (opts.Secure) parts.push('Secure');
-  if (opts.MaxAge) parts.push(`Max-Age=${opts.MaxAge}`);
-  res.setHeader('Set-Cookie', parts.join('; '));
-}
-
-function requireCsrf(req, res, next) {
-  try {
-    const cookies = parseCookies(req);
-    const header = String(req.headers['x-csrf-token'] || '').trim();
-    const token = cookies['csrf_token'] || '';
-    if (!token || !header || token !== header) return res.status(403).json({ message: 'CSRF validation failed' });
-    next();
-  } catch {
-    return res.status(403).json({ message: 'CSRF validation failed' });
-  }
-}
-
 async function validateCatboxUrl(url) {
   if (!isCatboxUrl(url)) return { ok: false, status: 0, message: 'URL is not a catbox.moe link' };
   return new Promise((resolve) => {
@@ -111,30 +94,6 @@ async function validateCatboxUrl(url) {
       resolve({ ok: false, status: 0, message: err.message });
     }
   });
-}
-
-function generateSalt(len = 16) {
-  try { return crypto.randomBytes(len).toString('hex'); } catch { return Math.random().toString(36).slice(2, 2 + len); }
-}
-
-function hashPassword(password, salt) {
-  const s = String(salt || '').trim() || generateSalt(16);
-  const buf = crypto.scryptSync(String(password || ''), s, 64);
-  return `scrypt:${s}:${buf.toString('hex')}`;
-}
-
-function verifyPassword(password, stored) {
-  const v = String(stored || '').trim();
-  const parts = v.split(':');
-  if (parts.length !== 3 || parts[0] !== 'scrypt') return false;
-  const salt = parts[1];
-  const expected = parts[2];
-  try {
-    const buf = crypto.scryptSync(String(password || ''), salt, 64);
-    return buf.toString('hex') === expected;
-  } catch {
-    return false;
-  }
 }
 
 function normalizeImageUrl(raw) {
@@ -286,19 +245,14 @@ async function useProvidedImage(req) {
     const url = (req.body && (req.body.image_url || req.body.imageUrl || req.body.image)) || null;
     const pth = (req.body && (req.body.image_path || req.body.imagePath)) || null;
     
+    // Catbox exclusive hosting
     if (req.file && req.file.filename) {
       const localPath = req.file.path;
       try {
-        if (CLOUDINARY_ENABLED) {
-          const r = await cloudinary.uploader.upload(localPath, { folder: 'gamecart' });
-          try { fs.unlinkSync(localPath); } catch {}
-          return r.secure_url || r.url;
-        } else {
-          const r = await catboxFileUploadFromLocal(localPath, req.file.originalname || req.file.filename);
-          try { fs.unlinkSync(localPath); } catch {}
-          if (r.ok) return r.url;
-          throw new Error(r.message || 'catbox upload failed');
-        }
+        const r = await catboxFileUploadFromLocal(localPath, req.file.originalname || req.file.filename);
+        try { fs.unlinkSync(localPath); } catch {}
+        if (r.ok) return r.url;
+        throw new Error(r.message || 'catbox upload failed');
       } catch (err) {
         try {
           const alertId = `al_${Date.now()}`;
@@ -311,18 +265,11 @@ async function useProvidedImage(req) {
     
     if (typeof url === 'string' && url.trim()) {
       const u = url.trim();
-      if (CLOUDINARY_ENABLED) {
-        try {
-          const r = await cloudinary.uploader.upload(u, { folder: 'gamecart' });
-          return r.secure_url || r.url || null;
-        } catch {}
-      } else {
-        if (isCatboxUrl(u)) return u;
-        try {
-          const up = await uploadUrlToCatbox(u);
-          if (up.ok) return up.url;
-        } catch {}
-      }
+      if (isCatboxUrl(u)) return u;
+      try {
+        const up = await uploadUrlToCatbox(u);
+        if (up.ok) return up.url;
+      } catch {}
       return null;
     }
     
@@ -333,16 +280,10 @@ async function useProvidedImage(req) {
       const dest = path.join(uploadDir, filename);
       try { 
         fs.copyFileSync(src, dest);
-        if (CLOUDINARY_ENABLED) {
-          const r = await cloudinary.uploader.upload(dest, { folder: 'gamecart' });
-          try { fs.unlinkSync(dest); } catch {}
-          return r.secure_url || r.url || null;
-        } else {
-          const r = await catboxFileUploadFromLocal(dest, path.basename(src));
-          try { fs.unlinkSync(dest); } catch {}
-          if (r.ok) return r.url;
-          return null;
-        }
+        const r = await catboxFileUploadFromLocal(dest, path.basename(src));
+        try { fs.unlinkSync(dest); } catch {}
+        if (r.ok) return r.url;
+        return null; 
       } catch {}
     }
   } catch (err) {
@@ -393,50 +334,24 @@ if (fs.existsSync(imagesDir)) {
 
 // Serve favicon and logo files from images directory if they exist
 app.get('/favicon.ico', (req, res) => {
-  const icoPath = path.join(imagesDir, 'favicon.ico');
-  if (fs.existsSync(icoPath)) {
-    return res.sendFile(icoPath);
+  const faviconPath = path.join(imagesDir, 'cropped-favicon1-32x32.png');
+  if (fs.existsSync(faviconPath)) {
+    return res.sendFile(faviconPath);
   }
-  try {
-    pool.query('SELECT favicon_url FROM logo_config WHERE id = $1', ['logo_1']).then((r) => {
-      const url = r.rows[0]?.favicon_url || '';
-      if (/^https?:\/\//i.test(url)) return res.redirect(url);
-      const p = path.join(imagesDir, (url || 'cropped-favicon1-32x32.png').replace(/^\//, ''));
-      if (fs.existsSync(p)) return res.sendFile(p);
-      // fallbacks
-      const altPaths = [
-        path.join(publicDir, 'favicon.ico'),
-        path.join(attachedAssetsDir, 'favicon.ico'),
-        path.join(rootAttachedAssetsDir, 'favicon.ico')
-      ];
-      for (const altPath of altPaths) {
-        if (fs.existsSync(altPath)) {
-          return res.sendFile(altPath);
-        }
-      }
-      res.status(404).end();
-    }).catch(() => res.status(404).end());
-  } catch {
-    res.status(404).end();
+  // Try other favicon locations
+  const altPaths = [
+    path.join(publicDir, 'favicon.ico'),
+    path.join(attachedAssetsDir, 'favicon.ico'),
+    path.join(rootAttachedAssetsDir, 'favicon.ico')
+  ];
+  for (const altPath of altPaths) {
+    if (fs.existsSync(altPath)) {
+      return res.sendFile(altPath);
+    }
   }
+  res.status(404).end();
 });
 
-function httpsGetBuffer(url) {
-  return new Promise((resolve, reject) => {
-    try {
-      const u = new URL(url);
-      const req = https.request({ method: 'GET', hostname: u.hostname, path: u.pathname + (u.search || ''), timeout: 12000 }, (res) => {
-        const chunks = [];
-        res.on('data', (c) => chunks.push(c));
-        res.on('end', () => resolve(Buffer.concat(chunks)));
-      });
-      req.on('error', (err) => reject(err));
-      req.end();
-    } catch (err) {
-      reject(err);
-    }
-  });
-}
 // Serve logo files from images or attached_assets
 app.get('/attached_assets/ninja-gaming-logo.png', (req, res) => {
   // Try images directory first
@@ -465,10 +380,10 @@ app.get('/attached_assets/ninja-gaming-logo.png', (req, res) => {
 // Serve any image from images directory
 app.get('/images/:filename', (req, res) => {
   const filename = req.params.filename;
-  const primary = path.join(imagesDir, filename);
-  if (fs.existsSync(primary)) return res.sendFile(primary);
-  const fallbackPublic = path.join(publicDir, 'images', filename);
-  if (fs.existsSync(fallbackPublic)) return res.sendFile(fallbackPublic);
+  const imagePath = path.join(imagesDir, filename);
+  if (fs.existsSync(imagePath)) {
+    return res.sendFile(imagePath);
+  }
   res.status(404).json({ message: 'Image not found' });
 });
 
@@ -801,12 +716,6 @@ async function initializeDatabase() {
         id VARCHAR(50) PRIMARY KEY,
         name VARCHAR(255) NOT NULL,
         phone VARCHAR(50) NOT NULL,
-        email TEXT UNIQUE,
-        password_hash TEXT,
-        email_verified BOOLEAN DEFAULT false,
-        verification_token TEXT,
-        verification_token_expires TIMESTAMP,
-        last_login TIMESTAMP,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `);
@@ -885,8 +794,7 @@ async function initializeDatabase() {
         message_encrypted TEXT NOT NULL,
         session_id VARCHAR(100) NOT NULL,
         timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        read BOOLEAN DEFAULT false,
-        user_id VARCHAR(50) REFERENCES users(id) ON DELETE SET NULL
+        read BOOLEAN DEFAULT false
       );
     `);
 
@@ -903,39 +811,6 @@ async function initializeDatabase() {
     `);
 
     await pool.query(`ALTER TABLE chat_messages ADD COLUMN IF NOT EXISTS read BOOLEAN DEFAULT false`);
-    await pool.query(`ALTER TABLE chat_messages ADD COLUMN IF NOT EXISTS user_id VARCHAR(50) REFERENCES users(id) ON DELETE SET NULL`);
-    await pool.query(`CREATE INDEX IF NOT EXISTS idx_chat_messages_user_id ON chat_messages(user_id)`);
-    await pool.query(`CREATE INDEX IF NOT EXISTS idx_chat_messages_session ON chat_messages(session_id)`);
-    await pool.query(`CREATE TABLE IF NOT EXISTS refresh_tokens (token TEXT PRIMARY KEY, user_id VARCHAR(50) REFERENCES users(id) ON DELETE CASCADE, expires_at TIMESTAMP NOT NULL, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)`);
-    await pool.query(`CREATE TABLE IF NOT EXISTS login_attempts (id VARCHAR(60) PRIMARY KEY, email TEXT, ip TEXT, success BOOLEAN, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)`);
-    await pool.query(`ALTER TABLE chat_messages ADD COLUMN IF NOT EXISTS thread_id VARCHAR(60)`);
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS chat_templates (
-        id VARCHAR(60) PRIMARY KEY,
-        title TEXT NOT NULL,
-        text TEXT NOT NULL,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      );
-    `);
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS chat_attachments (
-        id VARCHAR(60) PRIMARY KEY,
-        message_id VARCHAR(60) REFERENCES chat_messages(id) ON DELETE CASCADE,
-        url TEXT NOT NULL,
-        filename TEXT,
-        mime TEXT,
-        size INTEGER,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      );
-    `);
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS typing_indicators (
-        session_id VARCHAR(100) PRIMARY KEY,
-        who TEXT NOT NULL,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      );
-    `);
     await pool.query(`ALTER TABLE seller_alerts ADD COLUMN IF NOT EXISTS archived BOOLEAN DEFAULT false`);
 
     console.log('✓ Database tables initialized');
@@ -944,148 +819,6 @@ async function initializeDatabase() {
   }
 }
 
-// Content pages and versions
-async function ensureContentTables() {
-  try {
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS content_pages (
-        id VARCHAR(60) PRIMARY KEY,
-        slug TEXT UNIQUE NOT NULL,
-        title TEXT NOT NULL,
-        body TEXT NOT NULL,
-        published BOOLEAN DEFAULT true,
-        updated_by TEXT,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      );
-    `);
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS content_versions (
-        id VARCHAR(60) PRIMARY KEY,
-        content_id VARCHAR(60) REFERENCES content_pages(id) ON DELETE CASCADE,
-        version INTEGER NOT NULL,
-        title TEXT,
-        body TEXT,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      );
-    `);
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS content_audit_logs (
-        id VARCHAR(60) PRIMARY KEY,
-        content_id VARCHAR(60),
-        action TEXT NOT NULL,
-        summary TEXT,
-        user_id TEXT,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      );
-    `);
-  } catch (err) {
-    console.error('Content table init error:', err.message);
-  }
-}
-
-ensureContentTables();
-
-const contentCache = new Map();
-function cacheSet(key, value, ttlMs = 30000) {
-  contentCache.set(key, { value, expires: Date.now() + ttlMs });
-}
-function cacheGet(key) {
-  const item = contentCache.get(key);
-  if (!item) return null;
-  if (Date.now() > item.expires) { contentCache.delete(key); return null; }
-  return item.value;
-}
-
-app.get('/api/content/:slug', async (req, res) => {
-  try {
-    const { slug } = req.params;
-    const cacheKey = `content:${slug}`;
-    const cached = cacheGet(cacheKey);
-    if (cached) return res.json(cached);
-    const row = await pool.query('SELECT slug, title, body FROM content_pages WHERE slug = $1 AND published = true', [slug]);
-    if (row.rows.length === 0) return res.status(404).json({ message: 'Not found' });
-    const payload = { slug, title: row.rows[0].title, body: row.rows[0].body };
-    cacheSet(cacheKey, payload);
-    res.json(payload);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-});
-
-app.get('/api/admin/content/pages', authenticateToken, async (req, res) => {
-  try {
-    const rows = await pool.query('SELECT id, slug, title, updated_at, published FROM content_pages ORDER BY updated_at DESC LIMIT 200');
-    res.json(rows.rows);
-  } catch (err) { res.status(500).json({ message: err.message }); }
-});
-
-app.get('/api/admin/content/pages/:slug', authenticateToken, async (req, res) => {
-  try {
-    const { slug } = req.params;
-    const row = await pool.query('SELECT id, slug, title, body, published FROM content_pages WHERE slug = $1', [slug]);
-    if (row.rows.length === 0) return res.status(404).json({ message: 'Not found' });
-    res.json(row.rows[0]);
-  } catch (err) { res.status(500).json({ message: err.message }); }
-});
-
-app.post('/api/admin/content/pages', authenticateToken, async (req, res) => {
-  try {
-    const { slug, title, body, published } = req.body || {};
-    if (!slug || !title || !body) return res.status(400).json({ message: 'slug, title, body required' });
-    const id = `cont_${Date.now()}_${Math.random().toString(36).slice(2,9)}`;
-    await pool.query('INSERT INTO content_pages (id, slug, title, body, published, updated_by, updated_at) VALUES ($1, $2, $3, $4, COALESCE($5, true), $6, NOW())', [
-      id, String(slug).trim().toLowerCase(), String(title).trim(), String(body), Boolean(published), req.user?.email || 'admin'
-    ]);
-    await pool.query('INSERT INTO content_versions (id, content_id, version, title, body) VALUES ($1, $2, $3, $4, $5)', [
-      `cv_${Date.now()}`, id, 1, String(title).trim(), String(body)
-    ]);
-    await pool.query('INSERT INTO content_audit_logs (id, content_id, action, summary, user_id) VALUES ($1, $2, $3, $4, $5)', [
-      `cal_${Date.now()}`, id, 'create', `Created ${slug}`, req.user?.email || 'admin'
-    ]);
-    res.status(201).json({ id, slug });
-  } catch (err) { res.status(500).json({ message: err.message }); }
-});
-
-app.put('/api/admin/content/pages/:slug', authenticateToken, async (req, res) => {
-  try {
-    const { slug } = req.params;
-    const { title, body, published } = req.body || {};
-    const row = await pool.query('SELECT id, title, body FROM content_pages WHERE slug = $1', [slug]);
-    if (row.rows.length === 0) return res.status(404).json({ message: 'Not found' });
-    const id = row.rows[0].id;
-    const newTitle = title !== undefined ? String(title).trim() : row.rows[0].title;
-    const newBody = body !== undefined ? String(body) : row.rows[0].body;
-    await pool.query('UPDATE content_pages SET title = $1, body = $2, published = COALESCE($3, published), updated_by = $4, updated_at = NOW() WHERE id = $5', [
-      newTitle, newBody, published, req.user?.email || 'admin', id
-    ]);
-    const v = await pool.query('SELECT COUNT(*)::int AS c FROM content_versions WHERE content_id = $1', [id]);
-    const nextVersion = (v.rows[0]?.c || 0) + 1;
-    await pool.query('INSERT INTO content_versions (id, content_id, version, title, body) VALUES ($1, $2, $3, $4, $5)', [
-      `cv_${Date.now()}`, id, nextVersion, newTitle, newBody
-    ]);
-    await pool.query('INSERT INTO content_audit_logs (id, content_id, action, summary, user_id) VALUES ($1, $2, $3, $4, $5)', [
-      `cal_${Date.now()}`, id, 'update', `Updated ${slug}`, req.user?.email || 'admin'
-    ]);
-    res.json({ ok: true });
-  } catch (err) { res.status(500).json({ message: err.message }); }
-});
-
-app.delete('/api/admin/content/pages/:slug', authenticateToken, async (req, res) => {
-  try {
-    const { slug } = req.params;
-    const { confirm } = req.query || {};
-    if (String(confirm) !== 'true') return res.status(400).json({ message: 'Confirmation required' });
-    const row = await pool.query('SELECT id FROM content_pages WHERE slug = $1', [slug]);
-    if (row.rows.length === 0) return res.status(404).json({ message: 'Not found' });
-    const id = row.rows[0].id;
-    await pool.query('DELETE FROM content_pages WHERE id = $1', [id]);
-    await pool.query('INSERT INTO content_audit_logs (id, content_id, action, summary, user_id) VALUES ($1, $2, $3, $4, $5)', [
-      `cal_${Date.now()}`, id, 'delete', `Deleted ${slug}`, req.user?.email || 'admin'
-    ]);
-    res.json({ ok: true });
-  } catch (err) { res.status(500).json({ message: err.message }); }
-});
 // Seed product images from public folder
 async function seedProductImages() {
   try {
@@ -2363,78 +2096,6 @@ app.put('/api/admin/logo/config', authenticateToken, async (req, res) => {
   }
 });
 
-async function generateFaviconsFromSource(src) {
-  const sizes = [
-    { w: 16, h: 16, name: 'favicon-16.png' },
-    { w: 32, h: 32, name: 'favicon-32.png' },
-    { w: 48, h: 48, name: 'favicon-48.png' },
-    { w: 180, h: 180, name: 'apple-touch-icon.png' },
-  ];
-  const pngBuffers = [];
-  for (const s of sizes.slice(0, 3)) {
-    const buf = await sharp(src).resize(s.w, s.h, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } }).png().toBuffer();
-    pngBuffers.push({ size: s.w, buf });
-    const out = path.join(imagesDir, s.name);
-    try { fs.writeFileSync(out, buf); } catch {}
-  }
-  const appleBuf = await sharp(src).resize(180, 180, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } }).png().toBuffer();
-  try { fs.writeFileSync(path.join(imagesDir, 'apple-touch-icon.png'), appleBuf); } catch {}
-  const ico = buildIcoFromPngBuffers(pngBuffers);
-  const icoPath = path.join(imagesDir, 'favicon.ico');
-  try { fs.writeFileSync(icoPath, ico); } catch {}
-  return { icoPath };
-}
-
-function buildIcoFromPngBuffers(entries) {
-  const count = entries.length;
-  const header = Buffer.alloc(6);
-  header.writeUInt16LE(0, 0);
-  header.writeUInt16LE(1, 2);
-  header.writeUInt16LE(count, 4);
-  const dirEntries = [];
-  let offset = 6 + count * 16;
-  for (const e of entries) {
-    const d = Buffer.alloc(16);
-    d.writeUInt8(e.size === 256 ? 0 : e.size, 0);
-    d.writeUInt8(e.size === 256 ? 0 : e.size, 1);
-    d.writeUInt8(0, 2);
-    d.writeUInt8(0, 3);
-    d.writeUInt16LE(1, 4);
-    d.writeUInt16LE(32, 6);
-    d.writeUInt32LE(e.buf.length, 8);
-    d.writeUInt32LE(offset, 12);
-    dirEntries.push(d);
-    offset += e.buf.length;
-  }
-  return Buffer.concat([header, ...dirEntries, ...entries.map(e => e.buf)]);
-}
-
-app.post('/api/admin/logo/generate-favicons', authenticateToken, async (req, res) => {
-  try {
-    const { sourcePath, sourceUrl, setConfigUrl } = req.body || {};
-    let src = sourcePath;
-    if (!src && typeof sourceUrl === 'string' && sourceUrl.trim()) {
-      const tmp = path.join(imagesDir, `tmp-favicon-${Date.now()}.png`);
-      const r = await httpsGetBuffer(sourceUrl);
-      fs.writeFileSync(tmp, r);
-      src = tmp;
-    }
-    if (!src || !fs.existsSync(src)) {
-      return res.status(400).json({ message: 'Valid sourcePath or sourceUrl required' });
-    }
-    await generateFaviconsFromSource(src);
-    try { if (src.includes('tmp-favicon-')) fs.unlinkSync(src); } catch {}
-    if (setConfigUrl && typeof setConfigUrl === 'string' && setConfigUrl.trim()) {
-      await pool.query('UPDATE logo_config SET favicon_url = $1, updated_at = NOW() WHERE id = $2', [setConfigUrl, 'logo_1']);
-    } else {
-      await pool.query('UPDATE logo_config SET favicon_url = $1, updated_at = NOW() WHERE id = $2', ['/images/favicon.ico', 'logo_1']);
-    }
-    res.json({ ok: true });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-});
-
 // Generic admin image upload (PNG, SVG)
 app.post('/api/admin/upload', authenticateToken, imageUpload.single('file'), async (req, res) => {
   try {
@@ -2461,7 +2122,7 @@ app.get('/api/logo/config', async (req, res) => {
     res.json({
       smallLogoUrl: normalizeImageUrl(row.small_logo_url || '/attached_assets/small-image-logo.png'),
       largeLogoUrl: normalizeImageUrl(row.large_logo_url || '/attached_assets/large-image-logo.png'),
-      faviconUrl: row.favicon_url || '/images/favicon.ico'
+      faviconUrl: normalizeImageUrl(row.favicon_url || '/images/cropped-favicon1-32x32.png')
     });
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -3332,72 +2993,6 @@ app.post('/api/admin/images/upload-batch', authenticateToken, (req, res) => {
   });
 });
 
-// Cloudinary upload endpoint
-const cloudinaryUpload = multer({ storage }).single('file');
-app.post('/api/admin/images/upload-cloudinary', authenticateToken, (req, res) => {
-  cloudinaryUpload(req, res, async (err) => {
-    if (err) return res.status(400).json({ message: err.message });
-    try {
-      if (!req.file) return res.status(400).json({ message: 'No file provided' });
-      if (!CLOUDINARY_ENABLED) return res.status(500).json({ message: 'Cloudinary not configured' });
-      
-      const filePath = req.file.path;
-      const fileName = req.file.originalname.replace(/\.[^/.]+$/, '');
-      const type = String(req.body.type || '').toLowerCase();
-      const relatedId = req.body.id || null;
-      
-      try {
-        const fileBuffer = fs.readFileSync(filePath);
-        const uploadStream = new Promise((resolve, reject) => {
-          const stream = cloudinary.uploader.upload_stream(
-            {
-              folder: 'gaming-store',
-              resource_type: 'auto',
-              public_id: `${type}_${Date.now()}_${fileName.slice(0, 20)}`
-            },
-            (error, result) => {
-              if (error) reject(error);
-              else resolve(result);
-            }
-          );
-          stream.end(fileBuffer);
-        });
-        
-        const result = await uploadStream;
-        const imageUrl = result.secure_url;
-        
-        // Update database if needed
-        if (type === 'game' && relatedId) {
-          await pool.query('UPDATE games SET image = $1, image_url = $1 WHERE id = $2 OR slug = $2', [imageUrl, relatedId]);
-        } else if (type === 'category' && relatedId) {
-          await pool.query('UPDATE categories SET image = $1 WHERE id = $2 OR slug = $2', [imageUrl, relatedId]);
-        }
-        
-        // Store in image assets
-        await pool.query('INSERT INTO image_assets (id, url, original_filename, source, related_type, related_id) VALUES ($1, $2, $3, $4, $5, $6)', [
-          `img_${Date.now()}_${Math.random().toString(36).slice(2,9)}`,
-          imageUrl,
-          req.file.originalname,
-          'cloudinary',
-          type || null,
-          relatedId || null
-        ]);
-        
-        // Clean up temp file
-        try { fs.unlinkSync(filePath); } catch {}
-        
-        res.json({ url: imageUrl, publicId: result.public_id, ok: true });
-      } catch (uploadErr) {
-        try { fs.unlinkSync(filePath); } catch {}
-        throw uploadErr;
-      }
-    } catch (e) {
-      console.error('Cloudinary upload failed:', e);
-      res.status(500).json({ message: e.message });
-    }
-  });
-});
-
 function httpsGetToFile(srcUrl, destPath) {
   return new Promise((resolve) => {
     try {
@@ -3676,153 +3271,6 @@ app.post('/api/whatsapp/webhook', async (req, res) => {
 
 // ===================== CHAT ENDPOINTS =====================
 
-app.get('/api/csrf', (req, res) => {
-  const token = crypto.randomBytes(16).toString('hex');
-  setCookie(res, 'csrf_token', token, { Path: '/', HttpOnly: true, SameSite: 'Lax' });
-  res.json({ token });
-});
-
-app.post('/api/auth/register', async (req, res) => {
-  try {
-    if (!req.headers['authorization']) {
-      const cookies = parseCookies(req);
-      const header = String(req.headers['x-csrf-token'] || '').trim();
-      if (!cookies['csrf_token'] || cookies['csrf_token'] !== header) return res.status(403).json({ message: 'CSRF validation failed' });
-    }
-    const { email, password, name } = req.body || {};
-    if (!email || !password || !name) return res.status(400).json({ message: 'email, password, name required' });
-    const existing = await pool.query('SELECT id FROM users WHERE email = $1', [String(email).toLowerCase()]);
-    if (existing.rows.length > 0) return res.status(409).json({ message: 'Email already registered' });
-    const id = `usr_${Date.now()}_${Math.random().toString(36).slice(2,9)}`;
-    const hashed = hashPassword(password);
-    const token = Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
-    const expires = new Date(Date.now() + 1000 * 60 * 60 * 24);
-    await pool.query('INSERT INTO users (id, name, phone, email, password_hash, email_verified, verification_token, verification_token_expires) VALUES ($1, $2, $3, $4, $5, false, $6, $7)', [
-      id, String(name).trim(), '', String(email).toLowerCase(), hashed, token, expires
-    ]);
-    res.status(201).json({ ok: true });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-});
-
-app.post('/api/auth/verify', async (req, res) => {
-  try {
-    if (!req.headers['authorization']) {
-      const cookies = parseCookies(req);
-      const header = String(req.headers['x-csrf-token'] || '').trim();
-      if (!cookies['csrf_token'] || cookies['csrf_token'] !== header) return res.status(403).json({ message: 'CSRF validation failed' });
-    }
-    const { email, token } = req.body || {};
-    if (!email || !token) return res.status(400).json({ message: 'email and token required' });
-    const row = await pool.query('SELECT id, verification_token_expires FROM users WHERE email = $1 AND verification_token = $2', [String(email).toLowerCase(), token]);
-    if (row.rows.length === 0) return res.status(400).json({ message: 'Invalid token' });
-    const expires = row.rows[0].verification_token_expires ? new Date(row.rows[0].verification_token_expires) : null;
-    if (expires && expires.getTime() < Date.now()) return res.status(400).json({ message: 'Token expired' });
-    await pool.query('UPDATE users SET email_verified = true, verification_token = NULL, verification_token_expires = NULL WHERE email = $1', [String(email).toLowerCase()]);
-    res.json({ ok: true });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-});
-
-app.post('/api/auth/login', async (req, res) => {
-  try {
-    if (!req.headers['authorization']) {
-      const cookies = parseCookies(req);
-      const header = String(req.headers['x-csrf-token'] || '').trim();
-      if (!cookies['csrf_token'] || cookies['csrf_token'] !== header) return res.status(403).json({ message: 'CSRF validation failed' });
-    }
-    const { email, password } = req.body || {};
-    const ip = req.headers['x-forwarded-for']?.split(',')[0] || req.socket.remoteAddress || 'unknown';
-    if (!email || !password) return res.status(400).json({ message: 'email and password required' });
-    const row = await pool.query('SELECT id, password_hash, email_verified FROM users WHERE email = $1', [String(email).toLowerCase()]);
-    if (row.rows.length === 0) {
-      await pool.query('INSERT INTO login_attempts (id, email, ip, success) VALUES ($1, $2, $3, $4)', [`la_${Date.now()}`, String(email).toLowerCase(), ip, false]);
-      const recent = await pool.query('SELECT COUNT(*)::int AS c FROM login_attempts WHERE ip = $1 AND success = false AND created_at > NOW() - INTERVAL \'10 minutes\'', [ip]);
-      if ((recent.rows[0]?.c || 0) >= 10) {
-        try {
-          const alertId = `al_${Date.now()}`;
-          const summary = `High failed login rate from IP ${ip}`;
-          await pool.query('INSERT INTO seller_alerts (id, type, summary) VALUES ($1, $2, $3)', [alertId, 'security_alert', summary]);
-        } catch {}
-      }
-      return res.status(401).json({ message: 'Invalid credentials' });
-    }
-    const u = row.rows[0];
-    if (!verifyPassword(password, u.password_hash)) {
-      await pool.query('INSERT INTO login_attempts (id, email, ip, success) VALUES ($1, $2, $3, $4)', [`la_${Date.now()}`, String(email).toLowerCase(), ip, false]);
-      const recent = await pool.query('SELECT COUNT(*)::int AS c FROM login_attempts WHERE ip = $1 AND success = false AND created_at > NOW() - INTERVAL \'10 minutes\'', [ip]);
-      if ((recent.rows[0]?.c || 0) >= 10) {
-        try {
-          const alertId = `al_${Date.now()}`;
-          const summary = `High failed login rate from IP ${ip}`;
-          await pool.query('INSERT INTO seller_alerts (id, type, summary) VALUES ($1, $2, $3)', [alertId, 'security_alert', summary]);
-        } catch {}
-      }
-      return res.status(401).json({ message: 'Invalid credentials' });
-    }
-    if (!u.email_verified) return res.status(403).json({ message: 'Email not verified' });
-    const token = jwt.sign({ uid: u.id, email: String(email).toLowerCase() }, USER_JWT_SECRET, { expiresIn: '1h' });
-    const refresh = `rt_${Date.now()}_${Math.random().toString(36).slice(2,12)}`;
-    const exp = new Date(Date.now() + 1000 * 60 * 60 * 24 * 30);
-    await pool.query('INSERT INTO refresh_tokens (token, user_id, expires_at) VALUES ($1, $2, $3)', [refresh, u.id, exp]);
-    await pool.query('UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = $1', [u.id]);
-    await pool.query('INSERT INTO login_attempts (id, email, ip, success) VALUES ($1, $2, $3, $4)', [`la_${Date.now()}`, String(email).toLowerCase(), ip, true]);
-    res.json({ token, refresh });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-});
-
-app.post('/api/auth/refresh', async (req, res) => {
-  try {
-    if (!req.headers['authorization']) {
-      const cookies = parseCookies(req);
-      const header = String(req.headers['x-csrf-token'] || '').trim();
-      if (!cookies['csrf_token'] || cookies['csrf_token'] !== header) return res.status(403).json({ message: 'CSRF validation failed' });
-    }
-    const { refresh } = req.body || {};
-    if (!refresh) return res.status(400).json({ message: 'refresh required' });
-    const row = await pool.query('SELECT user_id, expires_at FROM refresh_tokens WHERE token = $1', [refresh]);
-    if (row.rows.length === 0) return res.status(401).json({ message: 'Invalid refresh token' });
-    const expires = new Date(row.rows[0].expires_at);
-    if (expires.getTime() < Date.now()) return res.status(401).json({ message: 'Refresh token expired' });
-    const token = jwt.sign({ uid: row.rows[0].user_id }, USER_JWT_SECRET, { expiresIn: '1h' });
-    res.json({ token });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-});
-
-app.post('/api/auth/logout', async (req, res) => {
-  try {
-    if (!req.headers['authorization']) {
-      const cookies = parseCookies(req);
-      const header = String(req.headers['x-csrf-token'] || '').trim();
-      if (!cookies['csrf_token'] || cookies['csrf_token'] !== header) return res.status(403).json({ message: 'CSRF validation failed' });
-    }
-    const { refresh } = req.body || {};
-    if (refresh) await pool.query('DELETE FROM refresh_tokens WHERE token = $1', [refresh]);
-    res.json({ ok: true });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-});
-
-function authenticateUser(req, res, next) {
-  const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1];
-  if (!token) return res.status(401).json({ message: 'Access token required' });
-  try {
-    const u = jwt.verify(token, USER_JWT_SECRET);
-    req.user = { uid: u.uid, email: u.email };
-    next();
-  } catch {
-    return res.status(403).json({ message: 'Invalid or expired token' });
-  }
-}
-
 app.get('/api/chat/:sessionId', async (req, res) => {
   try {
     const { sessionId } = req.params;
@@ -3883,7 +3331,7 @@ app.get('/api/admin/chat/:sessionId', authenticateToken, async (req, res) => {
 
 app.post('/api/chat/message', async (req, res) => {
   try {
-    const { sender, message, sessionId, threadId, attachments } = req.body;
+    const { sender, message, sessionId } = req.body;
     if (!sender || !message || !sessionId) return res.status(400).json({ message: 'sender, message, sessionId required' });
 
     if (sender === 'support') {
@@ -3898,27 +3346,9 @@ app.post('/api/chat/message', async (req, res) => {
     }
 
     const id = `cm_${Date.now()}_${Math.random().toString(36).slice(2,9)}`;
-    let userId = null;
-    try {
-      const authHeader = req.headers['authorization'];
-      const tok = authHeader && String(authHeader).split(' ')[1];
-      if (tok) {
-        const u = jwt.verify(tok, USER_JWT_SECRET);
-        userId = u?.uid || null;
-      }
-    } catch {}
-    await pool.query('INSERT INTO chat_messages (id, sender, message_encrypted, session_id, user_id, thread_id) VALUES ($1, $2, $3, $4, $5, $6)', [
-      id, sender, encryptMessage(String(message)), sessionId, userId, threadId || null
+    await pool.query('INSERT INTO chat_messages (id, sender, message_encrypted, session_id) VALUES ($1, $2, $3, $4)', [
+      id, sender, encryptMessage(String(message)), sessionId
     ]);
-    if (Array.isArray(attachments)) {
-      for (const a of attachments) {
-        if (a?.url) {
-          await pool.query('INSERT INTO chat_attachments (id, message_id, url, filename, mime, size) VALUES ($1, $2, $3, $4, $5, $6)', [
-            `att_${Date.now()}_${Math.random().toString(36).slice(2,9)}`, id, String(a.url), a.filename || null, a.mime || null, a.size || null
-          ]);
-        }
-      }
-    }
     
     // When admin replies, mark all unread messages in this session as read
     if (sender === 'support') {
@@ -3957,80 +3387,6 @@ app.post('/api/chat/message', async (req, res) => {
   }
 });
 
-app.post('/api/admin/chat/:sessionId/typing', authenticateToken, async (req, res) => {
-  try {
-    const { sessionId } = req.params;
-    const { who } = req.body || {};
-    await pool.query('INSERT INTO typing_indicators (session_id, who, updated_at) VALUES ($1, $2, NOW()) ON CONFLICT (session_id) DO UPDATE SET who = EXCLUDED.who, updated_at = NOW()', [sessionId, String(who || 'support')]);
-    res.json({ ok: true });
-  } catch (err) { res.status(500).json({ message: err.message }); }
-});
-
-app.get('/api/admin/chat/:sessionId/typing', authenticateToken, async (req, res) => {
-  try {
-    const { sessionId } = req.params;
-    const r = await pool.query('SELECT who, updated_at FROM typing_indicators WHERE session_id = $1', [sessionId]);
-    if (r.rows.length === 0) return res.json({ typing: false });
-    const last = new Date(r.rows[0].updated_at).getTime();
-    res.json({ typing: Date.now() - last < 4000, who: r.rows[0].who });
-  } catch (err) { res.status(500).json({ message: err.message }); }
-});
-
-app.get('/api/admin/chat/templates', authenticateToken, async (req, res) => {
-  try {
-    const r = await pool.query('SELECT id, title, text FROM chat_templates ORDER BY updated_at DESC LIMIT 200');
-    res.json(r.rows);
-  } catch (err) { res.status(500).json({ message: err.message }); }
-});
-
-app.post('/api/admin/chat/templates', authenticateToken, async (req, res) => {
-  try {
-    const { title, text } = req.body || {};
-    if (!title || !text) return res.status(400).json({ message: 'title and text required' });
-    const id = `tmpl_${Date.now()}_${Math.random().toString(36).slice(2,9)}`;
-    await pool.query('INSERT INTO chat_templates (id, title, text) VALUES ($1, $2, $3)', [id, String(title).trim(), String(text)]);
-    res.status(201).json({ id });
-  } catch (err) { res.status(500).json({ message: err.message }); }
-});
-
-app.put('/api/admin/chat/templates/:id', authenticateToken, async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { title, text } = req.body || {};
-    await pool.query('UPDATE chat_templates SET title = COALESCE($1, title), text = COALESCE($2, text), updated_at = NOW() WHERE id = $3', [title, text, id]);
-    res.json({ ok: true });
-  } catch (err) { res.status(500).json({ message: err.message }); }
-});
-
-app.delete('/api/admin/chat/templates/:id', authenticateToken, async (req, res) => {
-  try {
-    const { id } = req.params;
-    await pool.query('DELETE FROM chat_templates WHERE id = $1', [id]);
-    res.json({ ok: true });
-  } catch (err) { res.status(500).json({ message: err.message }); }
-});
-app.get('/api/user/chat-history', authenticateUser, async (req, res) => {
-  try {
-    const { uid } = req.user || {};
-    const page = Math.max(1, Number(req.query.page || 1));
-    const limit = Math.max(1, Math.min(100, Number(req.query.limit || 20)));
-    const offset = (page - 1) * limit;
-    const rows = await pool.query(
-      'SELECT id, sender, message_encrypted, session_id, timestamp FROM chat_messages WHERE user_id = $1 ORDER BY timestamp DESC LIMIT $2 OFFSET $3',
-      [uid, limit, offset]
-    );
-    const messages = rows.rows.map(r => ({
-      id: r.id,
-      sender: r.sender,
-      message: decryptMessage(r.message_encrypted),
-      sessionId: r.session_id,
-      timestamp: new Date(r.timestamp).getTime()
-    }));
-    res.json({ page, limit, messages });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-});
 // ===================== TRANSLATIONS =====================
 app.get('/api/translations/:lang', async (req, res) => {
   try {

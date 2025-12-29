@@ -252,6 +252,8 @@ function GamePreviewDialog({ open, onOpenChange, game, onAdd, mode, onModeChange
   const hasDiscount = game.discountPrice && parseFloat(game.discountPrice.toString()) > 0;
   const mainPrice = parseFloat(game.price.toString());
   const discountPrice = hasDiscount && game.discountPrice !== null ? parseFloat(String(game.discountPrice)) : null;
+  const originalPrice = discountPrice && discountPrice > mainPrice ? discountPrice : null;
+  const currentPrice = mainPrice;
   const isOutOfStock = Number(game.stock) <= 0;
 
   const [scale, setScale] = useState(1);
@@ -298,13 +300,13 @@ function GamePreviewDialog({ open, onOpenChange, game, onAdd, mode, onModeChange
           <DialogTitle className="flex items-center justify-between">
             <span className="truncate">{game.name}</span>
             <span className="text-neon-pink font-bold">
-              {discountPrice ? (
+              {originalPrice ? (
                 <span className="inline-flex items-center gap-2">
-                  <span className="line-through opacity-70">{mainPrice}</span>
-                  <span>{discountPrice}</span>
+                  <span className="line-through opacity-70 text-muted-foreground text-sm">{originalPrice}</span>
+                  <span>{currentPrice}</span>
                 </span>
               ) : (
-                <span>{mainPrice}</span>
+                <span>{currentPrice}</span>
               )}
             </span>
           </DialogTitle>

@@ -196,13 +196,11 @@ export default function CategoryPage() {
                         <div className="mb-3">
                           {hasDiscount ? (
                             <div className="flex items-center gap-2">
-                              <span className="text-red-500 line-through text-sm">{mainPrice} {game.currency}</span>
-                              <span className="text-xl font-bold text-blue-600 dark:text-blue-400">{discountPrice} {game.currency}</span>
+                              <span className="text-gray-500 line-through text-sm">{game.discountPrice} {game.currency}</span>
+                              <span className="text-gold-primary font-bold text-lg">{game.price} {game.currency}</span>
                             </div>
                           ) : (
-                            <span className="text-xl font-bold text-blue-600 dark:text-blue-400">
-                              {game.category === 'mobile-games' ? `${t('starting_from')} ${game.price} ${game.currency}` : `${game.price} ${game.currency}`}
-                            </span>
+                            <div className="text-gold-primary font-bold text-lg">{game.price} {game.currency}</div>
                           )}
                         </div>
                       )}

@@ -20,8 +20,8 @@ export default function PacksPage() {
           out.push({
             id: `${g.id}-pkg-${idx}`,
             name: pkg,
-            originalPrice: (g.packagePrices && g.packagePrices[idx]) || null,
-            finalPrice: (g.packageDiscountPrices && g.packageDiscountPrices[idx]) || (g.packagePrices && g.packagePrices[idx]) || g.price,
+            originalPrice: (g.discountPrices && g.discountPrices[idx]) || null,
+            finalPrice: (g.packagePrices && g.packagePrices[idx]) || g.price,
             currency: g.currency || "EGP",
             image: (g.packageThumbnails && g.packageThumbnails[idx]) || g.image,
           });

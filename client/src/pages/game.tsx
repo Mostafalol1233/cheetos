@@ -238,7 +238,19 @@ export default function GamePage() {
                 {t("instant_delivery")}
               </div>
               <div className="font-semibold text-foreground">
-                {packages[selectedPackage] || t("default_package")} · {packagePrices[selectedPackage] || game.price} {game.currency}
+                {packages[selectedPackage] || t("default_package")} · 
+                {(() => {
+                    const discountPrices = (game as any).discountPrices || [];
+                    const original = discountPrices[selectedPackage];
+                    const current = packagePrices[selectedPackage] || game.price;
+                    const hasDiscount = original && parseFloat(String(original)) > parseFloat(String(current));
+                    return hasDiscount ? (
+                      <> <span className="line-through text-muted-foreground text-[10px]">{original}</span> {current}</>
+                    ) : (
+                      ` ${current}`
+                    );
+                })()}
+                 {game.currency}
               </div>
             </div>
             <Button
