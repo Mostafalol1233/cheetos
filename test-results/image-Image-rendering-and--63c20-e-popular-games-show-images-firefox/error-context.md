@@ -1,0 +1,282 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e2]:
+  - region "Notifications (F8)":
+    - list
+  - banner [ref=e3]:
+    - generic [ref=e5]:
+      - link "Diaa Sadek Logo Diaa Sadek Premium Store" [ref=e6] [cursor=pointer]:
+        - /url: /
+        - generic [ref=e7]:
+          - generic [ref=e9]:
+            - img "Diaa Sadek Logo" [ref=e10]
+            - img [ref=e12]
+          - generic [ref=e16]:
+            - heading "Diaa Sadek" [level=1] [ref=e17]
+            - paragraph [ref=e18]: Premium Store
+      - generic [ref=e19]:
+        - navigation [ref=e20]:
+          - link "Home" [ref=e21] [cursor=pointer]:
+            - /url: /
+            - generic [ref=e22]: Home
+          - link "Categories" [ref=e23] [cursor=pointer]:
+            - /url: /#categories
+            - generic [ref=e24]: Categories
+          - link "Games" [ref=e25] [cursor=pointer]:
+            - /url: /games
+            - generic [ref=e26]: Games
+          - link "Support" [ref=e27] [cursor=pointer]:
+            - /url: /support
+            - generic [ref=e28]: Support
+          - button "Live Chat" [ref=e29] [cursor=pointer]: Live Chat
+        - generic [ref=e31]:
+          - button "Accessibility" [ref=e32] [cursor=pointer]:
+            - img
+            - generic [ref=e33]: Accessibility
+          - button "Switch language" [ref=e34] [cursor=pointer]:
+            - img
+            - generic [ref=e35]: Switch language
+          - button "Toggle Theme" [ref=e36] [cursor=pointer]:
+            - img
+          - button "Shopping Cart with 0 items" [ref=e37] [cursor=pointer]:
+            - img
+            - generic [ref=e38]: Cart
+  - generic [ref=e40]:
+    - generic [ref=e44]:
+      - heading "LEVEL UP YOUR GAME" [level=1] [ref=e45]
+      - paragraph [ref=e46]: Premium Currencies, Gift Cards & Instant Delivery
+      - generic [ref=e47]:
+        - button "Shop Now" [ref=e48] [cursor=pointer]
+        - button "View All Games" [ref=e49] [cursor=pointer]
+    - generic [ref=e53]:
+      - generic [ref=e54]:
+        - img [ref=e55]
+        - generic [ref=e57]:
+          - generic [ref=e58]:
+            - generic [ref=e59]: "5"
+            - text: days left until 2026
+          - paragraph [ref=e60]: Stay tuned for New Year offers and friend collaborations.
+      - generic [ref=e61]:
+        - button "Share with a friend" [ref=e62] [cursor=pointer]
+        - link "Invite now" [ref=e63] [cursor=pointer]:
+          - /url: "#"
+    - generic [ref=e64]:
+      - generic [ref=e65]:
+        - img [ref=e67]
+        - heading "Most Popular Games" [level=2] [ref=e69]
+      - generic [ref=e70]:
+        - 'link "Popular 1 In Stock: 5" [ref=e72] [cursor=pointer]':
+          - /url: /game/pop1
+          - generic [ref=e76]:
+            - heading "Popular 1" [level=3] [ref=e77]
+            - generic [ref=e79]: "In Stock: 5"
+        - 'link "Popular 2 In Stock: 5" [ref=e81] [cursor=pointer]':
+          - /url: /game/pop2
+          - generic [ref=e85]:
+            - heading "Popular 2" [level=3] [ref=e86]
+            - generic [ref=e88]: "In Stock: 5"
+    - generic [ref=e90]:
+      - generic [ref=e91]:
+        - img [ref=e93]
+        - heading "Fast Delivery" [level=3] [ref=e95]
+        - paragraph [ref=e96]: Get your products quickly and reliably.
+      - generic [ref=e97]:
+        - img [ref=e99]
+        - heading "Online Support" [level=3] [ref=e101]
+        - paragraph [ref=e102]: 24 hours a day, 7 days a week.
+      - generic [ref=e103]:
+        - img [ref=e105]
+        - heading "Secure Payment" [level=3] [ref=e107]
+        - paragraph [ref=e108]: Pay with Multiple Payment Methods.
+      - generic [ref=e109]:
+        - img [ref=e111]
+        - heading "Best Prices" [level=3] [ref=e114]
+        - paragraph [ref=e115]: Discover unbeatable prices.
+    - generic [ref=e118]:
+      - generic [ref=e119]:
+        - heading "About Diaa Eldeen" [level=2] [ref=e120]
+        - paragraph [ref=e121]: Welcome to Diaa Eldeen - Your trusted gaming partner since day one. We specialize in providing premium digital gaming products with fast delivery and exceptional customer service.
+        - paragraph [ref=e122]: Our mission is to make gaming accessible and affordable for everyone. Whether you're looking for game currencies, gift cards, or digital vouchers, we've got you covered with the best prices and fastest delivery in the market.
+        - generic [ref=e123]:
+          - generic [ref=e124]:
+            - paragraph [ref=e125]: 1K+
+            - paragraph [ref=e126]: Happy Customers
+          - generic [ref=e127]:
+            - paragraph [ref=e128]: 5K+
+            - paragraph [ref=e129]: Orders Completed
+          - generic [ref=e130]:
+            - paragraph [ref=e131]: 24/7
+            - paragraph [ref=e132]: Customer Support
+      - generic [ref=e136]:
+        - img [ref=e137]
+        - paragraph [ref=e143]: Premium Gaming Experience
+    - generic [ref=e146]:
+      - generic [ref=e147]:
+        - heading "What Our Customers Say" [level=2] [ref=e148]
+        - paragraph [ref=e149]: Real testimonials from real gamers
+      - generic [ref=e150]:
+        - generic [ref=e151]:
+          - generic [ref=e152]:
+            - generic [ref=e153]: A
+            - generic [ref=e154]:
+              - paragraph [ref=e155]: Ahmed Hassan
+              - paragraph [ref=e156]: ⭐⭐⭐⭐⭐
+          - paragraph [ref=e157]: "\"Fast delivery and great prices! I got my game currency instantly. Highly recommended!\""
+        - generic [ref=e158]:
+          - generic [ref=e159]:
+            - generic [ref=e160]: M
+            - generic [ref=e161]:
+              - paragraph [ref=e162]: Mona Ali
+              - paragraph [ref=e163]: ⭐⭐⭐⭐⭐
+          - paragraph [ref=e164]: "\"Best gaming store ever! The support team is super helpful and responsive. 10/10\""
+        - generic [ref=e165]:
+          - generic [ref=e166]:
+            - generic [ref=e167]: K
+            - generic [ref=e168]:
+              - paragraph [ref=e169]: Karim Mohamed
+              - paragraph [ref=e170]: ⭐⭐⭐⭐⭐
+          - paragraph [ref=e171]: "\"Competitive prices and instant delivery. This is my go-to store for all gaming needs!\""
+    - generic [ref=e174]:
+      - heading "Payment Methods We Accept" [level=2] [ref=e175]
+      - paragraph [ref=e176]: Secure payments through multiple trusted providers
+      - generic [ref=e178]:
+        - generic [ref=e179]:
+          - img "Visa" [ref=e180]
+          - generic [ref=e181]: Visa
+        - generic [ref=e182]:
+          - img "Mastercard" [ref=e183]
+          - generic [ref=e184]: Mastercard
+        - generic [ref=e185]:
+          - img "Vodafone Cash" [ref=e186]
+          - generic [ref=e187]: Vodafone Cash
+        - generic [ref=e188]:
+          - img "Orange Money" [ref=e189]
+          - generic [ref=e190]: Orange Money
+        - generic [ref=e191]:
+          - img "Etisalat Cash" [ref=e192]
+          - generic [ref=e193]: Etisalat Cash
+        - generic [ref=e194]:
+          - img "InstaPay" [ref=e195]
+          - generic [ref=e196]: InstaPay
+        - generic [ref=e197]:
+          - img "CIB Bank" [ref=e198]
+          - generic [ref=e199]: CIB Bank
+        - generic [ref=e200]:
+          - img "WE Pay" [ref=e201]
+          - generic [ref=e202]: WE Pay
+        - generic [ref=e203]:
+          - img "Visa" [ref=e204]
+          - generic [ref=e205]: Visa
+        - generic [ref=e206]:
+          - img "Mastercard" [ref=e207]
+          - generic [ref=e208]: Mastercard
+        - generic [ref=e209]:
+          - img "Vodafone Cash" [ref=e210]
+          - generic [ref=e211]: Vodafone Cash
+        - generic [ref=e212]:
+          - img "Orange Money" [ref=e213]
+          - generic [ref=e214]: Orange Money
+        - generic [ref=e215]:
+          - img "Etisalat Cash" [ref=e216]
+          - generic [ref=e217]: Etisalat Cash
+        - generic [ref=e218]:
+          - img "InstaPay" [ref=e219]
+          - generic [ref=e220]: InstaPay
+        - generic [ref=e221]:
+          - img "CIB Bank" [ref=e222]
+          - generic [ref=e223]: CIB Bank
+        - generic [ref=e224]:
+          - img "WE Pay" [ref=e225]
+          - generic [ref=e226]: WE Pay
+    - contentinfo [ref=e227]:
+      - generic [ref=e228]:
+        - generic [ref=e229]:
+          - generic [ref=e230]:
+            - link "Diaa Sadek Logo Diaa Sadek" [ref=e231] [cursor=pointer]:
+              - /url: /
+              - generic [ref=e232]:
+                - img "Diaa Sadek Logo" [ref=e234]
+                - generic [ref=e235]: Diaa Sadek
+            - paragraph [ref=e236]: Your premium destination for gaming currencies, gift cards, and instant digital delivery. Level up your gaming experience today.
+            - generic [ref=e237]:
+              - link [ref=e238] [cursor=pointer]:
+                - /url: https://www.facebook.com/DiaElDeenSadek
+                - img [ref=e239]
+              - link [ref=e241] [cursor=pointer]:
+                - /url: https://tiktok.com/@diaa_eldeen
+                - img [ref=e242]
+              - link [ref=e244] [cursor=pointer]:
+                - /url: https://www.youtube.com/@bemora-site
+                - img [ref=e245]
+              - link [ref=e248] [cursor=pointer]:
+                - /url: https://t.me/diaaeldeen
+                - img [ref=e249]
+          - generic [ref=e251]:
+            - heading "Quick Links" [level=3] [ref=e252]: Quick Links
+            - list [ref=e254]:
+              - listitem [ref=e255]:
+                - link "› Home" [ref=e256] [cursor=pointer]:
+                  - /url: /
+                  - generic [ref=e257]: ›
+                  - text: Home
+              - listitem [ref=e258]:
+                - link "› Browse Games" [ref=e259] [cursor=pointer]:
+                  - /url: /games
+                  - generic [ref=e260]: ›
+                  - text: Browse Games
+              - listitem [ref=e261]:
+                - link "› Support Center" [ref=e262] [cursor=pointer]:
+                  - /url: /support
+                  - generic [ref=e263]: ›
+                  - text: Support Center
+              - listitem [ref=e264]:
+                - link "› Track Order" [ref=e265] [cursor=pointer]:
+                  - /url: /track-order
+                  - generic [ref=e266]: ›
+                  - text: Track Order
+          - generic [ref=e267]:
+            - heading "Support" [level=3] [ref=e268]: Support
+            - list [ref=e270]:
+              - listitem [ref=e271]:
+                - link "› FAQ" [ref=e272] [cursor=pointer]:
+                  - /url: /faq
+                  - generic [ref=e273]: ›
+                  - text: FAQ
+              - listitem [ref=e274]:
+                - link "› Terms of Service" [ref=e275] [cursor=pointer]:
+                  - /url: /terms
+                  - generic [ref=e276]: ›
+                  - text: Terms of Service
+              - listitem [ref=e277]:
+                - link "› Privacy Policy" [ref=e278] [cursor=pointer]:
+                  - /url: /privacy
+                  - generic [ref=e279]: ›
+                  - text: Privacy Policy
+              - listitem [ref=e280]:
+                - link "› Refund Policy" [ref=e281] [cursor=pointer]:
+                  - /url: /refunds
+                  - generic [ref=e282]: ›
+                  - text: Refund Policy
+          - generic [ref=e283]:
+            - heading "Contact Us" [level=3] [ref=e284]: Contact Us
+            - list [ref=e286]:
+              - listitem [ref=e287]:
+                - img [ref=e288]
+                - generic [ref=e291]: 123 Gaming Street, Digital City, EG
+              - listitem [ref=e292]:
+                - img [ref=e293]
+                - generic [ref=e295]: +20 123 456 7890
+              - listitem [ref=e296]:
+                - img [ref=e297]
+                - generic [ref=e300]: support@diaaeldeen.com
+        - generic [ref=e301]:
+          - paragraph [ref=e302]: © 2025 Diaa Eldeen. All rights reserved.
+          - generic [ref=e303]:
+            - img "PayPal" [ref=e304]
+            - img "Mastercard" [ref=e305]
+            - img "Visa" [ref=e306]
+            - img "Vodafone Cash" [ref=e307]
+  - button [ref=e309] [cursor=pointer]:
+    - img [ref=e310]
+```

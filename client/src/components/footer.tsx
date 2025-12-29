@@ -1,6 +1,7 @@
 import { Link } from "wouter";
 import { Facebook, Youtube, Mail, Phone, MapPin } from "lucide-react";
 import { SiTelegram, SiTiktok } from "react-icons/si";
+import logo from "@assets/favicon_1766968131270.png";
 
 export function Footer() {
   return (
@@ -11,11 +12,11 @@ export function Footer() {
           <div className="space-y-4">
             <Link href="/">
               <div className="flex items-center space-x-2 cursor-pointer group">
-                <div className="w-10 h-10 rounded-lg bg-black flex items-center justify-center border border-gold-primary/20 group-hover:border-gold-primary/50 transition-colors">
+                <div className="w-10 h-10 rounded-lg bg-black flex items-center justify-center border border-gold-primary/20 group-hover:border-gold-primary/50 transition-colors overflow-hidden">
                   <img 
-                    src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Cdefs%3E%3ClinearGradient id='grad2' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' style='stop-color:%23ffd700;stop-opacity:1'/%3E%3Cstop offset='100%25' style='stop-color:%23ffed4e;stop-opacity:1'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='100' cy='100' r='95' fill='url(%23grad2)' stroke='%23000' stroke-width='2'/%3E%3Ctext x='50%25' y='55%25' font-family='Arial,sans-serif' font-size='55' font-weight='bold' fill='%23000' text-anchor='middle' dy='.35em'%3EDS%3C/text%3E%3Ccircle cx='100' cy='150' r='6' fill='%23000'/%3E%3C/svg%3E" 
+                    src={logo}
                     alt="Diaa Sadek Logo" 
-                    className="w-8 h-8 object-contain"
+                    className="w-full h-full object-cover"
                   />
                 </div>
                 <span className="text-xl font-bold bg-gradient-to-r from-gold-primary to-neon-pink bg-clip-text text-transparent">
@@ -128,10 +129,10 @@ export function Footer() {
         <div className="border-t border-border mt-12 pt-8 flex flex-col md:flex-row justify-between items-center text-sm text-muted-foreground">
           <p>© {new Date().getFullYear()} Diaa Eldeen. All rights reserved.</p>
           <div className="flex space-x-6 mt-4 md:mt-0">
-            <img src="https://upload.wikimedia.org/wikipedia/commons/b/b5/PayPal.svg" alt="PayPal" className="h-6 opacity-70 grayscale hover:grayscale-0 transition-all" />
-            <img src="https://upload.wikimedia.org/wikipedia/commons/2/2a/Mastercard-logo.svg" alt="Mastercard" className="h-6 opacity-70 grayscale hover:grayscale-0 transition-all" />
-            <img src="https://upload.wikimedia.org/wikipedia/commons/5/5e/Visa_Inc._logo.svg" alt="Visa" className="h-6 opacity-70 grayscale hover:grayscale-0 transition-all" />
-            <img src="https://upload.wikimedia.org/wikipedia/commons/f/fa/Vodafone_2017_logo.svg" alt="Vodafone Cash" className="h-6 opacity-70 grayscale hover:grayscale-0 transition-all" />
+            <img src="https://static-00.iconduck.com/assets.00/paypal-icon-2048x1214-8v796p0r.png" alt="PayPal" className="h-6 hover:scale-110 transition-all" />
+            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/2a/Mastercard-logo.svg/1280px-Mastercard-logo.svg.png" alt="Mastercard" className="h-6 hover:scale-110 transition-all" />
+            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Visa_Inc._logo.svg/2560px-Visa_Inc._logo.svg.png" alt="Visa" className="h-6 hover:scale-110 transition-all" />
+            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/f/fa/Vodafone_2017_logo.svg/1200px-Vodafone_2017_logo.svg.png" alt="Vodafone Cash" className="h-6 hover:scale-110 transition-all" />
           </div>
         </div>
       </div>

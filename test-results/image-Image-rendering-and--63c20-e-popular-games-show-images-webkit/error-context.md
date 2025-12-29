@@ -1,0 +1,295 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - region "Notifications (F8)":
+      - list
+    - banner [ref=e3]:
+      - generic [ref=e5]:
+        - link "Diaa Sadek Logo Diaa Sadek Premium Store" [ref=e6]:
+          - /url: /
+          - generic [ref=e7] [cursor=pointer]:
+            - generic [ref=e9]:
+              - img "Diaa Sadek Logo" [ref=e10]
+              - img [ref=e12]
+            - generic [ref=e16]:
+              - heading "Diaa Sadek" [level=1] [ref=e17]
+              - paragraph [ref=e18]: Premium Store
+        - generic [ref=e19]:
+          - navigation [ref=e20]:
+            - link "Home" [ref=e21]:
+              - /url: /
+              - generic [ref=e22] [cursor=pointer]: Home
+            - link "Categories" [ref=e23]:
+              - /url: /#categories
+              - generic [ref=e24] [cursor=pointer]: Categories
+            - link "Games" [ref=e25]:
+              - /url: /games
+              - generic [ref=e26] [cursor=pointer]: Games
+            - link "Support" [ref=e27]:
+              - /url: /support
+              - generic [ref=e28] [cursor=pointer]: Support
+            - button "Live Chat" [ref=e29] [cursor=pointer]: Live Chat
+          - generic [ref=e31]:
+            - button "Accessibility" [ref=e32] [cursor=pointer]:
+              - img
+              - generic [ref=e33]: Accessibility
+            - button "Switch language" [ref=e34] [cursor=pointer]:
+              - img
+              - generic [ref=e35]: Switch language
+            - button "Toggle Theme" [ref=e36] [cursor=pointer]:
+              - img
+            - button "Shopping Cart with 0 items" [ref=e37] [cursor=pointer]:
+              - img
+              - generic [ref=e38]: Cart
+    - generic [ref=e40]:
+      - generic [ref=e44]:
+        - heading "LEVEL UP YOUR GAME" [level=1] [ref=e45]
+        - paragraph [ref=e46]: Premium Currencies, Gift Cards & Instant Delivery
+        - generic [ref=e47]:
+          - button "Shop Now" [ref=e48] [cursor=pointer]
+          - button "View All Games" [ref=e49] [cursor=pointer]
+      - generic [ref=e53]:
+        - generic [ref=e54]:
+          - img [ref=e55]
+          - generic [ref=e57]:
+            - generic [ref=e58]:
+              - generic [ref=e59]: "5"
+              - text: days left until 2026
+            - paragraph [ref=e60]: Stay tuned for New Year offers and friend collaborations.
+        - generic [ref=e61]:
+          - button "Share with a friend" [ref=e62] [cursor=pointer]
+          - link "Invite now" [ref=e63]:
+            - /url: "#"
+      - generic [ref=e64]:
+        - generic [ref=e65]:
+          - img [ref=e67]
+          - heading "Most Popular Games" [level=2] [ref=e69]
+        - generic [ref=e70]:
+          - 'link "Popular 1 In Stock: 5" [ref=e72]':
+            - /url: /game/pop1
+            - generic [ref=e77] [cursor=pointer]:
+              - heading "Popular 1" [level=3] [ref=e78]
+              - generic [ref=e80]: "In Stock: 5"
+          - 'link "Popular 2 In Stock: 5" [ref=e82]':
+            - /url: /game/pop2
+            - generic [ref=e87] [cursor=pointer]:
+              - heading "Popular 2" [level=3] [ref=e88]
+              - generic [ref=e90]: "In Stock: 5"
+      - generic [ref=e92]:
+        - generic [ref=e93]:
+          - img [ref=e95]
+          - heading "Fast Delivery" [level=3] [ref=e97]
+          - paragraph [ref=e98]: Get your products quickly and reliably.
+        - generic [ref=e99]:
+          - img [ref=e101]
+          - heading "Online Support" [level=3] [ref=e103]
+          - paragraph [ref=e104]: 24 hours a day, 7 days a week.
+        - generic [ref=e105]:
+          - img [ref=e107]
+          - heading "Secure Payment" [level=3] [ref=e109]
+          - paragraph [ref=e110]: Pay with Multiple Payment Methods.
+        - generic [ref=e111]:
+          - img [ref=e113]
+          - heading "Best Prices" [level=3] [ref=e116]
+          - paragraph [ref=e117]: Discover unbeatable prices.
+      - generic [ref=e120]:
+        - generic [ref=e121]:
+          - heading "About Diaa Eldeen" [level=2] [ref=e122]
+          - paragraph [ref=e123]: Welcome to Diaa Eldeen - Your trusted gaming partner since day one. We specialize in providing premium digital gaming products with fast delivery and exceptional customer service.
+          - paragraph [ref=e124]: Our mission is to make gaming accessible and affordable for everyone. Whether you're looking for game currencies, gift cards, or digital vouchers, we've got you covered with the best prices and fastest delivery in the market.
+          - generic [ref=e125]:
+            - generic [ref=e126]:
+              - paragraph [ref=e127]: 1K+
+              - paragraph [ref=e128]: Happy Customers
+            - generic [ref=e129]:
+              - paragraph [ref=e130]: 5K+
+              - paragraph [ref=e131]: Orders Completed
+            - generic [ref=e132]:
+              - paragraph [ref=e133]: 24/7
+              - paragraph [ref=e134]: Customer Support
+        - generic [ref=e138]:
+          - img [ref=e139]
+          - paragraph [ref=e141]: Premium Gaming Experience
+      - generic [ref=e144]:
+        - generic [ref=e145]:
+          - heading "What Our Customers Say" [level=2] [ref=e146]
+          - paragraph [ref=e147]: Real testimonials from real gamers
+        - generic [ref=e148]:
+          - generic [ref=e149]:
+            - generic [ref=e150]:
+              - generic [ref=e151]: A
+              - generic [ref=e152]:
+                - paragraph [ref=e153]: Ahmed Hassan
+                - paragraph [ref=e154]: ⭐⭐⭐⭐⭐
+            - paragraph [ref=e155]: "\"Fast delivery and great prices! I got my game currency instantly. Highly recommended!\""
+          - generic [ref=e156]:
+            - generic [ref=e157]:
+              - generic [ref=e158]: M
+              - generic [ref=e159]:
+                - paragraph [ref=e160]: Mona Ali
+                - paragraph [ref=e161]: ⭐⭐⭐⭐⭐
+            - paragraph [ref=e162]: "\"Best gaming store ever! The support team is super helpful and responsive. 10/10\""
+          - generic [ref=e163]:
+            - generic [ref=e164]:
+              - generic [ref=e165]: K
+              - generic [ref=e166]:
+                - paragraph [ref=e167]: Karim Mohamed
+                - paragraph [ref=e168]: ⭐⭐⭐⭐⭐
+            - paragraph [ref=e169]: "\"Competitive prices and instant delivery. This is my go-to store for all gaming needs!\""
+      - generic [ref=e172]:
+        - heading "Payment Methods We Accept" [level=2] [ref=e173]
+        - paragraph [ref=e174]: Secure payments through multiple trusted providers
+        - generic [ref=e176]:
+          - generic [ref=e177]:
+            - img "Visa" [ref=e178]
+            - generic [ref=e179]: Visa
+          - generic [ref=e180]:
+            - img "Mastercard" [ref=e181]
+            - generic [ref=e182]: Mastercard
+          - generic [ref=e183]:
+            - img "Vodafone Cash" [ref=e184]
+            - generic [ref=e185]: Vodafone Cash
+          - generic [ref=e186]:
+            - img "Orange Money" [ref=e187]
+            - generic [ref=e188]: Orange Money
+          - generic [ref=e189]:
+            - img "Etisalat Cash" [ref=e190]
+            - generic [ref=e191]: Etisalat Cash
+          - generic [ref=e192]:
+            - img "InstaPay" [ref=e193]
+            - generic [ref=e194]: InstaPay
+          - generic [ref=e195]:
+            - img "CIB Bank" [ref=e196]
+            - generic [ref=e197]: CIB Bank
+          - generic [ref=e198]:
+            - img "WE Pay" [ref=e199]
+            - generic [ref=e200]: WE Pay
+          - generic [ref=e201]:
+            - img "Visa" [ref=e202]
+            - generic [ref=e203]: Visa
+          - generic [ref=e204]:
+            - img "Mastercard" [ref=e205]
+            - generic [ref=e206]: Mastercard
+          - generic [ref=e207]:
+            - img "Vodafone Cash" [ref=e208]
+            - generic [ref=e209]: Vodafone Cash
+          - generic [ref=e210]:
+            - img "Orange Money" [ref=e211]
+            - generic [ref=e212]: Orange Money
+          - generic [ref=e213]:
+            - img "Etisalat Cash" [ref=e214]
+            - generic [ref=e215]: Etisalat Cash
+          - generic [ref=e216]:
+            - img "InstaPay" [ref=e217]
+            - generic [ref=e218]: InstaPay
+          - generic [ref=e219]:
+            - img "CIB Bank" [ref=e220]
+            - generic [ref=e221]: CIB Bank
+          - generic [ref=e222]:
+            - img "WE Pay" [ref=e223]
+            - generic [ref=e224]: WE Pay
+      - contentinfo [ref=e225]:
+        - generic [ref=e226]:
+          - generic [ref=e227]:
+            - generic [ref=e228]:
+              - link "Diaa Sadek Logo Diaa Sadek" [ref=e229]:
+                - /url: /
+                - generic [ref=e230] [cursor=pointer]:
+                  - img "Diaa Sadek Logo" [ref=e232]
+                  - generic [ref=e233]: Diaa Sadek
+              - paragraph [ref=e234]: Your premium destination for gaming currencies, gift cards, and instant digital delivery. Level up your gaming experience today.
+              - generic [ref=e235]:
+                - link [ref=e236]:
+                  - /url: https://www.facebook.com/DiaElDeenSadek
+                  - img [ref=e237]
+                - link [ref=e239]:
+                  - /url: https://tiktok.com/@diaa_eldeen
+                  - img [ref=e240]
+                - link [ref=e242]:
+                  - /url: https://www.youtube.com/@bemora-site
+                  - img [ref=e243]
+                - link [ref=e246]:
+                  - /url: https://t.me/diaaeldeen
+                  - img [ref=e247]
+            - generic [ref=e249]:
+              - heading "Quick Links" [level=3] [ref=e250]: Quick Links
+              - list [ref=e252]:
+                - listitem [ref=e253]:
+                  - link "› Home" [ref=e254]:
+                    - /url: /
+                    - generic [ref=e255]: ›
+                    - text: Home
+                - listitem [ref=e256]:
+                  - link "› Browse Games" [ref=e257]:
+                    - /url: /games
+                    - generic [ref=e258]: ›
+                    - text: Browse Games
+                - listitem [ref=e259]:
+                  - link "› Support Center" [ref=e260]:
+                    - /url: /support
+                    - generic [ref=e261]: ›
+                    - text: Support Center
+                - listitem [ref=e262]:
+                  - link "› Track Order" [ref=e263]:
+                    - /url: /track-order
+                    - generic [ref=e264]: ›
+                    - text: Track Order
+            - generic [ref=e265]:
+              - heading "Support" [level=3] [ref=e266]: Support
+              - list [ref=e268]:
+                - listitem [ref=e269]:
+                  - link "› FAQ" [ref=e270]:
+                    - /url: /faq
+                    - generic [ref=e271]: ›
+                    - text: FAQ
+                - listitem [ref=e272]:
+                  - link "› Terms of Service" [ref=e273]:
+                    - /url: /terms
+                    - generic [ref=e274]: ›
+                    - text: Terms of Service
+                - listitem [ref=e275]:
+                  - link "› Privacy Policy" [ref=e276]:
+                    - /url: /privacy
+                    - generic [ref=e277]: ›
+                    - text: Privacy Policy
+                - listitem [ref=e278]:
+                  - link "› Refund Policy" [ref=e279]:
+                    - /url: /refunds
+                    - generic [ref=e280]: ›
+                    - text: Refund Policy
+            - generic [ref=e281]:
+              - heading "Contact Us" [level=3] [ref=e282]: Contact Us
+              - list [ref=e284]:
+                - listitem [ref=e285]:
+                  - img [ref=e286]
+                  - generic [ref=e289]: 123 Gaming Street, Digital City, EG
+                - listitem [ref=e290]:
+                  - img [ref=e291]
+                  - generic [ref=e293]: +20 123 456 7890
+                - listitem [ref=e294]:
+                  - img [ref=e295]
+                  - generic [ref=e298]: support@diaaeldeen.com
+          - generic [ref=e299]:
+            - paragraph [ref=e300]: © 2025 Diaa Eldeen. All rights reserved.
+            - generic [ref=e301]:
+              - img "PayPal" [ref=e302]
+              - img "Mastercard" [ref=e303]
+              - img "Visa" [ref=e304]
+              - img "Vodafone Cash" [ref=e305]
+    - button [ref=e307] [cursor=pointer]:
+      - img [ref=e308]
+  - generic [ref=e312]:
+    - generic [ref=e313]: URI malformed
+    - generic [ref=e314]: at decodeURI (<anonymous>) at viteTransformMiddleware (file:///D:/GameCart-1/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:62023:13) at call (file:///D:/GameCart-1/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:41364:7) at next (file:///D:/GameCart-1/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:41308:5) at viteServePublicMiddleware (file:///D:/GameCart-1/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:51663:14) at call (file:///D:/GameCart-1/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:41364:7) at next (file:///D:/GameCart-1/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:41308:5) at viteHMRPingMiddleware (file:///D:/GameCart-1/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:63353:7) at call (file:///D:/GameCart-1/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:41364:7) at next (file:///D:/GameCart-1/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:41308:5) at next (file:///D:/GameCart-1/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:41286:14) at viteProxyMiddleware (file:///D:/GameCart-1/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:61862:5) at call (file:///D:/GameCart-1/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:41364:7) at next (file:///D:/GameCart-1/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:41308:5) at viteCachedTransformMiddleware (file:///D:/GameCart-1/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:62010:5) at call (file:///D:/GameCart-1/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:41364:7) at next (file:///D:/GameCart-1/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:41308:5) at cors (file:///D:/GameCart-1/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:41836:7) at file:///D:/GameCart-1/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:41872:17 at originCallback (file:///D:/GameCart-1/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:41862:15) at file:///D:/GameCart-1/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:41867:13 at optionsCallback (file:///D:/GameCart-1/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:41847:9) at corsMiddleware (file:///D:/GameCart-1/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:41852:7) at call (file:///D:/GameCart-1/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:41364:7) at next (file:///D:/GameCart-1/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:41308:5) at viteRejectInvalidRequestMiddleware (file:///D:/GameCart-1/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:62991:12) at call (file:///D:/GameCart-1/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:41364:7) at next (file:///D:/GameCart-1/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:41308:5) at Function.handle (file:///D:/GameCart-1/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:41311:3) at Server.app (file:///D:/GameCart-1/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:41176:37
+    - generic [ref=e315]:
+      - text: Click outside, press Esc key, or fix the code to dismiss.
+      - text: You can also disable this overlay by setting
+      - code [ref=e316]: server.hmr.overlay
+      - text: to
+      - code [ref=e317]: "false"
+      - text: in
+      - code [ref=e318]: vite.config.ts
+      - text: .
+```

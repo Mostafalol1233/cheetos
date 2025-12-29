@@ -7,6 +7,7 @@ import { useCart } from "@/lib/cart-context";
 import { useTheme } from "@/components/theme-provider";
 import { useState, useEffect } from "react";
 import { useTranslation } from "@/lib/translation";
+import logo from "@assets/favicon_1766968131270.png";
 
 interface HeaderProps {
   onCartClick: () => void;
@@ -46,24 +47,14 @@ export function Header({ onCartClick }: HeaderProps) {
         <div className="flex items-center justify-between">
           {/* Logo */}
           <Link href="/">
-            <div className="flex items-center space-x-3 cursor-pointer group">
+            <div className="flex items-center space-x-3 cursor-pointer group text-nowrap">
               <div className="relative">
-                <div className="w-12 h-12 md:w-14 md:h-14 rounded-xl flex items-center justify-center overflow-hidden bg-black transition-transform transform group-hover:scale-110 duration-300 border border-gold-primary/40 shadow-[0_0_20px_rgba(52,152,219,0.3)]">
+                <div className="w-16 h-16 md:w-24 md:h-24 rounded-xl flex items-center justify-center overflow-hidden bg-black transition-transform transform group-hover:scale-105 duration-300 border border-gold-primary/40 shadow-[0_0_20px_rgba(52,152,219,0.3)]">
                   <img 
-                    src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Cdefs%3E%3ClinearGradient id='grad' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' style='stop-color:%23ffd700;stop-opacity:1'/%3E%3Cstop offset='100%25' style='stop-color:%23ffed4e;stop-opacity:1'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='100' cy='100' r='95' fill='url(%23grad)' stroke='%23000' stroke-width='3'/%3E%3Ctext x='50%25' y='55%25' font-family='Arial,sans-serif' font-size='65' font-weight='bold' fill='%23000' text-anchor='middle' dy='.35em'%3EDS%3C/text%3E%3Ccircle cx='100' cy='150' r='8' fill='%23000'/%3E%3C/svg%3E" 
+                    src={logo}
                     alt="Diaa Sadek Logo"
-                    className="w-10 h-10 md:w-12 md:h-12 object-contain"
+                    className="w-full h-full object-cover"
                   />
-                  {/* Christmas Hat Overlay */}
-                  <div className={`absolute -top-2 left-1/2 -translate-x-1/2 transition-opacity duration-300 ${theme === 'dark' ? 'opacity-100' : 'opacity-80'}`}>
-                    <svg width="24" height="20" viewBox="0 0 24 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      {/* Hat */}
-                      <path d="M12 0L14 6L18 4L16 8L20 8L15 10L20 12L12 10L4 12L9 10L4 8L8 8L6 4L10 6L12 0Z" fill={theme === 'dark' ? '#FFD700' : '#8B4513'} />
-                      <path d="M12 8L10 12L14 12L12 8Z" fill={theme === 'dark' ? '#FFA500' : '#654321'} />
-                      {/* Pom-pom */}
-                      <circle cx="12" cy="2" r="2" fill={theme === 'dark' ? '#FFFFFF' : '#FF0000'} />
-                    </svg>
-                  </div>
                 </div>
               </div>
               <div className="hidden sm:block">
