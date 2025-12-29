@@ -152,7 +152,8 @@ function coerceJsonArray(value) {
       const parsed = JSON.parse(s);
       return Array.isArray(parsed) ? parsed : [];
     } catch {
-      return [];
+      const parts = s.split(',').map(t => t.trim()).filter(Boolean);
+      return parts.length ? parts : [];
     }
   }
   // PostgreSQL JSONB returns objects directly - if it's an object, try to extract array-like structure
@@ -338,6 +339,22 @@ if (fs.existsSync(imagesDir)) {
   // Also serve from /media for compatibility, but prioritize images directory
   app.use('/media', express.static(imagesDir));
 }
+
+app.get('/manifest.webmanifest', (req, res) => {
+  const candidates = [
+    path.join(__dirname, '..', 'client', 'public', 'manifest.webmanifest'),
+    path.join(process.cwd(), 'client', 'public', 'manifest.webmanifest'),
+    path.join(__dirname, 'public', 'manifest.webmanifest')
+  ];
+  const file = candidates.find(p => {
+    try { return fs.existsSync(p); } catch { return false; }
+  });
+  if (!file) {
+    return res.status(404).json({ message: 'manifest not found' });
+  }
+  res.type('application/manifest+json');
+  res.sendFile(file);
+});
 
 // Serve favicon and logo files from images directory if they exist
 app.get('/favicon.ico', (req, res) => {
@@ -1154,24 +1171,43 @@ function normalizeGamePayload(body) {
 // Get all games
 app.get('/api/games', async (req, res) => {
   try {
-    const result = await pool.query(`
-      SELECT id, name, slug, description, price, currency, image, category, 
-             is_popular as "isPopular", stock, packages, package_prices as "packagePrices",
-             discount_price as "discountPrice", package_discount_prices as "packageDiscountPrices",
-             discount_prices as "discountPrices"
-      FROM games 
-      ORDER BY id DESC
-    `);
-    // Ensure packages and prices are arrays
-    const games = result.rows.map(game => ({
-      ...game,
-      image: normalizeImageUrl(game.image),
-      packages: coerceJsonArray(game.packages),
-      packagePrices: coerceJsonArray(game.packagePrices),
-      packageDiscountPrices: coerceJsonArray(game.packageDiscountPrices),
-      discountPrices: coerceJsonArray(game.discountPrices)
-    }));
-    res.json(games.map(g => ({ ...g, stock: 100 })));
+    try {
+      const result = await pool.query(`
+        SELECT id, name, slug, description, price, currency, image, category, 
+               is_popular as "isPopular", stock, packages, package_prices as "packagePrices",
+               discount_price as "discountPrice", package_discount_prices as "packageDiscountPrices",
+               discount_prices as "discountPrices"
+        FROM games 
+        ORDER BY id DESC
+      `);
+      const games = result.rows.map(game => ({
+        ...game,
+        image: normalizeImageUrl(game.image),
+        packages: coerceJsonArray(game.packages),
+        packagePrices: coerceJsonArray(game.packagePrices),
+        packageDiscountPrices: coerceJsonArray(game.packageDiscountPrices),
+        discountPrices: coerceJsonArray(game.discountPrices)
+      }));
+      return res.json(games.map(g => ({ ...g, stock: 100 })));
+    } catch {}
+    const gamesPath = path.join(__dirname, 'data', 'games.json');
+    if (fs.existsSync(gamesPath)) {
+      const data = fs.readFileSync(gamesPath, 'utf8');
+      const games = JSON.parse(data);
+      const normalized = Array.isArray(games)
+        ? games.map(g => ({
+            ...g,
+            image: normalizeImageUrl(g.image),
+            packages: coerceJsonArray(g.packages),
+            packagePrices: coerceJsonArray(g.packagePrices),
+            packageDiscountPrices: coerceJsonArray(g.packageDiscountPrices),
+            discountPrices: coerceJsonArray(g.discountPrices),
+            stock: 100
+          }))
+        : [];
+      return res.json(normalized);
+    }
+    res.json([]);
   } catch (err) {
     console.error('Error fetching games:', err);
     res.status(500).json({ message: err.message, error: 'Failed to fetch games' });
@@ -3546,6 +3582,37 @@ app.get('/api/admin/chat/sessions', authenticateToken, async (req, res) => {
   }
 });
 
+app.get('/api/admin/images/validate', authenticateToken, async (req, res) => {
+  try {
+    const games = await pool.query('SELECT id, name, image FROM games ORDER BY updated_at DESC LIMIT 500');
+    const categories = await pool.query('SELECT id, name, image FROM categories ORDER BY name ASC');
+    const items = [];
+    function canAccess(url) {
+      try {
+        const v = String(url || '').trim();
+        if (!v) return false;
+        if (/^https?:\/\//i.test(v)) return true;
+        if (v.startsWith('/images/')) {
+          const p = path.join(imagesDir, v.replace(/^\/images\//, ''));
+          return fs.existsSync(p);
+        }
+        return false;
+      } catch { return false; }
+    }
+    for (const g of games.rows) {
+      const url = normalizeImageUrl(g.image);
+      items.push({ id: g.id, type: 'game', name: g.name, url, ok: canAccess(url) });
+    }
+    for (const c of categories.rows) {
+      const url = normalizeImageUrl(c.image);
+      items.push({ id: c.id, type: 'category', name: c.name, url, ok: canAccess(url) });
+    }
+    res.json({ count: items.length, items });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 app.get('/api/admin/confirmations', authenticateToken, async (req, res) => {
   try {
     const result = await pool.query('SELECT id, transaction_id, message_encrypted, receipt_url, created_at FROM payment_confirmations ORDER BY created_at DESC LIMIT 200');
@@ -3557,6 +3624,32 @@ app.get('/api/admin/confirmations', authenticateToken, async (req, res) => {
       createdAt: new Date(r.created_at).getTime()
     }));
     res.json(items);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+const checkoutTemplatesFile = path.join(__dirname, '..', 'data', 'checkout-templates.json');
+app.get('/api/admin/checkout/templates', authenticateToken, async (req, res) => {
+  try {
+    const t = loadJson(checkoutTemplatesFile) || {
+      customerMessage: 'Thank you for your order #{id}! We are processing it.',
+      adminMessage: 'New Order #{id}\nTotal: {total} EGP\nCustomer: {name} ({phone})\nItems:\n{items}',
+    };
+    res.json(t);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+app.put('/api/admin/checkout/templates', authenticateToken, async (req, res) => {
+  try {
+    const { customerMessage, adminMessage } = req.body || {};
+    const t = {
+      customerMessage: String(customerMessage || '').slice(0, 500),
+      adminMessage: String(adminMessage || '').slice(0, 2000),
+    };
+    saveJson(checkoutTemplatesFile, t);
+    res.json(t);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -3703,6 +3796,44 @@ app.get('/api/admin/storage/health', authenticateToken, (req, res) => {
     res.json({ writable: true, path: uploadDir });
   } catch (err) {
     res.status(500).json({ writable: false, path: uploadDir, message: err.message });
+  }
+});
+
+app.get('/api/admin/transactions', authenticateToken, async (req, res) => {
+  try {
+    const tx = await pool.query(`
+      SELECT t.id, t.payment_method, t.total, t.status, t.created_at, u.name as customer_name, u.phone as customer_phone
+      FROM transactions t
+      LEFT JOIN users u ON t.user_id = u.id
+      ORDER BY t.created_at DESC
+      LIMIT 200
+    `);
+    const map = new Map();
+    for (const row of tx.rows) {
+      map.set(row.id, { 
+        id: row.id, 
+        paymentMethod: row.payment_method, 
+        total: Number(row.total), 
+        status: row.status, 
+        timestamp: new Date(row.created_at).getTime(), 
+        customerName: row.customer_name, 
+        customerPhone: row.customer_phone, 
+        items: [] 
+      });
+    }
+    const ids = Array.from(map.keys());
+    if (ids.length) {
+      const items = await pool.query('SELECT transaction_id, game_id, quantity, price FROM transaction_items WHERE transaction_id = ANY($1)', [ids]);
+      for (const it of items.rows) {
+        const entry = map.get(it.transaction_id);
+        if (entry) {
+          entry.items.push({ gameId: it.game_id, quantity: Number(it.quantity), price: Number(it.price) });
+        }
+      }
+    }
+    res.json(Array.from(map.values()));
+  } catch (err) {
+    res.status(500).json({ message: err.message });
   }
 });
 
