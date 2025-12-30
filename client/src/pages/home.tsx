@@ -187,14 +187,17 @@ export default function Home() {
 
             {/* Image */}
             <div className="rounded-2xl overflow-hidden bg-gradient-to-br from-neon-pink/20 via-purple-900/20 to-gold-primary/20 border border-gold-primary/30 p-4">
-              <div className="relative w-full h-64 md:h-96 bg-gradient-to-br from-gray-200 dark:from-gray-800 to-white dark:to-black rounded-xl flex items-center justify-center overflow-hidden group">
+              <div className="relative w-full h-[380px] md:h-[520px] bg-gradient-to-br from-gray-200 dark:from-gray-800 to-white dark:to-black rounded-xl flex items-center justify-center overflow-hidden group">
                 {/* Animated background */}
                 <div className="absolute inset-0 bg-gradient-to-r from-gold-primary/10 via-neon-pink/10 to-purple-600/10 animate-pulse"></div>
                 
                 {/* Main image or placeholder */}
-                <div className="relative z-10 flex flex-col items-center justify-center">
-                  <Gamepad2 className="w-16 h-16 text-gold-primary mb-4 animate-float" />
-                  <p className="text-gray-600 dark:text-gray-400 text-sm">Premium Gaming Experience</p>
+                <div className="relative z-10 flex flex-col items-center justify-center w-full h-full">
+                  <img 
+                    src="https://i.postimg.cc/TKzn201w/large-image-logo-1766968131283.png" 
+                    alt="Premium Gaming Experience"
+                    className="max-w-full max-h-full object-contain transition-transform duration-500 group-hover:scale-105"
+                  />
                 </div>
                 
                 {/* Decorative elements */}
@@ -223,7 +226,7 @@ export default function Home() {
                 <p className="text-sm text-gold-primary">⭐⭐⭐⭐⭐</p>
               </div>
             </div>
-            <p className="text-gray-700 dark:text-gray-300">"Fast delivery and great prices! I got my game currency instantly. Highly recommended!"</p>
+            <p className="text-gray-700 dark:text-gray-300">Fast delivery and great prices</p>
           </div>
 
           {/* Review 2 */}
@@ -231,11 +234,11 @@ export default function Home() {
             <div className="flex items-center mb-4">
               <div className="w-12 h-12 rounded-full bg-gradient-to-br from-gold-primary to-gold-secondary flex items-center justify-center text-white font-bold">M</div>
               <div className="ml-4">
-                <p className="font-bold text-gray-900 dark:text-white">Mona Ali</p>
+                <p className="font-bold text-gray-900 dark:text-white">Mohamed Ali</p>
                 <p className="text-sm text-gold-primary">⭐⭐⭐⭐⭐</p>
               </div>
             </div>
-            <p className="text-gray-700 dark:text-gray-300">"Best gaming store ever! The support team is super helpful and responsive. 10/10"</p>
+            <p className="text-gray-700 dark:text-gray-300">"Best gaming store 10/10"</p>
           </div>
 
           {/* Review 3 */}
@@ -247,7 +250,7 @@ export default function Home() {
                 <p className="text-sm text-gold-primary">⭐⭐⭐⭐⭐</p>
               </div>
             </div>
-            <p className="text-gray-700 dark:text-gray-300">"Competitive prices and instant delivery. This is my go-to store for all gaming needs!"</p>
+            <p className="text-gray-700 dark:text-gray-300">"Competitive prices and instant delivery. This is my go-to store for all gaming needs</p>
           </div>
         </div>
       </section>

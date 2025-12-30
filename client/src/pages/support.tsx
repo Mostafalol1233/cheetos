@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { useEffect, useState } from "react";
 
 export default function SupportPage() {
-  const [contactInfo, setContactInfo] = useState<{ instapay: string | null; cash_numbers: string[]; paypal: string | null } | null>(null);
+  const [contactInfo, setContactInfo] = useState<{ instapay: string | null; cash_numbers: string[]; paypal: string | null; etisalat_cash: string | null } | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -21,6 +21,7 @@ export default function SupportPage() {
           instapay: data?.instapay ?? null,
           cash_numbers: Array.isArray(data?.cash_numbers) ? data.cash_numbers : [],
           paypal: data?.paypal ?? null,
+          etisalat_cash: data?.etisalat_cash ?? null,
         });
       } catch {}
     })();

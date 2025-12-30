@@ -68,7 +68,7 @@ export function DynamicLoadingProgress({
 
     return () => {
       clearInterval(progressTimer);
-      clearTimeout(phaseTimer);
+      clearInterval(phaseTimer);
     };
   }, [isLoading, currentPhase, onComplete]);
 
