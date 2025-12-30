@@ -19,6 +19,7 @@ interface Game {
   name: string;
   slug?: string;
   price: string;
+  discountPrice?: string | number | null;
   stock: number;
   category: string;
   image: string;
@@ -419,6 +420,128 @@ export default function AdminDashboard() {
 
   const sessionChats = sessionMessages;
 
+  function DiscountsPanelLocal({ games, onSaved }: { games: Game[]; onSaved: () => void }) {
+    const { toast } = useToast();
+    const [gameId, setGameId] = useState<string>(games[0]?.id || '');
+    const [mode, setMode] = useState<'percentage' | 'amount'>('percentage');
+    const [percentage, setPercentage] = useState<string>('10');
+    const [amount, setAmount] = useState<string>('0');
+    const [saving, setSaving] = useState(false);
+    const selectedGame = games.find(g => g.id === gameId);
+    const basePrice = selectedGame ? Number(selectedGame.price) || 0 : 0;
+    const pct = Number(percentage);
+    const amt = Number(amount);
+    const isPctValid = mode === 'percentage' ? pct >= 0 && pct <= 100 : true;
+    const isAmtValid = mode === 'amount' ? amt >= 0 && amt <= basePrice : true;
+    const effectiveDiscount = mode === 'percentage' ? (basePrice * (pct / 100)) : amt;
+    const finalPrice = Math.max(0, basePrice - effectiveDiscount);
+    const saveMutation = useMutation({
+      mutationFn: async () => {
+        const token = localStorage.getItem('adminToken');
+        const res = await fetch(`/api/admin/games/${gameId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+          body: JSON.stringify({ id: gameId, discountPrice: finalPrice })
+        });
+        return await res.json();
+      },
+      onSuccess: (resp) => {
+        setSaving(false);
+        if (resp?.id) {
+          toast({ title: 'Saved', description: 'Discount updated', duration: 1200 });
+          onSaved();
+        } else {
+          toast({ title: 'Error', description: resp?.message || 'Failed to save', duration: 1800 });
+        }
+      },
+      onError: (err: any) => {
+        setSaving(false);
+        toast({ title: 'Error', description: err?.message || 'Failed to save', duration: 1800 });
+      }
+    });
+    useEffect(() => {
+      if (!gameId && games.length) setGameId(games[0]?.id);
+    }, [games, gameId]);
+    const reset = () => {
+      setMode('percentage');
+      setPercentage('10');
+      setAmount('0');
+    };
+    const save = () => {
+      if (!gameId || !selectedGame) {
+        toast({ title: 'Error', description: 'Select a game', duration: 1500 });
+        return;
+      }
+      if (!isPctValid || !isAmtValid) {
+        toast({ title: 'Invalid values', description: 'Fix validation errors', duration: 1500 });
+        return;
+      }
+      setSaving(true);
+      saveMutation.mutate();
+    };
+    return (
+      <div className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <Label>Game</Label>
+            <Select value={gameId} onValueChange={setGameId}>
+              <SelectTrigger><SelectValue placeholder="Select game" /></SelectTrigger>
+              <SelectContent>
+                {games.map(g => <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label>Mode</Label>
+            <Select value={mode} onValueChange={(v) => setMode(v as any)}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="percentage">Percentage</SelectItem>
+                <SelectItem value="amount">Amount</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label>Base Price</Label>
+            <Input value={basePrice ? `${basePrice} EGP` : '-'} readOnly />
+          </div>
+        </div>
+        {mode === 'percentage' ? (
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label className="text-right">Percentage</Label>
+            <Input
+              type="number"
+              value={percentage}
+              onChange={(e) => setPercentage(e.target.value)}
+              className="col-span-3"
+            />
+          </div>
+        ) : (
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label className="text-right">Amount</Label>
+            <Input
+              type="number"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              className="col-span-3"
+            />
+          </div>
+        )}
+        <div className="text-xs text-muted-foreground">
+          {!isPctValid ? 'Percentage must be between 0 and 100. ' : ''}
+          {!isAmtValid ? 'Amount must be ≤ base price. ' : ''}
+        </div>
+        <div className="grid grid-cols-4 items-center gap-4">
+          <Label className="text-right">Final Price</Label>
+          <Input value={`${finalPrice.toFixed(2)} EGP`} readOnly className="col-span-3" />
+        </div>
+        <div className="flex gap-2">
+          <Button onClick={save} disabled={saving || !isPctValid || !isAmtValid} className="bg-gold-primary">Save</Button>
+          <Button variant="outline" onClick={reset}>Cancel</Button>
+        </div>
+      </div>
+    );
+  }
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, target: 'logo' | 'large') => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -550,6 +673,7 @@ export default function AdminDashboard() {
           <ScrollArea className="w-full whitespace-nowrap rounded-md border">
         <TabsList className="flex w-full justify-start p-0 h-auto bg-transparent overflow-x-auto whitespace-nowrap">
           <TabsTrigger value="games" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Games & Products</TabsTrigger>
+          <TabsTrigger value="discounts" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Discounts</TabsTrigger>
           <TabsTrigger value="users" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Users</TabsTrigger>
           <TabsTrigger value="packages" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Packages</TabsTrigger>
           <TabsTrigger value="categories" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Categories</TabsTrigger>
@@ -670,6 +794,18 @@ export default function AdminDashboard() {
                 )}
               </div>
             </div>
+          </TabsContent>
+          
+          {/* Discounts Tab */}
+          <TabsContent value="discounts" className="space-y-6">
+            <Card className="bg-card/50 border-gold-primary/30">
+              <CardHeader>
+                <CardTitle className="text-lg">Discount Management</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <DiscountsPanelLocal games={allGames} onSaved={() => queryClient.invalidateQueries({ queryKey: ['/api/games'] })} />
+              </CardContent>
+            </Card>
           </TabsContent>
 
           {/* Users Tab */}
@@ -1936,9 +2072,131 @@ function LogoManagementPanel() {
       }
     } catch (err) {
       alert('Upload failed');
-    }
   }
+}
 
+function DiscountsPanel({ games, onSaved }: { games: Game[]; onSaved: () => void }) {
+  const { toast } = useToast();
+  const [gameId, setGameId] = useState<string>(games[0]?.id || '');
+  const [mode, setMode] = useState<'percentage' | 'amount'>('percentage');
+  const [percentage, setPercentage] = useState<string>('10');
+  const [amount, setAmount] = useState<string>('0');
+  const [saving, setSaving] = useState(false);
+  const selectedGame = games.find(g => g.id === gameId);
+  const basePrice = selectedGame ? Number(selectedGame.price) || 0 : 0;
+  const pct = Number(percentage);
+  const amt = Number(amount);
+  const isPctValid = mode === 'percentage' ? pct >= 0 && pct <= 100 : true;
+  const isAmtValid = mode === 'amount' ? amt >= 0 && amt <= basePrice : true;
+  const effectiveDiscount = mode === 'percentage' ? (basePrice * (pct / 100)) : amt;
+  const finalPrice = Math.max(0, basePrice - effectiveDiscount);
+  const updateGameMutation = useMutation({
+    mutationFn: async () => {
+      const token = localStorage.getItem('adminToken');
+      const res = await fetch(`/api/admin/games/${gameId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: JSON.stringify({ id: gameId, discountPrice: finalPrice })
+      });
+      return await res.json();
+    },
+    onSuccess: (resp) => {
+      setSaving(false);
+      if (resp?.id) {
+        toast({ title: 'Saved', description: 'Discount updated', duration: 1200 });
+        onSaved();
+      } else {
+        toast({ title: 'Error', description: resp?.message || 'Failed to save', duration: 1800 });
+      }
+    },
+    onError: (err: any) => {
+      setSaving(false);
+      toast({ title: 'Error', description: err?.message || 'Failed to save', duration: 1800 });
+    }
+  });
+  useEffect(() => {
+    if (!gameId && games.length) setGameId(games[0]?.id);
+  }, [games, gameId]);
+  const reset = () => {
+    setMode('percentage');
+    setPercentage('10');
+    setAmount('0');
+  };
+  const save = () => {
+    if (!gameId || !selectedGame) {
+      toast({ title: 'Error', description: 'Select a game', duration: 1500 });
+      return;
+    }
+    if (!isPctValid || !isAmtValid) {
+      toast({ title: 'Invalid values', description: 'Fix validation errors', duration: 1500 });
+      return;
+    }
+    setSaving(true);
+    updateGameMutation.mutate();
+  };
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div>
+          <Label>Game</Label>
+          <Select value={gameId} onValueChange={setGameId}>
+            <SelectTrigger><SelectValue placeholder="Select game" /></SelectTrigger>
+            <SelectContent>
+              {games.map(g => <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+        <div>
+          <Label>Mode</Label>
+          <Select value={mode} onValueChange={(v) => setMode(v as any)}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="percentage">Percentage</SelectItem>
+              <SelectItem value="amount">Amount</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div>
+          <Label>Base Price</Label>
+          <Input value={basePrice ? `${basePrice} EGP` : '-'} readOnly />
+        </div>
+      </div>
+      {mode === 'percentage' ? (
+        <div className="grid grid-cols-4 items-center gap-4">
+          <Label className="text-right">Percentage</Label>
+          <Input
+            type="number"
+            value={percentage}
+            onChange={(e) => setPercentage(e.target.value)}
+            className="col-span-3"
+          />
+        </div>
+      ) : (
+        <div className="grid grid-cols-4 items-center gap-4">
+          <Label className="text-right">Amount</Label>
+          <Input
+            type="number"
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+            className="col-span-3"
+          />
+        </div>
+      )}
+      <div className="text-xs text-muted-foreground">
+        {!isPctValid ? 'Percentage must be between 0 and 100. ' : ''}
+        {!isAmtValid ? 'Amount must be ≤ base price. ' : ''}
+      </div>
+      <div className="grid grid-cols-4 items-center gap-4">
+        <Label className="text-right">Final Price</Label>
+        <Input value={`${finalPrice.toFixed(2)} EGP`} readOnly className="col-span-3" />
+      </div>
+      <div className="flex gap-2">
+        <Button onClick={save} disabled={saving || !isPctValid || !isAmtValid} className="bg-gold-primary">Save</Button>
+        <Button variant="outline" onClick={reset}>Cancel</Button>
+      </div>
+    </div>
+  );
+}
   // (moved) CheckoutTemplatesPanel is defined below LogoManagementPanel
 
   return (

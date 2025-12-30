@@ -5,6 +5,7 @@ export default function ImageWithFallback({ src, alt, className, width, height, 
   const [current, setCurrent] = useState<string>(src);
   const [errorCount, setErrorCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
+  const placeholderSrc = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="800" height="450" viewBox="0 0 800 450"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="%23111827"/><stop offset="1" stop-color="%230f172a"/></linearGradient></defs><rect width="800" height="450" fill="url(%23g)"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="%2364748b" font-size="28" font-family="sans-serif">Image unavailable</text></svg>';
 
   useEffect(() => {
     setCurrent(src);
@@ -39,8 +40,14 @@ export default function ImageWithFallback({ src, alt, className, width, height, 
   };
 
   const onError = () => {
+    const nextErrorCount = errorCount + 1;
+    setErrorCount(nextErrorCount);
+    if (current !== placeholderSrc) {
+      setIsLoading(true);
+      setCurrent(placeholderSrc);
+      return;
+    }
     setIsLoading(false);
-    setErrorCount(errorCount + 1);
   };
   
   const onLoad: React.ReactEventHandler<HTMLImageElement> = (e) => {
