@@ -23,10 +23,7 @@ export function ProductPackCard({
   highlight,
   onClick,
 }: ProductPackCardProps) {
-  const hasDiscount =
-    originalPrice != null &&
-    originalPrice !== "" &&
-    Number(originalPrice) > Number(finalPrice || 0);
+  const showStrike = originalPrice != null && originalPrice !== "";
 
   return (
     <button
@@ -75,8 +72,8 @@ export function ProductPackCard({
 
         <div className="mt-1 flex items-end justify-between gap-2">
           <div className="flex flex-col">
-            {hasDiscount && (
-              <span className="text-xs font-medium text-muted-foreground line-through">
+            {showStrike && (
+              <span className="text-xs font-medium text-red-600 line-through">
                 {originalPrice} {currency}
               </span>
             )}

@@ -1,8 +1,8 @@
 import http from 'http';
 
-const BASE = process.env.BASE_URL || 'http://localhost:5000';
+const BASE = process.env.BASE_URL || 'http://localhost:3001';
 
-function get(path: string): Promise<{ status: number; ok: boolean; body: string }> {
+function get(path) {
   return new Promise((resolve) => {
     try {
       const req = http.request(`${BASE}${path}`, { method: 'GET' }, (res) => {
@@ -42,4 +42,3 @@ async function run() {
 }
 
 run();
-

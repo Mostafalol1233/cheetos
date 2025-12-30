@@ -196,7 +196,7 @@ export default function Home() {
                   <img 
                     src="https://i.postimg.cc/TKzn201w/large-image-logo-1766968131283.png" 
                     alt="Premium Gaming Experience"
-                    className="max-w-full max-h-full object-contain transition-transform duration-500 group-hover:scale-105"
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                   />
                 </div>
                 

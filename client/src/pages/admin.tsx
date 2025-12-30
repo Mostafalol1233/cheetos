@@ -419,16 +419,12 @@ export default function AdminDashboard() {
 
   const sessionChats = sessionMessages;
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, target: 'logo' | 'large') => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     const formData = new FormData();
     formData.append('file', file);
-    if (editingGame?.id) {
-      formData.append('type', 'game');
-      formData.append('id', editingGame.id);
-    }
 
     try {
       const token = localStorage.getItem('adminToken');
@@ -439,7 +435,11 @@ export default function AdminDashboard() {
       });
       const data = await res.json();
       if (data.url && editingGame) {
-        setEditingGame({ ...editingGame, image: data.url });
+        if (target === 'logo') {
+          setEditingGame({ ...editingGame, image: data.url });
+        } else {
+          setEditingGame({ ...editingGame, image_url: data.url } as any);
+        }
       } else if (data.url) {
         alert('Image uploaded: ' + data.url);
       }
@@ -1270,11 +1270,29 @@ export default function AdminDashboard() {
                 />
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
-                <Label className="text-right">Upload</Label>
+                <Label className="text-right">Upload Logo</Label>
                 <Input 
                   type="file" 
                   accept="image/*"
-                  onChange={handleImageUpload}
+                  onChange={(ev) => handleImageUpload(ev, 'logo')}
+                  className="col-span-3"
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="image_url" className="text-right">Large Image URL</Label>
+                <Input
+                  id="image_url"
+                  value={(editingGame as any).image_url || ''}
+                  onChange={(e) => setEditingGame({ ...editingGame, image_url: e.target.value } as any)}
+                  className="col-span-3"
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label className="text-right">Upload Large Image</Label>
+                <Input 
+                  type="file" 
+                  accept="image/*"
+                  onChange={(ev) => handleImageUpload(ev, 'large')}
                   className="col-span-3"
                 />
               </div>
@@ -1282,6 +1300,13 @@ export default function AdminDashboard() {
                 <div className="grid grid-cols-4 items-center gap-4">
                   <div className="col-start-2 col-span-3">
                     <img src={editingGame.image} alt="Preview" className="h-32 object-contain rounded-md border" />
+                  </div>
+                </div>
+              )}
+              {(editingGame as any).image_url && (
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <div className="col-start-2 col-span-3">
+                    <img src={(editingGame as any).image_url} alt="Large Preview" className="h-32 object-contain rounded-md border" />
                   </div>
                 </div>
               )}

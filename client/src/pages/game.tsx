@@ -120,13 +120,13 @@ export default function GamePage() {
         {/* Game Image - Large Square Box at Top */}
         <div className="relative w-full">
           <div className="aspect-square overflow-hidden rounded-3xl shadow-2xl border border-gold-primary/20">
-            <ImageWithFallback src={game.image} alt={game.name} className="w-full h-full object-cover" />
-            {game.isPopular && (
-              <div className="absolute top-6 right-6 bg-gradient-to-r from-gold-primary to-neon-pink text-white px-4 py-2 rounded-full text-sm font-bold flex items-center shadow-lg">
-                <Star className="w-5 h-5 mr-2" />
-                {t('popular')}
-              </div>
-            )}
+            <ImageWithFallback src={(game as any).image_url || game.image} alt={game.name} className="w-full h-full object-cover" />
+          {game.isPopular && (
+            <div className="absolute top-6 right-6 bg-gradient-to-r from-gold-primary to-neon-pink text-white px-4 py-2 rounded-full text-sm font-bold flex items-center shadow-lg">
+              <Star className="w-5 h-5 mr-2" />
+              {t('popular')}
+            </div>
+          )}
           </div>
         </div>
 
@@ -179,18 +179,21 @@ export default function GamePage() {
             </div>
 
             <ProductPackGrid
-              packs={packages.map((pkg, index) => ({
-                id: String(index),
-                name: String(pkg),
-                originalPrice: undefined,
-                finalPrice: packagePrices[index] || game.price,
-                currency: game.currency,
-                image:
-                  (Array.isArray((game as any).packageThumbnails) &&
-                    (game as any).packageThumbnails[index]) ||
-                  game.image,
-                highlight: index === selectedPackage,
-              }))}
+              packs={packages.map((pkg, index) => {
+                const base = Number(packagePrices[index] || game.price || 0);
+                return {
+                  id: String(index),
+                  name: String(pkg),
+                  originalPrice: base,
+                  finalPrice: base + 100,
+                  currency: game.currency,
+                  image:
+                    (Array.isArray((game as any).packageThumbnails) &&
+                      (game as any).packageThumbnails[index]) ||
+                    game.image,
+                  highlight: index === selectedPackage,
+                };
+              })}
               onSelectPack={(id) => setSelectedPackage(Number(id))}
             />
           </div>
@@ -204,8 +207,13 @@ export default function GamePage() {
                 <h3 className="mb-2 text-xl font-bold text-foreground sm:text-2xl">
                   {packages[selectedPackage] || t("default_package")}
                 </h3>
-                <div className="bg-gradient-to-r from-gold-primary to-neon-pink bg-clip-text text-3xl font-black text-transparent sm:text-5xl">
-                  {packagePrices[selectedPackage] || game.price} {game.currency}
+                <div className="flex items-center gap-3">
+                  <span className="line-through text-red-600 text-xl sm:text-2xl">
+                    {packagePrices[selectedPackage] || game.price} {game.currency}
+                  </span>
+                  <span className="bg-gradient-to-r from-gold-primary to-neon-pink bg-clip-text text-3xl font-black text-transparent sm:text-5xl">
+                    {Number(packagePrices[selectedPackage] || game.price || 0) + 100} {game.currency}
+                  </span>
                 </div>
               </div>
               <div className="rounded-xl bg-muted/40 px-4 py-3 text-xs text-muted-foreground">
@@ -240,14 +248,12 @@ export default function GamePage() {
               <div className="font-semibold text-foreground">
                 {packages[selectedPackage] || t("default_package")} · 
                 {(() => {
-                    const discountPrices = (game as any).discountPrices || [];
-                    const original = discountPrices[selectedPackage];
-                    const current = packagePrices[selectedPackage] || game.price;
-                    const hasDiscount = original && parseFloat(String(original)) > parseFloat(String(current));
-                    return hasDiscount ? (
-                      <> <span className="line-through text-muted-foreground text-[10px]">{original}</span> {current}</>
-                    ) : (
-                      ` ${current}`
+                    const current = Number(packagePrices[selectedPackage] || game.price || 0);
+                    const computed = current + 100;
+                    return (
+                      <>
+                        <span className="line-through text-red-600 text-[10px]">{current}</span> {computed}
+                      </>
                     );
                 })()}
                  {game.currency}

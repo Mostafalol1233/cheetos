@@ -168,6 +168,60 @@ function coerceJsonArray(value) {
   return [];
 }
 
+function readGamesFile() {
+  try {
+    const gamesPath = path.join(__dirname, 'data', 'games.json');
+    if (!fs.existsSync(gamesPath)) return [];
+    const data = fs.readFileSync(gamesPath, 'utf8');
+    const games = JSON.parse(data);
+    return Array.isArray(games) ? games : [];
+  } catch { return []; }
+}
+
+function writeGamesFile(games) {
+  try {
+    const gamesPath = path.join(__dirname, 'data', 'games.json');
+    fs.writeFileSync(gamesPath, JSON.stringify(Array.isArray(games) ? games : [], null, 2), 'utf8');
+    return true;
+  } catch { return false; }
+}
+
+async function seedGamesFromJsonIfEmpty() {
+  try {
+    const countRes = await pool.query('SELECT COUNT(*)::int AS c FROM games');
+    const c = countRes.rows?.[0]?.c || 0;
+    if (c > 0) return;
+    const items = readGamesFile();
+    if (!Array.isArray(items) || items.length === 0) return;
+    for (const g of items) {
+      try {
+        const id = String(g.id || `game_${Date.now()}_${Math.random().toString(36).slice(2,9)}`);
+        const name = String(g.name || '').trim();
+        const slug = String(g.slug || name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''));
+        const description = String(g.description || '');
+        const price = Number(g.price || 0);
+        const currency = String(g.currency || 'EGP');
+        const image = normalizeImageUrl(g.image || '/media/placeholder.jpg');
+        const category = String(g.category || 'other');
+        const is_popular = Boolean(g.isPopular || g.is_popular || false);
+        const stock = Number(g.stock || 100);
+        const discount_price = g.discountPrice != null ? Number(g.discountPrice) : null;
+        const packages = coerceJsonArray(g.packages);
+        const package_prices = coerceJsonArray(g.packagePrices).map(n => Number(n) || 0);
+        const package_discount_prices = coerceJsonArray(g.packageDiscountPrices).map(v => (v == null ? null : Number(v)));
+        await pool.query(
+          `INSERT INTO games (id, name, slug, description, price, currency, image, category, is_popular, stock, discount_price, packages, package_prices, package_discount_prices)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
+           ON CONFLICT (id) DO NOTHING`,
+          [id, name, slug, description, price, currency, image, category, is_popular, stock, discount_price, packages, package_prices, package_discount_prices]
+        );
+      } catch {}
+    }
+    console.log(`✓ Seeded ${items.length} games from JSON`);
+  } catch (err) {
+    console.error('Seed from JSON error:', err.message);
+  }
+}
 // PostgreSQL Connection Pool - Imported from db.js
 
 // In-memory QR sessions
@@ -436,7 +490,20 @@ app.get('/images/:filename', (req, res) => {
   if (fs.existsSync(imagePath)) {
     return res.sendFile(imagePath);
   }
-  res.status(404).json({ message: 'Image not found' });
+  res.set('Cache-Control', 'public, max-age=60');
+  res.type('image/svg+xml');
+  res.status(200).send(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="800" height="450" viewBox="0 0 800 450">
+      <defs>
+        <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#111827"/>
+          <stop offset="1" stop-color="#0f172a"/>
+        </linearGradient>
+      </defs>
+      <rect width="800" height="450" fill="url(#g)"/>
+      <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="#64748b" font-size="28" font-family="sans-serif">Image unavailable</text>
+    </svg>`
+  );
 });
 
 // ===============================================
@@ -1141,8 +1208,22 @@ app.delete('/api/admin/game-cards/:id', authenticateToken, async (req, res) => {
 // ===================== HOT DEALS =====================
 app.get('/api/games/hot-deals', async (req, res) => {
   try {
-    const rows = await pool.query('SELECT id, name, slug, image, price, currency FROM games WHERE hot_deal = true ORDER BY updated_at DESC');
-    res.json(rows.rows.map(g => ({ ...g, image: normalizeImageUrl(g.image) })));
+    try {
+      const rows = await pool.query('SELECT id, name, slug, image, price, currency FROM games WHERE hot_deal = true ORDER BY updated_at DESC');
+      return res.json(rows.rows.map(g => ({ ...g, image: normalizeImageUrl(g.image) })));
+    } catch {}
+    const gamesPath = path.join(__dirname, 'data', 'games.json');
+    if (fs.existsSync(gamesPath)) {
+      const data = fs.readFileSync(gamesPath, 'utf8');
+      const games = JSON.parse(data);
+      const filtered = Array.isArray(games)
+        ? games
+            .filter(g => g.hot_deal === true)
+            .map(g => ({ ...g, image: normalizeImageUrl(g.image) }))
+        : [];
+      return res.json(filtered);
+    }
+    res.json([]);
   } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
@@ -1328,24 +1409,43 @@ app.get('/api/games/category/:category', async (req, res) => {
 app.get('/api/games/id/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const result = await pool.query(`
-      SELECT id, name, slug, description, price, currency, image, category, 
-             is_popular as "isPopular", stock, packages, package_prices as "packagePrices",
-             discount_price as "discountPrice", package_discount_prices as "packageDiscountPrices",
-             discount_prices as "discountPrices"
-      FROM games 
-      WHERE id = $1
-    `, [id]);
-    if (result.rows.length === 0) {
-      return res.status(404).json({ message: 'Game not found' });
+    try {
+      const result = await pool.query(`
+        SELECT id, name, slug, description, price, currency, image, category, 
+               is_popular as "isPopular", stock, packages, package_prices as "packagePrices",
+               discount_price as "discountPrice", package_discount_prices as "packageDiscountPrices",
+               discount_prices as "discountPrices"
+        FROM games 
+        WHERE id = $1
+      `, [id]);
+      if (result.rows.length === 0) {
+        return res.status(404).json({ message: 'Game not found' });
+      }
+      const game = result.rows[0];
+      game.image = normalizeImageUrl(game.image);
+      game.packages = coerceJsonArray(game.packages);
+      game.packagePrices = coerceJsonArray(game.packagePrices);
+      game.packageDiscountPrices = coerceJsonArray(game.packageDiscountPrices);
+      game.discountPrices = coerceJsonArray(game.discountPrices);
+      return res.json(game);
+    } catch {}
+    const gamesPath = path.join(__dirname, 'data', 'games.json');
+    if (fs.existsSync(gamesPath)) {
+      const data = fs.readFileSync(gamesPath, 'utf8');
+      const games = JSON.parse(data);
+      const found = Array.isArray(games) ? games.find(g => String(g.id) === String(id)) : null;
+      if (!found) return res.status(404).json({ message: 'Game not found' });
+      const game = {
+        ...found,
+        image: normalizeImageUrl(found.image),
+        packages: coerceJsonArray(found.packages),
+        packagePrices: coerceJsonArray(found.packagePrices),
+        packageDiscountPrices: coerceJsonArray(found.packageDiscountPrices),
+        discountPrices: coerceJsonArray(found.discountPrices)
+      };
+      return res.json(game);
     }
-    const game = result.rows[0];
-    game.image = normalizeImageUrl(game.image);
-    game.packages = coerceJsonArray(game.packages);
-    game.packagePrices = coerceJsonArray(game.packagePrices);
-    game.packageDiscountPrices = coerceJsonArray(game.packageDiscountPrices);
-    game.discountPrices = coerceJsonArray(game.discountPrices);
-    res.json(game);
+    res.status(404).json({ message: 'Game not found' });
   } catch (err) {
     console.error('Error fetching game by ID:', err);
     res.status(500).json({ message: err.message });
@@ -1358,28 +1458,50 @@ app.get('/api/games/slug/:slug', async (req, res) => {
     const { slug } = req.params;
     const normalizedSlug = String(slug || '').trim();
     const compactSlug = normalizedSlug.replace(/-/g, '').toLowerCase();
-    const result = await pool.query(`
-      SELECT id, name, slug, description, price, currency, image, category, 
-             is_popular as "isPopular", stock, packages, package_prices as "packagePrices",
-             discount_price as "discountPrice", package_discount_prices as "packageDiscountPrices"
-      FROM games 
-      WHERE slug = $1
-         OR LOWER(REPLACE(slug, '-', '')) = $2
-      LIMIT 1
-    `, [normalizedSlug, compactSlug]);
-    
-    if (result.rows.length === 0) {
-      return res.status(404).json({ message: 'Game not found' });
+    try {
+      const result = await pool.query(`
+        SELECT id, name, slug, description, price, currency, image, category, 
+               is_popular as "isPopular", stock, packages, package_prices as "packagePrices",
+               discount_price as "discountPrice", package_discount_prices as "packageDiscountPrices"
+        FROM games 
+        WHERE slug = $1
+           OR LOWER(REPLACE(slug, '-', '')) = $2
+        LIMIT 1
+      `, [normalizedSlug, compactSlug]);
+      
+      if (result.rows.length === 0) {
+        return res.status(404).json({ message: 'Game not found' });
+      }
+  
+      const game = result.rows[0];
+      game.image = normalizeImageUrl(game.image);
+      game.packages = coerceJsonArray(game.packages);
+      game.packagePrices = coerceJsonArray(game.packagePrices);
+      game.packageDiscountPrices = coerceJsonArray(game.packageDiscountPrices);
+      return res.json(game);
+    } catch {}
+    // Fallback to local JSON
+    const gamesPath = path.join(__dirname, 'data', 'games.json');
+    if (fs.existsSync(gamesPath)) {
+      const data = fs.readFileSync(gamesPath, 'utf8');
+      const games = JSON.parse(data);
+      const found = Array.isArray(games)
+        ? games.find(g => {
+            const s = String(g.slug || '').trim();
+            return s === normalizedSlug || s.replace(/-/g, '').toLowerCase() === compactSlug;
+          })
+        : null;
+      if (!found) return res.status(404).json({ message: 'Game not found' });
+      const game = {
+        ...found,
+        image: normalizeImageUrl(found.image),
+        packages: coerceJsonArray(found.packages),
+        packagePrices: coerceJsonArray(found.packagePrices),
+        packageDiscountPrices: coerceJsonArray(found.packageDiscountPrices)
+      };
+      return res.json(game);
     }
-
-    const game = result.rows[0];
-    // Ensure packages are arrays
-    game.image = normalizeImageUrl(game.image);
-    game.packages = coerceJsonArray(game.packages);
-    game.packagePrices = coerceJsonArray(game.packagePrices);
-    game.packageDiscountPrices = coerceJsonArray(game.packageDiscountPrices);
-    
-    res.json(game);
+    res.status(404).json({ message: 'Game not found' });
   } catch (err) {
     console.error('Error fetching game by slug:', err);
     res.status(500).json({ message: err.message });
@@ -1478,17 +1600,38 @@ app.post('/api/admin/games', authenticateToken, imageUpload.single('image'), asy
       return res.status(400).json({ message: 'Game name is required' });
     }
 
-    const result = await pool.query(
-      `INSERT INTO games (id, name, slug, description, price, currency, image, category, is_popular, stock, discount_price, packages, package_prices, package_discount_prices) 
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) 
-       RETURNING id, name, slug, description, price, currency, image, category, is_popular as "isPopular", stock, 
-                 discount_price as "discountPrice", packages, package_prices as "packagePrices", 
-                 package_discount_prices as "packageDiscountPrices"`,
-      [id, name.trim(), finalSlug, safeDescription, Number(price) || 0, currency || 'EGP', image || '/media/placeholder.jpg', category || 'other', isPop, Number(stock) || 100, 
-       discountPrice ? Number(discountPrice) : null, packagesArr, packagePricesArr, packageDiscountPricesArr]
-    );
-
-    res.status(201).json(result.rows[0]);
+    try {
+      const result = await pool.query(
+        `INSERT INTO games (id, name, slug, description, price, currency, image, category, is_popular, stock, discount_price, packages, package_prices, package_discount_prices) 
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) 
+         RETURNING id, name, slug, description, price, currency, image, category, is_popular as "isPopular", stock, 
+                   discount_price as "discountPrice", packages, package_prices as "packagePrices", 
+                   package_discount_prices as "packageDiscountPrices"`,
+        [id, name.trim(), finalSlug, safeDescription, Number(price) || 0, currency || 'EGP', image || '/media/placeholder.jpg', category || 'other', isPop, Number(stock) || 100, 
+         discountPrice ? Number(discountPrice) : null, packagesArr, packagePricesArr, packageDiscountPricesArr]
+      );
+      return res.status(201).json(result.rows[0]);
+    } catch {}
+    const existingGames = readGamesFile();
+    const jsonGame = {
+      id,
+      name: name.trim(),
+      slug: finalSlug,
+      description: safeDescription,
+      price: String(Number(price) || 0),
+      currency: currency || 'EGP',
+      image: normalizeImageUrl(image || '/media/placeholder.jpg'),
+      category: category || 'other',
+      isPopular: isPop,
+      stock: Number(stock) || 100,
+      discountPrice: discountPrice ? String(Number(discountPrice)) : null,
+      packages: packagesArr,
+      packagePrices: (packagePricesArr || []).map(n => String(Number(n) || 0)),
+      packageDiscountPrices: (packageDiscountPricesArr || []).map(v => v == null ? null : String(Number(v)))
+    };
+    existingGames.unshift(jsonGame);
+    writeGamesFile(existingGames);
+    res.status(201).json(jsonGame);
   } catch (err) {
     console.error('Error creating game:', err);
     res.status(500).json({ message: err.message });
@@ -1552,6 +1695,7 @@ app.put('/api/admin/games/:id', authenticateToken, imageUpload.single('image'), 
     if (price !== undefined && price !== null) { updates.push(`price = $${paramIndex++}`); values.push(Number(price) || 0); }
     if (currency !== undefined && currency !== null) { updates.push(`currency = $${paramIndex++}`); values.push(currency); }
     if (image !== undefined && image !== null) { updates.push(`image = $${paramIndex++}`); values.push(image); }
+    if (req.body.image_url !== undefined && req.body.image_url !== null) { updates.push(`image_url = $${paramIndex++}`); values.push(normalizeImageUrl(req.body.image_url)); }
     if (category !== undefined && category !== null) { updates.push(`category = $${paramIndex++}`); values.push(category); }
     if (isPopular !== undefined && isPopular !== null) { updates.push(`is_popular = $${paramIndex++}`); values.push(isPop); }
     if (stock !== undefined && stock !== null) { updates.push(`stock = $${paramIndex++}`); values.push(Number(stock) || 0); }
@@ -1585,18 +1729,39 @@ app.put('/api/admin/games/:id', authenticateToken, imageUpload.single('image'), 
                 package_discount_prices as "packageDiscountPrices"
     `;
 
-    const result = await pool.query(query, values);
-
-    if (result.rows.length === 0) {
-      return res.status(404).json({ message: 'Game not found' });
-    }
-
-    const row = result.rows[0];
-    row.image = normalizeImageUrl(row.image);
-    row.packages = coerceJsonArray(row.packages);
-    row.packagePrices = coerceJsonArray(row.packagePrices);
-    row.packageDiscountPrices = coerceJsonArray(row.packageDiscountPrices);
-    res.json(row);
+    try {
+      const result = await pool.query(query, values);
+      if (result.rows.length === 0) {
+        return res.status(404).json({ message: 'Game not found' });
+      }
+      const row = result.rows[0];
+      row.image = normalizeImageUrl(row.image);
+      row.packages = coerceJsonArray(row.packages);
+      row.packagePrices = coerceJsonArray(row.packagePrices);
+      row.packageDiscountPrices = coerceJsonArray(row.packageDiscountPrices);
+      return res.json(row);
+    } catch {}
+    const jsonGames = readGamesFile();
+    const idx = jsonGames.findIndex(g => String(g.id) === String(gameId));
+    if (idx === -1) return res.status(404).json({ message: 'Game not found' });
+    const current = jsonGames[idx];
+    const updated = { ...current };
+    if (name !== undefined && name !== null) updated.name = String(name).trim();
+    if (slug !== undefined && slug !== null) updated.slug = String(slug);
+    if (description !== undefined) updated.description = (description !== null) ? String(description).trim() : '';
+    if (price !== undefined && price !== null) updated.price = String(Number(price) || 0);
+    if (currency !== undefined && currency !== null) updated.currency = String(currency);
+    if (image !== undefined && image !== null) updated.image = normalizeImageUrl(image);
+    if (category !== undefined && category !== null) updated.category = String(category);
+    if (isPopular !== undefined && isPopular !== null) updated.isPopular = isPop;
+    if (stock !== undefined && stock !== null) updated.stock = Number(stock) || 0;
+    if (discountPrice !== undefined) updated.discountPrice = discountPrice ? String(Number(discountPrice)) : null;
+    if (packagesArr !== undefined) updated.packages = packagesArr;
+    if (packagePricesArr !== undefined) updated.packagePrices = (packagePricesArr || []).map(n => String(Number(n) || 0));
+    if (packageDiscountPricesArr !== undefined) updated.packageDiscountPrices = (packageDiscountPricesArr || []).map(v => v == null ? null : String(Number(v)));
+    jsonGames[idx] = updated;
+    writeGamesFile(jsonGames);
+    res.json(updated);
   } catch (err) {
     console.error('Error updating game:', err);
     res.status(500).json({ message: err.message });
@@ -1617,18 +1782,62 @@ app.delete('/api/admin/games/:id', authenticateToken, async (req, res) => {
     }
     const gameId = lookup.rows[0].id;
     
-    const result = await pool.query('DELETE FROM games WHERE id = $1 RETURNING *', [gameId]);
-
-    if (result.rows.length === 0) {
+    try {
+      const result = await pool.query('DELETE FROM games WHERE id = $1 RETURNING *', [gameId]);
+      if (result.rows.length === 0) {
+        return res.status(404).json({ message: 'Game not found' });
+      }
+      return res.json({ ok: true });
+    } catch {}
+    const jsonGames2 = readGamesFile();
+    const filtered = jsonGames2.filter(g => String(g.id) !== String(gameId));
+    if (filtered.length === jsonGames2.length) {
       return res.status(404).json({ message: 'Game not found' });
     }
-
-    res.json({ message: 'Game deleted' });
+    writeGamesFile(filtered);
+    res.json({ ok: true });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 });
 
+app.post('/api/admin/games/wipe', authenticateToken, async (req, res) => {
+  try {
+    try {
+      await pool.query('DELETE FROM game_cards');
+    } catch {}
+    try {
+      await pool.query('DELETE FROM games');
+    } catch {}
+    writeGamesFile([]);
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+app.post('/api/admin/images/upload-cloudinary', authenticateToken, imageUpload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ message: 'file required' });
+    const localPath = req.file.path;
+    let url = null;
+    if (CLOUDINARY_ENABLED) {
+      try {
+        const result = await cloudinary.uploader.upload(localPath, { folder: process.env.CLOUDINARY_FOLDER || 'gamecart/games', resource_type: 'image' });
+        url = result.secure_url;
+      } catch (err) {
+        url = null;
+      }
+    }
+    if (!url) {
+      url = normalizeImageUrl(`/uploads/${req.file.filename}`);
+    }
+    try { fs.unlinkSync(localPath); } catch {}
+    res.json({ ok: true, url });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
 // ===============================================
 // CATEGORIES ENDPOINTS
 // ===============================================
@@ -3999,6 +4208,7 @@ const startServer = async () => {
     if (isConnected) {
       try {
         if (typeof initializeDatabase === 'function') await initializeDatabase();
+        await seedGamesFromJsonIfEmpty();
         if (ENABLE_IMAGE_SEEDING && typeof seedProductImages === 'function') await seedProductImages();
       } catch (dbErr) {
         console.error('⚠️ Database initialization warning:', dbErr.message);
