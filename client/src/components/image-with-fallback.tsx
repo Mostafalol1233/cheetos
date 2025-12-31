@@ -32,8 +32,8 @@ export default function ImageWithFallback({ src, alt, className, width, height, 
       return imgSrc;
     }
     
-    // Otherwise, try to find it in attached_assets
-    return `/attached_assets/${imgSrc}`;
+    // Fallback to relative path from root
+    return `/${imgSrc}`;
   };
 
   const isSupportedFormat = (imgSrc: string): boolean => {
