@@ -24,8 +24,7 @@ export default function ImageWithFallback({ src, alt, className, width, height, 
     
     // If it starts with /, it's a relative path - ensure it's served correctly
     if (imgSrc.startsWith('/')) {
-      const base = API_BASE_URL || '';
-      return base ? `${base}${imgSrc}` : imgSrc;
+      return imgSrc;
     }
     
     // If it's a Cloudinary URL without protocol, add https
