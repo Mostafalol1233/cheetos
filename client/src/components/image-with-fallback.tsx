@@ -22,17 +22,17 @@ export default function ImageWithFallback({ src, alt, className, width, height, 
       return imgSrc;
     }
     
-    // If it starts with /attached_assets/, serve it directly
+    // If it starts with /attached_assets/, serve it directly from the public folder
     if (imgSrc.startsWith('/attached_assets/')) {
       return imgSrc;
     }
     
-    // If it starts with /, it's a relative path
+    // If it starts with /, it's a relative path from the root
     if (imgSrc.startsWith('/')) {
       return imgSrc;
     }
     
-    // Fallback to relative path from root
+    // Otherwise, treat as a relative path from the root
     return `/${imgSrc}`;
   };
 
