@@ -194,7 +194,7 @@ export default function Home() {
                 {/* Main image or placeholder */}
                 <div className="relative z-10 flex flex-col items-center justify-center w-full h-full">
                   <img 
-                    src="https://i.postimg.cc/TKzn201w/large-image-logo-1766968131283.png" 
+                    src="/attached_assets/large-image-logo_1766968131283.png" 
                     alt="Premium Gaming Experience"
                     className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                   />
