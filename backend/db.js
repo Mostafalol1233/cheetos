@@ -13,9 +13,8 @@ function buildPoolConfig() {
   const useObject = Boolean(overrideHost);
 
   // Determine if SSL should be used based on connection string
-  // For local/Replit Postgres, usually SSL is not strictly required or might fail if not configured correctly
-  // However, Neon specifically requires it or handles it via SNI
-  const useSSL = (connStr.includes('sslmode=require') || connStr.includes('neon.tech')) && !connStr.includes('sslmode=disable');
+  // Fixed: Replit internal postgres (helium) DOES NOT support SSL.
+  const useSSL = false;
   
   if (useObject && connStr) {
     try {
@@ -38,7 +37,7 @@ function buildPoolConfig() {
 
   return {
     connectionString: connStr,
-    ssl: useSSL ? { rejectUnauthorized: false } : false,
+    ssl: false,
     connectionTimeoutMillis: 10000,
     idleTimeoutMillis: 30000,
     max: 20,
@@ -47,6 +46,14 @@ function buildPoolConfig() {
 
 const poolConfig = buildPoolConfig();
 let pool = new Pool(poolConfig);
+
+// Re-override pool for internal Replit DB to ensure SSL is disabled
+if (process.env.DATABASE_URL && (process.env.DATABASE_URL.includes('helium') || process.env.DATABASE_URL.includes('172.31'))) {
+  pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: false
+  });
+}
 
 export const setHostOverride = (ip) => {
   if (!ip) return pool;
@@ -59,7 +66,7 @@ export const setHostOverride = (ip) => {
       user: decodeURIComponent(u.username || process.env.PGUSER || ''),
       password: decodeURIComponent(u.password || process.env.PGPASSWORD || ''),
       database: (u.pathname || '').replace('/', '') || process.env.PGDATABASE || 'postgres',
-      ssl: { rejectUnauthorized: false },
+      ssl: false,
       connectionTimeoutMillis: 10000,
       idleTimeoutMillis: 30000,
       max: 20,
