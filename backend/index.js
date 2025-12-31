@@ -142,23 +142,20 @@ function coerceJsonArray(value) {
   if (typeof value === 'string') {
     const s = value.trim();
     if (!s) return [];
-    // Handle the case where string is "[object Object]" - this means it was incorrectly stringified
     if (s === '[object Object]') return [];
     try {
       const parsed = JSON.parse(s);
-      return Array.isArray(parsed) ? parsed : [];
+      return Array.isArray(parsed) ? parsed : [s];
     } catch {
+      // Split by comma but be careful with JSON-like strings
       const parts = s.split(',').map(t => t.trim()).filter(Boolean);
-      return parts.length ? parts : [];
+      return parts.length ? parts : [s];
     }
   }
-  // PostgreSQL JSONB returns objects directly - if it's an object, try to extract array-like structure
   if (typeof value === 'object') {
-    // If it's already an array-like object (has numeric keys), convert it
     if (value.constructor === Object && Object.keys(value).every(k => !isNaN(Number(k)))) {
       return Object.values(value);
     }
-    // If it's a JSONB object that should be an array, return empty array
     return [];
   }
   return [];
@@ -182,13 +179,17 @@ function writeGamesFile(games) {
   } catch { return false; }
 }
 
-async function seedGamesFromJsonIfEmpty() {
+async function seedGamesFromJsonIfEmpty(force = false) {
   try {
-    const countRes = await pool.query('SELECT COUNT(*)::int AS c FROM games');
-    const c = countRes.rows?.[0]?.c || 0;
-    if (c > 0) return;
+    if (!force) {
+      const countRes = await pool.query('SELECT COUNT(*)::int AS c FROM games');
+      const c = countRes.rows?.[0]?.c || 0;
+      if (c > 0) return;
+    }
+    
     const items = readGamesFile();
     if (!Array.isArray(items) || items.length === 0) return;
+    
     for (const g of items) {
       try {
         const id = String(g.id || `game_${Date.now()}_${Math.random().toString(36).slice(2,9)}`);
@@ -197,7 +198,7 @@ async function seedGamesFromJsonIfEmpty() {
         const description = String(g.description || '');
         const price = Number(g.price || 0);
         const currency = String(g.currency || 'EGP');
-        const image = normalizeImageUrl(g.image || '/media/placeholder.jpg');
+        const image = g.image || '/media/placeholder.jpg';
         const category = String(g.category || 'other');
         const is_popular = Boolean(g.isPopular || g.is_popular || false);
         const stock = Number(g.stock || 100);
@@ -205,17 +206,65 @@ async function seedGamesFromJsonIfEmpty() {
         const packages = coerceJsonArray(g.packages);
         const package_prices = coerceJsonArray(g.packagePrices).map(n => Number(n) || 0);
         const package_discount_prices = coerceJsonArray(g.packageDiscountPrices).map(v => (v == null ? null : Number(v)));
+        
         await pool.query(
           `INSERT INTO games (id, name, slug, description, price, currency, image, category, is_popular, stock, discount_price, packages, package_prices, package_discount_prices)
            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
-           ON CONFLICT (id) DO NOTHING`,
+           ON CONFLICT (id) DO UPDATE SET
+             name = EXCLUDED.name,
+             slug = EXCLUDED.slug,
+             description = EXCLUDED.description,
+             price = EXCLUDED.price,
+             currency = EXCLUDED.currency,
+             image = EXCLUDED.image,
+             category = EXCLUDED.category,
+             is_popular = EXCLUDED.is_popular,
+             stock = EXCLUDED.stock,
+             discount_price = EXCLUDED.discount_price,
+             packages = EXCLUDED.packages,
+             package_prices = EXCLUDED.package_prices,
+             package_discount_prices = EXCLUDED.package_discount_prices`,
           [id, name, slug, description, price, currency, image, category, is_popular, stock, discount_price, packages, package_prices, package_discount_prices]
         );
-      } catch {}
+      } catch (err) {
+        console.error(`Failed to seed game ${g.name}:`, err.message);
+      }
     }
-    console.log(`✓ Seeded ${items.length} games from JSON`);
+    console.log(`✓ Seeded/Updated ${items.length} games from JSON`);
   } catch (err) {
     console.error('Seed from JSON error:', err.message);
+  }
+}
+
+async function seedCategoriesFromJsonIfEmpty(force = false) {
+  try {
+    if (!force) {
+      const countRes = await pool.query('SELECT COUNT(*)::int AS c FROM categories');
+      const c = countRes.rows?.[0]?.c || 0;
+      if (c > 0) return;
+    }
+    
+    const categoriesPath = path.join(__dirname, 'data', 'categories.json');
+    if (!fs.existsSync(categoriesPath)) return;
+    const items = JSON.parse(fs.readFileSync(categoriesPath, 'utf8'));
+    
+    for (const c of items) {
+      await pool.query(
+        `INSERT INTO categories (id, name, slug, description, image, gradient, icon)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)
+         ON CONFLICT (id) DO UPDATE SET
+           name = EXCLUDED.name,
+           slug = EXCLUDED.slug,
+           description = EXCLUDED.description,
+           image = EXCLUDED.image,
+           gradient = EXCLUDED.gradient,
+           icon = EXCLUDED.icon`,
+        [c.id, c.name, c.slug, c.description, c.image, c.gradient, c.icon]
+      );
+    }
+    console.log(`✓ Seeded/Updated ${items.length} categories from JSON`);
+  } catch (err) {
+    console.error('Category seed error:', err.message);
   }
 }
 // PostgreSQL Connection Pool - Imported from db.js
@@ -4203,15 +4252,34 @@ const startServer = async () => {
     try { await preferIPv4(); } catch {}
     const isConnected = await checkConnection(3, 2000);
     
-    if (isConnected) {
-      try {
-        if (typeof initializeDatabase === 'function') await initializeDatabase();
-        await seedGamesFromJsonIfEmpty();
-        if (ENABLE_IMAGE_SEEDING && typeof seedProductImages === 'function') await seedProductImages();
-      } catch (dbErr) {
-        console.error('⚠️ Database initialization warning:', dbErr.message);
-      }
-    } else {
+        if (isConnected) {
+          try {
+            if (typeof initializeDatabase === 'function') await initializeDatabase();
+            await seedGamesFromJsonIfEmpty(true);
+            await seedCategoriesFromJsonIfEmpty(true);
+            
+            // Force re-sync external links specifically to ensure they persist
+            const items = readGamesFile();
+            for (const g of items) {
+              if (g.image && /^https?:\/\//i.test(g.image)) {
+                await pool.query('UPDATE games SET image = $1 WHERE id = $2', [g.image, g.id]);
+              }
+            }
+            const catPath = path.join(__dirname, 'data', 'categories.json');
+            if (fs.existsSync(catPath)) {
+              const cats = JSON.parse(fs.readFileSync(catPath, 'utf8'));
+              for (const c of cats) {
+                if (c.image && /^https?:\/\//i.test(c.image)) {
+                   await pool.query('UPDATE categories SET image = $1 WHERE id = $2', [c.image, c.id]);
+                }
+              }
+            }
+
+            if (ENABLE_IMAGE_SEEDING && typeof seedProductImages === 'function') await seedProductImages();
+          } catch (dbErr) {
+            console.error('⚠️ Database initialization warning:', dbErr.message);
+          }
+        } else {
       console.error('❌ Database connection failed. API endpoints requiring DB will fail.');
       console.log('⚠️ Server starting in partial functionality mode.');
     }
