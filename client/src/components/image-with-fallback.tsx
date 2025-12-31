@@ -15,25 +15,25 @@ export default function ImageWithFallback({ src, alt, className, width, height, 
   }, [src]);
 
   const normalizeImageSrc = (imgSrc: string): string => {
-    if (!imgSrc) return '';
+    if (!imgSrc) return placeholderSrc;
     
     // If it's already a full URL (http/https), return as is
     if (/^https?:\/\//i.test(imgSrc)) {
       return imgSrc;
     }
     
-    // If it starts with /, it's a relative path - ensure it's served correctly
+    // If it starts with /attached_assets/, serve it directly
+    if (imgSrc.startsWith('/attached_assets/')) {
+      return imgSrc;
+    }
+    
+    // If it starts with /, it's a relative path
     if (imgSrc.startsWith('/')) {
       return imgSrc;
     }
     
-    // If it's a Cloudinary URL without protocol, add https
-    if (imgSrc.includes('cloudinary.com') && !imgSrc.startsWith('http')) {
-      return `https://${imgSrc}`;
-    }
-    
-    // Otherwise, treat as relative path
-    return `/${imgSrc}`;
+    // Otherwise, try to find it in attached_assets
+    return `/attached_assets/${imgSrc}`;
   };
 
   const isSupportedFormat = (imgSrc: string): boolean => {
