@@ -519,7 +519,9 @@ app.get('/api/categories', async (req, res) => {
       if (result?.rows?.length) {
         return res.json(result.rows.map((c) => ({ ...c, image: normalizeImageUrl(c.image) })));
       }
-    } catch {}
+    } catch (err) {
+      console.error('DB Category fetch error:', err);
+    }
 
     const categoriesPath = path.join(__dirname, 'data', 'categories.json');
     if (fs.existsSync(categoriesPath)) {
