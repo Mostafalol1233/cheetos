@@ -109,10 +109,6 @@ function normalizeImageUrl(raw) {
 
   // Keep external URLs
   if (/^https?:\/\//i.test(v)) {
-    if (isCatboxUrl(v)) return v;
-    // Fix old broken absolute uploads URLs missing backend port
-    const m = v.match(/\/uploads\/(.+)$/i);
-    if (m) return `/uploads/${m[1]}`;
     return v;
   }
 
