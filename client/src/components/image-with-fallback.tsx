@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { API_BASE_URL } from "@/lib/queryClient";
 
 export default function ImageWithFallback({ src, alt, className, width, height, sizes }: { src: string; alt: string; className?: string; width?: number; height?: number; sizes?: string }) {
   const [current, setCurrent] = useState<string>(src);
@@ -23,7 +24,8 @@ export default function ImageWithFallback({ src, alt, className, width, height, 
     
     // If it starts with /, it's a relative path - ensure it's served correctly
     if (imgSrc.startsWith('/')) {
-      return imgSrc;
+      const base = API_BASE_URL || '';
+      return base ? `${base}${imgSrc}` : imgSrc;
     }
     
     // If it's a Cloudinary URL without protocol, add https
