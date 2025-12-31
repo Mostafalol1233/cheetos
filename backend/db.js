@@ -13,7 +13,9 @@ function buildPoolConfig() {
   const useObject = Boolean(overrideHost);
 
   // Determine if SSL should be used based on connection string
-  const useSSL = connStr.includes('sslmode=require') || connStr.includes('neon.tech');
+  // For local/Replit Postgres, usually SSL is not strictly required or might fail if not configured correctly
+  // However, Neon specifically requires it or handles it via SNI
+  const useSSL = (connStr.includes('sslmode=require') || connStr.includes('neon.tech')) && !connStr.includes('sslmode=disable');
   
   if (useObject && connStr) {
     try {
