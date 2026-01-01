@@ -179,6 +179,11 @@ export default function GamesPage() {
                                 <span className="text-xs text-gray-400 line-through">${mainPrice.toFixed(2)}</span>
                                 <span className="text-cyan-400 font-bold text-lg">${discountPrice.toFixed(2)}</span>
                              </div>
+                           ) : discountPrice && discountPrice > 0 && discountPrice > mainPrice ? (
+                             <div className="flex flex-col">
+                                <span className="text-xs text-gray-400 line-through">${discountPrice.toFixed(2)}</span>
+                                <span className="text-cyan-400 font-bold text-lg">${mainPrice.toFixed(2)}</span>
+                             </div>
                            ) : (
                               <span className="text-cyan-400 font-bold text-lg">${mainPrice.toFixed(2)}</span>
                            )}

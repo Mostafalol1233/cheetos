@@ -16,6 +16,7 @@ export default function GameDetails() {
   const [selectedPackage, setSelectedPackage] = useState<string>("");
   const [selectedPrice, setSelectedPrice] = useState<number>(0);
   const [addingToCart, setAddingToCart] = useState(false);
+  const [amount, setAmount] = useState(1);
 
   const { data: game, isLoading } = useQuery({
     queryKey: ["/api/games", params?.slug],
@@ -35,8 +36,9 @@ export default function GameDetails() {
     addToCart({
       id: `${game.id}-${selectedPackage}`,
       name: `${game.name} - ${selectedPackage}`,
-      price: selectedPrice,
-      image: game.image
+      price: selectedPrice * amount,
+      image: game.image,
+      quantity: amount
     });
 
     toast({
@@ -168,6 +170,26 @@ export default function GameDetails() {
                 <span className="bg-green-500/20 text-green-400 px-2 py-1 rounded-full text-xs font-medium">
                   ✓ In Stock
                 </span>
+              </div>
+
+              {/* Amount Selection */}
+              <div className="flex items-center gap-4 mb-4">
+                <span className="font-semibold">Amount:</span>
+                <div className="flex items-center border rounded-lg">
+                  <button 
+                    onClick={() => setAmount(Math.max(1, amount - 1))}
+                    className="px-3 py-1 hover:bg-muted transition-colors border-r"
+                  >
+                    -
+                  </button>
+                  <span className="px-4 py-1 font-bold">{amount}</span>
+                  <button 
+                    onClick={() => setAmount(amount + 1)}
+                    className="px-3 py-1 hover:bg-muted transition-colors border-l"
+                  >
+                    +
+                  </button>
+                </div>
               </div>
               
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">

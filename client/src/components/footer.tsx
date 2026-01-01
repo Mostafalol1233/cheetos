@@ -1,7 +1,8 @@
 import { Link } from "wouter";
 import { Facebook, Youtube, Mail, Phone, MapPin } from "lucide-react";
 import { SiTelegram, SiTiktok } from "react-icons/si";
-import logo from "@assets/favicon_1766968131270.png";
+
+const logo = "https://files.catbox.moe/brmkrj.png";
 
 export function Footer() {
   return (
