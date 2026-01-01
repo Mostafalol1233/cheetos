@@ -187,13 +187,18 @@ function writeGamesFile(games) {
 }
 
 async function seedGamesFromJsonIfEmpty() {
+  console.log('🔄 seedGamesFromJsonIfEmpty starting...');
   try {
     const countRes = await pool.query('SELECT COUNT(*)::int AS c FROM games');
     const c = countRes.rows?.[0]?.c || 0;
+    console.log(`ℹ️  Current game count: ${c}`);
     if (c > 0) return;
+    console.log('ℹ️  Seeding games from JSON...');
     const items = readGamesFile();
+    console.log(`ℹ️  Found ${items.length} items to seed`);
     if (!Array.isArray(items) || items.length === 0) return;
     for (const g of items) {
+      console.log(`   Seeding ${g.name}...`);
       try {
         const id = String(g.id || `game_${Date.now()}_${Math.random().toString(36).slice(2,9)}`);
         const name = String(g.name || '').trim();
@@ -660,7 +665,10 @@ async function initializeDatabase() {
     // Additional fields requested
     await pool.query(`ALTER TABLE games ADD COLUMN IF NOT EXISTS category_id VARCHAR(50)`);
     await pool.query(`ALTER TABLE games ADD COLUMN IF NOT EXISTS stock_amount INTEGER DEFAULT 0`);
+    await pool.query(`ALTER TABLE games ADD COLUMN IF NOT EXISTS is_popular BOOLEAN DEFAULT false`);
     await pool.query(`ALTER TABLE games ADD COLUMN IF NOT EXISTS image_url TEXT`);
+    await pool.query(`ALTER TABLE games ADD COLUMN IF NOT EXISTS packages JSONB DEFAULT '[]'`);
+    await pool.query(`ALTER TABLE games ADD COLUMN IF NOT EXISTS package_prices JSONB DEFAULT '[]'`);
     await pool.query(`ALTER TABLE games ADD COLUMN IF NOT EXISTS discount_price DECIMAL(10, 2)`);
     await pool.query(`ALTER TABLE games ADD COLUMN IF NOT EXISTS package_discount_prices JSONB DEFAULT '[]'`);
     
@@ -938,6 +946,83 @@ async function initializeDatabase() {
   }
 }
 
+async function runImageAssetsSeeding() {
+  console.log('🔄 runImageAssetsSeeding starting...');
+  const client = await pool.connect();
+  console.log('🔄 runImageAssetsSeeding connected to DB');
+  const runId = `seed_${Date.now()}_${Math.random().toString(36).slice(2,9)}`;
+  const startedAt = new Date();
+  let gamesUpdated = 0;
+  let categoriesUpdated = 0;
+  let errors = 0;
+  try {
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS seeding_runs (
+        id VARCHAR(60) PRIMARY KEY,
+        started_at TIMESTAMP,
+        finished_at TIMESTAMP,
+        success BOOLEAN,
+        games_updated INTEGER,
+        categories_updated INTEGER,
+        errors INTEGER,
+        summary TEXT
+      )
+    `);
+    await client.query('BEGIN');
+    const gamesRes = await client.query('SELECT id, image FROM games');
+    for (const row of gamesRes.rows || []) {
+      const current = normalizeImageUrl(row.image);
+      if (current !== row.image) {
+        try {
+          await client.query('UPDATE games SET image = $1 WHERE id = $2', [current, row.id]);
+          gamesUpdated++;
+        } catch {
+          errors++;
+        }
+      }
+    }
+    const catRes = await client.query('SELECT id, image FROM categories');
+    for (const row of catRes.rows || []) {
+      const current = normalizeImageUrl(row.image);
+      if (current !== row.image) {
+        try {
+          await client.query('UPDATE categories SET image = $1 WHERE id = $2', [current, row.id]);
+          categoriesUpdated++;
+        } catch {
+          errors++;
+        }
+      }
+    }
+    await client.query('COMMIT');
+    const finishedAt = new Date();
+    const summary = `images updated: games=${gamesUpdated}, categories=${categoriesUpdated}, errors=${errors}`;
+    try {
+      await pool.query(
+        'INSERT INTO seeding_runs (id, started_at, finished_at, success, games_updated, categories_updated, errors, summary) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)',
+        [runId, startedAt, finishedAt, true, gamesUpdated, categoriesUpdated, errors, summary]
+      );
+      const auditId = `aa_${Date.now()}`;
+      await pool.query('INSERT INTO admin_audit_logs (id, action, summary) VALUES ($1,$2,$3)', [auditId, 'image_seeding', summary]);
+    } catch {}
+    return { ok: true, gamesUpdated, categoriesUpdated, errors };
+  } catch (err) {
+    try { await client.query('ROLLBACK'); } catch {}
+    const finishedAt = new Date();
+    const summary = `seeding failed: ${String(err.message || err).substring(0,180)}`;
+    try {
+      await pool.query(
+        'INSERT INTO seeding_runs (id, started_at, finished_at, success, games_updated, categories_updated, errors, summary) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)',
+        [runId, startedAt, finishedAt, false, gamesUpdated, categoriesUpdated, errors+1, summary]
+      );
+      const alertId = `al_${Date.now()}`;
+      await pool.query('INSERT INTO seller_alerts (id, type, summary) VALUES ($1,$2,$3)', [alertId, 'seeding_error', summary]);
+    } catch {}
+    return { ok: false, error: err.message || String(err) };
+  } finally {
+    client.release();
+  }
+}
+
 // Seed product images from public folder
 async function seedProductImages() {
   try {
@@ -1018,6 +1103,25 @@ app.post('/api/admin/logout', authenticateToken, async (req, res) => {
     // JWT tokens are stateless, so logout is handled client-side by removing the token
     // This endpoint just confirms the logout
     res.json({ message: 'Logged out successfully' });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+app.get('/api/admin/seeding/status', authenticateToken, async (req, res) => {
+  try {
+    const r = await pool.query('SELECT * FROM seeding_runs ORDER BY finished_at DESC NULLS LAST LIMIT 1');
+    res.json(r.rows?.[0] || null);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+app.get('/api/admin/seeding/report', authenticateToken, async (req, res) => {
+  try {
+    const r = await pool.query('SELECT * FROM seeding_runs ORDER BY finished_at DESC NULLS LAST LIMIT 20');
+    const total = await pool.query('SELECT COUNT(*)::int AS c FROM seeding_runs');
+    res.json({ total: total.rows?.[0]?.c || 0, items: r.rows || [] });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -1512,35 +1616,54 @@ app.get('/api/games/slug/:slug', async (req, res) => {
 app.get('/api/games/:slug', async (req, res) => {
   try {
     const { slug } = req.params;
-    // Skip if it's a reserved route
     if (slug === 'popular' || slug === 'category' || slug === 'slug' || slug === 'id') {
       return res.status(404).json({ message: 'Invalid route' });
     }
 
-    const normalizedSlug = String(slug || '').trim();
+    const normalizedSlug = String(slug || '').trim().replace(/:\d+$/, '');
     const compactSlug = normalizedSlug.replace(/-/g, '').toLowerCase();
     
-    const result = await pool.query(`
-      SELECT id, name, slug, description, price, currency, image, category, 
-             is_popular as "isPopular", stock, packages, package_prices as "packagePrices",
-             discount_price as "discountPrice", package_discount_prices as "packageDiscountPrices"
-      FROM games 
-      WHERE slug = $1
-         OR LOWER(REPLACE(slug, '-', '')) = $2
-      LIMIT 1
-    `, [normalizedSlug, compactSlug]);
-    if (result.rows.length === 0) {
-      return res.status(404).json({ message: 'Game not found' });
+    try {
+      const result = await pool.query(`
+        SELECT id, name, slug, description, price, currency, image, category, 
+               is_popular as "isPopular", stock, packages, package_prices as "packagePrices",
+               discount_price as "discountPrice", package_discount_prices as "packageDiscountPrices"
+        FROM games 
+        WHERE slug = $1
+           OR LOWER(REPLACE(slug, '-', '')) = $2
+        LIMIT 1
+      `, [normalizedSlug, compactSlug]);
+      if (result.rows.length === 0) {
+        return res.status(404).json({ message: 'Game not found' });
+      }
+      const game = result.rows[0];
+      game.image = normalizeImageUrl(game.image);
+      game.packages = coerceJsonArray(game.packages);
+      game.packagePrices = coerceJsonArray(game.packagePrices);
+      game.packageDiscountPrices = coerceJsonArray(game.packageDiscountPrices);
+      return res.json(game);
+    } catch {}
+    const gamesPath = path.join(__dirname, 'data', 'games.json');
+    if (fs.existsSync(gamesPath)) {
+      const data = fs.readFileSync(gamesPath, 'utf8');
+      const games = JSON.parse(data);
+      const found = Array.isArray(games)
+        ? games.find(g => {
+            const s = String(g.slug || '').trim();
+            return s === normalizedSlug || s.replace(/-/g, '').toLowerCase() === compactSlug;
+          })
+        : null;
+      if (!found) return res.status(404).json({ message: 'Game not found' });
+      const game = {
+        ...found,
+        image: normalizeImageUrl(found.image),
+        packages: coerceJsonArray(found.packages),
+        packagePrices: coerceJsonArray(found.packagePrices),
+        packageDiscountPrices: coerceJsonArray(found.packageDiscountPrices)
+      };
+      return res.json(game);
     }
-    
-    const game = result.rows[0];
-    // Ensure packages are arrays
-    game.image = normalizeImageUrl(game.image);
-    game.packages = coerceJsonArray(game.packages);
-    game.packagePrices = coerceJsonArray(game.packagePrices);
-    game.packageDiscountPrices = coerceJsonArray(game.packageDiscountPrices);
-    
-    res.json(game);
+    res.status(404).json({ message: 'Game not found' });
   } catch (err) {
     console.error('Error fetching game:', err);
     res.status(500).json({ message: err.message });
@@ -1608,10 +1731,12 @@ app.post('/api/admin/games', authenticateToken, imageUpload.single('image'), asy
                    discount_price as "discountPrice", packages, package_prices as "packagePrices", 
                    package_discount_prices as "packageDiscountPrices"`,
         [id, name.trim(), finalSlug, safeDescription, Number(price) || 0, currency || 'EGP', image || '/media/placeholder.jpg', category || 'other', isPop, Number(stock) || 100, 
-         discountPrice ? Number(discountPrice) : null, packagesArr, packagePricesArr, packageDiscountPricesArr]
+         discountPrice ? Number(discountPrice) : null, JSON.stringify(packagesArr), JSON.stringify(packagePricesArr), JSON.stringify(packageDiscountPricesArr)]
       );
       return res.status(201).json(result.rows[0]);
-    } catch {}
+    } catch (dbErr) {
+      console.error('DB Insert Failed:', dbErr.message);
+    }
     const existingGames = readGamesFile();
     const jsonGame = {
       id,
@@ -1811,6 +1936,40 @@ app.post('/api/admin/games/wipe', authenticateToken, async (req, res) => {
     } catch {}
     writeGamesFile([]);
     res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+app.post('/api/admin/games/seed', authenticateToken, async (req, res) => {
+  try {
+    if (typeof initializeDatabase === 'function') {
+      await initializeDatabase();
+    }
+    await seedGamesFromJsonIfEmpty();
+    const r = await pool.query('SELECT COUNT(*)::int AS c FROM games');
+    res.json({ ok: true, count: r.rows?.[0]?.c || 0 });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+app.post('/api/admin/games/reset-seed', authenticateToken, async (req, res) => {
+  try {
+    try { await pool.query('DELETE FROM game_cards'); } catch {}
+    try { await pool.query('DELETE FROM games'); } catch {}
+    if (typeof initializeDatabase === 'function') await initializeDatabase();
+    await seedGamesFromJsonIfEmpty();
+    let count = 0;
+    try {
+      const r = await pool.query('SELECT COUNT(*)::int AS c FROM games');
+      count = r.rows?.[0]?.c || 0;
+    } catch {}
+    let imageSeeding = null;
+    try {
+      imageSeeding = await runImageAssetsSeeding();
+    } catch {}
+    res.json({ ok: true, count, imageSeeding });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -4202,13 +4361,48 @@ const startServer = async () => {
   try {
     // 1. Verify Database Connection
     console.log('🔄 Checking database connection...');
-    try { await preferIPv4(); } catch {}
+    if (process.env.DATABASE_URL) {
+      try {
+        const u = new URL(process.env.DATABASE_URL);
+        console.log(`Checking connection to: ${u.host}`);
+      } catch (e) {
+        console.log('Checking connection to: (invalid URL)');
+      }
+    } else {
+      console.log('Checking connection to: (no DATABASE_URL set)');
+    }
+    // try { await preferIPv4(); } catch {}
     const isConnected = await checkConnection(3, 2000);
     
     if (isConnected) {
       try {
         if (typeof initializeDatabase === 'function') await initializeDatabase();
-        await seedGamesFromJsonIfEmpty();
+        try { await pool.query('CREATE TABLE IF NOT EXISTS app_meta (key TEXT PRIMARY KEY, value TEXT, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)'); } catch {}
+        try {
+          const resetKey = 'auto_reset_seed_v1';
+          const row = await pool.query('SELECT value FROM app_meta WHERE key = $1', [resetKey]);
+          const shouldRun = !(row.rows?.[0]?.value === 'done');
+          if (shouldRun) {
+            try { await pool.query('DELETE FROM game_cards'); } catch {}
+            try { await pool.query('DELETE FROM games'); } catch {}
+            await seedGamesFromJsonIfEmpty();
+            try { await runImageAssetsSeeding(); } catch (seedErr) { console.error('Image seeding error:', seedErr.message); }
+            try {
+              await pool.query(
+                'INSERT INTO app_meta (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = CURRENT_TIMESTAMP',
+                [resetKey, 'done']
+              );
+            } catch {}
+            console.log('✅ Auto reset-seed executed on startup');
+          } else {
+            await seedGamesFromJsonIfEmpty();
+            try { await runImageAssetsSeeding(); } catch (seedErr) { console.error('Image seeding error:', seedErr.message); }
+          }
+        } catch (dbErr) {
+          console.error('⚠️ Auto reset-seed warning:', dbErr.message);
+          await seedGamesFromJsonIfEmpty();
+          try { await runImageAssetsSeeding(); } catch (seedErr) { console.error('Image seeding error:', seedErr.message); }
+        }
         if (ENABLE_IMAGE_SEEDING && typeof seedProductImages === 'function') await seedProductImages();
       } catch (dbErr) {
         console.error('⚠️ Database initialization warning:', dbErr.message);
@@ -4421,9 +4615,8 @@ const startServer = async () => {
       }
     } catch {}
 
-    app.post('/api/maintenance/images/override', async (req, res) => {
+    app.post('/api/maintenance/images/override', authenticateToken, async (req, res) => {
       try {
-        if (!ENABLE_IMAGE_OVERRIDES) return res.status(400).json({ ok: false, message: 'Image overrides disabled' });
         await applyImageOverrides();
         res.json({ ok: true });
       } catch (err) {
@@ -4431,10 +4624,10 @@ const startServer = async () => {
       }
     });
 
-    if (ENABLE_IMAGE_OVERRIDES) {
+    try {
       await applyImageOverrides();
-    } else {
-      console.log('⏭️  Image override on startup disabled (ENABLE_IMAGE_OVERRIDES != true)');
+    } catch (err) {
+      console.error('Image override error:', err.message);
     }
     app.listen(PORT, () => {
       console.log('\n╔════════════════════════════════════════╗');
@@ -4478,6 +4671,40 @@ const startServer = async () => {
   }
 };
 
+async function runCliCommands() {
+  try {
+    const args = (process.argv || []).slice(2).map(s => String(s).toLowerCase());
+    if (args.includes('--wipe')) {
+      try { await pool.query('DELETE FROM game_cards'); } catch {}
+      try { await pool.query('DELETE FROM games'); } catch {}
+      writeGamesFile([]);
+      console.log('Wipe completed');
+      process.exit(0);
+    }
+    if (args.includes('--seed')) {
+      if (typeof initializeDatabase === 'function') await initializeDatabase();
+      await seedGamesFromJsonIfEmpty();
+      let count = 0;
+      try { const r = await pool.query('SELECT COUNT(*)::int AS c FROM games'); count = r.rows?.[0]?.c || 0; } catch {}
+      console.log(`Seed completed: ${count} games`);
+      process.exit(0);
+    }
+    if (args.includes('--reset-seed')) {
+      try { await pool.query('DELETE FROM game_cards'); } catch {}
+      try { await pool.query('DELETE FROM games'); } catch {}
+      if (typeof initializeDatabase === 'function') await initializeDatabase();
+      await seedGamesFromJsonIfEmpty();
+      let count = 0;
+      try { const r = await pool.query('SELECT COUNT(*)::int AS c FROM games'); count = r.rows?.[0]?.c || 0; } catch {}
+      let imageSeeding = null;
+      try { imageSeeding = await runImageAssetsSeeding(); } catch {}
+      console.log(JSON.stringify({ ok: true, count, imageSeeding }));
+      process.exit(0);
+    }
+  } catch {}
+}
+
+await runCliCommands();
 startServer();
 
 // 404 handler for API routes (must be at the end, after all routes are registered)

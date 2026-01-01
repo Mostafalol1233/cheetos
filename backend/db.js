@@ -76,6 +76,8 @@ export const setHostOverride = (ip) => {
 };
 
 export const preferIPv4 = async () => {
+  return false; // Disable IPv4 resolution for now as it causes timeouts with Neon
+  /*
   const host = (() => { try { return new URL(process.env.DATABASE_URL || '').hostname; } catch { return ''; } })();
   if (!host) return false;
   return new Promise(resolve => {
@@ -90,6 +92,7 @@ export const preferIPv4 = async () => {
       }
     });
   });
+  */
 };
 
 // Event listeners for pool health

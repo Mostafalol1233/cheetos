@@ -53,12 +53,7 @@ export default function ImageWithFallback({ src, alt, className, width, height, 
   };
   
   const onLoad: React.ReactEventHandler<HTMLImageElement> = (e) => {
-    const img = e.currentTarget;
-    if (!isSupportedFormat(current)) {
-      onError();
-      return;
-    }
-        setIsLoading(false);
+    setIsLoading(false);
   };
   
   const normalizedSrc = normalizeImageSrc(current);
@@ -69,9 +64,10 @@ export default function ImageWithFallback({ src, alt, className, width, height, 
       <img 
         src={normalizedSrc} 
         alt={alt} 
-        className={`${className} ${isLoading ? 'hidden' : ''}`} 
+        className={`${className}`} 
         loading="lazy" 
         decoding="async"
+        referrerPolicy="no-referrer"
         width={width}
         height={height}
         sizes={sizes}

@@ -1,5 +1,5 @@
 import { Link } from "wouter";
-import { ShoppingCart, Sun, Moon, Menu, X } from "lucide-react";
+import { ShoppingCart, Sun, Moon, Menu, X, Gamepad2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AccessibilityToolbar } from "@/components/accessibility-mode";
 import { LanguageSwitcher } from "@/components/language-switcher";
@@ -7,7 +7,6 @@ import { useCart } from "@/lib/cart-context";
 import { useTheme } from "@/components/theme-provider";
 import { useState, useEffect } from "react";
 import { useTranslation } from "@/lib/translation";
-import logo from "/attached_assets/favicon_1766968131270.png";
 
 interface HeaderProps {
   onCartClick: () => void;
@@ -50,11 +49,7 @@ export function Header({ onCartClick }: HeaderProps) {
             <div className="flex items-center space-x-3 cursor-pointer group text-nowrap">
               <div className="relative">
                 <div className="w-16 h-16 md:w-24 md:h-24 rounded-xl flex items-center justify-center overflow-hidden bg-black transition-transform transform group-hover:scale-105 duration-300 border border-gold-primary/40 shadow-[0_0_20px_rgba(52,152,219,0.3)]">
-                  <img 
-                    src={logo}
-                    alt="Diaa Sadek Logo"
-                    className="w-full h-full object-cover"
-                  />
+                  <Gamepad2 className="w-8 h-8 md:w-12 md:h-12 text-gold-primary" />
                 </div>
               </div>
               <div className="hidden sm:block">

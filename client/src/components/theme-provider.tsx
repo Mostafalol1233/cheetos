@@ -29,7 +29,8 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       setIsNight(nightTime);
       // Respect manual override if present
       const saved = typeof window !== 'undefined' ? (localStorage.getItem('theme') as Theme | null) : null;
-      const nextTheme = saved ?? (nightTime ? "dark" : "light");
+      // Default to dark mode if no preference is saved
+      const nextTheme = saved ?? "dark";
       setTheme(nextTheme);
       
       if (nextTheme === "dark") {

@@ -1948,8 +1948,8 @@ function CatboxUploadPanel({ allGames, categories }: { allGames: Game[]; categor
 }
 
 function LogoManagementPanel() {
-  const [smallLogoUrl, setSmallLogoUrl] = useState('/attached_assets/small-image-logo.png');
-  const [largeLogoUrl, setLargeLogoUrl] = useState('/attached_assets/large-image-logo.png');
+  const [smallLogoUrl, setSmallLogoUrl] = useState('');
+  const [largeLogoUrl, setLargeLogoUrl] = useState('');
   const [faviconUrl, setFaviconUrl] = useState('/images/cropped-favicon1-32x32.png');
   const [previewInfo, setPreviewInfo] = useState("");
 
@@ -2232,7 +2232,7 @@ function DiscountsPanel({ games, onSaved }: { games: Game[]; onSaved: () => void
             <Input
               value={largeLogoUrl}
               onChange={(e) => setLargeLogoUrl(e.target.value)}
-              placeholder="/attached_assets/large-image-logo.png"
+              placeholder="Large Logo URL"
             />
             <Button onClick={() => handleImageUpload('large')} variant="outline">
               Upload

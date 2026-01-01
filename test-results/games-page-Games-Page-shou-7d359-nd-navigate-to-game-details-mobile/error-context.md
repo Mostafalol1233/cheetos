@@ -1,0 +1,281 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - region "Notifications (F8)":
+      - list
+    - banner [ref=e3]:
+      - generic [ref=e5]:
+        - link [ref=e6] [cursor=pointer]:
+          - /url: /
+          - img [ref=e10]
+        - generic [ref=e12]:
+          - button [ref=e13] [cursor=pointer]:
+            - img
+          - button [ref=e14] [cursor=pointer]:
+            - img
+    - generic [ref=e17]:
+      - generic [ref=e18]:
+        - link "Back to Home" [ref=e19] [cursor=pointer]:
+          - /url: /
+          - img [ref=e20]
+          - text: Back to Home
+        - generic [ref=e22]:
+          - heading "Games" [level=1] [ref=e23]
+          - paragraph [ref=e24]: Browse our complete collection of games
+        - generic [ref=e25]:
+          - generic [ref=e26]:
+            - img [ref=e27]
+            - textbox "Search..." [ref=e30]
+          - combobox [ref=e31] [cursor=pointer]:
+            - img [ref=e32]
+            - generic: All Categories
+            - img [ref=e34]
+        - heading "14 games found" [level=2] [ref=e37]
+      - generic [ref=e38]:
+        - link "Test Game Admin Test Game Admin $100.00 Add" [ref=e39] [cursor=pointer]:
+          - /url: /game/test-game-admin
+          - generic [ref=e40]:
+            - img "Test Game Admin" [ref=e42]
+            - generic [ref=e43]:
+              - heading "Test Game Admin" [level=3] [ref=e44]
+              - generic [ref=e45]:
+                - generic [ref=e47]: $100.00
+                - button "Add" [ref=e48]:
+                  - img
+                  - generic [ref=e49]: Add
+        - link "Valorant HOT Valorant $360.00 $260.00 Add" [ref=e50] [cursor=pointer]:
+          - /url: /game/valorant
+          - generic [ref=e51]:
+            - generic [ref=e52]:
+              - img "Valorant" [ref=e53]
+              - generic [ref=e54]:
+                - img [ref=e55]
+                - text: HOT
+            - generic [ref=e57]:
+              - heading "Valorant" [level=3] [ref=e58]
+              - generic [ref=e59]:
+                - generic [ref=e61]:
+                  - generic [ref=e62]: $360.00
+                  - generic [ref=e63]: $260.00
+                - button "Add" [ref=e64]:
+                  - img
+                  - generic [ref=e65]: Add
+        - link "Crossfire HOT Crossfire $100.00 Add" [ref=e66] [cursor=pointer]:
+          - /url: /game/crossfire
+          - generic [ref=e67]:
+            - generic [ref=e68]:
+              - img "Crossfire" [ref=e69]
+              - generic [ref=e70]:
+                - img [ref=e71]
+                - text: HOT
+            - generic [ref=e73]:
+              - heading "Crossfire" [level=3] [ref=e74]
+              - generic [ref=e75]:
+                - generic [ref=e77]: $100.00
+                - button "Add" [ref=e78]:
+                  - img
+                  - generic [ref=e79]: Add
+        - link "Roblox HOT Roblox $228.00 $128.00 Add" [ref=e80] [cursor=pointer]:
+          - /url: /game/roblox
+          - generic [ref=e81]:
+            - generic [ref=e82]:
+              - img "Roblox" [ref=e83]
+              - generic [ref=e84]:
+                - img [ref=e85]
+                - text: HOT
+            - generic [ref=e87]:
+              - heading "Roblox" [level=3] [ref=e88]
+              - generic [ref=e89]:
+                - generic [ref=e91]:
+                  - generic [ref=e92]: $228.00
+                  - generic [ref=e93]: $128.00
+                - button "Add" [ref=e94]:
+                  - img
+                  - generic [ref=e95]: Add
+        - link "PUBG Mobile HOT PUBG Mobile $250.00 $150.00 Add" [ref=e96] [cursor=pointer]:
+          - /url: /game/pubg-mobile
+          - generic [ref=e97]:
+            - generic [ref=e98]:
+              - img "PUBG Mobile" [ref=e99]
+              - generic [ref=e100]:
+                - img [ref=e101]
+                - text: HOT
+            - generic [ref=e103]:
+              - heading "PUBG Mobile" [level=3] [ref=e104]
+              - generic [ref=e105]:
+                - generic [ref=e107]:
+                  - generic [ref=e108]: $250.00
+                  - generic [ref=e109]: $150.00
+                - button "Add" [ref=e110]:
+                  - img
+                  - generic [ref=e111]: Add
+        - link "Free Fire HOT Free Fire $204.00 $104.00 Add" [ref=e112] [cursor=pointer]:
+          - /url: /game/free-fire
+          - generic [ref=e113]:
+            - generic [ref=e114]:
+              - img "Free Fire" [ref=e115]
+              - generic [ref=e116]:
+                - img [ref=e117]
+                - text: HOT
+            - generic [ref=e119]:
+              - heading "Free Fire" [level=3] [ref=e120]
+              - generic [ref=e121]:
+                - generic [ref=e123]:
+                  - generic [ref=e124]: $204.00
+                  - generic [ref=e125]: $104.00
+                - button "Add" [ref=e126]:
+                  - img
+                  - generic [ref=e127]: Add
+        - link "Minecraft HOT Minecraft $256.00 $156.00 Add" [ref=e128] [cursor=pointer]:
+          - /url: /game/minecraft
+          - generic [ref=e129]:
+            - generic [ref=e130]:
+              - img "Minecraft" [ref=e131]
+              - generic [ref=e132]:
+                - img [ref=e133]
+                - text: HOT
+            - generic [ref=e135]:
+              - heading "Minecraft" [level=3] [ref=e136]
+              - generic [ref=e137]:
+                - generic [ref=e139]:
+                  - generic [ref=e140]: $256.00
+                  - generic [ref=e141]: $156.00
+                - button "Add" [ref=e142]:
+                  - img
+                  - generic [ref=e143]: Add
+        - link "Fortnite HOT Fortnite $650.00 $550.00 Add" [ref=e144] [cursor=pointer]:
+          - /url: /game/fortnite
+          - generic [ref=e145]:
+            - generic [ref=e146]:
+              - img "Fortnite" [ref=e147]
+              - generic [ref=e148]:
+                - img [ref=e149]
+                - text: HOT
+            - generic [ref=e151]:
+              - heading "Fortnite" [level=3] [ref=e152]
+              - generic [ref=e153]:
+                - generic [ref=e155]:
+                  - generic [ref=e156]: $650.00
+                  - generic [ref=e157]: $550.00
+                - button "Add" [ref=e158]:
+                  - img
+                  - generic [ref=e159]: Add
+        - link "League of Legends HOT League of Legends $530.00 $430.00 Add" [ref=e160] [cursor=pointer]:
+          - /url: /game/league-of-legends
+          - generic [ref=e161]:
+            - generic [ref=e162]:
+              - img "League of Legends" [ref=e163]
+              - generic [ref=e164]:
+                - img [ref=e165]
+                - text: HOT
+            - generic [ref=e167]:
+              - heading "League of Legends" [level=3] [ref=e168]
+              - generic [ref=e169]:
+                - generic [ref=e171]:
+                  - generic [ref=e172]: $530.00
+                  - generic [ref=e173]: $430.00
+                - button "Add" [ref=e174]:
+                  - img
+                  - generic [ref=e175]: Add
+        - link "Clash of Clans HOT Clash of Clans $210.00 $110.00 Add" [ref=e176] [cursor=pointer]:
+          - /url: /game/clash-of-clans
+          - generic [ref=e177]:
+            - generic [ref=e178]:
+              - img "Clash of Clans" [ref=e180]
+              - generic [ref=e181]:
+                - img [ref=e182]
+                - text: HOT
+            - generic [ref=e184]:
+              - heading "Clash of Clans" [level=3] [ref=e185]
+              - generic [ref=e186]:
+                - generic [ref=e188]:
+                  - generic [ref=e189]: $210.00
+                  - generic [ref=e190]: $110.00
+                - button "Add" [ref=e191]:
+                  - img
+                  - generic [ref=e192]: Add
+        - link "Apex Legends HOT Apex Legends $250.00 $150.00 Add" [ref=e193] [cursor=pointer]:
+          - /url: /game/apex-legends
+          - generic [ref=e194]:
+            - generic [ref=e195]:
+              - img "Apex Legends" [ref=e197]
+              - generic [ref=e198]:
+                - img [ref=e199]
+                - text: HOT
+            - generic [ref=e201]:
+              - heading "Apex Legends" [level=3] [ref=e202]
+              - generic [ref=e203]:
+                - generic [ref=e205]:
+                  - generic [ref=e206]: $250.00
+                  - generic [ref=e207]: $150.00
+                - button "Add" [ref=e208]:
+                  - img
+                  - generic [ref=e209]: Add
+        - link "Call of Duty Mobile HOT Call of Duty Mobile $240.00 $140.00 Add" [ref=e210] [cursor=pointer]:
+          - /url: /game/call-of-duty-mobile
+          - generic [ref=e211]:
+            - generic [ref=e212]:
+              - img "Call of Duty Mobile" [ref=e214]
+              - generic [ref=e215]:
+                - img [ref=e216]
+                - text: HOT
+            - generic [ref=e218]:
+              - heading "Call of Duty Mobile" [level=3] [ref=e219]
+              - generic [ref=e220]:
+                - generic [ref=e222]:
+                  - generic [ref=e223]: $240.00
+                  - generic [ref=e224]: $140.00
+                - button "Add" [ref=e225]:
+                  - img
+                  - generic [ref=e226]: Add
+        - link "Genshin Impact HOT Genshin Impact $225.00 $125.00 Add" [ref=e227] [cursor=pointer]:
+          - /url: /game/genshin-impact
+          - generic [ref=e228]:
+            - generic [ref=e229]:
+              - img "Genshin Impact" [ref=e231]
+              - generic [ref=e232]:
+                - img [ref=e233]
+                - text: HOT
+            - generic [ref=e235]:
+              - heading "Genshin Impact" [level=3] [ref=e236]
+              - generic [ref=e237]:
+                - generic [ref=e239]:
+                  - generic [ref=e240]: $225.00
+                  - generic [ref=e241]: $125.00
+                - button "Add" [ref=e242]:
+                  - img
+                  - generic [ref=e243]: Add
+        - link "Garena HOT Garena $234.00 $134.00 Add" [ref=e244] [cursor=pointer]:
+          - /url: /game/garena
+          - generic [ref=e245]:
+            - generic [ref=e246]:
+              - img "Garena" [ref=e248]
+              - generic [ref=e249]:
+                - img [ref=e250]
+                - text: HOT
+            - generic [ref=e252]:
+              - heading "Garena" [level=3] [ref=e253]
+              - generic [ref=e254]:
+                - generic [ref=e256]:
+                  - generic [ref=e257]: $234.00
+                  - generic [ref=e258]: $134.00
+                - button "Add" [ref=e259]:
+                  - img
+                  - generic [ref=e260]: Add
+    - button [ref=e262] [cursor=pointer]:
+      - img [ref=e263]
+  - generic [ref=e267]:
+    - generic [ref=e268]: URI malformed
+    - generic [ref=e269]: at decodeURI (<anonymous>) at viteTransformMiddleware (file:///D:/GameCart-1/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:62023:13) at call (file:///D:/GameCart-1/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:41364:7) at next (file:///D:/GameCart-1/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:41308:5) at viteServePublicMiddleware (file:///D:/GameCart-1/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:51663:14) at call (file:///D:/GameCart-1/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:41364:7) at next (file:///D:/GameCart-1/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:41308:5) at viteHMRPingMiddleware (file:///D:/GameCart-1/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:63353:7) at call (file:///D:/GameCart-1/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:41364:7) at next (file:///D:/GameCart-1/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:41308:5) at next (file:///D:/GameCart-1/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:41286:14) at viteProxyMiddleware (file:///D:/GameCart-1/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:61862:5) at call (file:///D:/GameCart-1/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:41364:7) at next (file:///D:/GameCart-1/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:41308:5) at viteCachedTransformMiddleware (file:///D:/GameCart-1/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:62010:5) at call (file:///D:/GameCart-1/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:41364:7) at next (file:///D:/GameCart-1/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:41308:5) at cors (file:///D:/GameCart-1/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:41836:7) at file:///D:/GameCart-1/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:41872:17 at originCallback (file:///D:/GameCart-1/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:41862:15) at file:///D:/GameCart-1/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:41867:13 at optionsCallback (file:///D:/GameCart-1/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:41847:9) at corsMiddleware (file:///D:/GameCart-1/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:41852:7) at call (file:///D:/GameCart-1/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:41364:7) at next (file:///D:/GameCart-1/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:41308:5) at viteRejectInvalidRequestMiddleware (file:///D:/GameCart-1/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:62991:12) at call (file:///D:/GameCart-1/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:41364:7) at next (file:///D:/GameCart-1/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:41308:5) at Function.handle (file:///D:/GameCart-1/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:41311:3) at Server.app (file:///D:/GameCart-1/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:41176:37
+    - generic [ref=e270]:
+      - text: Click outside, press Esc key, or fix the code to dismiss.
+      - text: You can also disable this overlay by setting
+      - code [ref=e271]: server.hmr.overlay
+      - text: to
+      - code [ref=e272]: "false"
+      - text: in
+      - code [ref=e273]: vite.config.ts
+      - text: .
+```
