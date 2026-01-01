@@ -64,7 +64,10 @@ export async function seedDatabase() {
         image: "https://files.catbox.moe/Gzt4AYJcsVJe.png",
         category: "online-games",
         isPopular: true,
-        stock: 1000
+        stock: 1000,
+        packages: [],
+        packagePrices: [],
+        packageDiscountPrices: []
       },
       {
         id: "roblox", 
@@ -77,27 +80,26 @@ export async function seedDatabase() {
         image: "https://files.catbox.moe/ROBLOX.png",
         category: "online-games",
         isPopular: true,
-        stock: 1000
+        stock: 1000,
+        packages: [],
+        packagePrices: [],
+        packageDiscountPrices: []
       },
       {
         id: "freefire",
         name: "FREE FIRE",
         slug: "free-fire",
         description: "Free Fire diamonds and characters", 
-        price: "90.00",
-        discountPrice: "90.00", // No discount if under 50, but wait, 90 >= 50. Discount is 100 less.
-        // Wait, "if main price under 50 don't do discount". 
-        // 90 is not under 50. Price - 100 = -10. 
-        // I will assume "discount as 100 less" means price = original, discountPrice = price - 100.
-        // If price - 100 <= 0, then no discount.
-        // Let's adjust prices to be realistic for "100 less".
         price: "200.00",
         discountPrice: "100.00",
         currency: "EGP",
         image: "https://files.catbox.moe/FREE_FIRE.jpg",
         category: "mobile-games",
         isPopular: true,
-        stock: 1000
+        stock: 1000,
+        packages: [],
+        packagePrices: [],
+        packageDiscountPrices: []
       },
       {
         id: "pubg", 
@@ -110,7 +112,10 @@ export async function seedDatabase() {
         image: "https://files.catbox.moe/PUBG_MOBILE.jpg",
         category: "mobile-games",
         isPopular: true,
-        stock: 1000
+        stock: 1000,
+        packages: [],
+        packagePrices: [],
+        packageDiscountPrices: []
       },
       {
         id: "steam",
@@ -123,7 +128,10 @@ export async function seedDatabase() {
         image: "https://files.catbox.moe/image_1754933742848.png", 
         category: "gift-cards",
         isPopular: true,
-        stock: 1000
+        stock: 1000,
+        packages: [],
+        packagePrices: [],
+        packageDiscountPrices: []
       }
     ];
 

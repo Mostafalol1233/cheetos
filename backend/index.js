@@ -4531,7 +4531,7 @@ const startServer = async () => {
     }
 
     const PORT = process.env.PORT || 3001;
-    httpServer.listen(PORT, () => {
+    app.listen(PORT, () => {
       console.log(`╔════════════════════════════════════════╗`);
       console.log(`║     GameCart Backend Server             ║`);
       console.log(`║     Running on port ${PORT}              ║`);

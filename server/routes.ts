@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertChatMessageSchema } from "@shared/schema";
+import { insertChatMessageSchema } from "../shared/schema";
 import crypto from "crypto";
 import { getQRCode, getConnectionStatus, sendWhatsAppMessage } from "./whatsapp";
 import { setupAuth, hashPassword } from "./auth";
@@ -331,6 +331,5 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  const httpServer = createServer(app);
-  return httpServer;
+  return createServer(app);
 }
