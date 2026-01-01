@@ -7,10 +7,8 @@ import { useCart } from "@/lib/cart-context";
 import { useTheme } from "@/components/theme-provider";
 import { useState, useEffect } from "react";
 import { useTranslation } from "@/lib/translation";
-<<<<<<< HEAD
-=======
+
 const logo = "/attached_assets/favicon_1766968131270.png";
->>>>>>> 11187337703f9d57d38b3a578353a54b6fa7deaf
 
 interface HeaderProps {
   onCartClick: () => void;
