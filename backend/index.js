@@ -4440,6 +4440,7 @@ const startServer = async () => {
         if (typeof initializeDatabase === "function") await initializeDatabase();
         
         const items = readGamesFile();
+        console.log(`Seeding ${items.length} games...`);
         for (const g of items) {
           const id = String(g.id || `game_${Date.now()}_${Math.random().toString(36).slice(2,9)}`);
           const name = String(g.name || "").trim();
@@ -4485,7 +4486,7 @@ const startServer = async () => {
                packages = EXCLUDED.packages,
                package_prices = EXCLUDED.package_prices,
                package_discount_prices = EXCLUDED.package_discount_prices`,
-            [id, name, slug, description, priceVal, currency, image, category, is_popular, stock, discount_priceVal, rawPackages, processedPackagePrices, processedDiscountPrices]
+            [id, name, slug, description, priceVal, currency, image, category, is_popular, stock, discount_priceVal, JSON.stringify(rawPackages), JSON.stringify(processedPackagePrices), JSON.stringify(processedDiscountPrices)]
           );
         }
 
@@ -4513,308 +4514,34 @@ const startServer = async () => {
         console.error("⚠️ Database initialization warning:", dbErr.message);
       }
     } else {
-      console.error("❌ Database connection failed. API endpoints requiring DB will fail.");
-      console.log("⚠️ Server starting in partial functionality mode.");
+      console.error("❌ Database connection failed.");
     }
 
-    // 2. Verify Uploads Directory
     try {
       if (!fs.existsSync(uploadDir)) {
         fs.mkdirSync(uploadDir, { recursive: true });
-        console.log('✅ Created uploads directory at:', uploadDir);
+        console.log("✅ Created uploads directory at:", uploadDir);
       }
-      // Test write permission
-      const testFile = path.join(uploadDir, 'write_test.tmp');
-      fs.writeFileSync(testFile, 'test');
+      const testFile = path.join(uploadDir, "write_test.tmp");
+      fs.writeFileSync(testFile, "test");
       fs.unlinkSync(testFile);
-      console.log('✅ Uploads directory is writable');
+      console.log("✅ Uploads directory is writable");
     } catch (err) {
-      console.error('❌ Uploads directory error:', err.message);
-    }
-    async function applyImageOverrides() {
-      function copyLocalToUploads(localPath) {
-        try {
-          if (!fs.existsSync(localPath)) return null;
-          const ext = path.extname(localPath) || '.jpg';
-          const filename = `image-${Date.now()}-${Math.round(Math.random()*1e9)}${ext}`;
-          const dest = path.join(uploadDir, filename);
-          fs.copyFileSync(localPath, dest);
-          return normalizeImageUrl(`/uploads/${filename}`);
-        } catch {
-          return null;
-        }
-      }
-      async function uploadFromLocal(localPath) {
-        if (CLOUDINARY_ENABLED) {
-          try {
-            const result = await cloudinary.uploader.upload(localPath, { folder: process.env.CLOUDINARY_FOLDER || 'gamecart/games', resource_type: 'image' });
-            return result.secure_url;
-          } catch {}
-        }
-        return copyLocalToUploads(localPath);
-      }
-      const items = [
-        { slugs: ['call-of-duty-mobile','cod-mobile','codm','callofdutymobile','call-of-duty'], file: 'D:\\GameCart-1\\callofduty-new-image.jpg' },
-        { slugs: ['free-fire','freefire'], file: 'D:\\GameCart-1\\free-fire-newimage.jpg' },
-        { slugs: ['roblox'], file: 'D:\\GameCart-1\\roblox-new-image.jpg' }
-      ];
-      for (const it of items) {
-        const up = await catboxFileUploadFromLocal(it.file, path.basename(it.file));
-        const url = up && up.ok ? up.url : null;
-        if (!url) continue;
-        for (const s of it.slugs) {
-          try {
-            const cur = await pool.query(`SELECT id, image FROM games WHERE slug = $1 OR LOWER(REPLACE(slug, '-', '')) = LOWER(REPLACE($1, '-', ''))`, [s]);
-            const row = cur.rows[0];
-            if (row && isCatboxUrl(row.image)) continue;
-            await pool.query(`UPDATE games SET image = $1, image_url = $1 WHERE slug = $2 OR LOWER(REPLACE(slug, '-', '')) = LOWER(REPLACE($2, '-', ''))`, [url, s]);
-          } catch {}
-        }
-      }
-      try {
-        const baseDir = 'D:\\GameCart-1\\images';
-        if (fs.existsSync(baseDir)) {
-          const files = fs.readdirSync(baseDir).filter(f => /\.(jpg|jpeg|png|webp|gif)$/i.test(f));
-          const allGamesRes = await pool.query('SELECT id, slug, name, image FROM games');
-          const allGames = allGamesRes.rows || [];
-          const norm = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-          for (const f of files) {
-            const localPath = path.join(baseDir, f);
-            const base = f.replace(/\.[^.]+$/, '');
-            const nb = norm(base);
-            const up = await catboxFileUploadFromLocal(localPath, path.basename(localPath));
-            const url = up && up.ok ? up.url : null;
-            if (!url) continue;
-            for (const g of allGames) {
-              const ns = norm(g.slug);
-              const nn = norm(g.name);
-              if (ns.includes(nb) || nb.includes(ns) || nn.includes(nb) || nb.includes(nn)) {
-                try {
-                  if (isCatboxUrl(g.image)) continue;
-                  await pool.query('UPDATE games SET image = $1, image_url = $1 WHERE id = $2', [url, g.id]);
-                } catch {}
-              }
-            }
-          }
-        }
-      } catch {}
-    }
-    
-    // 3. Autoload startup modules
-    async function resolveDir(rel) {
-      try {
-        const p = path.join(__dirname, rel);
-        if (fs.existsSync(p)) return p;
-        return null;
-      } catch {
-        return null;
-      }
+      console.error("❌ Uploads directory error:", err.message);
     }
 
-    async function autoloadFrom(dirRel, context) {
-      const dir = await resolveDir(dirRel);
-      if (!dir) {
-        console.log(`ℹ️  Autoload skipped: ${dirRel} not found`);
-        return { loaded: 0, errors: 0 };
-      }
-      let loaded = 0; let errors = 0;
-      try {
-        const files = fs.readdirSync(dir).filter(f => /\.js$/i.test(f) && !/\.(test|spec)\.js$/i.test(f));
-        files.sort((a,b) => {
-          const pa = parseInt(a, 10); const pb = parseInt(b, 10);
-          if (!isNaN(pa) && !isNaN(pb)) return pa - pb;
-          return a.localeCompare(b);
-        });
-        for (const f of files) {
-          const full = path.join(dir, f);
-          try {
-            const mod = await import(pathToFileURL(full).href);
-            const fn = mod.init || mod.setup || mod.run || mod.seed || (typeof mod.default === 'function' ? mod.default : null);
-            if (typeof fn === 'function') {
-              await fn(context);
-              console.log(`✓ Loaded ${dirRel}/${f}`);
-              loaded++;
-            } else {
-              console.log(`ℹ️  Skipped ${dirRel}/${f} (no init function)`);
-            }
-          } catch (err) {
-            console.error(`✗ Failed to load ${dirRel}/${f}: ${err.message}`);
-            errors++;
-          }
-        }
-      } catch (err) {
-        console.error(`✗ Autoload error in ${dirRel}: ${err.message}`);
-        errors++;
-      }
-      return { loaded, errors };
-    }
-
-    const autoResults = [];
-    autoResults.push(await autoloadFrom('../startup', { app, pool }));
-    autoResults.push(await autoloadFrom('../hooks', { app, pool }));
-    autoResults.push(await autoloadFrom('../seeders', { app, pool }));
-    const totalLoaded = autoResults.reduce((s,r)=>s+r.loaded,0);
-    const totalErrors = autoResults.reduce((s,r)=>s+r.errors,0);
-    console.log(`Autoload summary: ${totalLoaded} modules loaded, ${totalErrors} errors`);
-
-    // 3.5 Run Critical Maintenance Scripts (skippable by env flag)
-    const shouldRunMaintenance = String(process.env.DISABLE_MAINTENANCE_SCRIPTS || '').toLowerCase() !== 'true';
-    if (shouldRunMaintenance) {
-      console.log('🔧 Running maintenance scripts...');
-      try {
-        const scriptsDir = path.join(__dirname, 'scripts');
-        try {
-          await pool.query('CREATE TABLE IF NOT EXISTS app_meta (key TEXT PRIMARY KEY, value TEXT, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)');
-        } catch {}
-
-        try {
-          const seedKey = 'seed_db_v1';
-          const seedRow = await pool.query('SELECT value FROM app_meta WHERE key = $1', [seedKey]);
-          const alreadySeeded = seedRow.rows?.[0]?.value === 'done';
-          if (!alreadySeeded) {
-            const seedScript = path.join(scriptsDir, 'seed-db.js');
-            if (fs.existsSync(seedScript)) {
-              console.log('   Running seed-db.js (one-time)...');
-              execSync(`node "${seedScript}"`, { stdio: 'inherit' });
-              try {
-                await pool.query(
-                  'INSERT INTO app_meta (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = CURRENT_TIMESTAMP',
-                  [seedKey, 'done']
-                );
-              } catch {}
-            }
-          } else {
-            console.log('   seed-db.js already applied. Skipping.');
-          }
-        } catch (seedErr) {
-          console.error('⚠️ Seed script error:', seedErr.message);
-        }
-
-        const verifyScript = path.join(scriptsDir, 'verify-media.js');
-        if (fs.existsSync(verifyScript)) {
-           console.log('   Running verify-media.js...');
-           execSync(`node "${verifyScript}"`, { stdio: 'inherit' });
-        }
-        const updateScript = path.join(scriptsDir, 'update-packages.js');
-        if (fs.existsSync(updateScript)) {
-           console.log('   Running update-packages.js...');
-           execSync(`node "${updateScript}"`, { stdio: 'inherit' });
-        }
-        console.log('✅ Maintenance scripts completed');
-      } catch (scriptErr) {
-         console.error('⚠️ Maintenance script error:', scriptErr.message);
-      }
-    } else {
-      console.log('⏭️  Maintenance scripts disabled by DISABLE_MAINTENANCE_SCRIPTS');
-    }
-
-    // 4. Start WhatsApp Client
-    startWhatsApp().catch(err => console.error('Failed to start WhatsApp:', err));
-
-    try {
-      const routesPath = path.join(__dirname, 'routes', 'game-verification.js');
-      if (fs.existsSync(routesPath)) {
-        const mod = await import(pathToFileURL(routesPath).href);
-        const r = mod.default || mod.router || mod;
-        if (r) app.use(r);
-      }
-    } catch {}
-
-    app.post('/api/maintenance/images/override', authenticateToken, async (req, res) => {
-      try {
-        await applyImageOverrides();
-        res.json({ ok: true });
-      } catch (err) {
-        res.status(500).json({ ok: false, message: err.message });
-      }
-    });
-
-    try {
-      await applyImageOverrides();
-    } catch (err) {
-      console.error('Image override error:', err.message);
-    }
-    app.listen(PORT, () => {
-      console.log('\n╔════════════════════════════════════════╗');
-      console.log('║     GameCart Backend Server             ║');
+    const PORT = process.env.PORT || 3001;
+    httpServer.listen(PORT, () => {
+      console.log(`╔════════════════════════════════════════╗`);
+      console.log(`║     GameCart Backend Server             ║`);
       console.log(`║     Running on port ${PORT}              ║`);
-      console.log(`║     Environment: ${process.env.NODE_ENV || 'development'}         ║`);
-      console.log(`║     Database: ${isConnected ? 'Connected ✅' : 'Disconnected ❌'}       ║`);
-      console.log('╚════════════════════════════════════════╝\n');
-      console.log('📡 API Endpoints ready\n');
-      
-      console.log('Startup complete\n');
+      console.log(`║     Environment: ${process.env.NODE_ENV || "development"}         ║`);
+      console.log(`║     Database: ${isConnected ? "Connected ✅" : "Disconnected ❌"}       ║`);
+      console.log(`╚════════════════════════════════════════╝`);
     });
-
-    // Start image processor asynchronously (does not block server startup)
-    try {
-      if (initImageProcessor) {
-        initImageProcessor({
-          app,
-          pool,
-          memStorage,
-          paths: {
-            imagesDir,
-            publicDir,
-            generatedImagesDir,
-            assetsDir: path.join(publicDir, 'assets'),
-            attachedAssetsDir,
-            rootAttachedAssetsDir,
-            uploadDir
-          }
-        });
-        console.log('🖼️  Image processor initialized (async)');
-      } else {
-        console.log('ℹ️  Image processor not available, skipping initialization');
-      }
-    } catch (err) {
-      console.warn('⚠️  Image processor failed to initialize:', err.message);
-    }
   } catch (err) {
-    console.error('Failed to start server:', err.message);
-    process.exit(1);
+    console.error("❌ Critical server error:", err.message);
   }
 };
 
-async function runCliCommands() {
-  try {
-    const args = (process.argv || []).slice(2).map(s => String(s).toLowerCase());
-    if (args.includes('--wipe')) {
-      try { await pool.query('DELETE FROM game_cards'); } catch {}
-      try { await pool.query('DELETE FROM games'); } catch {}
-      writeGamesFile([]);
-      console.log('Wipe completed');
-      process.exit(0);
-    }
-    if (args.includes('--seed')) {
-      if (typeof initializeDatabase === 'function') await initializeDatabase();
-      await seedGamesFromJsonIfEmpty();
-      let count = 0;
-      try { const r = await pool.query('SELECT COUNT(*)::int AS c FROM games'); count = r.rows?.[0]?.c || 0; } catch {}
-      console.log(`Seed completed: ${count} games`);
-      process.exit(0);
-    }
-    if (args.includes('--reset-seed')) {
-      try { await pool.query('DELETE FROM game_cards'); } catch {}
-      try { await pool.query('DELETE FROM games'); } catch {}
-      if (typeof initializeDatabase === 'function') await initializeDatabase();
-      await seedGamesFromJsonIfEmpty();
-      let count = 0;
-      try { const r = await pool.query('SELECT COUNT(*)::int AS c FROM games'); count = r.rows?.[0]?.c || 0; } catch {}
-      let imageSeeding = null;
-      try { imageSeeding = await runImageAssetsSeeding(); } catch {}
-      console.log(JSON.stringify({ ok: true, count, imageSeeding }));
-      process.exit(0);
-    }
-  } catch {}
-}
-
-await runCliCommands();
 startServer();
-
-// 404 handler for API routes (must be at the end, after all routes are registered)
-app.use('/api/*', (req, res) => {
-  res.status(404).json({ message: 'API endpoint not found', path: req.path });
-});
-
-export default app;
