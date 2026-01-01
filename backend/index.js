@@ -109,10 +109,6 @@ function normalizeImageUrl(raw) {
 
   // Keep external URLs
   if (/^https?:\/\//i.test(v)) {
-    if (isCatboxUrl(v)) return v;
-    // Fix old broken absolute uploads URLs missing backend port
-    const m = v.match(/\/uploads\/(.+)$/i);
-    if (m) return `/uploads/${m[1]}`;
     return v;
   }
 
@@ -146,23 +142,29 @@ function coerceJsonArray(value) {
   if (typeof value === 'string') {
     const s = value.trim();
     if (!s) return [];
-    // Handle the case where string is "[object Object]" - this means it was incorrectly stringified
     if (s === '[object Object]') return [];
-    try {
-      const parsed = JSON.parse(s);
-      return Array.isArray(parsed) ? parsed : [];
-    } catch {
-      const parts = s.split(',').map(t => t.trim()).filter(Boolean);
-      return parts.length ? parts : [];
+    
+    // If it's a JSON array string, parse it
+    if (s.startsWith('[') && s.endsWith(']')) {
+      try {
+        const parsed = JSON.parse(s);
+        return Array.isArray(parsed) ? parsed : [s];
+      } catch {
+        return [s];
+      }
     }
+    
+    // If it's a comma-separated string, split it
+    if (s.includes(',')) {
+      return s.split(',').map(t => t.trim()).filter(Boolean);
+    }
+    
+    return [s];
   }
-  // PostgreSQL JSONB returns objects directly - if it's an object, try to extract array-like structure
   if (typeof value === 'object') {
-    // If it's already an array-like object (has numeric keys), convert it
     if (value.constructor === Object && Object.keys(value).every(k => !isNaN(Number(k)))) {
       return Object.values(value);
     }
-    // If it's a JSONB object that should be an array, return empty array
     return [];
   }
   return [];
@@ -186,6 +188,7 @@ function writeGamesFile(games) {
   } catch { return false; }
 }
 
+<<<<<<< HEAD
 async function seedGamesFromJsonIfEmpty() {
   console.log('🔄 seedGamesFromJsonIfEmpty starting...');
   try {
@@ -194,9 +197,20 @@ async function seedGamesFromJsonIfEmpty() {
     console.log(`ℹ️  Current game count: ${c}`);
     if (c > 0) return;
     console.log('ℹ️  Seeding games from JSON...');
+=======
+async function seedGamesFromJsonIfEmpty(force = false) {
+  try {
+    if (!force) {
+      const countRes = await pool.query('SELECT COUNT(*)::int AS c FROM games');
+      const c = countRes.rows?.[0]?.c || 0;
+      if (c > 0) return;
+    }
+    
+>>>>>>> 11187337703f9d57d38b3a578353a54b6fa7deaf
     const items = readGamesFile();
     console.log(`ℹ️  Found ${items.length} items to seed`);
     if (!Array.isArray(items) || items.length === 0) return;
+    
     for (const g of items) {
       console.log(`   Seeding ${g.name}...`);
       try {
@@ -206,25 +220,84 @@ async function seedGamesFromJsonIfEmpty() {
         const description = String(g.description || '');
         const price = Number(g.price || 0);
         const currency = String(g.currency || 'EGP');
-        const image = normalizeImageUrl(g.image || '/media/placeholder.jpg');
+        const image = g.image || '/media/placeholder.jpg';
         const category = String(g.category || 'other');
         const is_popular = Boolean(g.isPopular || g.is_popular || false);
         const stock = Number(g.stock || 100);
         const discount_price = g.discountPrice != null ? Number(g.discountPrice) : null;
         const packages = coerceJsonArray(g.packages);
-        const package_prices = coerceJsonArray(g.packagePrices).map(n => Number(n) || 0);
-        const package_discount_prices = coerceJsonArray(g.packageDiscountPrices).map(v => (v == null ? null : Number(v)));
+        const package_prices = coerceJsonArray(g.packagePrices).map(n => {
+          if (typeof n === 'number') return n;
+          const s = String(n || '0').replace(/[^0-9.]/g, '');
+          const num = parseFloat(s);
+          return isNaN(num) ? 0 : num;
+        });
+        const package_discount_prices = coerceJsonArray(g.packageDiscountPrices || g.discountPrices).map(v => {
+          if (v == null || String(v).trim() === '' || v === '0') return null;
+          if (typeof v === 'number') return v;
+          const s = String(v).replace(/[^0-9.]/g, '');
+          const num = parseFloat(s);
+          return isNaN(num) ? null : num;
+        });
+        
         await pool.query(
           `INSERT INTO games (id, name, slug, description, price, currency, image, category, is_popular, stock, discount_price, packages, package_prices, package_discount_prices)
            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
-           ON CONFLICT (id) DO NOTHING`,
+           ON CONFLICT (id) DO UPDATE SET
+             name = EXCLUDED.name,
+             slug = EXCLUDED.slug,
+             description = EXCLUDED.description,
+             price = EXCLUDED.price,
+             currency = EXCLUDED.currency,
+             image = EXCLUDED.image,
+             category = EXCLUDED.category,
+             is_popular = EXCLUDED.is_popular,
+             stock = EXCLUDED.stock,
+             discount_price = EXCLUDED.discount_price,
+             packages = EXCLUDED.packages,
+             package_prices = EXCLUDED.package_prices,
+             package_discount_prices = EXCLUDED.package_discount_prices`,
           [id, name, slug, description, price, currency, image, category, is_popular, stock, discount_price, packages, package_prices, package_discount_prices]
         );
-      } catch {}
+      } catch (err) {
+        console.error(`Failed to seed game ${g.name}:`, err.message);
+      }
     }
-    console.log(`✓ Seeded ${items.length} games from JSON`);
+    console.log(`✓ Seeded/Updated ${items.length} games from JSON`);
   } catch (err) {
     console.error('Seed from JSON error:', err.message);
+  }
+}
+
+async function seedCategoriesFromJsonIfEmpty(force = false) {
+  try {
+    if (!force) {
+      const countRes = await pool.query('SELECT COUNT(*)::int AS c FROM categories');
+      const c = countRes.rows?.[0]?.c || 0;
+      if (c > 0) return;
+    }
+    
+    const categoriesPath = path.join(__dirname, 'data', 'categories.json');
+    if (!fs.existsSync(categoriesPath)) return;
+    const items = JSON.parse(fs.readFileSync(categoriesPath, 'utf8'));
+    
+    for (const c of items) {
+      await pool.query(
+        `INSERT INTO categories (id, name, slug, description, image, gradient, icon)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)
+         ON CONFLICT (id) DO UPDATE SET
+           name = EXCLUDED.name,
+           slug = EXCLUDED.slug,
+           description = EXCLUDED.description,
+           image = EXCLUDED.image,
+           gradient = EXCLUDED.gradient,
+           icon = EXCLUDED.icon`,
+        [c.id, c.name, c.slug, c.description, c.image, c.gradient, c.icon]
+      );
+    }
+    console.log(`✓ Seeded/Updated ${items.length} categories from JSON`);
+  } catch (err) {
+    console.error('Category seed error:', err.message);
   }
 }
 // PostgreSQL Connection Pool - Imported from db.js
@@ -524,7 +597,9 @@ app.get('/api/categories', async (req, res) => {
       if (result?.rows?.length) {
         return res.json(result.rows.map((c) => ({ ...c, image: normalizeImageUrl(c.image) })));
       }
-    } catch {}
+    } catch (err) {
+      console.error('DB Category fetch error:', err);
+    }
 
     const categoriesPath = path.join(__dirname, 'data', 'categories.json');
     if (fs.existsSync(categoriesPath)) {
@@ -4374,6 +4449,7 @@ const startServer = async () => {
     // try { await preferIPv4(); } catch {}
     const isConnected = await checkConnection(3, 2000);
     
+<<<<<<< HEAD
     if (isConnected) {
       try {
         if (typeof initializeDatabase === 'function') await initializeDatabase();
@@ -4408,6 +4484,86 @@ const startServer = async () => {
         console.error('⚠️ Database initialization warning:', dbErr.message);
       }
     } else {
+=======
+        if (isConnected) {
+          try {
+            if (typeof initializeDatabase === 'function') await initializeDatabase();
+            
+            // Force re-sync external links specifically to ensure they persist
+            const items = readGamesFile();
+            for (const g of items) {
+              const id = String(g.id || `game_${Date.now()}_${Math.random().toString(36).slice(2,9)}`);
+              const name = String(g.name || '').trim();
+              const slug = String(g.slug || name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''));
+              const description = String(g.description || '');
+              const price = Number(g.price || 0);
+              const currency = String(g.currency || 'EGP');
+              const image = g.image || '/media/placeholder.jpg';
+              const category = String(g.category || 'other');
+              const is_popular = Boolean(g.isPopular || g.is_popular || false);
+              const stock = Number(g.stock || 100);
+              const discount_price = g.discountPrice != null ? Number(g.discountPrice) : null;
+              const packages = coerceJsonArray(g.packages);
+              const package_prices = coerceJsonArray(g.packagePrices).map(n => {
+                if (typeof n === 'number') return n;
+                const s = String(n || '0').replace(/[^0-9.]/g, '');
+                const num = parseFloat(s);
+                return isNaN(num) ? 0 : num;
+              });
+              const package_discount_prices = coerceJsonArray(g.packageDiscountPrices || g.discountPrices).map(v => {
+                if (v == null || String(v).trim() === '' || v === '0') return null;
+                if (typeof v === 'number') return v;
+                const s = String(v).replace(/[^0-9.]/g, '');
+                const num = parseFloat(s);
+                return isNaN(num) ? null : num;
+              });
+
+              await pool.query(
+                `INSERT INTO games (id, name, slug, description, price, currency, image, category, is_popular, stock, discount_price, packages, package_prices, package_discount_prices)
+                 VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
+                 ON CONFLICT (id) DO UPDATE SET
+                   name = EXCLUDED.name,
+                   slug = EXCLUDED.slug,
+                   description = EXCLUDED.description,
+                   price = EXCLUDED.price,
+                   currency = EXCLUDED.currency,
+                   image = EXCLUDED.image,
+                   category = EXCLUDED.category,
+                   is_popular = EXCLUDED.is_popular,
+                   stock = EXCLUDED.stock,
+                   discount_price = EXCLUDED.discount_price,
+                   packages = EXCLUDED.packages,
+                   package_prices = EXCLUDED.package_prices,
+                   package_discount_prices = EXCLUDED.package_discount_prices`,
+                [id, name, slug, description, price, currency, image, category, is_popular, stock, discount_price, packages, package_prices, package_discount_prices]
+              );
+            }
+
+            const catPath = path.join(__dirname, 'data', 'categories.json');
+            if (fs.existsSync(catPath)) {
+              const cats = JSON.parse(fs.readFileSync(catPath, 'utf8'));
+              for (const c of cats) {
+                await pool.query(
+                  `INSERT INTO categories (id, name, slug, description, image, gradient, icon)
+                   VALUES ($1, $2, $3, $4, $5, $6, $7)
+                   ON CONFLICT (id) DO UPDATE SET
+                     name = EXCLUDED.name,
+                     slug = EXCLUDED.slug,
+                     description = EXCLUDED.description,
+                     image = EXCLUDED.image,
+                     gradient = EXCLUDED.gradient,
+                     icon = EXCLUDED.icon`,
+                  [c.id, c.name, c.slug, c.description, c.image, c.gradient, c.icon]
+                );
+              }
+            }
+
+            if (ENABLE_IMAGE_SEEDING && typeof seedProductImages === 'function') await seedProductImages();
+          } catch (dbErr) {
+            console.error('⚠️ Database initialization warning:', dbErr.message);
+          }
+        } else {
+>>>>>>> 11187337703f9d57d38b3a578353a54b6fa7deaf
       console.error('❌ Database connection failed. API endpoints requiring DB will fail.');
       console.log('⚠️ Server starting in partial functionality mode.');
     }
