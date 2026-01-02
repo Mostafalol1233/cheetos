@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Trash2, Edit, Plus, MessageSquare, Bell, Check, AlertCircle, Info, Search, Package, Shield, ShoppingCart } from 'lucide-react';
-import { queryClient } from '@/lib/queryClient';
+import { API_BASE_URL, queryClient } from '@/lib/queryClient';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -48,6 +48,8 @@ interface Alert {
   timestamp: number;
   read: boolean;
 }
+
+const apiPath = (path: string) => (path.startsWith('http') ? path : `${API_BASE_URL}${path}`);
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('games');
@@ -92,7 +94,7 @@ export default function AdminDashboard() {
       if (alertType !== 'all') params.append('type', alertType);
       if (alertSearch) params.append('q', alertSearch);
       
-      const res = await fetch(`/api/admin/alerts?${params.toString()}`, {
+      const res = await fetch(`${API_BASE_URL}/api/admin/alerts?${params.toString()}`, {
         headers: token ? { Authorization: `Bearer ${token}` } : undefined
       });
       return await res.json();
@@ -103,7 +105,7 @@ export default function AdminDashboard() {
   const markAlertReadMutation = useMutation({
     mutationFn: async (id: number) => {
       const token = typeof window !== 'undefined' ? localStorage.getItem('adminToken') : null;
-      const res = await fetch(`/api/admin/alerts/${id}/read`, {
+      const res = await fetch(`${API_BASE_URL}/api/admin/alerts/${id}/read`, {
         method: 'PUT',
         headers: token ? { Authorization: `Bearer ${token}` } : undefined
       });
@@ -120,7 +122,7 @@ export default function AdminDashboard() {
     enabled: true,
     queryFn: async () => {
       const token = typeof window !== 'undefined' ? localStorage.getItem('adminToken') : null;
-      const res = await fetch(`/api/admin/game-cards?page=${cardsPage}&limit=${cardsLimit}`,
+      const res = await fetch(`${API_BASE_URL}/api/admin/game-cards?page=${cardsPage}&limit=${cardsLimit}`,
         { headers: token ? { Authorization: `Bearer ${token}` } : undefined }
       );
       return await res.json();
@@ -135,7 +137,7 @@ export default function AdminDashboard() {
     enabled: true,
     queryFn: async () => {
       const token = localStorage.getItem('adminToken');
-      const res = await fetch('/api/admin/chat/all', {
+      const res = await fetch(`${API_BASE_URL}/api/admin/chat/all`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {}
       });
       if (!res.ok) throw new Error('Failed to fetch chats');
@@ -148,7 +150,7 @@ export default function AdminDashboard() {
     enabled: true,
     queryFn: async () => {
       const token = typeof window !== 'undefined' ? localStorage.getItem('adminToken') : null;
-      const res = await fetch('/api/admin/confirmations', {
+      const res = await fetch(`${API_BASE_URL}/api/admin/confirmations`, {
         headers: token ? { Authorization: `Bearer ${token}` } : undefined
       });
       if (!res.ok) throw new Error('Failed to fetch confirmations');
@@ -163,7 +165,7 @@ export default function AdminDashboard() {
       refetchInterval: 3000,
       queryFn: async () => {
         const token = typeof window !== 'undefined' ? localStorage.getItem('adminToken') : null;
-        const res = await fetch('/api/admin/transactions', { headers: token ? { Authorization: `Bearer ${token}` } : undefined });
+        const res = await fetch(`${API_BASE_URL}/api/admin/transactions`, { headers: token ? { Authorization: `Bearer ${token}` } : undefined });
         if (!res.ok) throw new Error('Failed to fetch transactions');
         return await res.json();
       }
@@ -218,7 +220,7 @@ export default function AdminDashboard() {
   const deleteGameMutation = useMutation({
     mutationFn: async (gameId: string) => {
       const token = localStorage.getItem('adminToken');
-      const res = await fetch(`/api/admin/games/${gameId}`, { 
+      const res = await fetch(apiPath(`/api/admin/games/${gameId}`), { 
         method: 'DELETE',
         headers: token ? { Authorization: `Bearer ${token}` } : undefined,
       });
@@ -237,7 +239,7 @@ export default function AdminDashboard() {
   const updateGameMutation = useMutation({
     mutationFn: async (game: Partial<Game> & { id: string }) => {
       const token = localStorage.getItem('adminToken');
-      const res = await fetch(`/api/admin/games/${game.id}`, {
+      const res = await fetch(apiPath(`/api/admin/games/${game.id}`), {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
         body: JSON.stringify(game)
@@ -263,7 +265,7 @@ export default function AdminDashboard() {
   const updateGameImageUrlMutation = useMutation({
     mutationFn: async (payload: { id: string; image_url: string }) => {
       const token = localStorage.getItem('adminToken');
-      const res = await fetch(`/api/admin/games/${payload.id}/image-url`, {
+      const res = await fetch(apiPath(`/api/admin/games/${payload.id}/image-url`), {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
         body: JSON.stringify({ image_url: payload.image_url })
@@ -294,7 +296,7 @@ export default function AdminDashboard() {
       const headers: HeadersInit = {};
       if (token) (headers as Record<string, string>).Authorization = `Bearer ${token}`;
 
-      const getRes = await fetch(`/api/admin/games/${payload.gameId}/packages`, { headers });
+      const getRes = await fetch(apiPath(`/api/admin/games/${payload.gameId}/packages`), { headers });
       const current = await getRes.json().catch(() => []);
       if (!getRes.ok) throw new Error((current as any)?.message || 'Failed to load packages');
 
@@ -305,7 +307,7 @@ export default function AdminDashboard() {
         image: payload.logoUrl
       }));
 
-      const putRes = await fetch(`/api/admin/games/${payload.gameId}/packages`, {
+      const putRes = await fetch(apiPath(`/api/admin/games/${payload.gameId}/packages`), {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
         body: JSON.stringify({ packages })
@@ -330,7 +332,7 @@ export default function AdminDashboard() {
   const createGameMutation = useMutation({
     mutationFn: async (gameData: Omit<Game, 'id'>) => {
       const token = localStorage.getItem('adminToken');
-      const res = await fetch('/api/admin/games', {
+      const res = await fetch(apiPath('/api/admin/games'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
         body: JSON.stringify(gameData)
@@ -351,7 +353,7 @@ export default function AdminDashboard() {
       if (!newCardGameId || !newCardCode.trim() || newCardCode.trim().length > 200) {
         throw new Error('Invalid card data');
       }
-      const res = await fetch('/api/admin/game-cards', {
+      const res = await fetch(apiPath('/api/admin/game-cards'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
         body: JSON.stringify({ game_id: newCardGameId, card_code: newCardCode.trim() })
@@ -369,7 +371,7 @@ export default function AdminDashboard() {
   const updateCardMutation = useMutation({
     mutationFn: async (payload: { id: string; is_used?: boolean; card_code?: string }) => {
       const token = typeof window !== 'undefined' ? localStorage.getItem('adminToken') : null;
-      const res = await fetch(`/api/admin/game-cards/${payload.id}`, {
+      const res = await fetch(apiPath(`/api/admin/game-cards/${payload.id}`), {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
         body: JSON.stringify(payload)
@@ -385,7 +387,7 @@ export default function AdminDashboard() {
   const deleteCardMutation = useMutation({
     mutationFn: async (id: string) => {
       const token = typeof window !== 'undefined' ? localStorage.getItem('adminToken') : null;
-      const res = await fetch(`/api/admin/game-cards/${id}`, {
+      const res = await fetch(apiPath(`/api/admin/game-cards/${id}`), {
         method: 'DELETE',
         headers: token ? { Authorization: `Bearer ${token}` } : undefined,
       });
@@ -400,7 +402,7 @@ export default function AdminDashboard() {
   const replyMutation = useMutation({
     mutationFn: async () => {
       const token = localStorage.getItem('adminToken');
-      const res = await fetch('/api/chat/message', {
+      const res = await fetch(apiPath('/api/chat/message'), {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -425,7 +427,7 @@ export default function AdminDashboard() {
   const deleteCategoryMutation = useMutation({
     mutationFn: async (categoryId: string) => {
       const token = localStorage.getItem('adminToken');
-      const res = await fetch(`/api/admin/categories/${categoryId}`, {
+      const res = await fetch(apiPath(`/api/admin/categories/${categoryId}`), {
         method: 'DELETE',
         headers: token ? { Authorization: `Bearer ${token}` } : {}
       });
@@ -449,7 +451,7 @@ export default function AdminDashboard() {
       if (data.icon) formData.append('icon', data.icon);
       if (data.image) formData.append('image', data.image);
       
-      const res = await fetch(`/api/admin/categories/${data.id}`, {
+      const res = await fetch(apiPath(`/api/admin/categories/${data.id}`), {
         method: 'PUT',
         headers: token ? { Authorization: `Bearer ${token}` } : {},
         body: formData
@@ -492,7 +494,7 @@ export default function AdminDashboard() {
     refetchInterval: 2000,
     queryFn: async () => {
       const token = localStorage.getItem('adminToken');
-      const res = await fetch(`/api/admin/chat/${selectedSession}`, {
+      const res = await fetch(apiPath(`/api/admin/chat/${selectedSession}`), {
         headers: token ? { Authorization: `Bearer ${token}` } : {}
       });
       if (!res.ok) throw new Error('Failed to fetch messages');
@@ -520,7 +522,7 @@ export default function AdminDashboard() {
     const saveMutation = useMutation({
       mutationFn: async () => {
         const token = localStorage.getItem('adminToken');
-        const res = await fetch(`/api/admin/games/${gameId}`, {
+        const res = await fetch(apiPath(`/api/admin/games/${gameId}`), {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
           body: JSON.stringify({ id: gameId, discountPrice: finalPrice })
@@ -633,7 +635,7 @@ export default function AdminDashboard() {
 
     try {
       const token = localStorage.getItem('adminToken');
-      const res = await fetch('/api/admin/images/upload-cloudinary', {
+      const res = await fetch(apiPath('/api/admin/images/upload-cloudinary'), {
         method: 'POST',
         headers: token ? { Authorization: `Bearer ${token}` } : undefined,
         body: formData
@@ -670,7 +672,7 @@ export default function AdminDashboard() {
     const saveMutation = useMutation({
       mutationFn: async () => {
         const token = localStorage.getItem('adminToken');
-        const res = await fetch('/api/admin/content', {
+        const res = await fetch(apiPath('/api/admin/content'), {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
           body: JSON.stringify({ title, description, link })
@@ -1608,7 +1610,7 @@ function CatboxUploadPanel({ allGames, categories }: { allGames: Game[]; categor
     setError(''); setResultUrl('');
     const token = typeof window !== 'undefined' ? localStorage.getItem('adminToken') : null;
     try {
-      const res = await fetch('/api/admin/images/catbox-url', {
+      const res = await fetch(apiPath('/api/admin/images/catbox-url'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
         body: JSON.stringify({ url, type, id: targetId, filename: undefined })
@@ -1675,7 +1677,7 @@ function CatboxUploadPanel({ allGames, categories }: { allGames: Game[]; categor
       enabled: true,
       queryFn: async () => {
         const token = localStorage.getItem('adminToken');
-        const res = await fetch(`/api/admin/users?q=${encodeURIComponent(q)}&page=${page}&limit=20`, {
+        const res = await fetch(apiPath(`/api/admin/users?q=${encodeURIComponent(q)}&page=${page}&limit=20`), {
           headers: token ? { Authorization: `Bearer ${token}` } : {}
         });
         if (!res.ok) throw new Error('Failed to fetch users');
@@ -1685,7 +1687,7 @@ function CatboxUploadPanel({ allGames, categories }: { allGames: Game[]; categor
     const exportMutation = useMutation({
       mutationFn: async () => {
         const token = localStorage.getItem('adminToken');
-        const res = await fetch('/api/admin/users/export', { headers: token ? { Authorization: `Bearer ${token}` } : {} });
+        const res = await fetch(apiPath('/api/admin/users/export'), { headers: token ? { Authorization: `Bearer ${token}` } : {} });
         const csv = await res.text();
         const blob = new Blob([csv], { type: 'text/csv' });
         const url = URL.createObjectURL(blob);
@@ -1746,7 +1748,7 @@ function CatboxUploadPanel({ allGames, categories }: { allGames: Game[]; categor
         const params = new URLSearchParams();
         if (q) params.set('q', q);
         if (eventType && eventType !== 'all') params.set('event_type', eventType);
-        const res = await fetch(`/api/admin/interactions?${params.toString()}`, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
+        const res = await fetch(apiPath(`/api/admin/interactions?${params.toString()}`), { headers: token ? { Authorization: `Bearer ${token}` } : {} });
         if (!res.ok) throw new Error('Failed to fetch interactions');
         return res.json();
       }
@@ -1754,7 +1756,7 @@ function CatboxUploadPanel({ allGames, categories }: { allGames: Game[]; categor
     const exportMutation = useMutation({
       mutationFn: async () => {
         const token = localStorage.getItem('adminToken');
-        const res = await fetch('/api/admin/interactions/export', { headers: token ? { Authorization: `Bearer ${token}` } : {} });
+        const res = await fetch(apiPath('/api/admin/interactions/export'), { headers: token ? { Authorization: `Bearer ${token}` } : {} });
         const csv = await res.text();
         const blob = new Blob([csv], { type: 'text/csv' });
         const url = URL.createObjectURL(blob);
@@ -1875,7 +1877,7 @@ function CatboxUploadPanel({ allGames, categories }: { allGames: Game[]; categor
       const form = new FormData();
       files.forEach(f => form.append('files', f));
       form.append('storage', storage);
-      const res = await fetch('/api/admin/images/upload-batch', {
+      const res = await fetch(apiPath('/api/admin/images/upload-batch'), {
         method: 'POST',
         headers: token ? { Authorization: `Bearer ${token}` } : undefined,
         body: form
@@ -1886,7 +1888,7 @@ function CatboxUploadPanel({ allGames, categories }: { allGames: Game[]; categor
       setProgress(100);
     } else {
       const urls = urlsText.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
-      const res = await fetch('/api/admin/images/upload-batch', {
+      const res = await fetch(apiPath('/api/admin/images/upload-batch'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
         body: JSON.stringify({ storage, urls })
@@ -1900,7 +1902,7 @@ function CatboxUploadPanel({ allGames, categories }: { allGames: Game[]; categor
   const scanSite = async () => {
     setResults([]); setProgress(0);
     const token = typeof window !== 'undefined' ? localStorage.getItem('adminToken') : null;
-    const res = await fetch('/api/admin/images/scan-site', {
+    const res = await fetch(apiPath('/api/admin/images/scan-site'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
       body: JSON.stringify({ url: scanUrl, storage })
@@ -1972,7 +1974,7 @@ function CatboxUploadPanel({ allGames, categories }: { allGames: Game[]; categor
     queryKey: ['/api/admin/chat-widget/config'],
     queryFn: async () => {
       const token = localStorage.getItem('adminToken');
-      const res = await fetch('/api/admin/chat-widget/config', {
+      const res = await fetch(apiPath('/api/admin/chat-widget/config'), {
         headers: token ? { Authorization: `Bearer ${token}` } : {}
       });
       if (!res.ok) throw new Error('Failed to fetch config');
@@ -1997,7 +1999,7 @@ function CatboxUploadPanel({ allGames, categories }: { allGames: Game[]; categor
   const updateConfigMutation = useMutation({
     mutationFn: async (configData: any) => {
       const token = localStorage.getItem('adminToken');
-      const res = await fetch('/api/admin/chat-widget/config', {
+      const res = await fetch(apiPath('/api/admin/chat-widget/config'), {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -2092,7 +2094,7 @@ function LogoManagementPanel() {
     queryKey: ['/api/admin/logo/config'],
     queryFn: async () => {
       const token = localStorage.getItem('adminToken');
-      const res = await fetch('/api/admin/logo/config', {
+      const res = await fetch(apiPath('/api/admin/logo/config'), {
         headers: token ? { Authorization: `Bearer ${token}` } : {}
       });
       if (!res.ok) throw new Error('Failed to fetch logo config');
@@ -2116,7 +2118,7 @@ function LogoManagementPanel() {
   const updateLogoMutation = useMutation({
     mutationFn: async (logoData: any) => {
       const token = localStorage.getItem('adminToken');
-      const res = await fetch('/api/admin/logo/config', {
+      const res = await fetch(apiPath('/api/admin/logo/config'), {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -2193,7 +2195,7 @@ function LogoManagementPanel() {
     formData.append('file', blob, `logo-${type}.${blob.type === 'image/svg+xml' ? 'svg' : 'png'}`);
     try {
       const token = localStorage.getItem('adminToken');
-      const res = await fetch('/api/admin/upload', {
+      const res = await fetch(apiPath('/api/admin/upload'), {
         method: 'POST',
         headers: token ? { Authorization: `Bearer ${token}` } : {},
         body: formData
@@ -2227,7 +2229,7 @@ function DiscountsPanel({ games, onSaved }: { games: Game[]; onSaved: () => void
   const updateGameMutation = useMutation({
     mutationFn: async () => {
       const token = localStorage.getItem('adminToken');
-      const res = await fetch(`/api/admin/games/${gameId}`, {
+      const res = await fetch(apiPath(`/api/admin/games/${gameId}`), {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
         body: JSON.stringify({ id: gameId, discountPrice: finalPrice })
@@ -2414,7 +2416,7 @@ function CheckoutTemplatesPanel() {
     queryKey: ['/api/admin/checkout/templates'],
     queryFn: async () => {
       const token = localStorage.getItem('adminToken');
-      const res = await fetch('/api/admin/checkout/templates', {
+      const res = await fetch(apiPath('/api/admin/checkout/templates'), {
         headers: token ? { Authorization: `Bearer ${token}` } : {}
       });
       if (!res.ok) throw new Error('Failed to fetch templates');
@@ -2433,7 +2435,7 @@ function CheckoutTemplatesPanel() {
   const saveMutation = useMutation({
     mutationFn: async () => {
       const token = localStorage.getItem('adminToken');
-      const res = await fetch('/api/admin/checkout/templates', {
+      const res = await fetch(apiPath('/api/admin/checkout/templates'), {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
         body: JSON.stringify({ customerMessage, adminMessage })
@@ -2508,7 +2510,7 @@ function WhatsAppConnectionPanel() {
     queryKey: ['/api/admin/whatsapp/config'],
     queryFn: async () => {
       const token = localStorage.getItem('adminToken');
-      const res = await fetch('/api/admin/whatsapp/config', {
+      const res = await fetch(apiPath('/api/admin/whatsapp/config'), {
         headers: token ? { Authorization: `Bearer ${token}` } : {}
       });
       if (!res.ok) throw new Error('Failed to fetch WhatsApp config');
@@ -2520,7 +2522,7 @@ function WhatsAppConnectionPanel() {
   const sendMutation = useMutation({
     mutationFn: async () => {
       const token = localStorage.getItem('adminToken');
-      const res = await fetch('/api/admin/whatsapp/send', {
+      const res = await fetch(apiPath('/api/admin/whatsapp/send'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
         body: JSON.stringify({ to, text })
@@ -2551,14 +2553,14 @@ function SellerAlertsPanel() {
     queryKey: ['/api/admin/alerts'],
     refetchInterval: 5000,
     queryFn: async () => {
-      const res = await fetch('/api/admin/alerts', { headers: token ? { Authorization: `Bearer ${token}` } : undefined });
+      const res = await fetch(apiPath('/api/admin/alerts'), { headers: token ? { Authorization: `Bearer ${token}` } : undefined });
       return res.json();
     }
   });
 
   const markRead = useMutation({
     mutationFn: async (id: string) => {
-      const res = await fetch(`/api/admin/alerts/${id}/read`, { method: 'POST', headers: token ? { Authorization: `Bearer ${token}` } : undefined });
+      const res = await fetch(apiPath(`/api/admin/alerts/${id}/read`), { method: 'POST', headers: token ? { Authorization: `Bearer ${token}` } : undefined });
       return res.json();
     },
     onSuccess: () => refetch()
@@ -2566,7 +2568,7 @@ function SellerAlertsPanel() {
 
   const flagAlert = useMutation({
     mutationFn: async (id: string) => {
-      const res = await fetch(`/api/admin/alerts/${id}/flag`, { method: 'POST', headers: token ? { Authorization: `Bearer ${token}` } : undefined });
+      const res = await fetch(apiPath(`/api/admin/alerts/${id}/flag`), { method: 'POST', headers: token ? { Authorization: `Bearer ${token}` } : undefined });
       return res.json();
     },
     onSuccess: () => refetch()
