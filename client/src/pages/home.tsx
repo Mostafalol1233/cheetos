@@ -187,16 +187,16 @@ export default function Home() {
 
             {/* Image */}
             <div className="rounded-2xl overflow-hidden bg-gradient-to-br from-neon-pink/20 via-purple-900/20 to-gold-primary/20 border border-gold-primary/30 p-4">
-              <div className="relative w-full h-[380px] md:h-[520px] bg-gradient-to-br from-gray-200 dark:from-gray-800 to-white dark:to-black rounded-xl flex items-center justify-center overflow-hidden group">
+              <div className="relative w-full bg-gradient-to-br from-gray-200 dark:from-gray-800 to-white dark:to-black rounded-xl flex items-center justify-center overflow-hidden group">
                 {/* Animated background */}
                 <div className="absolute inset-0 bg-gradient-to-r from-gold-primary/10 via-neon-pink/10 to-purple-600/10 animate-pulse"></div>
                 
                 {/* Main image or placeholder */}
-                <div className="relative z-10 flex flex-col items-center justify-center w-full h-full">
+                <div className="relative z-10 flex flex-col items-center justify-center w-full">
                   <img 
                     src="https://i.postimg.cc/zG8jHjqS/large-image-logo.png" 
                     alt="Diaa Sadek Logo"
-                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                    className="w-full h-auto object-contain transition-transform duration-500 group-hover:scale-105"
                   />
                 </div>
                 

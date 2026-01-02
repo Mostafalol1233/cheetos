@@ -4114,7 +4114,7 @@ app.get('/api/chat/:sessionId', async (req, res) => {
     const messages = result.rows.map(r => ({ 
       id: r.id, 
       sender: r.sender, 
-      message: r.message_encrypted ? '[encrypted]' : '', 
+      message: (() => { try { return decryptMessage(r.message_encrypted); } catch { return ''; } })(), 
       sessionId: r.session_id, 
       timestamp: new Date(r.timestamp).getTime() 
     }));
@@ -4234,7 +4234,7 @@ app.get('/api/chat/all', async (req, res) => {
     const messages = result.rows.map(r => ({ 
       id: r.id, 
       sender: r.sender, 
-      message: r.message_encrypted ? '[encrypted]' : '', 
+      message: (() => { try { return decryptMessage(r.message_encrypted); } catch { return ''; } })(), 
       sessionId: r.session_id, 
       timestamp: new Date(r.timestamp).getTime() 
     }));
@@ -4295,6 +4295,19 @@ app.post('/api/chat/message', async (req, res) => {
     }
     
     if (sender === 'user') {
+      // Insert a one-time welcome/wait message AFTER the user sends the first message
+      try {
+        const countRes = await pool.query('SELECT COUNT(*)::int AS c FROM chat_messages WHERE session_id = $1', [sessionId]);
+        const c = countRes?.rows?.[0]?.c;
+        if (Number(c) === 1) {
+          const waitMsg = 'Please wait a moment — Diaa or the seller will reply as soon as possible.\nيرجى الانتظار قليلاً، دِيعاء أو البائع سيرد عليك في أسرع وقت ممكن.';
+          const sysId = `cm_${Date.now()}_${Math.random().toString(36).slice(2,9)}`;
+          await pool.query('INSERT INTO chat_messages (id, sender, message_encrypted, session_id) VALUES ($1, $2, $3, $4)', [
+            sysId, 'support', encryptMessage(waitMsg), sessionId
+          ]);
+        }
+      } catch {}
+
       const alertId = `al_${Date.now()}_${Math.random().toString(36).slice(2,9)}`;
       const summary = `Website message in ${sessionId}: ${String(message).substring(0, 120)}`;
       await pool.query('INSERT INTO seller_alerts (id, type, summary) VALUES ($1, $2, $3)', [alertId, 'website_message', summary]);

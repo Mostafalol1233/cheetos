@@ -29,7 +29,6 @@ export function LiveChatWidget() {
   const [isUserTyping, setIsUserTyping] = useState(false);
   const [isSupportTyping, setIsSupportTyping] = useState(false);
   const [search, setSearch] = useState('');
-  const sentAutoWaitRef = useRef(false);
 
   // Fetch chat widget config
   const { data: config } = useQuery<ChatWidgetConfig>({
@@ -96,11 +95,11 @@ export function LiveChatWidget() {
       });
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (_data, msg) => {
       queryClient.invalidateQueries({ queryKey: [`/api/chat/${sessionId}`] });
       setInputMessage('');
       // Trigger auto-reply
-      autoReplyMutation.mutate(inputMessage);
+      autoReplyMutation.mutate(String(msg || ''));
     }
   });
 
@@ -127,31 +126,6 @@ export function LiveChatWidget() {
       }
     }
   }, [messages]);
-
-  useEffect(() => {
-    if (!isOpen) return;
-    if (sentAutoWaitRef.current) return;
-    if (Array.isArray(messages) && messages.length > 0) return;
-    sentAutoWaitRef.current = true;
-
-    const t = window.setTimeout(async () => {
-      try {
-        const lang = (typeof window !== 'undefined' ? (localStorage.getItem('lang') || navigator.language || '') : '').toLowerCase();
-        const isAr = lang.startsWith('ar');
-        const msg = isAr
-          ? 'يرجى الانتظار قليلاً، دِيعاء أو البائع سيرد عليك في أسرع وقت ممكن.\nPlease wait a moment — Diaa or the seller will reply as soon as possible.'
-          : 'Please wait a moment — Diaa or the seller will reply as soon as possible.\nيرجى الانتظار قليلاً، دِيعاء أو البائع سيرد عليك في أسرع وقت ممكن.';
-        await apiRequest('POST', '/api/chat/message', {
-          sender: 'support',
-          message: msg,
-          sessionId
-        });
-        queryClient.invalidateQueries({ queryKey: [`/api/chat/${sessionId}`] });
-      } catch {}
-    }, 1000);
-
-    return () => window.clearTimeout(t);
-  }, [isOpen, messages, sessionId]);
 
   useEffect(() => {
     const handler = () => setIsOpen(true);

@@ -1032,6 +1032,12 @@ export default function AdminDashboard() {
                     <CardTitle>{cat.name}</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
+                    {cat.image && (
+                      <div className="flex items-center gap-3">
+                        <img src={String(cat.image)} alt={cat.name} className="w-12 h-12 rounded object-cover border border-gold-primary/20" />
+                        <div className="text-xs text-muted-foreground break-all">{String(cat.image)}</div>
+                      </div>
+                    )}
                     <p className="text-sm text-muted-foreground">ID: {cat.id}</p>
                     <p className="text-sm text-muted-foreground">Slug: {cat.slug}</p>
                     <div className="flex gap-2">
@@ -1048,6 +1054,20 @@ export default function AdminDashboard() {
                       >
                         <Edit className="w-4 h-4 mr-2" />
                         Edit
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex-1"
+                        onClick={() => {
+                          const image = prompt('Category image URL:', String((cat as any).image || ''));
+                          if (image && image.trim()) {
+                            updateCategoryMutation.mutate({ id: cat.id, image: image.trim() });
+                          }
+                        }}
+                      >
+                        <Edit className="w-4 h-4 mr-2" />
+                        Image
                       </Button>
                       <Button 
                         variant="destructive" 
