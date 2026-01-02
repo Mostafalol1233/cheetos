@@ -77,6 +77,14 @@ export default function GamePage() {
     : undefined;
   const isOutOfStock = Number(game.stock) <= 0;
 
+  const computeDiscount = (base: number) => {
+    if (!Number.isFinite(base) || base < 50) return null;
+    const d = base - 100;
+    if (!Number.isFinite(d) || d <= 0) return null;
+    if (d >= base) return null;
+    return d;
+  };
+
   const handleAddToCart = () => {
     if (isOutOfStock) {
       toast({
@@ -181,11 +189,13 @@ export default function GamePage() {
             <ProductPackGrid
               packs={packages.map((pkg, index) => {
                 const base = Number(packagePrices[index] || game.price || 0);
+                const computedDiscount = computeDiscount(base);
+                const effectiveFinal = computedDiscount ?? base;
                 return {
                   id: String(index),
                   name: String(pkg),
-                  originalPrice: base,
-                  finalPrice: base + 100,
+                  originalPrice: computedDiscount != null ? base : null,
+                  finalPrice: effectiveFinal,
                   currency: game.currency,
                   image:
                     (Array.isArray((game as any).packageThumbnails) &&
@@ -208,12 +218,26 @@ export default function GamePage() {
                   {packages[selectedPackage] || t("default_package")}
                 </h3>
                 <div className="flex items-center gap-3">
-                  <span className="line-through text-red-600 text-xl sm:text-2xl">
-                    {packagePrices[selectedPackage] || game.price} {game.currency}
-                  </span>
-                  <span className="bg-gradient-to-r from-gold-primary to-neon-pink bg-clip-text text-3xl font-black text-transparent sm:text-5xl">
-                    {Number(packagePrices[selectedPackage] || game.price || 0) + 100} {game.currency}
-                  </span>
+                  {(() => {
+                    const base = Number(packagePrices[selectedPackage] || game.price || 0);
+                    const computed = computeDiscount(base);
+                    const finalPrice = computed ?? base;
+
+                    return computed != null ? (
+                      <>
+                        <span className="line-through text-red-600 text-xl sm:text-2xl">
+                          {base} {game.currency}
+                        </span>
+                        <span className="bg-gradient-to-r from-gold-primary to-neon-pink bg-clip-text text-3xl font-black text-transparent sm:text-5xl">
+                          {finalPrice} {game.currency}
+                        </span>
+                      </>
+                    ) : (
+                      <span className="bg-gradient-to-r from-gold-primary to-neon-pink bg-clip-text text-3xl font-black text-transparent sm:text-5xl">
+                        {finalPrice} {game.currency}
+                      </span>
+                    );
+                  })()}
                 </div>
               </div>
               <div className="rounded-xl bg-muted/40 px-4 py-3 text-xs text-muted-foreground">
@@ -248,13 +272,17 @@ export default function GamePage() {
               <div className="font-semibold text-foreground">
                 {packages[selectedPackage] || t("default_package")} · 
                 {(() => {
-                    const current = Number(packagePrices[selectedPackage] || game.price || 0);
-                    const computed = current + 100;
-                    return (
-                      <>
-                        <span className="line-through text-red-600 text-[10px]">{current}</span> {computed}
-                      </>
-                    );
+                    const base = Number(packagePrices[selectedPackage] || game.price || 0);
+                    const computed = computeDiscount(base);
+                    const finalPrice = computed ?? base;
+                    if (computed != null) {
+                      return (
+                        <>
+                          <span className="line-through text-red-600 text-[10px]">{base}</span> {finalPrice}
+                        </>
+                      );
+                    }
+                    return <>{finalPrice}</>;
                 })()}
                  {game.currency}
               </div>

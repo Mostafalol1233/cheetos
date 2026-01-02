@@ -141,9 +141,6 @@ export default function GamesPage() {
             {filteredGames.map((game) => {
               const isAdding = addingItems.includes(game.id);
               const isOutOfStock = Number(game.stock) <= 0;
-              const hasDiscount = game.discountPrice && parseFloat(game.discountPrice.toString()) > 0;
-              const mainPrice = parseFloat(game.price.toString());
-              const discountPrice = hasDiscount && game.discountPrice !== null ? parseFloat(String(game.discountPrice)) : null;
               
               return (
                 <Link key={game.id} href={`/game/${game.slug}`} className="group block h-full">
@@ -173,22 +170,6 @@ export default function GamesPage() {
                       </h3>
                       
                       <div className="mt-auto flex items-center justify-between pt-2">
-                        <div className="flex flex-col">
-                           {discountPrice && discountPrice > 0 && discountPrice < mainPrice ? (
-                             <div className="flex flex-col">
-                                <span className="text-xs text-gray-400 line-through">${mainPrice.toFixed(2)}</span>
-                                <span className="text-cyan-400 font-bold text-lg">${discountPrice.toFixed(2)}</span>
-                             </div>
-                           ) : discountPrice && discountPrice > 0 && discountPrice > mainPrice ? (
-                             <div className="flex flex-col">
-                                <span className="text-xs text-gray-400 line-through">${discountPrice.toFixed(2)}</span>
-                                <span className="text-cyan-400 font-bold text-lg">${mainPrice.toFixed(2)}</span>
-                             </div>
-                           ) : (
-                              <span className="text-cyan-400 font-bold text-lg">${mainPrice.toFixed(2)}</span>
-                           )}
-                        </div>
-
                         <Button
                           size="sm"
                           variant={isAdding ? "secondary" : "default"}

@@ -7,7 +7,6 @@ import { useCart } from "@/lib/cart-context";
 import { useTheme } from "@/components/theme-provider";
 import { useState, useEffect } from "react";
 import { useTranslation } from "@/lib/translation";
-
 const logo = "https://files.catbox.moe/brmkrj.png";
 
 interface HeaderProps {

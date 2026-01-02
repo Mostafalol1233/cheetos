@@ -18,14 +18,17 @@ export default function GameDetails() {
   const [addingToCart, setAddingToCart] = useState(false);
   const [amount, setAmount] = useState(1);
 
-  const { data: game, isLoading } = useQuery({
-    queryKey: ["/api/games", params?.slug],
-    queryFn: () => 
-      fetch(`/api/games/${params?.slug}`).then(res => {
-        if (!res.ok) throw new Error('Game not found');
-        return res.json();
-      }) as Promise<Game>,
-    enabled: !!params?.slug
+  const computeDiscount = (base: number) => {
+    if (!Number.isFinite(base) || base < 50) return null;
+    const d = base - 100;
+    if (!Number.isFinite(d) || d <= 0) return null;
+    if (d >= base) return null;
+    return d;
+  };
+
+  const { data: game, isLoading } = useQuery<Game>({
+    queryKey: [`/api/games/${params?.slug}`],
+    enabled: !!params?.slug,
   });
 
   const handleAddToCart = async () => {
@@ -57,11 +60,8 @@ export default function GameDetails() {
     
     setSelectedPackage(packageName);
     const base = parseFloat(String(game.price));
-    // If discountPrice > price, then price is the sale price.
-    // If discountPrice < price, then discountPrice is the sale price (unlikely given the data).
-    // Given the data (145 vs 45), price is the sale price.
-    // So selectedPrice should default to price.
-    setSelectedPrice(base);
+    const computed = computeDiscount(base);
+    setSelectedPrice(computed ?? base);
   };
 
   if (!match) return null;
@@ -199,11 +199,11 @@ export default function GameDetails() {
                     // Check both discountPrices (from games.json) and packageDiscountPrices (legacy/schema)
                     const discountPrices = game.discountPrices || game.packageDiscountPrices || [];
                     const rawDiscount = discountPrices[index] ? parseFloat(String(discountPrices[index])) : 0;
-                    
-                    const hasDiscount = rawDiscount > 0;
-                    // Ensure original price is the higher one, and sale price is the lower one
-                    const originalPrice = hasDiscount ? Math.max(rawPrice, rawDiscount) : rawPrice;
-                    const displayPrice = hasDiscount ? Math.min(rawPrice, rawDiscount) : rawPrice;
+
+                    const computedDiscount = computeDiscount(rawPrice);
+                    const hasDiscount = computedDiscount != null;
+                    const originalPrice = rawPrice;
+                    const displayPrice = computedDiscount ?? rawPrice;
                     
                     const isSelected = selectedPackage === pkg;
                     
@@ -258,10 +258,10 @@ export default function GameDetails() {
                         <div className="text-2xl font-bold text-gold-primary">
                           {(() => {
                             const rawPrice = parseFloat(String(game.price));
-                            const rawDiscount = game.discountPrice ? parseFloat(String(game.discountPrice)) : 0;
-                            const hasDiscount = rawDiscount > 0;
-                            const originalPrice = hasDiscount ? Math.max(rawPrice, rawDiscount) : rawPrice;
-                            const displayPrice = hasDiscount ? Math.min(rawPrice, rawDiscount) : rawPrice;
+                            const computed = computeDiscount(rawPrice);
+                            const hasDiscount = computed != null;
+                            const originalPrice = rawPrice;
+                            const displayPrice = computed ?? rawPrice;
 
                             return hasDiscount && originalPrice !== displayPrice ? (
                               <span className="inline-flex items-center gap-2">
@@ -289,7 +289,7 @@ export default function GameDetails() {
                 size="lg"
               >
                 <ShoppingCart className="mr-2 h-5 w-5" />
-                {addingToCart ? "Added to Cart!" : `Add to Cart - $${selectedPrice || parseFloat(String(game.discountPrice || game.price))}`}
+                {addingToCart ? "Added to Cart!" : `Add to Cart - $${selectedPrice || parseFloat(String(game.price))}`}
               </Button>
             </div>
 

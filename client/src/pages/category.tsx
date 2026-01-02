@@ -126,9 +126,13 @@ export default function CategoryPage() {
                 const packages = Array.isArray(game.packages) ? game.packages : [];
                 const packagePrices = Array.isArray(game.packagePrices) ? game.packagePrices : [];
                 const packageDiscountPrices = Array.isArray((game as any).packageDiscountPrices) ? (game as any).packageDiscountPrices : [];
-                const hasDiscount = game.discountPrice && parseFloat(game.discountPrice.toString()) > 0;
-                const mainPrice = parseFloat(game.price.toString());
-                const discountPrice = hasDiscount && game.discountPrice !== null ? parseFloat(String(game.discountPrice)) : null;
+                const computeDiscount = (base: number) => {
+                  if (!Number.isFinite(base) || base < 50) return null;
+                  const d = base - 100;
+                  if (!Number.isFinite(d) || d <= 0) return null;
+                  if (d >= base) return null;
+                  return d;
+                };
                 
                 const isOutOfStock = Number(game.stock) <= 0;
 
@@ -194,14 +198,19 @@ export default function CategoryPage() {
                         </div>
                       ) : (
                         <div className="mb-3">
-                          {hasDiscount ? (
-                            <div className="flex items-center gap-2">
-                              <span className="text-gray-500 line-through text-sm">{game.discountPrice} {game.currency}</span>
-                              <span className="text-gold-primary font-bold text-lg">{game.price} {game.currency}</span>
-                            </div>
-                          ) : (
-                            <div className="text-gold-primary font-bold text-lg">{game.price} {game.currency}</div>
-                          )}
+                          {(() => {
+                            const base = Number(game.price);
+                            const computed = computeDiscount(base);
+                            const finalPrice = computed ?? base;
+                            return computed != null ? (
+                              <div className="flex items-center gap-2">
+                                <span className="text-gray-500 line-through text-sm">{base} {game.currency}</span>
+                                <span className="text-gold-primary font-bold text-lg">{finalPrice} {game.currency}</span>
+                              </div>
+                            ) : (
+                              <div className="text-gold-primary font-bold text-lg">{finalPrice} {game.currency}</div>
+                            );
+                          })()}
                         </div>
                       )}
                       

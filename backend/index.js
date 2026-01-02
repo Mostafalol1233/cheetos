@@ -62,6 +62,7 @@ const CDN_BASE_URL = process.env.CDN_BASE_URL || '';
 const CLOUDINARY_CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME || '';
 const CLOUDINARY_API_KEY = process.env.CLOUDINARY_API_KEY || '';
 const CLOUDINARY_API_SECRET = process.env.CLOUDINARY_API_SECRET || '';
+const DEFAULT_PLACEHOLDER_IMAGE = process.env.DEFAULT_PLACEHOLDER_IMAGE || 'https://placehold.co/800x450/png?text=GameCart';
 // Image behavior flags
 const ENABLE_IMAGE_SEEDING = String(process.env.ENABLE_IMAGE_SEEDING || '').toLowerCase() === 'true';
 const ENABLE_IMAGE_OVERRIDES = String(process.env.ENABLE_IMAGE_OVERRIDES || '').toLowerCase() === 'true';
@@ -208,11 +209,10 @@ async function seedGamesFromJsonIfEmpty(force = false) {
         const slug = String(g.slug || name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''));
         const description = String(g.description || '');
         const currency = String(g.currency || 'EGP');
-        const image = g.image || '/media/placeholder.jpg';
+        const image = g.image || DEFAULT_PLACEHOLDER_IMAGE;
         const category = String(g.category || 'other');
         const is_popular = Boolean(g.isPopular || g.is_popular || false);
         const stock = Number(g.stock || 100);
-        
         const rawPackages = coerceJsonArray(g.packages);
         const rawPrices = coerceJsonArray(g.packagePrices).map(n => {
           if (typeof n === 'number') return n;
@@ -221,22 +221,17 @@ async function seedGamesFromJsonIfEmpty(force = false) {
           return isNaN(num) ? 0 : num;
         });
 
-        // Apply 100 EGP discount logic: discount = price - 100, only if price > 50
         const processedPackagePrices = [];
         const processedDiscountPrices = [];
-        
+
         for (const p of rawPrices) {
-          processedPackagePrices.push(p);
-          if (p > 50) {
-            processedDiscountPrices.push(p - 100);
-          } else {
-            processedDiscountPrices.push(null);
-          }
+          const base = Number(p) || 0;
+          processedPackagePrices.push(base);
+          processedDiscountPrices.push(computeDiscountPrice(base));
         }
 
-        // Set main price as the first package price if not provided
         const price = Number(g.price) || (processedPackagePrices[0] || 0);
-        const discount_price = price > 50 ? (price - 100) : null;
+        const discount_price = computeDiscountPrice(price);
 
         await pool.query(
           `INSERT INTO games (id, name, slug, description, price, currency, image, category, is_popular, stock, discount_price, packages, package_prices, package_discount_prices)
@@ -378,14 +373,30 @@ if (!fs.existsSync(imagesDir)) {
   try { fs.mkdirSync(imagesDir, { recursive: true }); } catch {}
 }
 
+function computeDiscountPrice(mainPrice) {
+  const p = Number(mainPrice);
+  if (!Number.isFinite(p) || p < 50) return null;
+  const d = p - 100;
+  if (!Number.isFinite(d) || d <= 0) return null;
+  if (d >= p) return null;
+  return d;
+}
+
 async function useProvidedImage(req) {
   try {
     const url = (req.body && (req.body.image_url || req.body.imageUrl || req.body.image)) || null;
     const pth = (req.body && (req.body.image_path || req.body.imagePath)) || null;
     
-    // Catbox exclusive hosting
     if (req.file && req.file.filename) {
       const localPath = req.file.path;
+      try {
+        if (CLOUDINARY_ENABLED) {
+          const result = await cloudinary.uploader.upload(localPath, { folder: process.env.CLOUDINARY_FOLDER || 'gamecart/games', resource_type: 'image' });
+          try { fs.unlinkSync(localPath); } catch {}
+          if (result?.secure_url) return result.secure_url;
+        }
+      } catch {}
+
       try {
         const r = await catboxFileUploadFromLocal(localPath, req.file.originalname || req.file.filename);
         try { fs.unlinkSync(localPath); } catch {}
@@ -394,7 +405,7 @@ async function useProvidedImage(req) {
       } catch (err) {
         try {
           const alertId = `al_${Date.now()}`;
-          const summary = `Catbox upload failed for ${req.file?.originalname || req.file?.filename}: ${String(err?.message || err).substring(0, 180)}`;
+          const summary = `Image upload failed for ${req.file?.originalname || req.file?.filename}: ${String(err?.message || err).substring(0, 180)}`;
           await pool.query('INSERT INTO seller_alerts (id, type, summary) VALUES ($1, $2, $3)', [alertId, 'upload_error', summary]);
         } catch {}
         return null;
@@ -404,6 +415,12 @@ async function useProvidedImage(req) {
     if (typeof url === 'string' && url.trim()) {
       const u = url.trim();
       if (isCatboxUrl(u)) return u;
+      if (CLOUDINARY_ENABLED) {
+        try {
+          const result = await cloudinary.uploader.upload(u, { folder: process.env.CLOUDINARY_FOLDER || 'gamecart/games', resource_type: 'image' });
+          if (result?.secure_url) return result.secure_url;
+        } catch {}
+      }
       try {
         const up = await uploadUrlToCatbox(u);
         if (up.ok) return up.url;
@@ -1796,6 +1813,9 @@ app.post('/api/admin/games', authenticateToken, imageUpload.single('image'), asy
       return res.status(400).json({ message: 'Game name is required' });
     }
 
+    const numericPrice = Number(price) || 0;
+    const computedDiscount = computeDiscountPrice(numericPrice);
+
     try {
       const result = await pool.query(
         `INSERT INTO games (id, name, slug, description, price, currency, image, category, is_popular, stock, discount_price, packages, package_prices, package_discount_prices) 
@@ -1803,8 +1823,8 @@ app.post('/api/admin/games', authenticateToken, imageUpload.single('image'), asy
          RETURNING id, name, slug, description, price, currency, image, category, is_popular as "isPopular", stock, 
                    discount_price as "discountPrice", packages, package_prices as "packagePrices", 
                    package_discount_prices as "packageDiscountPrices"`,
-        [id, name.trim(), finalSlug, safeDescription, Number(price) || 0, currency || 'EGP', image || '/media/placeholder.jpg', category || 'other', isPop, Number(stock) || 100, 
-         discountPrice ? Number(discountPrice) : null, JSON.stringify(packagesArr), JSON.stringify(packagePricesArr), JSON.stringify(packageDiscountPricesArr)]
+        [id, name.trim(), finalSlug, safeDescription, numericPrice, currency || 'EGP', image || DEFAULT_PLACEHOLDER_IMAGE, category || 'other', isPop, Number(stock) || 100, 
+         computedDiscount, JSON.stringify(packagesArr), JSON.stringify(packagePricesArr), JSON.stringify(packageDiscountPricesArr)]
       );
       return res.status(201).json(result.rows[0]);
     } catch (dbErr) {
@@ -1818,11 +1838,11 @@ app.post('/api/admin/games', authenticateToken, imageUpload.single('image'), asy
       description: safeDescription,
       price: String(Number(price) || 0),
       currency: currency || 'EGP',
-      image: normalizeImageUrl(image || '/media/placeholder.jpg'),
+      image: normalizeImageUrl(image || DEFAULT_PLACEHOLDER_IMAGE),
       category: category || 'other',
       isPopular: isPop,
       stock: Number(stock) || 100,
-      discountPrice: discountPrice ? String(Number(discountPrice)) : null,
+      discountPrice: computedDiscount != null ? String(computedDiscount) : null,
       packages: packagesArr,
       packagePrices: (packagePricesArr || []).map(n => String(Number(n) || 0)),
       packageDiscountPrices: (packageDiscountPricesArr || []).map(v => v == null ? null : String(Number(v)))
@@ -1890,14 +1910,30 @@ app.put('/api/admin/games/:id', authenticateToken, imageUpload.single('image'), 
       updates.push(`description = $${paramIndex++}`); 
       values.push(safeDescription); 
     }
-    if (price !== undefined && price !== null) { updates.push(`price = $${paramIndex++}`); values.push(Number(price) || 0); }
+    const numericPriceForDiscount = price !== undefined && price !== null ? (Number(price) || 0) : undefined;
+    if (price !== undefined && price !== null) { updates.push(`price = $${paramIndex++}`); values.push(numericPriceForDiscount); }
     if (currency !== undefined && currency !== null) { updates.push(`currency = $${paramIndex++}`); values.push(currency); }
     if (image !== undefined && image !== null) { updates.push(`image = $${paramIndex++}`); values.push(image); }
     if (req.body.image_url !== undefined && req.body.image_url !== null) { updates.push(`image_url = $${paramIndex++}`); values.push(normalizeImageUrl(req.body.image_url)); }
     if (category !== undefined && category !== null) { updates.push(`category = $${paramIndex++}`); values.push(category); }
     if (isPopular !== undefined && isPopular !== null) { updates.push(`is_popular = $${paramIndex++}`); values.push(isPop); }
     if (stock !== undefined && stock !== null) { updates.push(`stock = $${paramIndex++}`); values.push(Number(stock) || 0); }
-    if (discountPrice !== undefined) { updates.push(`discount_price = $${paramIndex++}`); values.push(discountPrice ? Number(discountPrice) : null); }
+    if (discountPrice !== undefined || numericPriceForDiscount !== undefined) {
+      let basePrice = numericPriceForDiscount;
+      if (basePrice === undefined) {
+        try {
+          const currentPriceRes = await pool.query('SELECT price FROM games WHERE id = $1', [gameId]);
+          const currentPrice = currentPriceRes.rows?.[0]?.price;
+          basePrice = currentPrice != null ? Number(currentPrice) : undefined;
+        } catch {
+          basePrice = undefined;
+        }
+      }
+
+      const computedDiscount = basePrice !== undefined ? computeDiscountPrice(basePrice) : null;
+      updates.push(`discount_price = $${paramIndex++}`);
+      values.push(computedDiscount);
+    }
     if (packagesArr !== undefined) { updates.push(`packages = $${paramIndex++}`); values.push(packagesArr); }
     if (packagePricesArr !== undefined) { updates.push(`package_prices = $${paramIndex++}`); values.push(packagePricesArr); }
     if (packageDiscountPricesArr !== undefined) { updates.push(`package_discount_prices = $${paramIndex++}`); values.push(packageDiscountPricesArr); }
@@ -2062,9 +2098,13 @@ app.post('/api/admin/images/upload-cloudinary', authenticateToken, imageUpload.s
       }
     }
     if (!url) {
-      url = normalizeImageUrl(`/uploads/${req.file.filename}`);
+      try {
+        const r = await catboxFileUploadFromLocal(localPath, req.file.originalname || req.file.filename);
+        if (r?.ok) url = r.url;
+      } catch {}
     }
     try { fs.unlinkSync(localPath); } catch {}
+    if (!url) return res.status(500).json({ ok: false, message: 'Failed to upload image (configure Cloudinary or Catbox)' });
     res.json({ ok: true, url });
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -2102,15 +2142,15 @@ app.get('/api/categories/:id', async (req, res) => {
 });
 
 // Create category (Admin)
-app.post('/api/admin/categories', authenticateToken, upload.single('image'), async (req, res) => {
+app.post('/api/admin/categories', authenticateToken, imageUpload.single('image'), async (req, res) => {
   try {
     const { name, slug, description, gradient, icon } = req.body;
-    const image = req.file ? `/uploads/${req.file.filename}` : null;
+    const image = await useProvidedImage(req);
     const id = `cat_${Date.now()}`;
 
     const result = await pool.query(
       'INSERT INTO categories (id, name, slug, description, image, gradient, icon) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *',
-      [id, name, slug, description, image, gradient, icon]
+      [id, name, slug, description !== null && description !== undefined ? String(description).trim() : '', image || '/media/placeholder.jpg', gradient, icon]
     );
 
     res.status(201).json(result.rows[0]);
@@ -2120,7 +2160,7 @@ app.post('/api/admin/categories', authenticateToken, upload.single('image'), asy
 });
 
 // Update category (Admin)
-app.put('/api/admin/categories/:id', authenticateToken, upload.single('image'), async (req, res) => {
+app.put('/api/admin/categories/:id', authenticateToken, imageUpload.single('image'), async (req, res) => {
   try {
     const { id } = req.params;
     const { name, slug, description, gradient, icon } = req.body;
@@ -2145,12 +2185,16 @@ app.put('/api/admin/categories/:id', authenticateToken, upload.single('image'), 
     if (icon !== undefined && icon !== null) { updates.push(`icon = $${paramIndex++}`); values.push(icon); }
     
     // Handle image
-    if (req.file) {
+    const newImage = await useProvidedImage(req);
+    if (newImage) {
       updates.push(`image = $${paramIndex++}`);
-      values.push(normalizeImageUrl(`/uploads/${req.file.filename}`));
-    } else if (req.body.image !== undefined) {
-      updates.push(`image = $${paramIndex++}`);
-      values.push(normalizeImageUrl(req.body.image));
+      values.push(newImage);
+    } else if (typeof req.body.image === 'string' && req.body.image.trim()) {
+      const normalized = normalizeImageUrl(req.body.image);
+      if (/^https?:\/\//i.test(normalized) || isCatboxUrl(normalized)) {
+        updates.push(`image = $${paramIndex++}`);
+        values.push(normalized);
+      }
     }
     
     if (updates.length === 0) {
@@ -4434,7 +4478,11 @@ const startServer = async () => {
   try {
     console.log("🔄 Checking database connection...");
     const isConnected = await checkConnection(3, 2000);
+<<<<<<< HEAD
     
+=======
+
+>>>>>>> 81b0be5 (update)
     if (isConnected) {
       try {
         if (typeof initializeDatabase === "function") await initializeDatabase();
@@ -4514,7 +4562,12 @@ const startServer = async () => {
         console.error("⚠️ Database initialization warning:", dbErr.message);
       }
     } else {
+<<<<<<< HEAD
       console.error("❌ Database connection failed.");
+=======
+      console.error('❌ Database connection failed. API endpoints requiring DB will fail.');
+      console.log('⚠️ Server starting in partial functionality mode.');
+>>>>>>> 81b0be5 (update)
     }
 
     try {
