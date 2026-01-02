@@ -11,17 +11,34 @@ export default function PacksPage() {
   const { data: games = [], isLoading } = useQuery<any[]>({ queryKey: ["/api/games"] });
   const { addToCart } = useCart();
 
+  const computeDiscount = (base: number) => {
+    if (!Number.isFinite(base) || base < 50) return null;
+    const d = base - 100;
+    if (!Number.isFinite(d) || d <= 0) return null;
+    if (d >= base) return null;
+    return d;
+  };
+
   // Aggregate packs from all games for demo; adapt to /api/packs if available
   const packs = React.useMemo(() => {
     const out: any[] = [];
     (games || ([] as any[])).forEach((g: any) => {
       if (Array.isArray(g.packages) && g.packages.length > 0) {
         g.packages.forEach((pkg: string, idx: number) => {
+          const base = Number((g.packagePrices && g.packagePrices[idx]) || g.price || 0);
+          const computed = computeDiscount(base);
+          const legacy = Array.isArray(g.packageDiscountPrices) ? g.packageDiscountPrices[idx] : null;
+          const legacyNum = legacy != null ? Number(legacy) : null;
+          const effectiveDiscount =
+            legacyNum != null && Number.isFinite(legacyNum) && legacyNum > 0 && legacyNum < base
+              ? legacyNum
+              : computed;
+          const finalPrice = effectiveDiscount ?? base;
           out.push({
             id: `${g.id}-pkg-${idx}`,
             name: pkg,
-            originalPrice: (g.discountPrices && g.discountPrices[idx]) || null,
-            finalPrice: (g.packagePrices && g.packagePrices[idx]) || g.price,
+            originalPrice: effectiveDiscount != null ? base : null,
+            finalPrice,
             currency: g.currency || "EGP",
             image: (g.packageThumbnails && g.packageThumbnails[idx]) || g.image,
           });

@@ -4478,11 +4478,6 @@ const startServer = async () => {
   try {
     console.log("🔄 Checking database connection...");
     const isConnected = await checkConnection(3, 2000);
-<<<<<<< HEAD
-    
-=======
-
->>>>>>> 81b0be5 (update)
     if (isConnected) {
       try {
         if (typeof initializeDatabase === "function") await initializeDatabase();
@@ -4562,12 +4557,8 @@ const startServer = async () => {
         console.error("⚠️ Database initialization warning:", dbErr.message);
       }
     } else {
-<<<<<<< HEAD
-      console.error("❌ Database connection failed.");
-=======
       console.error('❌ Database connection failed. API endpoints requiring DB will fail.');
       console.log('⚠️ Server starting in partial functionality mode.');
->>>>>>> 81b0be5 (update)
     }
 
     try {

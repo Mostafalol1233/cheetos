@@ -39,13 +39,12 @@ export default function GameDetails() {
     addToCart({
       id: `${game.id}-${selectedPackage}`,
       name: `${game.name} - ${selectedPackage}`,
-      price: selectedPrice * amount,
-      image: game.image,
-      quantity: amount
+      price: selectedPrice,
+      image: game.image
     });
 
     toast({
-      title: "Success! ✅",
+      title: "Success! ",
       description: `${game.name} - ${selectedPackage} added to cart`,
       duration: 2000,
     });
@@ -196,10 +195,6 @@ export default function GameDetails() {
                 {game.packages && game.packages.length > 0 ? (
                   game.packages.map((pkg: string, index: number) => {
                     const rawPrice = game.packagePrices && game.packagePrices[index] ? parseFloat(String(game.packagePrices[index])) : parseFloat(String(game.price));
-                    // Check both discountPrices (from games.json) and packageDiscountPrices (legacy/schema)
-                    const discountPrices = game.discountPrices || game.packageDiscountPrices || [];
-                    const rawDiscount = discountPrices[index] ? parseFloat(String(discountPrices[index])) : 0;
-
                     const computedDiscount = computeDiscount(rawPrice);
                     const hasDiscount = computedDiscount != null;
                     const originalPrice = rawPrice;
