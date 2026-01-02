@@ -246,6 +246,24 @@ export default function AdminDashboard() {
     }
   });
 
+  const updateGameImageUrlMutation = useMutation({
+    mutationFn: async (payload: { id: string; image_url: string }) => {
+      const token = localStorage.getItem('adminToken');
+      const res = await fetch(`/api/admin/games/${payload.id}/image-url`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: JSON.stringify({ image_url: payload.image_url })
+      });
+      return res.json();
+    },
+    onSuccess: (resp) => {
+      queryClient.invalidateQueries({ queryKey: ['/api/games'] });
+      if (resp?.id) {
+        setEditingGame((prev) => (prev ? ({ ...prev, image_url: resp.image_url } as any) : prev));
+      }
+    }
+  });
+
   // Create game mutation
   const createGameMutation = useMutation({
     mutationFn: async (gameData: Omit<Game, 'id'>) => {
@@ -1422,6 +1440,22 @@ export default function AdminDashboard() {
                   onChange={(e) => setEditingGame({ ...editingGame, image_url: e.target.value } as any)}
                   className="col-span-3"
                 />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <div className="col-start-2 col-span-3 flex gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={!editingGame?.id || !(editingGame as any).image_url || updateGameImageUrlMutation.isPending}
+                    onClick={() => {
+                      const url = String((editingGame as any).image_url || '').trim();
+                      if (!editingGame?.id || !url) return;
+                      updateGameImageUrlMutation.mutate({ id: editingGame.id, image_url: url });
+                    }}
+                  >
+                    Save Large Image Only
+                  </Button>
+                </div>
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label className="text-right">Upload Large Image</Label>

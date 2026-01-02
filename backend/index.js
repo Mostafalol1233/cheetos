@@ -531,6 +531,91 @@ app.get('/api/contact-info', async (req, res) => {
   }
 });
 
+// Update only the game's large image (Admin)
+app.put('/api/admin/games/:id/image-url', authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const idOrSlug = String(id || '').trim();
+    const raw = (req.body && (req.body.image_url ?? req.body.imageUrl ?? req.body.url)) ?? null;
+    const imageUrl = raw ? normalizeImageUrl(String(raw).trim()) : null;
+    if (!imageUrl) return res.status(400).json({ message: 'image_url required' });
+
+    const lookup = await pool.query('SELECT id FROM games WHERE id = $1 OR slug = $1 LIMIT 1', [idOrSlug]);
+    if (lookup.rows.length === 0) return res.status(404).json({ message: 'Game not found' });
+    const gameId = lookup.rows[0].id;
+
+    const result = await pool.query(
+      'UPDATE games SET image_url = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 RETURNING id, name, slug, image, image_url',
+      [imageUrl, gameId]
+    );
+    const row = result.rows[0];
+    row.image = normalizeImageUrl(row.image);
+    row.image_url = row.image_url ? normalizeImageUrl(row.image_url) : null;
+    res.json(row);
+  } catch (err) {
+    console.error('Error updating game image_url:', err);
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// Bulk update game images using provided Postimg links (Admin)
+app.post('/api/admin/games/bulk-update-images', authenticateToken, async (req, res) => {
+  try {
+    const updates = {
+      crossfire: 'https://i.postimg.cc/4Y7FFWjm/crossfire-icon.webp',
+      discord: 'https://i.postimg.cc/4Y7FFWjK/dis-co.webp',
+      'ea-play': 'https://i.postimg.cc/jDpkVzrR/ea-play-icon-1.webp',
+      freefire: 'https://i.postimg.cc/RWkbrcz4/freefire-Icon-1-1.webp',
+      'free-fire': 'https://i.postimg.cc/RWkbrcz4/freefire-Icon-1-1.webp',
+      'google-play-store': 'https://i.postimg.cc/FYMntjQr/gplay1-64c83ac2e830f.webp',
+      hok: 'https://i.postimg.cc/hXk3F9qf/hok-main.webp',
+      minecraft: 'https://i.postimg.cc/v4JSRWdD/minecraft.webp',
+      'mobile-legends': 'https://i.postimg.cc/tsKm0hHT/mobile-legends-logo-v2.webp',
+      'pubg-mobile': 'https://i.postimg.cc/DS9YVqK0/PUBG-3.webp',
+      rg: 'https://i.postimg.cc/FYMntjQd/RG-new-1.webp',
+      roblox: 'https://i.postimg.cc/bZ7FXQjS/roblox.webp',
+      'steam-wallet': 'https://i.postimg.cc/HrqPGQC7/Steam-Logo-White-3.png',
+      'xbox-live': 'https://i.postimg.cc/9D6N3Gj7/xbox-live.webp',
+      'yalla-ludo': 'https://i.postimg.cc/gxCB9vPh/yalla-ludo-2-67563efa1ab95.webp'
+    };
+
+    const isValidUrl = (u) => {
+      try {
+        const url = new URL(String(u || '').trim());
+        return url.protocol === 'http:' || url.protocol === 'https:';
+      } catch {
+        return false;
+      }
+    };
+
+    let updated = 0;
+    const applied = [];
+    const skipped = [];
+
+    for (const [key, url] of Object.entries(updates)) {
+      if (!isValidUrl(url)) {
+        skipped.push({ key, reason: 'invalid_url' });
+        continue;
+      }
+      const normalized = normalizeImageUrl(url);
+      const r = await pool.query(
+        'UPDATE games SET image = $1, updated_at = CURRENT_TIMESTAMP WHERE slug = $2 OR id = $2 RETURNING id, slug',
+        [normalized, key]
+      );
+      if (r.rowCount > 0) {
+        updated += r.rowCount;
+        applied.push({ key, rows: r.rows });
+      } else {
+        skipped.push({ key, reason: 'game_not_found' });
+      }
+    }
+
+    res.json({ ok: true, updated, applied, skipped });
+  } catch (err) {
+    res.status(500).json({ ok: false, message: err.message });
+  }
+});
+
 // Serve favicon and logo files from images directory if they exist
 app.get('/favicon.ico', (req, res) => {
   const faviconPath = path.join(imagesDir, 'cropped-favicon1-32x32.png');
@@ -720,6 +805,7 @@ async function initializeDatabase() {
         packages JSONB DEFAULT '[]',
         package_prices JSONB DEFAULT '[]',
         package_discount_prices JSONB DEFAULT '[]',
+        package_thumbnails JSONB DEFAULT '[]',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
@@ -761,6 +847,7 @@ async function initializeDatabase() {
     await pool.query(`ALTER TABLE games ADD COLUMN IF NOT EXISTS package_prices JSONB DEFAULT '[]'`);
     await pool.query(`ALTER TABLE games ADD COLUMN IF NOT EXISTS discount_price DECIMAL(10, 2)`);
     await pool.query(`ALTER TABLE games ADD COLUMN IF NOT EXISTS package_discount_prices JSONB DEFAULT '[]'`);
+    await pool.query(`ALTER TABLE games ADD COLUMN IF NOT EXISTS package_thumbnails JSONB DEFAULT '[]'`);
     
     await pool.query(`
       CREATE TABLE IF NOT EXISTS image_assets (
@@ -1479,17 +1566,20 @@ app.get('/api/games', async (req, res) => {
         SELECT id, name, slug, description, price, currency, image, category, 
                is_popular as "isPopular", stock, packages, package_prices as "packagePrices",
                discount_price as "discountPrice", package_discount_prices as "packageDiscountPrices",
-               discount_prices as "discountPrices"
+               discount_prices as "discountPrices",
+               image_url as "image_url", package_thumbnails as "packageThumbnails"
         FROM games 
         ORDER BY id DESC
       `);
       const games = result.rows.map(game => ({
         ...game,
         image: normalizeImageUrl(game.image),
+        image_url: game.image_url ? normalizeImageUrl(game.image_url) : null,
         packages: coerceJsonArray(game.packages),
         packagePrices: coerceJsonArray(game.packagePrices),
         packageDiscountPrices: coerceJsonArray(game.packageDiscountPrices),
-        discountPrices: coerceJsonArray(game.discountPrices)
+        discountPrices: coerceJsonArray(game.discountPrices),
+        packageThumbnails: coerceJsonArray(game.packageThumbnails)
       }));
       return res.json(games.map(g => ({ ...g, stock: 100 })));
     } catch {}
@@ -1523,7 +1613,8 @@ app.get('/api/games/popular', async (req, res) => {
     const result = await pool.query(`
       SELECT id, name, slug, description, price, currency, image, category, 
              is_popular as "isPopular", stock, packages, package_prices as "packagePrices",
-             discount_price as "discountPrice", package_discount_prices as "packageDiscountPrices"
+             discount_price as "discountPrice", package_discount_prices as "packageDiscountPrices",
+             image_url as "image_url", package_thumbnails as "packageThumbnails"
       FROM games 
       WHERE is_popular = true 
       LIMIT 10
@@ -1532,9 +1623,11 @@ app.get('/api/games/popular', async (req, res) => {
     const games = result.rows.map(game => ({
       ...game,
       image: normalizeImageUrl(game.image),
+      image_url: game.image_url ? normalizeImageUrl(game.image_url) : null,
       packages: coerceJsonArray(game.packages),
       packagePrices: coerceJsonArray(game.packagePrices),
-      packageDiscountPrices: coerceJsonArray(game.packageDiscountPrices)
+      packageDiscountPrices: coerceJsonArray(game.packageDiscountPrices),
+      packageThumbnails: coerceJsonArray(game.packageThumbnails)
     }));
     res.json(games.map(g => ({ ...g, stock: 100 })));
   } catch (err) {
@@ -1552,7 +1645,8 @@ app.get('/api/games/category/:category', async (req, res) => {
         SELECT id, name, slug, description, price, currency, image, category, 
                is_popular as "isPopular", stock, packages, package_prices as "packagePrices",
                discount_price as "discountPrice", package_discount_prices as "packageDiscountPrices",
-               discount_prices as "discountPrices"
+               discount_prices as "discountPrices",
+               image_url as "image_url", package_thumbnails as "packageThumbnails"
         FROM games 
         WHERE category = $1 OR category_id = $1 OR slug = $1
         ORDER BY id DESC
@@ -1560,10 +1654,12 @@ app.get('/api/games/category/:category', async (req, res) => {
       const games = result.rows.map(game => ({
         ...game,
         image: normalizeImageUrl(game.image),
+        image_url: game.image_url ? normalizeImageUrl(game.image_url) : null,
         packages: coerceJsonArray(game.packages),
         packagePrices: coerceJsonArray(game.packagePrices),
         packageDiscountPrices: coerceJsonArray(game.packageDiscountPrices),
-        discountPrices: coerceJsonArray(game.discountPrices)
+        discountPrices: coerceJsonArray(game.discountPrices),
+        packageThumbnails: coerceJsonArray(game.packageThumbnails)
       }));
       return res.json(games.map(g => ({ ...g, stock: 100 })));
     } catch {}
@@ -1608,7 +1704,8 @@ app.get('/api/games/id/:id', async (req, res) => {
         SELECT id, name, slug, description, price, currency, image, category, 
                is_popular as "isPopular", stock, packages, package_prices as "packagePrices",
                discount_price as "discountPrice", package_discount_prices as "packageDiscountPrices",
-               discount_prices as "discountPrices"
+               discount_prices as "discountPrices",
+               image_url as "image_url", package_thumbnails as "packageThumbnails"
         FROM games 
         WHERE id = $1
       `, [id]);
@@ -1617,10 +1714,12 @@ app.get('/api/games/id/:id', async (req, res) => {
       }
       const game = result.rows[0];
       game.image = normalizeImageUrl(game.image);
+      game.image_url = game.image_url ? normalizeImageUrl(game.image_url) : null;
       game.packages = coerceJsonArray(game.packages);
       game.packagePrices = coerceJsonArray(game.packagePrices);
       game.packageDiscountPrices = coerceJsonArray(game.packageDiscountPrices);
       game.discountPrices = coerceJsonArray(game.discountPrices);
+      game.packageThumbnails = coerceJsonArray(game.packageThumbnails);
       return res.json(game);
     } catch {}
     const gamesPath = path.join(__dirname, 'data', 'games.json');
@@ -1656,7 +1755,8 @@ app.get('/api/games/slug/:slug', async (req, res) => {
       const result = await pool.query(`
         SELECT id, name, slug, description, price, currency, image, category, 
                is_popular as "isPopular", stock, packages, package_prices as "packagePrices",
-               discount_price as "discountPrice", package_discount_prices as "packageDiscountPrices"
+               discount_price as "discountPrice", package_discount_prices as "packageDiscountPrices",
+               image_url as "image_url", package_thumbnails as "packageThumbnails"
         FROM games 
         WHERE slug = $1
            OR LOWER(REPLACE(slug, '-', '')) = $2
@@ -1669,9 +1769,11 @@ app.get('/api/games/slug/:slug', async (req, res) => {
   
       const game = result.rows[0];
       game.image = normalizeImageUrl(game.image);
+      game.image_url = game.image_url ? normalizeImageUrl(game.image_url) : null;
       game.packages = coerceJsonArray(game.packages);
       game.packagePrices = coerceJsonArray(game.packagePrices);
       game.packageDiscountPrices = coerceJsonArray(game.packageDiscountPrices);
+      game.packageThumbnails = coerceJsonArray(game.packageThumbnails);
       return res.json(game);
     } catch {}
     // Fallback to local JSON
@@ -1689,9 +1791,11 @@ app.get('/api/games/slug/:slug', async (req, res) => {
       const game = {
         ...found,
         image: normalizeImageUrl(found.image),
+        image_url: found.image_url ? normalizeImageUrl(found.image_url) : null,
         packages: coerceJsonArray(found.packages),
         packagePrices: coerceJsonArray(found.packagePrices),
-        packageDiscountPrices: coerceJsonArray(found.packageDiscountPrices)
+        packageDiscountPrices: coerceJsonArray(found.packageDiscountPrices),
+        packageThumbnails: coerceJsonArray(found.packageThumbnails || found.package_thumbnails)
       };
       return res.json(game);
     }
@@ -1747,9 +1851,11 @@ app.get('/api/games/:slug', async (req, res) => {
       const game = {
         ...found,
         image: normalizeImageUrl(found.image),
+        image_url: found.image_url ? normalizeImageUrl(found.image_url) : null,
         packages: coerceJsonArray(found.packages),
         packagePrices: coerceJsonArray(found.packagePrices),
-        packageDiscountPrices: coerceJsonArray(found.packageDiscountPrices)
+        packageDiscountPrices: coerceJsonArray(found.packageDiscountPrices),
+        packageThumbnails: coerceJsonArray(found.packageThumbnails || found.package_thumbnails)
       };
       return res.json(game);
     }
@@ -2386,14 +2492,14 @@ app.get('/api/admin/games/:id/packages', authenticateToken, async (req, res) => 
     const { id } = req.params;
     // Try by ID first, then by slug
     let result = await pool.query(
-      'SELECT packages, package_prices as "packagePrices", package_discount_prices as "packageDiscountPrices" FROM games WHERE id = $1',
+      'SELECT packages, package_prices as "packagePrices", package_discount_prices as "packageDiscountPrices", package_thumbnails as "packageThumbnails" FROM games WHERE id = $1',
       [id]
     );
     
     if (result.rows.length === 0) {
       // Try by slug
       result = await pool.query(
-        'SELECT packages, package_prices as "packagePrices", package_discount_prices as "packageDiscountPrices" FROM games WHERE slug = $1',
+        'SELECT packages, package_prices as "packagePrices", package_discount_prices as "packageDiscountPrices", package_thumbnails as "packageThumbnails" FROM games WHERE slug = $1',
         [id]
       );
     }
@@ -2407,6 +2513,7 @@ app.get('/api/admin/games/:id/packages', authenticateToken, async (req, res) => 
     const packages = coerceJsonArray(game.packages);
     const prices = coerceJsonArray(game.packagePrices);
     const discountPrices = coerceJsonArray(game.packageDiscountPrices);
+    const thumbnails = coerceJsonArray(game.packageThumbnails);
     
     // If packages are strings, convert to objects
     const packageObjects = packages.map((pkg, index) => {
@@ -2417,7 +2524,7 @@ app.get('/api/admin/games/:id/packages', authenticateToken, async (req, res) => 
         amount: String(pkg || ''),
         price: Number(prices[index] || 0),
         discountPrice: discountPrices[index] ? Number(discountPrices[index]) : null,
-        image: null
+        image: thumbnails[index] ? String(thumbnails[index]) : null
       };
     });
     
@@ -2444,7 +2551,7 @@ app.put('/api/admin/games/:id/packages', authenticateToken, async (req, res) => 
       amount: String((p && p.amount) ? p.amount : '').trim(),
       price: Number((p && p.price) ? p.price : 0),
       discountPrice: (p && p.discountPrice !== undefined && p.discountPrice !== null) ? Number(p.discountPrice) : null,
-      image: null
+      image: (p && p.image) ? String(p.image).trim() : null
     }));
     // Validate amounts and prices
     for (const pkg of sanitized) {
@@ -2474,14 +2581,16 @@ app.put('/api/admin/games/:id/packages', authenticateToken, async (req, res) => 
     const prices = sanitized.map(p => p.price);
     const discountPrices = sanitized.map(p => p.discountPrice);
     while (discountPrices.length < amounts.length) discountPrices.push(null);
+    const thumbnails = sanitized.map(p => (p.image ? normalizeImageUrl(p.image) : null));
+    while (thumbnails.length < amounts.length) thumbnails.push(null);
 
     await client.query('BEGIN');
     await client.query(
-      'UPDATE games SET packages = $1::jsonb, package_prices = $2::jsonb, package_discount_prices = $3::jsonb, updated_at = CURRENT_TIMESTAMP WHERE id = $4',
-      [JSON.stringify(amounts), JSON.stringify(prices), JSON.stringify(discountPrices), actualGameId]
+      'UPDATE games SET packages = $1::jsonb, package_prices = $2::jsonb, package_discount_prices = $3::jsonb, package_thumbnails = $4::jsonb, updated_at = CURRENT_TIMESTAMP WHERE id = $5',
+      [JSON.stringify(amounts), JSON.stringify(prices), JSON.stringify(discountPrices), JSON.stringify(thumbnails), actualGameId]
     );
     const updatedResult = await client.query(
-      'SELECT packages, package_prices as "packagePrices", package_discount_prices as "packageDiscountPrices" FROM games WHERE id = $1',
+      'SELECT packages, package_prices as "packagePrices", package_discount_prices as "packageDiscountPrices", package_thumbnails as "packageThumbnails" FROM games WHERE id = $1',
       [actualGameId]
     );
     await client.query('COMMIT');
@@ -2490,11 +2599,12 @@ app.put('/api/admin/games/:id/packages', authenticateToken, async (req, res) => 
     const updatedPackages = coerceJsonArray(updatedGame.packages);
     const updatedPrices = coerceJsonArray(updatedGame.packagePrices);
     const updatedDiscountPrices = coerceJsonArray(updatedGame.packageDiscountPrices);
+    const updatedThumbnails = coerceJsonArray(updatedGame.packageThumbnails);
     const packageObjects = updatedPackages.map((pkg, index) => ({
       amount: typeof pkg === 'string' ? pkg : (pkg?.amount || ''),
       price: Number(updatedPrices[index] || 0),
       discountPrice: updatedDiscountPrices[index] ? Number(updatedDiscountPrices[index]) : null,
-      image: null
+      image: updatedThumbnails[index] ? String(updatedThumbnails[index]) : null
     }));
     res.json({ message: 'Packages updated successfully', packages: packageObjects });
   } catch (err) {
