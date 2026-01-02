@@ -1626,6 +1626,29 @@ app.get('/api/games/hot-deals', async (req, res) => {
   } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
+function getPaymentDetails(paymentMethod) {
+  const method = String(paymentMethod || '').trim();
+  const orDefault = (v, d) => (v && String(v).trim() ? String(v).trim() : d);
+  if (method === 'Orange Cash') return { title: 'Transfer number', value: orDefault(process.env.ORANGE_NUMBER, '01001387284') };
+  if (method === 'Vodafone Cash') return { title: 'Transfer number', value: orDefault(process.env.VODAFONE_NUMBER, '01001387284') };
+  if (method === 'Etisalat Cash') return { title: 'Transfer number', value: orDefault(process.env.ETISALAT_NUMBER, '01001387284') };
+  if (method === 'WE Pay') return { title: 'Transfer numbers', value: orDefault(process.env.WE_NUMBERS, '01001387284 or 01029070780') };
+  if (method === 'InstaPay') return { title: 'Account', value: orDefault(process.env.INSTAPAY_ACCOUNT, 'DiaaEldeenn') };
+  if (method === 'PayPal') return { title: 'PayPal Account', value: orDefault(process.env.PAYPAL_ACCOUNT, 'support@diaaeldeen.com') };
+  if (method === 'Bank Transfer') return { title: 'Bank', value: orDefault(process.env.BANK_DETAILS, 'CIB Bank - Account Number: 0123456789') };
+  return { title: '', value: '' };
+}
+
+app.get('/api/public/payment-details', async (req, res) => {
+  try {
+    const method = req.query.method;
+    if (!method) return res.status(400).json({ message: 'method required' });
+    return res.json(getPaymentDetails(method));
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 app.put('/api/admin/games/:id/hotdeal', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params; const { hot } = req.body || {};

@@ -196,7 +196,7 @@ export default function Home() {
                   <img 
                     src="https://i.postimg.cc/zG8jHjqS/large-image-logo.png" 
                     alt="Diaa Sadek Logo"
-                    className="w-full h-auto object-contain transition-transform duration-500 group-hover:scale-105"
+                    className="w-full max-w-[520px] h-auto object-contain transition-transform duration-500 group-hover:scale-105"
                   />
                 </div>
                 

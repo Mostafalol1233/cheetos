@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import { useCart } from "@/lib/cart-context";
 import { apiRequest } from "@/lib/queryClient";
@@ -31,7 +31,23 @@ export function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
   const { toast } = useToast();
   const { t } = useTranslation();
 
+  const [payInfo, setPayInfo] = useState<{ title: string; value: string } | null>(null);
+
   const SELLER_WHATSAPP = import.meta.env.VITE_SELLER_WHATSAPP || "+201234567890";
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const res = await fetch(`/api/public/payment-details?method=${encodeURIComponent(paymentMethod)}`);
+        if (!res.ok) return setPayInfo(null);
+        const data = await res.json();
+        setPayInfo(data && typeof data === 'object' ? data : null);
+      } catch {
+        setPayInfo(null);
+      }
+    };
+    load();
+  }, [paymentMethod]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -204,50 +220,14 @@ ${orderSummary}
                 <SelectItem value="Bank Transfer">Bank Transfer</SelectItem>
               </SelectContent>
             </Select>
-            <div className="mt-3 text-sm bg-muted/30 rounded-lg p-3">
-              {paymentMethod === 'Orange Cash' && (
+            {payInfo?.value ? (
+              <div className="mt-3 text-sm bg-muted/30 rounded-lg p-3">
                 <div>
-                  <p className="font-medium">{t('transfer_number')}:</p>
-                  <p className="text-foreground">01001387284</p>
+                  <p className="font-medium">{payInfo.title || t('transfer_number')}:</p>
+                  <p className="text-foreground">{payInfo.value}</p>
                 </div>
-              )}
-              {paymentMethod === 'Vodafone Cash' && (
-                <div>
-                  <p className="font-medium">{t('transfer_number')}:</p>
-                  <p className="text-foreground">01001387284</p>
-                </div>
-              )}
-              {paymentMethod === 'Etisalat Cash' && (
-                <div>
-                  <p className="font-medium">{t('transfer_number')}:</p>
-                  <p className="text-foreground">01001387284</p>
-                </div>
-              )}
-              {paymentMethod === 'WE Pay' && (
-                <div>
-                  <p className="font-medium">{t('transfer_numbers')}:</p>
-                  <p className="text-foreground">01001387284 or 01029070780</p>
-                </div>
-              )}
-              {paymentMethod === 'InstaPay' && (
-                <div>
-                  <p className="font-medium">{t('account')}:</p>
-                  <p className="text-foreground">DiaaEldeenn</p>
-                </div>
-              )}
-              {paymentMethod === 'PayPal' && (
-                <div>
-                  <p className="font-medium">{t('paypal_account')}:</p>
-                  <p className="text-foreground">support@diaaeldeen.com</p>
-                </div>
-              )}
-              {paymentMethod === 'Bank Transfer' && (
-                <div>
-                  <p className="font-medium">{t('bank')}:</p>
-                  <p className="text-foreground">CIB Bank - Account Number: 0123456789</p>
-                </div>
-              )}
-            </div>
+              </div>
+            ) : null}
           </div>
 
           <Button 

@@ -21,30 +21,37 @@ export default function CheckoutSecurityPage() {
   const [confirmed, setConfirmed] = useState(false);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [payInfo, setPayInfo] = useState<{ title: string; value: string } | null>(null);
 
   const transactionId = params?.id as string | undefined;
 
   useEffect(() => {
-    let ignore = false;
-    async function load() {
+    const load = async () => {
       if (!transactionId) return;
       setLoading(true);
       try {
         const res = await fetch(`${API_BASE_URL}/api/transactions/${transactionId}`);
         if (!res.ok) throw new Error(await res.text());
         const data = await res.json();
-        if (!ignore) {
-          setTransaction(data.transaction);
-          setItems(data.items);
-        }
+        setTransaction(data.transaction);
+        setItems(data.items);
+
+        try {
+          if (data?.transaction?.payment_method) {
+            const infoRes = await fetch(`${API_BASE_URL}/api/public/payment-details?method=${encodeURIComponent(String(data.transaction.payment_method))}`);
+            if (infoRes.ok) {
+              const info = await infoRes.json();
+              setPayInfo(info && typeof info === 'object' ? info : null);
+            }
+          }
+        } catch {}
       } catch (err) {
         toast({ title: "Failed to load", description: String(err), variant: "destructive" });
       } finally {
-        if (!ignore) setLoading(false);
+        setLoading(false);
       }
-    }
+    };
     load();
-    return () => { ignore = true; };
   }, [transactionId]);
 
   async function onSubmit(e: React.FormEvent) {
@@ -122,50 +129,14 @@ export default function CheckoutSecurityPage() {
                     ))}
                   </div>
                 </div>
-                <div className="mt-4 bg-muted/20 rounded-lg p-3">
-                  {transaction.payment_method === 'Orange Cash' && (
+                {payInfo?.value ? (
+                  <div className="mt-4 bg-muted/20 rounded-lg p-3">
                     <div>
-                      <p className="font-medium">Transfer number</p>
-                      <p>01001387284</p>
+                      <p className="font-medium">{payInfo.title || 'Transfer number'}</p>
+                      <p>{payInfo.value}</p>
                     </div>
-                  )}
-                  {transaction.payment_method === 'Vodafone Cash' && (
-                    <div>
-                      <p className="font-medium">Transfer number</p>
-                      <p>01001387284</p>
-                    </div>
-                  )}
-                  {transaction.payment_method === 'Etisalat Cash' && (
-                    <div>
-                      <p className="font-medium">Transfer number</p>
-                      <p>01001387284</p>
-                    </div>
-                  )}
-                  {transaction.payment_method === 'WE Pay' && (
-                    <div>
-                      <p className="font-medium">Transfer numbers</p>
-                      <p>01001387284 or 01029070780</p>
-                    </div>
-                  )}
-                  {transaction.payment_method === 'InstaPay' && (
-                    <div>
-                      <p className="font-medium">Account</p>
-                      <p>DiaaEldeenn</p>
-                    </div>
-                  )}
-                  {transaction.payment_method === 'PayPal' && (
-                    <div>
-                      <p className="font-medium">PayPal Account</p>
-                      <p>support@diaaeldeen.com</p>
-                    </div>
-                  )}
-                  {transaction.payment_method === 'Bank Transfer' && (
-                    <div>
-                      <p className="font-medium">Bank</p>
-                      <p>CIB Bank - Account Number: 0123456789</p>
-                    </div>
-                  )}
-                </div>
+                  </div>
+                ) : null}
               </CardContent>
             </Card>
 

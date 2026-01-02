@@ -110,7 +110,7 @@ const translations: Record<Language, Record<string, string>> = {
     "shopping_cart": "Shopping Cart",
     "cart_empty": "Your cart is empty",
     "total": "Total",
-    "checkout_whatsapp": "Checkout via WhatsApp",
+    "checkout_whatsapp": "Continue (Choose payment method)",
 
     "complete_order": "Complete Your Order",
     "checkout_desc": "Provide your contact details and payment method to create the order.",
@@ -280,7 +280,7 @@ const translations: Record<Language, Record<string, string>> = {
     "shopping_cart": "سلة التسوق",
     "cart_empty": "سلتك فارغة",
     "total": "الإجمالي",
-    "checkout_whatsapp": "إتمام الطلب عبر واتساب",
+    "checkout_whatsapp": "متابعة (اختر طريقة الدفع)",
 
     "complete_order": "إتمام الطلب",
     "checkout_desc": "أدخل بيانات التواصل وطريقة الدفع لإنشاء الطلب.",
