@@ -128,7 +128,7 @@ export function Footer() {
         </div>
 
         <div className="border-t border-border mt-12 pt-8 flex flex-col md:flex-row justify-between items-center text-sm text-muted-foreground">
-          <p>© {new Date().getFullYear()} Diaa Eldeen. All rights reserved.</p>
+          <p>© 2015–{new Date().getFullYear()} Diaa Eldeen. All rights reserved.</p>
           <div className="flex space-x-6 mt-4 md:mt-0">
             {/* PayPal */}
             <img 
@@ -138,19 +138,19 @@ export function Footer() {
             />
             {/* Mastercard */}
             <img 
-              src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 60'%3E%3Crect fill='%23EB001B' width='100' height='60' rx='4'/%3E%3Ctext x='50%25' y='50%25' font-size='16' font-weight='bold' fill='%23fff' text-anchor='middle' dy='.3em'%3EMC%3C/text%3E%3C/svg%3E" 
+              src="https://upload.wikimedia.org/wikipedia/commons/2/2a/Mastercard-logo.svg" 
               alt="Mastercard" 
               className="h-8 w-auto hover:scale-110 transition-all shadow-sm rounded" 
             />
             {/* Visa */}
             <img 
-              src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 60'%3E%3Crect fill='%231434CB' width='100' height='60' rx='4'/%3E%3Ctext x='50%25' y='50%25' font-size='20' font-weight='bold' fill='%23fff' text-anchor='middle' dy='.3em'%3EVisa%3C/text%3E%3C/svg%3E" 
+              src="https://upload.wikimedia.org/wikipedia/commons/5/5e/Visa_Inc._logo.svg" 
               alt="Visa" 
               className="h-8 w-auto hover:scale-110 transition-all shadow-sm rounded" 
             />
             {/* Vodafone */}
             <img 
-              src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 60'%3E%3Crect fill='%23EF0606' width='100' height='60' rx='4'/%3E%3Ctext x='50%25' y='50%25' font-size='18' font-weight='bold' fill='%23fff' text-anchor='middle' dy='.3em'%3EVF%3C/text%3E%3C/svg%3E" 
+              src="https://upload.wikimedia.org/wikipedia/commons/1/1f/Vodafone_icon.svg" 
               alt="Vodafone Cash" 
               className="h-8 w-auto hover:scale-110 transition-all shadow-sm rounded" 
             />

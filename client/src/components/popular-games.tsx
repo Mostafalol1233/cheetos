@@ -1,13 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
 import { Game } from "@shared/schema";
-import { useCart } from "@/lib/cart-context";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
 import { ShoppingBag, Star, Flame, Share2, Play, Check } from "lucide-react";
 import { InteractiveGamePreview } from "./interactive-game-preview";
 import ImageWithFallback from "./image-with-fallback";
-import { useToast } from "@/hooks/use-toast";
 import { DynamicLoadingProgress } from "./dynamic-loading-progress";
 import { useTranslation } from "@/lib/translation";
 
@@ -17,39 +15,7 @@ export function PopularGames() {
     queryKey: ["/api/games/popular"],
   });
 
-  const { addToCart } = useCart();
-  const { toast } = useToast();
-  const [addingItems, setAddingItems] = useState<string[]>([]);
-
-  const handleAddToCart = async (game: Game) => {
-    if (Number(game.stock) <= 0) {
-      toast({
-        title: t('out_of_stock'),
-        description: t('item_unavailable'),
-        duration: 2500,
-      });
-      return;
-    }
-
-    setAddingItems(prev => [...prev, game.id]);
-    
-    addToCart({
-      id: game.id,
-      name: game.name,
-      price: parseFloat(game.price.toString()),
-      image: game.image
-    });
-
-    toast({
-      title: t('success'),
-      description: `${game.name} ${t('added_to_cart')}`,
-      duration: 2000,
-    });
-
-    setTimeout(() => {
-      setAddingItems(prev => prev.filter(id => id !== game.id));
-    }, 1000);
-  };
+  const [addingItems] = useState<string[]>([]);
 
   if (isLoading) {
     return <DynamicLoadingProgress isLoading={true} loadingText={t('loading_popular_games')} />;
@@ -71,7 +37,7 @@ export function PopularGames() {
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
         {Array.isArray(games) && games.map((game) => {
           const isAdding = addingItems.includes(game.id);
-          const isOutOfStock = Number(game.stock) <= 0;
+          const isOutOfStock = false;
           
           return (
             <div key={game.id} className="relative group perspective">
@@ -100,25 +66,10 @@ export function PopularGames() {
                 {/* Game Info */}
                 <div className="relative z-10">
                   <h3 className="font-bold text-white mb-2 text-lg line-clamp-1">{game.name}</h3>
-                  
+
                   <div className="flex items-center justify-between">
-                    <div className="flex flex-col">
-                      {game.discountPrice && parseFloat(String(game.discountPrice)) > 0 && parseFloat(String(game.discountPrice)) < parseFloat(String(game.price)) ? (
-                        <div className="flex flex-col">
-                          <span className="text-xs text-muted-foreground line-through">{parseFloat(String(game.price)).toFixed(2)} {game.currency}</span>
-                          <span className="text-gold-primary font-bold text-lg">{parseFloat(String(game.discountPrice)).toFixed(2)} {game.currency}</span>
-                        </div>
-                      ) : game.discountPrice && parseFloat(String(game.discountPrice)) > 0 && parseFloat(String(game.discountPrice)) > parseFloat(String(game.price)) ? (
-                        <div className="flex flex-col">
-                          <span className="text-xs text-muted-foreground line-through">{parseFloat(String(game.discountPrice)).toFixed(2)} {game.currency}</span>
-                          <span className="text-gold-primary font-bold text-lg">{parseFloat(String(game.price)).toFixed(2)} {game.currency}</span>
-                        </div>
-                      ) : (
-                        <span className="text-gold-primary font-bold text-lg">{parseFloat(String(game.price)).toFixed(2)} {game.currency}</span>
-                      )}
-                    </div>
-                    <span className={`text-xs px-2 py-1 rounded ${isOutOfStock ? 'text-red-200 bg-red-500/10' : 'text-cyan-300/70 bg-cyan-400/10'}`}>
-                      {isOutOfStock ? t('out_of_stock') : `${t('in_stock_prefix')}: ${game.stock}`}
+                    <span className="text-xs px-2 py-1 rounded text-cyan-300/70 bg-cyan-400/10">
+                      {t('view_details')}
                     </span>
                   </div>
                 </div>

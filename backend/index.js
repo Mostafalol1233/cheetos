@@ -598,19 +598,137 @@ app.post('/api/admin/games/bulk-update-images', authenticateToken, async (req, r
         continue;
       }
       const normalized = normalizeImageUrl(url);
+
+      const normalizeKey = (s) => String(s || '').trim().toLowerCase().replace(/_/g, '-').replace(/\s+/g, '-');
+      const keyNorm = normalizeKey(key);
+
+      const existing = await pool.query(
+        'SELECT id, slug, packages, package_thumbnails as "packageThumbnails" FROM games WHERE slug = $1 OR id = $1 LIMIT 1',
+        [key]
+      );
+      if (existing.rows.length === 0) {
+        skipped.push({ key, reason: 'game_not_found' });
+        continue;
+      }
+
+      const row = existing.rows[0];
+      const packages = coerceJsonArray(row.packages);
+      const thumbs = coerceJsonArray(row.packageThumbnails);
+      const hasAnyThumb = thumbs.some((t) => t != null && String(t).trim());
+      const nextThumbs = (!hasAnyThumb && packages.length > 0)
+        ? Array.from({ length: packages.length }, () => normalized)
+        : thumbs;
+
       const r = await pool.query(
-        'UPDATE games SET image = $1, updated_at = CURRENT_TIMESTAMP WHERE slug = $2 OR id = $2 RETURNING id, slug',
-        [normalized, key]
+        'UPDATE games SET image = $1, image_url = $1, package_thumbnails = $2::jsonb, updated_at = CURRENT_TIMESTAMP WHERE id = $3 RETURNING id, slug',
+        [normalized, JSON.stringify(nextThumbs), row.id]
       );
       if (r.rowCount > 0) {
         updated += r.rowCount;
         applied.push({ key, rows: r.rows });
-      } else {
-        skipped.push({ key, reason: 'game_not_found' });
       }
+
+      // Also update JSON fallback (backend/data/games.json) so frontend shows images even when DB is not used
+      try {
+        const fileGames = readGamesFile();
+        let changed = false;
+        const next = (Array.isArray(fileGames) ? fileGames : []).map((g) => {
+          const slugNorm = normalizeKey(g?.slug);
+          const idNorm = normalizeKey(g?.id);
+          const nameNorm = normalizeKey(g?.name);
+          const match = slugNorm === keyNorm || idNorm === keyNorm || nameNorm === keyNorm || nameNorm.includes(keyNorm);
+          if (!match) return g;
+          changed = true;
+          const out = { ...g, image: normalized, image_url: normalized };
+          const pkgs = coerceJsonArray(out.packages);
+          const existingThumbs = coerceJsonArray(out.packageThumbnails || out.package_thumbnails);
+          const hasThumb = existingThumbs.some((t) => t != null && String(t).trim());
+          if (!hasThumb && pkgs.length > 0) {
+            out.packageThumbnails = Array.from({ length: pkgs.length }, () => normalized);
+          }
+          return out;
+        });
+        if (changed) writeGamesFile(next);
+      } catch {}
     }
 
     res.json({ ok: true, updated, applied, skipped });
+  } catch (err) {
+    res.status(500).json({ ok: false, message: err.message });
+  }
+});
+
+// Remove unwanted categories and reassign games (Admin)
+app.post('/api/admin/categories/prune', authenticateToken, async (req, res) => {
+  try {
+    const raw = Array.isArray(req.body?.slugs) ? req.body.slugs : ['rpg', 'shooters', 'shotter', 'casual'];
+    const slugs = raw.map((s) => String(s || '').trim().toLowerCase()).filter(Boolean);
+    const keepCategory = String(req.body?.reassignTo || 'other').trim().toLowerCase() || 'other';
+    const removed = [];
+
+    try {
+      if (slugs.length) {
+        await pool.query('UPDATE games SET category = $1 WHERE LOWER(category) = ANY($2)', [keepCategory, slugs]);
+        const del = await pool.query('DELETE FROM categories WHERE LOWER(slug) = ANY($1) RETURNING id, slug', [slugs]);
+        removed.push(...(del.rows || []));
+      }
+    } catch {}
+
+    // Update categories.json + games.json fallback
+    try {
+      const categoriesPath = path.join(__dirname, 'data', 'categories.json');
+      if (fs.existsSync(categoriesPath)) {
+        const cats = JSON.parse(fs.readFileSync(categoriesPath, 'utf8'));
+        const nextCats = (Array.isArray(cats) ? cats : []).filter((c) => !slugs.includes(String(c?.slug || '').toLowerCase()));
+        fs.writeFileSync(categoriesPath, JSON.stringify(nextCats, null, 2), 'utf8');
+      }
+    } catch {}
+
+    try {
+      const fileGames = readGamesFile();
+      const next = (Array.isArray(fileGames) ? fileGames : []).map((g) => {
+        const cat = String(g?.category || '').toLowerCase();
+        if (!slugs.includes(cat)) return g;
+        return { ...g, category: keepCategory };
+      });
+      writeGamesFile(next);
+    } catch {}
+
+    res.json({ ok: true, removed, reassignedTo: keepCategory });
+  } catch (err) {
+    res.status(500).json({ ok: false, message: err.message });
+  }
+});
+
+// Randomize stock for all games (Admin)
+app.post('/api/admin/games/randomize-stock', authenticateToken, async (req, res) => {
+  try {
+    const min = Number(req.body?.min ?? 10);
+    const max = Number(req.body?.max ?? 50);
+    const lo = Number.isFinite(min) ? Math.max(0, Math.floor(min)) : 10;
+    const hi = Number.isFinite(max) ? Math.max(lo, Math.floor(max)) : 50;
+    const rand = () => lo + Math.floor(Math.random() * (hi - lo + 1));
+
+    let dbUpdated = 0;
+    try {
+      const rows = await pool.query('SELECT id FROM games');
+      for (const r of rows.rows || []) {
+        await pool.query('UPDATE games SET stock = $1 WHERE id = $2', [rand(), r.id]);
+        dbUpdated++;
+      }
+    } catch {}
+
+    let jsonUpdated = 0;
+    try {
+      const fileGames = readGamesFile();
+      const next = (Array.isArray(fileGames) ? fileGames : []).map((g) => {
+        jsonUpdated++;
+        return { ...g, stock: rand() };
+      });
+      writeGamesFile(next);
+    } catch {}
+
+    res.json({ ok: true, dbUpdated, jsonUpdated, range: { min: lo, max: hi } });
   } catch (err) {
     res.status(500).json({ ok: false, message: err.message });
   }
@@ -740,7 +858,7 @@ app.get('/api/games/popular', async (req, res) => {
           packagePrices: Array.isArray(game.packagePrices) ? game.packagePrices : (game.packagePrices ? JSON.parse(game.packagePrices) : []),
           packageDiscountPrices: Array.isArray(game.packageDiscountPrices) ? game.packageDiscountPrices : (game.packageDiscountPrices ? JSON.parse(game.packageDiscountPrices) : [])
         }));
-        return res.json(games.map(g => ({ ...g, stock: 100 })));
+        return res.json(games);
       }
     } catch {}
 
@@ -749,7 +867,7 @@ app.get('/api/games/popular', async (req, res) => {
       const data = fs.readFileSync(gamesPath, 'utf8');
       const games = JSON.parse(data);
       const popularGames = Array.isArray(games) ? games.filter(g => g.isPopular) : [];
-      return res.json(popularGames.map((g) => ({ ...g, image: normalizeImageUrl(g.image), stock: 100 })));
+      return res.json(popularGames.map((g) => ({ ...g, image: normalizeImageUrl(g.image), stock: Number(g.stock ?? 0) })));
     }
 
     res.json([]);
@@ -1581,7 +1699,7 @@ app.get('/api/games', async (req, res) => {
         discountPrices: coerceJsonArray(game.discountPrices),
         packageThumbnails: coerceJsonArray(game.packageThumbnails)
       }));
-      return res.json(games.map(g => ({ ...g, stock: 100 })));
+      return res.json(games);
     } catch {}
     const gamesPath = path.join(__dirname, 'data', 'games.json');
     if (fs.existsSync(gamesPath)) {
@@ -1595,7 +1713,7 @@ app.get('/api/games', async (req, res) => {
             packagePrices: coerceJsonArray(g.packagePrices),
             packageDiscountPrices: coerceJsonArray(g.packageDiscountPrices),
             discountPrices: coerceJsonArray(g.discountPrices),
-            stock: 100
+            stock: Number(g.stock ?? 0)
           }))
         : [];
       return res.json(normalized);
@@ -1629,7 +1747,7 @@ app.get('/api/games/popular', async (req, res) => {
       packageDiscountPrices: coerceJsonArray(game.packageDiscountPrices),
       packageThumbnails: coerceJsonArray(game.packageThumbnails)
     }));
-    res.json(games.map(g => ({ ...g, stock: 100 })));
+    res.json(games);
   } catch (err) {
     console.error('Error fetching popular games:', err);
     res.status(500).json({ message: err.message, error: 'Failed to fetch popular games' });
@@ -1661,7 +1779,7 @@ app.get('/api/games/category/:category', async (req, res) => {
         discountPrices: coerceJsonArray(game.discountPrices),
         packageThumbnails: coerceJsonArray(game.packageThumbnails)
       }));
-      return res.json(games.map(g => ({ ...g, stock: 100 })));
+      return res.json(games);
     } catch {}
     // Fallback to local JSON
     const gamesPath = path.join(__dirname, 'data', 'games.json');
@@ -1683,7 +1801,7 @@ app.get('/api/games/category/:category', async (req, res) => {
               packagePrices: coerceJsonArray(g.packagePrices),
               packageDiscountPrices: coerceJsonArray(g.packageDiscountPrices),
               discountPrices: coerceJsonArray(g.discountPrices),
-              stock: 100
+              stock: Number(g.stock ?? 0)
             }))
         : [];
       return res.json(filtered);
@@ -4591,80 +4709,12 @@ const startServer = async () => {
     if (isConnected) {
       try {
         if (typeof initializeDatabase === "function") await initializeDatabase();
-        
-        const items = readGamesFile();
-        console.log(`Seeding ${items.length} games...`);
-        for (const g of items) {
-          const id = String(g.id || `game_${Date.now()}_${Math.random().toString(36).slice(2,9)}`);
-          const name = String(g.name || "").trim();
-          const slug = String(g.slug || name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, ""));
-          const description = String(g.description || "");
-          const currency = String(g.currency || "EGP");
-          const image = g.image || "/media/placeholder.jpg";
-          const category = String(g.category || "other");
-          const is_popular = Boolean(g.isPopular || g.is_popular || false);
-          const stock = Number(g.stock || 100);
-          
-          const rawPackages = coerceJsonArray(g.packages);
-          const rawPrices = coerceJsonArray(g.packagePrices).map(n => {
-            const s = String(n || "0").replace(/[^0-9.]/g, "");
-            const num = parseFloat(s);
-            return isNaN(num) ? 0 : num;
-          });
 
-          const processedPackagePrices = [];
-          const processedDiscountPrices = [];
-          for (const p of rawPrices) {
-            processedPackagePrices.push(p);
-            processedDiscountPrices.push(p > 50 ? p - 100 : null);
-          }
-
-          const priceVal = Number(g.price) || (processedPackagePrices[0] || 0);
-          const discount_priceVal = priceVal > 50 ? priceVal - 100 : null;
-
-          await pool.query(
-            `INSERT INTO games (id, name, slug, description, price, currency, image, category, is_popular, stock, discount_price, packages, package_prices, package_discount_prices)
-             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
-             ON CONFLICT (id) DO UPDATE SET
-               name = EXCLUDED.name,
-               slug = EXCLUDED.slug,
-               description = EXCLUDED.description,
-               price = EXCLUDED.price,
-               currency = EXCLUDED.currency,
-               image = EXCLUDED.image,
-               category = EXCLUDED.category,
-               is_popular = EXCLUDED.is_popular,
-               stock = EXCLUDED.stock,
-               discount_price = EXCLUDED.discount_price,
-               packages = EXCLUDED.packages,
-               package_prices = EXCLUDED.package_prices,
-               package_discount_prices = EXCLUDED.package_discount_prices`,
-            [id, name, slug, description, priceVal, currency, image, category, is_popular, stock, discount_priceVal, JSON.stringify(rawPackages), JSON.stringify(processedPackagePrices), JSON.stringify(processedDiscountPrices)]
-          );
-        }
-
-        const catPath = path.join(__dirname, "data", "categories.json");
-        if (fs.existsSync(catPath)) {
-          const cats = JSON.parse(fs.readFileSync(catPath, "utf8"));
-          for (const c of cats) {
-            await pool.query(
-              `INSERT INTO categories (id, name, slug, description, image, gradient, icon)
-               VALUES ($1, $2, $3, $4, $5, $6, $7)
-               ON CONFLICT (id) DO UPDATE SET
-                 name = EXCLUDED.name,
-                 slug = EXCLUDED.slug,
-                 description = EXCLUDED.description,
-                 image = EXCLUDED.image,
-                 gradient = EXCLUDED.gradient,
-                 icon = EXCLUDED.icon`,
-              [c.id, c.name, c.slug, c.description, c.image, c.gradient, c.icon]
-            );
-          }
-        }
-
-        if (ENABLE_IMAGE_SEEDING && typeof seedProductImages === "function") await seedProductImages();
-      } catch (dbErr) {
-        console.error("⚠️ Database initialization warning:", dbErr.message);
+        const forceSeed = String(process.env.FORCE_SEED || '').toLowerCase() === 'true';
+        if (typeof seedGamesFromJsonIfEmpty === 'function') await seedGamesFromJsonIfEmpty(forceSeed);
+        if (typeof seedCategoriesFromJsonIfEmpty === 'function') await seedCategoriesFromJsonIfEmpty(forceSeed);
+      } catch (err) {
+        console.error('DB init/seed failed:', err.message);
       }
     } else {
       console.error('❌ Database connection failed. API endpoints requiring DB will fail.');

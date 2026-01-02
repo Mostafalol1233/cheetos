@@ -194,7 +194,7 @@ export default function Home() {
                 {/* Main image or placeholder */}
                 <div className="relative z-10 flex flex-col items-center justify-center w-full h-full">
                   <img 
-                    src="https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&q=80&w=500" 
+                    src="https://i.postimg.cc/zG8jHjqS/large-image-logo.png" 
                     alt="Diaa Sadek Logo"
                     className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                   />

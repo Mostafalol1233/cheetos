@@ -1637,7 +1637,7 @@ function CatboxUploadPanel({ allGames, categories }: { allGames: Game[]; categor
 
   function InteractionsPanel() {
     const [q, setQ] = useState('');
-    const [eventType, setEventType] = useState<string | undefined>(undefined);
+    const [eventType, setEventType] = useState<string>('all');
     const { data, refetch } = useQuery<{ items: Array<{ id: string; event_type: string; element?: string; page?: string; success: boolean; error?: string; ua?: string; ts: string }> }>({
       queryKey: ['/api/admin/interactions', q, eventType],
       enabled: true,
@@ -1645,7 +1645,7 @@ function CatboxUploadPanel({ allGames, categories }: { allGames: Game[]; categor
         const token = localStorage.getItem('adminToken');
         const params = new URLSearchParams();
         if (q) params.set('q', q);
-        if (eventType) params.set('event_type', eventType);
+        if (eventType && eventType !== 'all') params.set('event_type', eventType);
         const res = await fetch(`/api/admin/interactions?${params.toString()}`, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
         if (!res.ok) throw new Error('Failed to fetch interactions');
         return res.json();
@@ -1672,10 +1672,10 @@ function CatboxUploadPanel({ allGames, categories }: { allGames: Game[]; categor
         <CardContent className="space-y-3">
           <div className="flex flex-wrap gap-2">
             <Input placeholder="Search text or page" value={q} onChange={(e) => setQ(e.target.value)} className="max-w-md" />
-            <Select value={eventType || ''} onValueChange={(v) => setEventType(v || undefined)}>
+            <Select value={eventType} onValueChange={(v) => setEventType(v || 'all')}>
               <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Events</SelectItem>
+                <SelectItem value="all">All Events</SelectItem>
                 <SelectItem value="click">click</SelectItem>
                 <SelectItem value="submit">submit</SelectItem>
                 <SelectItem value="view">view</SelectItem>

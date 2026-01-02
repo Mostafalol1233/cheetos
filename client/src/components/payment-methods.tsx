@@ -1,12 +1,14 @@
 import { useEffect, useState } from "react";
 
 const paymentMethods = [
-  { id: "pm1", name: "Payment 1", image: "https://i.postimg.cc/wRzp9C8N/image-29-1754874736252.png" },
-  { id: "pm2", name: "Payment 2", image: "https://i.postimg.cc/tnbj9KQY/image-32-1754945434846.png" },
-  { id: "pm3", name: "Payment 3", image: "https://i.postimg.cc/RJmBvk57/image-33-1754945434846.png" },
-  { id: "pm4", name: "Payment 4", image: "https://i.postimg.cc/5QJVfhdk/image-34-1754945434846.png" },
-  { id: "pm5", name: "Payment 5", image: "https://i.postimg.cc/JHQW0pM3/image-35-1754945434846.png" },
-  { id: "pm6", name: "Payment 6", image: "https://i.postimg.cc/XBg0qs4h/image-36-1754945434846.png" },
+  { id: "pm1", name: "Vodafone Cash", image: "https://upload.wikimedia.org/wikipedia/commons/1/1f/Vodafone_icon.svg" },
+  { id: "pm2", name: "Orange Cash", image: "https://upload.wikimedia.org/wikipedia/commons/c/c8/Orange_logo.svg" },
+  { id: "pm3", name: "Etisalat Cash", image: "https://upload.wikimedia.org/wikipedia/commons/1/1b/Etisalat_logo.svg" },
+  { id: "pm4", name: "WE Pay", image: "https://upload.wikimedia.org/wikipedia/commons/9/96/Telecom_Egypt_logo.svg" },
+  { id: "pm5", name: "InstaPay", image: "https://upload.wikimedia.org/wikipedia/commons/7/7b/Instapay_logo.svg" },
+  { id: "pm6", name: "PayPal", image: "https://upload.wikimedia.org/wikipedia/commons/b/b5/PayPal.svg" },
+  { id: "pm7", name: "Visa", image: "https://upload.wikimedia.org/wikipedia/commons/5/5e/Visa_Inc._logo.svg" },
+  { id: "pm8", name: "Mastercard", image: "https://upload.wikimedia.org/wikipedia/commons/2/2a/Mastercard-logo.svg" },
 ];
 
 export default function PaymentMethods() {
