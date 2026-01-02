@@ -1962,7 +1962,9 @@ app.get('/api/games/:slug', async (req, res) => {
       const result = await pool.query(`
         SELECT id, name, slug, description, price, currency, image, category, 
                is_popular as "isPopular", stock, packages, package_prices as "packagePrices",
-               discount_price as "discountPrice", package_discount_prices as "packageDiscountPrices"
+               discount_price as "discountPrice", package_discount_prices as "packageDiscountPrices",
+               discount_prices as "discountPrices",
+               image_url as "image_url", package_thumbnails as "packageThumbnails"
         FROM games 
         WHERE slug = $1
            OR LOWER(REPLACE(slug, '-', '')) = $2
@@ -1973,9 +1975,12 @@ app.get('/api/games/:slug', async (req, res) => {
       }
       const game = result.rows[0];
       game.image = normalizeImageUrl(game.image);
+      game.image_url = game.image_url ? normalizeImageUrl(game.image_url) : null;
       game.packages = coerceJsonArray(game.packages);
       game.packagePrices = coerceJsonArray(game.packagePrices);
       game.packageDiscountPrices = coerceJsonArray(game.packageDiscountPrices);
+      game.discountPrices = coerceJsonArray(game.discountPrices);
+      game.packageThumbnails = coerceJsonArray(game.packageThumbnails);
       return res.json(game);
     } catch {}
     const gamesPath = path.join(__dirname, 'data', 'games.json');

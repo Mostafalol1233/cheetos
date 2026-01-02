@@ -229,6 +229,7 @@ export default function AdminDashboard() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/games'] });
       queryClient.invalidateQueries({ queryKey: ['/api/admin/game-cards'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/games/popular'] });
     }
   });
 
@@ -247,6 +248,14 @@ export default function AdminDashboard() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/games'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/games/popular'] });
+      if (editingGame?.id) {
+        queryClient.invalidateQueries({ queryKey: [`/api/games/id/${editingGame.id}`] });
+      }
+      if (editingGame?.slug) {
+        queryClient.invalidateQueries({ queryKey: [`/api/games/${editingGame.slug}`] });
+        queryClient.invalidateQueries({ queryKey: [`/api/games/slug/${editingGame.slug}`] });
+      }
       setEditingGame(null);
     }
   });
@@ -265,6 +274,14 @@ export default function AdminDashboard() {
     },
     onSuccess: (resp) => {
       queryClient.invalidateQueries({ queryKey: ['/api/games'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/games/popular'] });
+      if (resp?.id) {
+        queryClient.invalidateQueries({ queryKey: [`/api/games/id/${resp.id}`] });
+      }
+      if (editingGame?.slug) {
+        queryClient.invalidateQueries({ queryKey: [`/api/games/${editingGame.slug}`] });
+        queryClient.invalidateQueries({ queryKey: [`/api/games/slug/${editingGame.slug}`] });
+      }
       if (resp?.id) {
         setEditingGame((prev) => (prev ? ({ ...prev, image_url: resp.image_url } as any) : prev));
       }
@@ -274,7 +291,8 @@ export default function AdminDashboard() {
   const applyLogoToPackagesMutation = useMutation({
     mutationFn: async (payload: { gameId: string; logoUrl: string }) => {
       const token = localStorage.getItem('adminToken');
-      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      const headers: HeadersInit = {};
+      if (token) (headers as Record<string, string>).Authorization = `Bearer ${token}`;
 
       const getRes = await fetch(`/api/admin/games/${payload.gameId}/packages`, { headers });
       const current = await getRes.json().catch(() => []);
@@ -298,7 +316,13 @@ export default function AdminDashboard() {
     },
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['/api/games'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/games/popular'] });
       queryClient.invalidateQueries({ queryKey: [`/api/admin/games/${variables.gameId}/packages`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/games/id/${variables.gameId}`] });
+      if (editingGame?.slug) {
+        queryClient.invalidateQueries({ queryKey: [`/api/games/${editingGame.slug}`] });
+        queryClient.invalidateQueries({ queryKey: [`/api/games/slug/${editingGame.slug}`] });
+      }
     }
   });
 
@@ -1072,10 +1096,10 @@ export default function AdminDashboard() {
                     <CardTitle>{cat.name}</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    {cat.image && (
+                    {(cat as any).image && (
                       <div className="flex items-center gap-3">
-                        <img src={String(cat.image)} alt={cat.name} className="w-12 h-12 rounded object-cover border border-gold-primary/20" />
-                        <div className="text-xs text-muted-foreground break-all">{String(cat.image)}</div>
+                        <img src={String((cat as any).image)} alt={cat.name} className="w-12 h-12 rounded object-cover border border-gold-primary/20" />
+                        <div className="text-xs text-muted-foreground break-all">{String((cat as any).image)}</div>
                       </div>
                     )}
                     <p className="text-sm text-muted-foreground">ID: {cat.id}</p>
@@ -2182,8 +2206,8 @@ function LogoManagementPanel() {
       }
     } catch (err) {
       alert('Upload failed');
+    }
   }
-}
 
 function DiscountsPanel({ games, onSaved }: { games: Game[]; onSaved: () => void }) {
   const { toast } = useToast();
