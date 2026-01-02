@@ -24,9 +24,11 @@ export function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
   const [, setLocation] = useLocation();
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
+  const [customerEmail, setCustomerEmail] = useState("");
   const [countryCode, setCountryCode] = useState("+20");
   const [paymentMethod, setPaymentMethod] = useState("Orange Cash");
   const [confirmMethod, setConfirmMethod] = useState<'whatsapp' | 'live'>('whatsapp');
+  const [deliveryChannel, setDeliveryChannel] = useState<'whatsapp' | 'email'>('whatsapp');
   const [paymentMessage, setPaymentMessage] = useState("");
   const { toast } = useToast();
   const { t } = useTranslation();
@@ -55,6 +57,14 @@ export function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
     if (!customerName.trim() || !customerPhone.trim()) {
       alert(t('please_fill_required'));
       return;
+    }
+
+    if (deliveryChannel === 'email' && customerEmail.trim()) {
+      const email = customerEmail.trim();
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        alert('Invalid email');
+        return;
+      }
     }
 
     // Validate phone number format
@@ -87,7 +97,10 @@ ${orderSummary}
       const res = await apiRequest('POST', '/api/transactions/checkout', {
         customerName,
         customerPhone: `${countryCode}${customerPhone}`,
+        customerEmail: customerEmail.trim() || null,
         paymentMethod,
+        confirmationMethod: confirmMethod,
+        deliveryChannel,
         items,
       });
       const { id: transactionId } = await res.json();
@@ -114,6 +127,7 @@ ${orderSummary}
     // Reset form
     setCustomerName("");
     setCustomerPhone("");
+    setCustomerEmail("");
     setCountryCode("+20");
     setPaymentMethod("Orange Cash");
   };
@@ -146,6 +160,20 @@ ${orderSummary}
             <div className="border-t mt-2 pt-2 font-bold">
               {t('total')}: {getTotalPrice()} {t('egp')}
             </div>
+          </div>
+
+          <div>
+            <Label>Receive your order via</Label>
+            <RadioGroup value={deliveryChannel} onValueChange={(val) => setDeliveryChannel(val as 'whatsapp' | 'email')} className="mt-2">
+              <div className="flex items-center gap-2">
+                <RadioGroupItem id="deliver-whatsapp" value="whatsapp" />
+                <Label htmlFor="deliver-whatsapp">WhatsApp</Label>
+              </div>
+              <div className="flex items-center gap-2 mt-2">
+                <RadioGroupItem id="deliver-email" value="email" />
+                <Label htmlFor="deliver-email">Email</Label>
+              </div>
+            </RadioGroup>
           </div>
 
           {/* Confirmation Method */}
@@ -202,6 +230,18 @@ ${orderSummary}
                 required
               />
             </div>
+          </div>
+
+          <div>
+            <Label htmlFor="email">Email</Label>
+            <Input
+              id="email"
+              type="email"
+              value={customerEmail}
+              onChange={(e) => setCustomerEmail(e.target.value)}
+              placeholder="you@email.com"
+              required={deliveryChannel === 'email'}
+            />
           </div>
 
           <div>

@@ -1634,7 +1634,7 @@ function getPaymentDetails(paymentMethod) {
   if (method === 'Etisalat Cash') return { title: 'Transfer number', value: orDefault(process.env.ETISALAT_NUMBER, '01001387284') };
   if (method === 'WE Pay') return { title: 'Transfer numbers', value: orDefault(process.env.WE_NUMBERS, '01001387284 or 01029070780') };
   if (method === 'InstaPay') return { title: 'Account', value: orDefault(process.env.INSTAPAY_ACCOUNT, 'DiaaEldeenn') };
-  if (method === 'PayPal') return { title: 'PayPal Account', value: orDefault(process.env.PAYPAL_ACCOUNT, 'support@diaaeldeen.com') };
+  if (method === 'PayPal') return { title: 'PayPal Account', value: orDefault(process.env.PAYPAL_ACCOUNT, 'matrixdiaa2016@gmail.com') };
   if (method === 'Bank Transfer') return { title: 'Bank', value: orDefault(process.env.BANK_DETAILS, 'CIB Bank - Account Number: 0123456789') };
   return { title: '', value: '' };
 }

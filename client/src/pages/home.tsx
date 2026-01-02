@@ -158,7 +158,7 @@ export default function Home() {
 
       {/* About Diaa Section */}
       <section className="container mx-auto px-4 py-16">
-        <div className="bg-gradient-to-r from-gray-100 dark:from-gray-900 to-white dark:to-black rounded-3xl p-8 md:p-12 border border-gold-primary/30">
+        <div className="bg-gradient-to-r from-gray-100 dark:from-gray-900 to-white dark:to-black rounded-3xl p-6 md:p-10 border border-gold-primary/30">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
             {/* Text Content */}
             <div>
@@ -186,7 +186,7 @@ export default function Home() {
             </div>
 
             {/* Image */}
-            <div className="rounded-2xl overflow-hidden bg-gradient-to-br from-neon-pink/20 via-purple-900/20 to-gold-primary/20 border border-gold-primary/30 p-4">
+            <div className="rounded-2xl overflow-hidden bg-gradient-to-br from-neon-pink/20 via-purple-900/20 to-gold-primary/20 border border-gold-primary/30 p-3">
               <div className="relative w-full bg-gradient-to-br from-gray-200 dark:from-gray-800 to-white dark:to-black rounded-xl flex items-center justify-center overflow-hidden group">
                 {/* Animated background */}
                 <div className="absolute inset-0 bg-gradient-to-r from-gold-primary/10 via-neon-pink/10 to-purple-600/10 animate-pulse"></div>
@@ -196,7 +196,7 @@ export default function Home() {
                   <img 
                     src="https://i.postimg.cc/zG8jHjqS/large-image-logo.png" 
                     alt="Diaa Sadek Logo"
-                    className="w-full max-w-[520px] h-auto object-contain transition-transform duration-500 group-hover:scale-105"
+                    className="w-full max-w-[440px] h-auto object-contain transition-transform duration-500 group-hover:scale-105"
                   />
                 </div>
                 

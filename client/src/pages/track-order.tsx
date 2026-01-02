@@ -27,7 +27,7 @@ export default function TrackOrderPage() {
 
     setLoading(true);
     try {
-      const response = await fetch(`/api/transactions/${orderId}`);
+      const response = await fetch(`/api/public/track?code=${encodeURIComponent(orderId.trim())}`);
       if (!response.ok) {
         throw new Error("Order not found");
       }
@@ -97,7 +97,7 @@ export default function TrackOrderPage() {
             <CardContent>
               <div className="flex gap-2">
                 <Input
-                  placeholder="e.g., txn_1234567890"
+                  placeholder="e.g., txn_1234567890 or pc_1234567890"
                   value={orderId}
                   onChange={(e) => setOrderId(e.target.value)}
                   onKeyPress={(e) => e.key === "Enter" && handleTrackOrder()}

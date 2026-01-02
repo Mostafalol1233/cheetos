@@ -22,6 +22,7 @@ export default function CheckoutSecurityPage() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [payInfo, setPayInfo] = useState<{ title: string; value: string } | null>(null);
+  const [trackingCode, setTrackingCode] = useState<string | null>(null);
 
   const transactionId = params?.id as string | undefined;
 
@@ -82,6 +83,8 @@ export default function CheckoutSecurityPage() {
         return;
       }
       if (!res.ok) throw new Error(await res.text());
+      const j = await res.json();
+      if (j?.id) setTrackingCode(String(j.id));
       toast({ title: "Confirmation submitted", description: "We will notify you when the seller responds." });
       setMessage("");
       setReceipt(null);
@@ -145,6 +148,46 @@ export default function CheckoutSecurityPage() {
                 <CardTitle>Payment Confirmation</CardTitle>
               </CardHeader>
               <CardContent>
+                {trackingCode ? (
+                  <div className="mb-4 rounded-lg border border-gold-primary/30 bg-muted/20 p-3 space-y-2">
+                    <div className="text-sm font-medium">Tracking Code</div>
+                    <div className="flex items-center gap-2">
+                      <div className="font-mono text-xs break-all flex-1">{trackingCode}</div>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={async () => {
+                          try {
+                            await navigator.clipboard.writeText(trackingCode);
+                            toast({ title: "Copied", description: "Tracking code copied" });
+                          } catch {
+                            toast({ title: "Copy failed", description: "Please copy it manually" });
+                          }
+                        }}
+                      >
+                        Copy
+                      </Button>
+                    </div>
+                    <div className="flex gap-2 flex-wrap">
+                      <Link href={`/track-order`} className="text-gold-primary text-sm">Go to Track Order</Link>
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        onClick={async () => {
+                          try {
+                            const r = await fetch(`${API_BASE_URL}/api/public/confirmations/${encodeURIComponent(trackingCode)}/resend`, { method: 'POST' });
+                            if (!r.ok) throw new Error(await r.text());
+                            toast({ title: "Request sent", description: "We notified the admin to resend via WhatsApp." });
+                          } catch (e) {
+                            toast({ title: "Failed", description: String(e), variant: "destructive" });
+                          }
+                        }}
+                      >
+                        Request resend via WhatsApp
+                      </Button>
+                    </div>
+                  </div>
+                ) : null}
                 <form onSubmit={onSubmit} className="space-y-4">
                   <div>
                     <Label htmlFor="msg">Payment Message *</Label>

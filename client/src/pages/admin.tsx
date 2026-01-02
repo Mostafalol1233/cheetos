@@ -222,10 +222,13 @@ export default function AdminDashboard() {
         method: 'DELETE',
         headers: token ? { Authorization: `Bearer ${token}` } : undefined,
       });
-      return res.json();
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error((data as any)?.message || 'Failed to delete game');
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/games'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/game-cards'] });
     }
   });
 
@@ -238,7 +241,9 @@ export default function AdminDashboard() {
         headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
         body: JSON.stringify(game)
       });
-      return res.json();
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error((data as any)?.message || 'Failed to update game');
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/games'] });
@@ -254,13 +259,46 @@ export default function AdminDashboard() {
         headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
         body: JSON.stringify({ image_url: payload.image_url })
       });
-      return res.json();
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error((data as any)?.message || 'Failed to update large image');
+      return data;
     },
     onSuccess: (resp) => {
       queryClient.invalidateQueries({ queryKey: ['/api/games'] });
       if (resp?.id) {
         setEditingGame((prev) => (prev ? ({ ...prev, image_url: resp.image_url } as any) : prev));
       }
+    }
+  });
+
+  const applyLogoToPackagesMutation = useMutation({
+    mutationFn: async (payload: { gameId: string; logoUrl: string }) => {
+      const token = localStorage.getItem('adminToken');
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+
+      const getRes = await fetch(`/api/admin/games/${payload.gameId}/packages`, { headers });
+      const current = await getRes.json().catch(() => []);
+      if (!getRes.ok) throw new Error((current as any)?.message || 'Failed to load packages');
+
+      const packages = (Array.isArray(current) ? current : []).map((p: any) => ({
+        amount: String(p?.amount || '').trim(),
+        price: Number(p?.price || 0),
+        discountPrice: p?.discountPrice != null ? Number(p.discountPrice) : null,
+        image: payload.logoUrl
+      }));
+
+      const putRes = await fetch(`/api/admin/games/${payload.gameId}/packages`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: JSON.stringify({ packages })
+      });
+      const data = await putRes.json().catch(() => ({}));
+      if (!putRes.ok) throw new Error((data as any)?.message || 'Failed to apply logo to packages');
+      return data;
+    },
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['/api/games'] });
+      queryClient.invalidateQueries({ queryKey: [`/api/admin/games/${variables.gameId}/packages`] });
     }
   });
 
@@ -273,7 +311,9 @@ export default function AdminDashboard() {
         headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
         body: JSON.stringify(gameData)
       });
-      return res.json();
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error((data as any)?.message || 'Failed to create game');
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/games'] });
@@ -1451,6 +1491,22 @@ export default function AdminDashboard() {
                   onChange={(ev) => handleImageUpload(ev, 'logo')}
                   className="col-span-3"
                 />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <div className="col-start-2 col-span-3 flex gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={!editingGame?.id || !String(editingGame.image || '').trim() || applyLogoToPackagesMutation.isPending}
+                    onClick={() => {
+                      const logoUrl = String(editingGame.image || '').trim();
+                      if (!editingGame?.id || !logoUrl) return;
+                      applyLogoToPackagesMutation.mutate({ gameId: editingGame.id, logoUrl });
+                    }}
+                  >
+                    Apply Logo To All Packages
+                  </Button>
+                </div>
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="image_url" className="text-right">Large Image URL</Label>
