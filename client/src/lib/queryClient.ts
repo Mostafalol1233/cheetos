@@ -4,6 +4,12 @@ import { QueryClient, QueryFunction } from "@tanstack/react-query";
 const ENV_API_URL = import.meta.env.VITE_API_URL as string | undefined;
 export const API_BASE_URL = (() => {
   if (typeof window === "undefined") return ENV_API_URL || "";
+  const normalizeBaseUrl = (raw: string) => {
+    const s = String(raw || "").trim().replace(/\/$/, "");
+    if (!s) return "";
+    if (/^https?:\/\//i.test(s)) return s;
+    return `http://${s}`;
+  };
   try {
     const u = new URL(window.location.href);
     if (u.searchParams.get("mock") === "1") {
@@ -11,8 +17,9 @@ export const API_BASE_URL = (() => {
     }
   } catch {}
   if (!ENV_API_URL) return window.location.origin;
-  if (window.location.protocol === "https:" && ENV_API_URL.startsWith("http://")) return window.location.origin;
-  return ENV_API_URL;
+  const normalized = normalizeBaseUrl(ENV_API_URL);
+  if (window.location.protocol === "https:" && normalized.startsWith("http://")) return window.location.origin;
+  return normalized;
 })();
 
 async function throwIfResNotOk(res: Response) {
