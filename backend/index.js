@@ -18,6 +18,10 @@ import { startWhatsApp, getQRCode, getConnectionStatus, sendWhatsAppMessage, sen
 import requestLogger from './middleware/logger.js';
 import errorHandler from './middleware/error.js';
 import pool, { checkConnection, preferIPv4 } from './db.js';
+import gamesRouter from './routes/games.js';
+import ordersRouter from './routes/orders.js';
+import authRouter from './routes/auth.js';
+import { authenticateToken, ensureAdmin } from './middleware/auth.js';
 // Optional image processor (module may not exist in some deployments)
 let initImageProcessor = null;
 try {
@@ -224,42 +228,52 @@ async function seedGamesFromJsonIfEmpty(force = false) {
           return isNaN(num) ? 0 : num;
         });
 
+        const rawDiscountPrices = coerceJsonArray(g.packageDiscountPrices || g.package_discount_prices || g.discountPrices || g.discount_prices).map((n) => {
+          if (n == null) return null;
+          if (typeof n === 'number') return n;
+          const s = String(n || '').trim();
+          if (!s) return null;
+          const num = parseFloat(s.replace(/[^0-9.]/g, ''));
+          return isNaN(num) ? null : num;
+        });
+
         const processedPackagePrices = [];
         const processedDiscountPrices = [];
 
         for (const p of rawPrices) {
           const base = Number(p) || 0;
           processedPackagePrices.push(base);
-          processedDiscountPrices.push(computeDiscountPrice(base));
+          processedDiscountPrices.push(null);
+        }
+
+        // Prefer discount prices from JSON if provided
+        if (rawDiscountPrices.length > 0) {
+          const next = Array.from({ length: processedPackagePrices.length }, (_, i) => rawDiscountPrices[i] ?? null);
+          processedDiscountPrices.length = 0;
+          processedDiscountPrices.push(...next);
         }
 
         const price = Number(g.price) || (processedPackagePrices[0] || 0);
-        const discount_price = computeDiscountPrice(price);
+        const discountRaw = g.discountPrice ?? g.discount_price;
+        let discount_price = null;
+        if (discountRaw !== undefined && discountRaw !== null && String(discountRaw).trim() !== '') {
+          const dp = Number(discountRaw);
+          if (Number.isFinite(dp) && dp > 0 && dp < price) {
+            discount_price = dp;
+          }
+        }
 
         await pool.query(
           `INSERT INTO games (id, name, slug, description, price, currency, image, category, is_popular, stock, discount_price, packages, package_prices, package_discount_prices)
            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
-           ON CONFLICT (id) DO UPDATE SET
-             name = EXCLUDED.name,
-             slug = EXCLUDED.slug,
-             description = EXCLUDED.description,
-             price = EXCLUDED.price,
-             currency = EXCLUDED.currency,
-             image = EXCLUDED.image,
-             category = EXCLUDED.category,
-             is_popular = EXCLUDED.is_popular,
-             stock = EXCLUDED.stock,
-             discount_price = EXCLUDED.discount_price,
-             packages = EXCLUDED.packages,
-             package_prices = EXCLUDED.package_prices,
-             package_discount_prices = EXCLUDED.package_discount_prices`,
+           ON CONFLICT (id) DO NOTHING`,
           [id, name, slug, description, price, currency, image, category, is_popular, stock, discount_price, rawPackages, processedPackagePrices, processedDiscountPrices]
         );
       } catch (err) {
         console.error(`Failed to seed game ${g.name}:`, err.message);
       }
     }
-    console.log(`✓ Seeded/Updated ${items.length} games from JSON`);
+    console.log(`✓ Seeded ${items.length} games from JSON`);
   } catch (err) {
     console.error('Seed from JSON error:', err.message);
   }
@@ -281,17 +295,11 @@ async function seedCategoriesFromJsonIfEmpty(force = false) {
       await pool.query(
         `INSERT INTO categories (id, name, slug, description, image, gradient, icon)
          VALUES ($1, $2, $3, $4, $5, $6, $7)
-         ON CONFLICT (id) DO UPDATE SET
-           name = EXCLUDED.name,
-           slug = EXCLUDED.slug,
-           description = EXCLUDED.description,
-           image = EXCLUDED.image,
-           gradient = EXCLUDED.gradient,
-           icon = EXCLUDED.icon`,
+         ON CONFLICT (id) DO NOTHING`,
         [c.id, c.name, c.slug, c.description, c.image, c.gradient, c.icon]
       );
     }
-    console.log(`✓ Seeded/Updated ${items.length} categories from JSON`);
+    console.log(`✓ Seeded ${items.length} categories from JSON`);
   } catch (err) {
     console.error('Category seed error:', err.message);
   }
@@ -299,7 +307,7 @@ async function seedCategoriesFromJsonIfEmpty(force = false) {
 // PostgreSQL Connection Pool - Imported from db.js
 
 // In-memory QR sessions
-const qrSessions = new Map();
+
 const rateStore = new Map();
 const RATE_WINDOW_MS = 60 * 1000;
 const RATE_MAX_REQUESTS = 100;
@@ -319,30 +327,7 @@ function adminRateLimiter(req, res, next) {
   next();
 }
 
-// Auth Middleware
-const authenticateToken = (req, res, next) => {
-  const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1];
-
-  if (!token) {
-    return res.status(401).json({ message: 'Access token required' });
-  }
-
-  jwt.verify(token, JWT_SECRET, (err, user) => {
-    if (err) {
-      return res.status(403).json({ message: 'Invalid or expired token' });
-    }
-    req.user = user;
-    next();
-  });
-};
-
-function ensureAdmin(req, res, next) {
-  if (!req.user || req.user.role !== 'admin') {
-    return res.status(403).json({ message: 'Admin privileges required' });
-  }
-  next();
-}
+// Auth Middleware (Imported from ./middleware/auth.js)
 
 function parseCookies(cookieHeader) {
   const out = {};
@@ -418,12 +403,7 @@ if (!fs.existsSync(imagesDir)) {
 }
 
 function computeDiscountPrice(mainPrice) {
-  const p = Number(mainPrice);
-  if (!Number.isFinite(p) || p < 50) return null;
-  const d = p - 100;
-  if (!Number.isFinite(d) || d <= 0) return null;
-  if (d >= p) return null;
-  return d;
+  return null;
 }
 
 async function useProvidedImage(req) {
@@ -575,32 +555,7 @@ app.get('/api/contact-info', async (req, res) => {
   }
 });
 
-// Update only the game's large image (Admin)
-app.put('/api/admin/games/:id/image-url', authenticateToken, async (req, res) => {
-  try {
-    const { id } = req.params;
-    const idOrSlug = String(id || '').trim();
-    const raw = (req.body && (req.body.image_url ?? req.body.imageUrl ?? req.body.url)) ?? null;
-    const imageUrl = raw ? normalizeImageUrl(String(raw).trim()) : null;
-    if (!imageUrl) return res.status(400).json({ message: 'image_url required' });
 
-    const lookup = await pool.query('SELECT id FROM games WHERE id = $1 OR slug = $1 LIMIT 1', [idOrSlug]);
-    if (lookup.rows.length === 0) return res.status(404).json({ message: 'Game not found' });
-    const gameId = lookup.rows[0].id;
-
-    const result = await pool.query(
-      'UPDATE games SET image_url = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 RETURNING id, name, slug, image, image_url',
-      [imageUrl, gameId]
-    );
-    const row = result.rows[0];
-    row.image = normalizeImageUrl(row.image);
-    row.image_url = row.image_url ? normalizeImageUrl(row.image_url) : null;
-    res.json(row);
-  } catch (err) {
-    console.error('Error updating game image_url:', err);
-    res.status(500).json({ message: err.message });
-  }
-});
 
 // Bulk update game images using provided Postimg links (Admin)
 app.post('/api/admin/games/bulk-update-images', authenticateToken, async (req, res) => {
@@ -850,6 +805,11 @@ app.get('/images/:filename', (req, res) => {
 // API ENDPOINTS (Added as requested)
 // ===============================================
 
+// Mount Games Router
+app.use('/api/games', gamesRouter);
+app.use('/api/orders', ordersRouter);
+app.use('/api/auth', authRouter);
+
 // Get all categories
 app.get('/api/categories', async (req, res) => {
   try {
@@ -881,45 +841,7 @@ app.get('/api/categories', async (req, res) => {
   }
 });
 
-// Get popular games
-app.get('/api/games/popular', async (req, res) => {
-  try {
-    // Prefer database (so images and packages reflect actual DB). Fallback to JSON only if DB unavailable.
-    try {
-      const result = await pool.query(`
-        SELECT id, name, slug, description, price, currency, image, category, 
-               is_popular as "isPopular", stock, packages, package_prices as "packagePrices",
-               discount_price as "discountPrice", package_discount_prices as "packageDiscountPrices"
-        FROM games
-        WHERE is_popular = true
-        LIMIT 10
-      `);
-      if (result?.rows) {
-        const games = result.rows.map(game => ({
-          ...game,
-          image: normalizeImageUrl(game.image),
-          packages: Array.isArray(game.packages) ? game.packages : (game.packages ? JSON.parse(game.packages) : []),
-          packagePrices: Array.isArray(game.packagePrices) ? game.packagePrices : (game.packagePrices ? JSON.parse(game.packagePrices) : []),
-          packageDiscountPrices: Array.isArray(game.packageDiscountPrices) ? game.packageDiscountPrices : (game.packageDiscountPrices ? JSON.parse(game.packageDiscountPrices) : [])
-        }));
-        return res.json(games);
-      }
-    } catch {}
 
-    const gamesPath = path.join(__dirname, 'data', 'games.json');
-    if (fs.existsSync(gamesPath)) {
-      const data = fs.readFileSync(gamesPath, 'utf8');
-      const games = JSON.parse(data);
-      const popularGames = Array.isArray(games) ? games.filter(g => g.isPopular) : [];
-      return res.json(popularGames.map((g) => ({ ...g, image: normalizeImageUrl(g.image), stock: Number(g.stock ?? 0) })));
-    }
-
-    res.json([]);
-  } catch (err) {
-    console.error('Error fetching popular games:', err);
-    res.status(500).json({ message: 'Failed to fetch popular games' });
-  }
-});
 
 // Global Error Handler
 app.use(errorHandler);
@@ -1422,47 +1344,7 @@ async function seedProductImages() {
 }
 
 // ===============================================
-// AUTHENTICATION ENDPOINTS
-// ===============================================
-
-// Admin Login
-app.post('/api/admin/login', async (req, res) => {
-  try {
-    const { email, password } = req.body;
-
-    if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
-      const token = jwt.sign({ email, role: 'admin' }, JWT_SECRET, { expiresIn: '24h' });
-      const csrfToken = crypto.randomBytes(16).toString('hex');
-      const sameSite = process.env.NODE_ENV === 'production' ? 'None' : 'Lax';
-      const secure = process.env.NODE_ENV === 'production' ? '; Secure' : '';
-      res.setHeader('Set-Cookie', `csrf_token=${encodeURIComponent(csrfToken)}; Path=/; SameSite=${sameSite}${secure}`);
-      return res.json({ token, email, role: 'admin', csrfToken });
-    }
-
-    res.status(401).json({ message: 'Invalid credentials' });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-});
-
-app.get('/api/admin/verify', authenticateToken, async (req, res) => {
-  try {
-    res.json({ ok: true });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-});
-
-// Admin Logout
-app.post('/api/admin/logout', authenticateToken, async (req, res) => {
-  try {
-    // JWT tokens are stateless, so logout is handled client-side by removing the token
-    // This endpoint just confirms the logout
-    res.json({ message: 'Logged out successfully' });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-});
+// [Moved to routes/auth.js]
 
 app.get('/api/admin/seeding/status', authenticateToken, async (req, res) => {
   try {
@@ -1483,107 +1365,7 @@ app.get('/api/admin/seeding/report', authenticateToken, async (req, res) => {
   }
 });
 
-// User Login/Sign In for Chat
-app.post('/api/auth/login', async (req, res) => {
-  try {
-    const { name, phone, email } = req.body;
-    
-    if (!name || !phone) {
-      return res.status(400).json({ message: 'Name and phone are required' });
-    }
-    
-    // Create or get user
-    let userResult = await pool.query('SELECT id, name, phone FROM users WHERE phone = $1', [phone]);
-    let userId;
-    
-    if (userResult.rows.length === 0) {
-      userId = `user_${Date.now()}_${Math.random().toString(36).slice(2,9)}`;
-      await pool.query('INSERT INTO users (id, name, phone) VALUES ($1, $2, $3)', [userId, name, phone]);
-    } else {
-      userId = userResult.rows[0].id;
-      // Update name if provided
-      if (name !== userResult.rows[0].name) {
-        await pool.query('UPDATE users SET name = $1 WHERE id = $2', [name, userId]);
-      }
-    }
-    
-    // Generate session token for chat
-    const sessionToken = jwt.sign({ userId, name, phone }, JWT_SECRET, { expiresIn: '30d' });
-    
-    res.json({ 
-      token: sessionToken, 
-      user: { id: userId, name, phone },
-      message: 'Login successful' 
-    });
-  } catch (err) {
-    console.error('User login error:', err);
-    res.status(500).json({ message: err.message });
-  }
-});
-
-// QR Auth: Start session
-app.post('/api/auth/qr/start', async (req, res) => {
-  try {
-    const id = `qr_${Date.now()}_${crypto.randomBytes(6).toString('hex')}`;
-    const token = crypto.randomBytes(16).toString('hex');
-    const now = Date.now();
-    const expiresAt = now + 5 * 60 * 1000;
-    qrSessions.set(id, { token, status: 'pending', createdAt: now, expiresAt });
-    res.json({ id, token, expiresAt });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-});
-
-// QR Auth: Check status
-app.get('/api/auth/qr/status/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const s = qrSessions.get(id);
-    if (!s) return res.status(404).json({ message: 'Not found' });
-    if (Date.now() > s.expiresAt && s.status !== 'approved') {
-      s.status = 'expired';
-    }
-    res.json({ status: s.status });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-});
-
-// QR Auth: Confirm from mobile
-app.post('/api/auth/qr/confirm', async (req, res) => {
-  try {
-    const { id, token } = req.body || {};
-    const s = qrSessions.get(id);
-    if (!s) return res.status(404).json({ message: 'Not found' });
-    if (s.status === 'expired') return res.status(400).json({ message: 'Expired' });
-    if (Date.now() > s.expiresAt) {
-      s.status = 'expired';
-      return res.status(400).json({ message: 'Expired' });
-    }
-    if (s.token !== token) return res.status(403).json({ message: 'Invalid' });
-    s.status = 'approved';
-    res.json({ ok: true });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-});
-
-// QR Auth: Consume and issue JWT
-app.post('/api/auth/qr/consume', async (req, res) => {
-  try {
-    const { id } = req.body || {};
-    const s = qrSessions.get(id);
-    if (!s) return res.status(404).json({ message: 'Not found' });
-    if (s.status !== 'approved') return res.status(400).json({ message: 'Not approved' });
-    const email = ADMIN_EMAIL;
-    const token = jwt.sign({ email, role: 'admin' }, JWT_SECRET, { expiresIn: '24h' });
-    qrSessions.delete(id);
-    res.json({ token, user: { email } });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-});
+// [Moved to routes/auth.js]
 
 // ===================== ADMIN: GAME CARDS =====================
 function sanitizeString(input) {
@@ -1665,27 +1447,7 @@ app.delete('/api/admin/game-cards/:id', authenticateToken, async (req, res) => {
   }
 });
 
-// ===================== HOT DEALS =====================
-app.get('/api/games/hot-deals', async (req, res) => {
-  try {
-    try {
-      const rows = await pool.query('SELECT id, name, slug, image, price, currency FROM games WHERE hot_deal = true ORDER BY updated_at DESC');
-      return res.json(rows.rows.map(g => ({ ...g, image: normalizeImageUrl(g.image) })));
-    } catch {}
-    const gamesPath = path.join(__dirname, 'data', 'games.json');
-    if (fs.existsSync(gamesPath)) {
-      const data = fs.readFileSync(gamesPath, 'utf8');
-      const games = JSON.parse(data);
-      const filtered = Array.isArray(games)
-        ? games
-            .filter(g => g.hot_deal === true)
-            .map(g => ({ ...g, image: normalizeImageUrl(g.image) }))
-        : [];
-      return res.json(filtered);
-    }
-    res.json([]);
-  } catch (err) { res.status(500).json({ message: err.message }); }
-});
+
 
 function getPaymentDetails(paymentMethod) {
   const method = String(paymentMethod || '').trim();
@@ -1760,730 +1522,12 @@ function normalizeGamePayload(body) {
 // GAMES ENDPOINTS
 // ===============================================
 
-app.get('/api/games', async (req, res) => {
-  try {
-    try {
-      const pageQ = parseInt(req.query.page);
-      const limitQ = parseInt(req.query.limit);
-      const usePaging = Number.isFinite(pageQ) || Number.isFinite(limitQ);
-      const page = Math.max(1, Number.isFinite(pageQ) ? pageQ : 1);
-      const limit = Math.min(100, Math.max(1, Number.isFinite(limitQ) ? limitQ : 20));
-      const offset = (page - 1) * limit;
-      const rows = await pool.query(`
-        SELECT id, name, slug, description, price, currency, image, category,
-               is_popular as "isPopular", stock, packages, package_prices as "packagePrices",
-               discount_price as "discountPrice", package_discount_prices as "packageDiscountPrices",
-               discount_prices as "discountPrices", image_url as "image_url", package_thumbnails as "packageThumbnails"
-        FROM games
-        ORDER BY id DESC
-        ${usePaging ? `LIMIT ${limit} OFFSET ${offset}` : ``}
-      `);
-      const games = rows.rows.map(game => ({
-        ...game,
-        image: normalizeImageUrl(game.image),
-        image_url: game.image_url ? normalizeImageUrl(game.image_url) : null,
-        packages: coerceJsonArray(game.packages),
-        packagePrices: coerceJsonArray(game.packagePrices),
-        packageDiscountPrices: coerceJsonArray(game.packageDiscountPrices),
-        discountPrices: coerceJsonArray(game.discountPrices),
-        packageThumbnails: coerceJsonArray(game.packageThumbnails)
-      }));
-      if (!usePaging) return res.json(games);
-      const totalRes = await pool.query(`SELECT COUNT(*)::int AS c FROM games`);
-      const total = totalRes.rows?.[0]?.c || 0;
-      const totalPages = Math.max(1, Math.ceil(total / limit));
-      return res.json({ items: games, page, limit, total, totalPages });
-    } catch {}
-    const gamesPath = path.join(__dirname, 'data', 'games.json');
-    if (fs.existsSync(gamesPath)) {
-      const data = fs.readFileSync(gamesPath, 'utf8');
-      const games = JSON.parse(data);
-      const pageQ = parseInt(req.query.page);
-      const limitQ = parseInt(req.query.limit);
-      const usePaging = Number.isFinite(pageQ) || Number.isFinite(limitQ);
-      const page = Math.max(1, Number.isFinite(pageQ) ? pageQ : 1);
-      const limit = Math.min(100, Math.max(1, Number.isFinite(limitQ) ? limitQ : 20));
-      const normalized = Array.isArray(games)
-        ? games.map(g => ({
-            ...g,
-            image: normalizeImageUrl(g.image),
-            packages: coerceJsonArray(g.packages),
-            packagePrices: coerceJsonArray(g.packagePrices),
-            packageDiscountPrices: coerceJsonArray(g.packageDiscountPrices),
-            discountPrices: coerceJsonArray(g.discountPrices),
-            stock: Number(g.stock ?? 0)
-          }))
-        : [];
-      if (!usePaging) return res.json(normalized);
-      const total = normalized.length;
-      const totalPages = Math.max(1, Math.ceil(total / limit));
-      const start = (page - 1) * limit;
-      const items = normalized.slice(start, start + limit);
-      return res.json({ items, page, limit, total, totalPages });
-    }
-    res.json([]);
-  } catch (err) {
-    console.error('Error fetching games:', err);
-    res.status(500).json({ message: err.message, error: 'Failed to fetch games' });
-  }
-});
-
-function validatePackagePayload(body) {
-  const name = String(body.name || '').trim();
-  const basePrice = Number(body.base_price ?? body.basePrice ?? 0);
-  const discountRate = Number(body.discount_rate ?? body.discountRate ?? 0);
-  const specialOffers = Array.isArray(body.special_offers ?? body.specialOffers) ? (body.special_offers ?? body.specialOffers) : [];
-  const gameId = body.game_id ? String(body.game_id).trim() : null;
-  if (!name) return { ok: false, message: 'name required' };
-  if (!Number.isFinite(basePrice) || basePrice < 0) return { ok: false, message: 'base_price invalid' };
-  if (!Number.isFinite(discountRate) || discountRate < 0 || discountRate > 100) return { ok: false, message: 'discount_rate invalid' };
-  return { ok: true, value: { name, basePrice, discountRate, specialOffers, gameId } };
-}
-
-app.get('/api/packages', async (req, res) => {
-  try {
-    const page = Math.max(1, parseInt(req.query.page) || 1);
-    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 20));
-    const offset = (page - 1) * limit;
-    const rows = await pool.query(
-      'SELECT id, name, base_price as "basePrice", discount_rate as "discountRate", special_offers as "specialOffers", game_id as "gameId" FROM packages ORDER BY updated_at DESC LIMIT $1 OFFSET $2',
-      [limit, offset]
-    );
-    const totalRes = await pool.query('SELECT COUNT(*)::int AS c FROM packages');
-    const total = totalRes.rows?.[0]?.c || 0;
-    const totalPages = Math.max(1, Math.ceil(total / limit));
-    res.json({ items: rows.rows || [], page, limit, total, totalPages });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-});
-
-app.post('/api/packages', authenticateToken, ensureAdmin, async (req, res) => {
-  try {
-    const v = validatePackagePayload(req.body || {});
-    if (!v.ok) return res.status(400).json({ message: v.message });
-    const id = `pkg_${Date.now()}_${Math.random().toString(36).slice(2,9)}`;
-    await pool.query('BEGIN');
-    await pool.query(
-      'INSERT INTO packages (id, name, base_price, discount_rate, special_offers, game_id) VALUES ($1, $2, $3, $4, $5, $6)',
-      [id, v.value.name, v.value.basePrice, v.value.discountRate, JSON.stringify(v.value.specialOffers), v.value.gameId]
-    );
-    await pool.query('COMMIT');
-    res.status(201).json({ id, ...v.value });
-  } catch (err) {
-    try { await pool.query('ROLLBACK'); } catch {}
-    res.status(500).json({ message: err.message });
-  }
-});
-
-app.put('/api/packages/:id', authenticateToken, ensureAdmin, async (req, res) => {
-  try {
-    const { id } = req.params;
-    const v = validatePackagePayload(req.body || {});
-    if (!v.ok) return res.status(400).json({ message: v.message });
-    await pool.query('BEGIN');
-    const up = await pool.query(
-      'UPDATE packages SET name = $1, base_price = $2, discount_rate = $3, special_offers = $4, game_id = $5, updated_at = CURRENT_TIMESTAMP WHERE id = $6 RETURNING id',
-      [v.value.name, v.value.basePrice, v.value.discountRate, JSON.stringify(v.value.specialOffers), v.value.gameId, id]
-    );
-    await pool.query('COMMIT');
-    if (!up.rows.length) return res.status(404).json({ message: 'Not found' });
-    res.json({ id, ...v.value });
-  } catch (err) {
-    try { await pool.query('ROLLBACK'); } catch {}
-    res.status(500).json({ message: err.message });
-  }
-});
-
-app.delete('/api/packages/:id', authenticateToken, ensureAdmin, async (req, res) => {
-  try {
-    const { id } = req.params;
-    await pool.query('BEGIN');
-    const del = await pool.query('DELETE FROM packages WHERE id = $1 RETURNING id', [id]);
-    await pool.query('COMMIT');
-    if (!del.rows.length) return res.status(404).json({ message: 'Not found' });
-    res.json({ id });
-  } catch (err) {
-    try { await pool.query('ROLLBACK'); } catch {}
-    res.status(500).json({ message: err.message });
-  }
-});
-// Get popular games (must come before /api/games/:slug)
-app.get('/api/games/popular', async (req, res) => {
-  try {
-    const result = await pool.query(`
-      SELECT id, name, slug, description, price, currency, image, category, 
-             is_popular as "isPopular", stock, packages, package_prices as "packagePrices",
-             discount_price as "discountPrice", package_discount_prices as "packageDiscountPrices",
-             image_url as "image_url", package_thumbnails as "packageThumbnails"
-      FROM games 
-      WHERE is_popular = true 
-      LIMIT 10
-    `);
-    // Ensure packages and prices are arrays
-    const games = result.rows.map(game => ({
-      ...game,
-      image: normalizeImageUrl(game.image),
-      image_url: game.image_url ? normalizeImageUrl(game.image_url) : null,
-      packages: coerceJsonArray(game.packages),
-      packagePrices: coerceJsonArray(game.packagePrices),
-      packageDiscountPrices: coerceJsonArray(game.packageDiscountPrices),
-      packageThumbnails: coerceJsonArray(game.packageThumbnails)
-    }));
-    res.json(games);
-  } catch (err) {
-    console.error('Error fetching popular games:', err);
-    res.status(500).json({ message: err.message, error: 'Failed to fetch popular games' });
-  }
-});
-
-// Get games by category (must come before /api/games/:slug)
-app.get('/api/games/category/:category', async (req, res) => {
-  const { category } = req.params;
-  try {
-    try {
-      const result = await pool.query(`
-        SELECT id, name, slug, description, price, currency, image, category, 
-               is_popular as "isPopular", stock, packages, package_prices as "packagePrices",
-               discount_price as "discountPrice", package_discount_prices as "packageDiscountPrices",
-               discount_prices as "discountPrices",
-               image_url as "image_url", package_thumbnails as "packageThumbnails"
-        FROM games 
-        WHERE category = $1 OR category_id = $1 OR slug = $1
-        ORDER BY id DESC
-      `, [category]);
-      const games = result.rows.map(game => ({
-        ...game,
-        image: normalizeImageUrl(game.image),
-        image_url: game.image_url ? normalizeImageUrl(game.image_url) : null,
-        packages: coerceJsonArray(game.packages),
-        packagePrices: coerceJsonArray(game.packagePrices),
-        packageDiscountPrices: coerceJsonArray(game.packageDiscountPrices),
-        discountPrices: coerceJsonArray(game.discountPrices),
-        packageThumbnails: coerceJsonArray(game.packageThumbnails)
-      }));
-      return res.json(games);
-    } catch {}
-    // Fallback to local JSON
-    const gamesPath = path.join(__dirname, 'data', 'games.json');
-    if (fs.existsSync(gamesPath)) {
-      const data = fs.readFileSync(gamesPath, 'utf8');
-      const games = JSON.parse(data);
-      const filtered = Array.isArray(games)
-        ? games
-            .filter(g => {
-              const cat = String(g.category || '').toLowerCase();
-              const slug = String(g.slug || '').toLowerCase();
-              const q = String(category || '').toLowerCase();
-              return cat === q || slug === q;
-            })
-            .map(g => ({
-              ...g,
-              image: normalizeImageUrl(g.image),
-              packages: coerceJsonArray(g.packages),
-              packagePrices: coerceJsonArray(g.packagePrices),
-              packageDiscountPrices: coerceJsonArray(g.packageDiscountPrices),
-              discountPrices: coerceJsonArray(g.discountPrices),
-              stock: Number(g.stock ?? 0)
-            }))
-        : [];
-      return res.json(filtered);
-    }
-    res.json([]);
-  } catch (err) {
-    console.error('Error fetching games by category:', err);
-    res.status(500).json({ message: err.message });
-  }
-});
-
-// Get game by ID (must come before /api/games/:slug)
-app.get('/api/games/id/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-    try {
-      const result = await pool.query(`
-        SELECT id, name, slug, description, price, currency, image, category, 
-               is_popular as "isPopular", stock, packages, package_prices as "packagePrices",
-               discount_price as "discountPrice", package_discount_prices as "packageDiscountPrices",
-               discount_prices as "discountPrices",
-               image_url as "image_url", package_thumbnails as "packageThumbnails"
-        FROM games 
-        WHERE id = $1
-      `, [id]);
-      if (result.rows.length === 0) {
-        return res.status(404).json({ message: 'Game not found' });
-      }
-      const game = result.rows[0];
-      game.image = normalizeImageUrl(game.image);
-      game.image_url = game.image_url ? normalizeImageUrl(game.image_url) : null;
-      game.packages = coerceJsonArray(game.packages);
-      game.packagePrices = coerceJsonArray(game.packagePrices);
-      game.packageDiscountPrices = coerceJsonArray(game.packageDiscountPrices);
-      game.discountPrices = coerceJsonArray(game.discountPrices);
-      game.packageThumbnails = coerceJsonArray(game.packageThumbnails);
-      return res.json(game);
-    } catch {}
-    const gamesPath = path.join(__dirname, 'data', 'games.json');
-    if (fs.existsSync(gamesPath)) {
-      const data = fs.readFileSync(gamesPath, 'utf8');
-      const games = JSON.parse(data);
-      const found = Array.isArray(games) ? games.find(g => String(g.id) === String(id)) : null;
-      if (!found) return res.status(404).json({ message: 'Game not found' });
-      const game = {
-        ...found,
-        image: normalizeImageUrl(found.image),
-        packages: coerceJsonArray(found.packages),
-        packagePrices: coerceJsonArray(found.packagePrices),
-        packageDiscountPrices: coerceJsonArray(found.packageDiscountPrices),
-        discountPrices: coerceJsonArray(found.discountPrices)
-      };
-      return res.json(game);
-    }
-    res.status(404).json({ message: 'Game not found' });
-  } catch (err) {
-    console.error('Error fetching game by ID:', err);
-    res.status(500).json({ message: err.message });
-  }
-});
-
-// Get game by slug (must come after /api/games/category/:category)
-app.get('/api/games/slug/:slug', async (req, res) => {
-  try {
-    const { slug } = req.params;
-    const normalizedSlug = String(slug || '').trim();
-    const compactSlug = normalizedSlug.replace(/-/g, '').toLowerCase();
-    try {
-      const result = await pool.query(`
-        SELECT id, name, slug, description, price, currency, image, category, 
-               is_popular as "isPopular", stock, packages, package_prices as "packagePrices",
-               discount_price as "discountPrice", package_discount_prices as "packageDiscountPrices",
-               image_url as "image_url", package_thumbnails as "packageThumbnails"
-        FROM games 
-        WHERE slug = $1
-           OR LOWER(REPLACE(slug, '-', '')) = $2
-        LIMIT 1
-      `, [normalizedSlug, compactSlug]);
-      
-      if (result.rows.length === 0) {
-        return res.status(404).json({ message: 'Game not found' });
-      }
-  
-      const game = result.rows[0];
-      game.image = normalizeImageUrl(game.image);
-      game.image_url = game.image_url ? normalizeImageUrl(game.image_url) : null;
-      game.packages = coerceJsonArray(game.packages);
-      game.packagePrices = coerceJsonArray(game.packagePrices);
-      game.packageDiscountPrices = coerceJsonArray(game.packageDiscountPrices);
-      game.packageThumbnails = coerceJsonArray(game.packageThumbnails);
-      return res.json(game);
-    } catch {}
-    // Fallback to local JSON
-    const gamesPath = path.join(__dirname, 'data', 'games.json');
-    if (fs.existsSync(gamesPath)) {
-      const data = fs.readFileSync(gamesPath, 'utf8');
-      const games = JSON.parse(data);
-      const found = Array.isArray(games)
-        ? games.find(g => {
-            const s = String(g.slug || '').trim();
-            return s === normalizedSlug || s.replace(/-/g, '').toLowerCase() === compactSlug;
-          })
-        : null;
-      if (!found) return res.status(404).json({ message: 'Game not found' });
-      const game = {
-        ...found,
-        image: normalizeImageUrl(found.image),
-        image_url: found.image_url ? normalizeImageUrl(found.image_url) : null,
-        packages: coerceJsonArray(found.packages),
-        packagePrices: coerceJsonArray(found.packagePrices),
-        packageDiscountPrices: coerceJsonArray(found.packageDiscountPrices),
-        packageThumbnails: coerceJsonArray(found.packageThumbnails || found.package_thumbnails)
-      };
-      return res.json(game);
-    }
-    res.status(404).json({ message: 'Game not found' });
-  } catch (err) {
-    console.error('Error fetching game by slug:', err);
-    res.status(500).json({ message: err.message });
-  }
-});
-
-// Get game by slug (generic route - must come after specific routes)
-app.get('/api/games/:slug', async (req, res) => {
-  try {
-    const { slug } = req.params;
-    if (slug === 'popular' || slug === 'category' || slug === 'slug' || slug === 'id') {
-      return res.status(404).json({ message: 'Invalid route' });
-    }
-
-    const normalizedSlug = String(slug || '').trim().replace(/:\d+$/, '');
-    const compactSlug = normalizedSlug.replace(/-/g, '').toLowerCase();
-    
-    try {
-      const result = await pool.query(`
-        SELECT id, name, slug, description, price, currency, image, category, 
-               is_popular as "isPopular", stock, packages, package_prices as "packagePrices",
-               discount_price as "discountPrice", package_discount_prices as "packageDiscountPrices",
-               discount_prices as "discountPrices",
-               image_url as "image_url", package_thumbnails as "packageThumbnails"
-        FROM games 
-        WHERE slug = $1
-           OR LOWER(REPLACE(slug, '-', '')) = $2
-        LIMIT 1
-      `, [normalizedSlug, compactSlug]);
-      if (result.rows.length === 0) {
-        return res.status(404).json({ message: 'Game not found' });
-      }
-      const game = result.rows[0];
-      game.image = normalizeImageUrl(game.image);
-      game.image_url = game.image_url ? normalizeImageUrl(game.image_url) : null;
-      game.packages = coerceJsonArray(game.packages);
-      game.packagePrices = coerceJsonArray(game.packagePrices);
-      game.packageDiscountPrices = coerceJsonArray(game.packageDiscountPrices);
-      game.discountPrices = coerceJsonArray(game.discountPrices);
-      game.packageThumbnails = coerceJsonArray(game.packageThumbnails);
-      return res.json(game);
-    } catch {}
-    const gamesPath = path.join(__dirname, 'data', 'games.json');
-    if (fs.existsSync(gamesPath)) {
-      const data = fs.readFileSync(gamesPath, 'utf8');
-      const games = JSON.parse(data);
-      const found = Array.isArray(games)
-        ? games.find(g => {
-            const s = String(g.slug || '').trim();
-            return s === normalizedSlug || s.replace(/-/g, '').toLowerCase() === compactSlug;
-          })
-        : null;
-      if (!found) return res.status(404).json({ message: 'Game not found' });
-      const game = {
-        ...found,
-        image: normalizeImageUrl(found.image),
-        image_url: found.image_url ? normalizeImageUrl(found.image_url) : null,
-        packages: coerceJsonArray(found.packages),
-        packagePrices: coerceJsonArray(found.packagePrices),
-        packageDiscountPrices: coerceJsonArray(found.packageDiscountPrices),
-        packageThumbnails: coerceJsonArray(found.packageThumbnails || found.package_thumbnails)
-      };
-      return res.json(game);
-    }
-    res.status(404).json({ message: 'Game not found' });
-  } catch (err) {
-    console.error('Error fetching game:', err);
-    res.status(500).json({ message: err.message });
-  }
-});
 
 
-// Create game (Admin)
-app.post('/api/admin/games', authenticateToken, ensureAdmin, imageUpload.single('image'), async (req, res) => {
-  try {
-    const { name, slug, description, price, currency, category, isPopular, stock, discountPrice, packages, packagePrices, packageDiscountPrices } = req.body;
-    const image = await useProvidedImage(req);
-    const id = `game_${Date.now()}`;
-    
-    // Generate slug if not provided
-    const finalSlug = slug || name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-    const isPop = String(isPopular) === 'true';
+// [Removed conflicting packages routes - see routes/games.js]
 
-    const normalizeToArray = (v) => {
-      if (v === undefined) return [];
-      if (v === null) return [];
-      if (Array.isArray(v)) return v;
-      if (typeof v === 'string') {
-        const s = v.trim();
-        if (!s) return [];
-        if (s.startsWith('[')) {
-          try {
-            const parsed = JSON.parse(s);
-            if (Array.isArray(parsed)) return parsed;
-          } catch {}
-        }
-        return [s];
-      }
-      return [v];
-    };
-    
-    // Handle packages - if it's an array of objects, extract the arrays
-    let packagesArr, packagePricesArr, packageDiscountPricesArr;
-    
-    if (packages && Array.isArray(packages) && packages.length > 0 && typeof packages[0] === 'object') {
-      // Packages are objects: [{amount, price, discountPrice, image}, ...]
-      packagesArr = packages.map(p => String(p.amount || p.name || ''));
-      packagePricesArr = packages.map(p => Number(p.price || 0));
-      packageDiscountPricesArr = packages.map(p => (p.discountPrice ? Number(p.discountPrice) : null));
-    } else {
-      // Legacy format: separate arrays
-      packagesArr = normalizeToArray(packages);
-      packagePricesArr = normalizeToArray(packagePrices);
-      packageDiscountPricesArr = normalizeToArray(packageDiscountPrices);
-    }
 
-    // Ensure description is never null or undefined - use empty string as fallback
-    const safeDescription = (description !== null && description !== undefined) ? String(description).trim() : '';
-
-    // Validate required fields
-    if (!name || !name.trim()) {
-      return res.status(400).json({ message: 'Game name is required' });
-    }
-
-    const numericPrice = Number(price) || 0;
-    let discountNumeric = null;
-    if (discountPrice !== undefined && discountPrice !== null && String(discountPrice).trim() !== '') {
-      const dp = Number(discountPrice);
-      if (Number.isFinite(dp) && dp > 0 && dp < numericPrice) {
-        discountNumeric = dp;
-      } else {
-        return res.status(400).json({ message: 'Invalid discount price: must be numeric, > 0 and < price' });
-      }
-    } else {
-      discountNumeric = computeDiscountPrice(numericPrice);
-    }
-
-    try {
-      const result = await pool.query(
-        `INSERT INTO games (id, name, slug, description, price, currency, image, category, is_popular, stock, discount_price, packages, package_prices, package_discount_prices) 
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) 
-         RETURNING id, name, slug, description, price, currency, image, category, is_popular as "isPopular", stock, 
-                   discount_price as "discountPrice", packages, package_prices as "packagePrices", 
-                   package_discount_prices as "packageDiscountPrices"`,
-        [id, name.trim(), finalSlug, safeDescription, numericPrice, currency || 'EGP', image || DEFAULT_PLACEHOLDER_IMAGE, category || 'other', isPop, Number(stock) || 100, 
-         discountNumeric, JSON.stringify(packagesArr), JSON.stringify(packagePricesArr), JSON.stringify(packageDiscountPricesArr)]
-      );
-      return res.status(201).json(result.rows[0]);
-    } catch (dbErr) {
-      console.error('DB Insert Failed:', dbErr.message);
-    }
-    const existingGames = readGamesFile();
-    const jsonGame = {
-      id,
-      name: name.trim(),
-      slug: finalSlug,
-      description: safeDescription,
-      price: String(Number(price) || 0),
-      currency: currency || 'EGP',
-      image: normalizeImageUrl(image || DEFAULT_PLACEHOLDER_IMAGE),
-      category: category || 'other',
-      isPopular: isPop,
-      stock: Number(stock) || 100,
-      discountPrice: computedDiscount != null ? String(computedDiscount) : null,
-      packages: packagesArr,
-      packagePrices: (packagePricesArr || []).map(n => String(Number(n) || 0)),
-      packageDiscountPrices: (packageDiscountPricesArr || []).map(v => v == null ? null : String(Number(v)))
-    };
-    existingGames.unshift(jsonGame);
-    writeGamesFile(existingGames);
-    res.status(201).json(jsonGame);
-  } catch (err) {
-    console.error('Error creating game:', err);
-    res.status(500).json({ message: err.message });
-  }
-});
-
-// Update game (Admin)
-app.put('/api/admin/games/:id', authenticateToken, ensureAdmin, imageUpload.single('image'), async (req, res) => {
-  try {
-    const { id } = req.params;
-    const idOrSlug = String(id || '').trim();
-    let lookup = await pool.query('SELECT id FROM games WHERE id = $1', [idOrSlug]);
-    if (lookup.rows.length === 0) {
-      lookup = await pool.query('SELECT id FROM games WHERE slug = $1', [idOrSlug]);
-    }
-    if (lookup.rows.length === 0) {
-      return res.status(404).json({ message: 'Game not found' });
-    }
-    const gameId = lookup.rows[0].id;
-    const { name, slug, description, price, currency, category, isPopular, stock, discountPrice, packages, packagePrices, packageDiscountPrices } = req.body;
-    let newImage = await useProvidedImage(req);
-    const image = newImage !== null ? newImage : (req.body.image !== undefined ? normalizeImageUrl(req.body.image) : undefined);
-    
-    const isPop = String(isPopular) === 'true';
-
-    const normalizeOptionalArray = (v) => {
-      if (v === undefined) return undefined;
-      if (v === null) return [];
-      if (Array.isArray(v)) return v;
-      if (typeof v === 'string') {
-        const s = v.trim();
-        if (!s) return [];
-        if (s.startsWith('[')) {
-          try {
-            const parsed = JSON.parse(s);
-            if (Array.isArray(parsed)) return parsed;
-          } catch {}
-        }
-        return [s];
-      }
-      return [v];
-    };
-
-    const packagesArr = normalizeOptionalArray(packages);
-    const packagePricesArr = normalizeOptionalArray(packagePrices);
-    const packageDiscountPricesArr = normalizeOptionalArray(packageDiscountPrices);
-
-    // Build dynamic update query
-    const updates = [];
-    const values = [];
-    let paramIndex = 1;
-
-    if (name !== undefined && name !== null) { updates.push(`name = $${paramIndex++}`); values.push(String(name).trim()); }
-    if (slug !== undefined && slug !== null) { updates.push(`slug = $${paramIndex++}`); values.push(slug); }
-    if (description !== undefined) { 
-      // Ensure description is never null - use empty string as fallback
-      const safeDescription = (description !== null) ? String(description).trim() : '';
-      updates.push(`description = $${paramIndex++}`); 
-      values.push(safeDescription); 
-    }
-    const numericPriceForDiscount = price !== undefined && price !== null ? (Number(price) || 0) : undefined;
-    if (price !== undefined && price !== null) { updates.push(`price = $${paramIndex++}`); values.push(numericPriceForDiscount); }
-    if (currency !== undefined && currency !== null) { updates.push(`currency = $${paramIndex++}`); values.push(currency); }
-    if (image !== undefined && image !== null) { updates.push(`image = $${paramIndex++}`); values.push(image); }
-    if (req.body.image_url !== undefined && req.body.image_url !== null) { updates.push(`image_url = $${paramIndex++}`); values.push(normalizeImageUrl(req.body.image_url)); }
-    if (category !== undefined && category !== null) { updates.push(`category = $${paramIndex++}`); values.push(category); }
-    if (isPopular !== undefined && isPopular !== null) { updates.push(`is_popular = $${paramIndex++}`); values.push(isPop); }
-    if (stock !== undefined && stock !== null) { updates.push(`stock = $${paramIndex++}`); values.push(Number(stock) || 0); }
-    if (discountPrice !== undefined) {
-      let basePrice = numericPriceForDiscount;
-      if (basePrice === undefined) {
-        try {
-          const currentPriceRes = await pool.query('SELECT price FROM games WHERE id = $1', [gameId]);
-          const currentPrice = currentPriceRes.rows?.[0]?.price;
-          basePrice = currentPrice != null ? Number(currentPrice) : undefined;
-        } catch {
-          basePrice = undefined;
-        }
-      }
-      let finalDiscount = null;
-      const provided = String(discountPrice).trim();
-      if (provided === '' || discountPrice === null) {
-        finalDiscount = null;
-      } else {
-        const dp = Number(discountPrice);
-        if (!Number.isFinite(dp) || dp <= 0 || (basePrice !== undefined && dp >= basePrice)) {
-          return res.status(400).json({ message: 'Invalid discount price: must be numeric, > 0 and < price' });
-        }
-        finalDiscount = dp;
-      }
-      updates.push(`discount_price = $${paramIndex++}`);
-      values.push(finalDiscount);
-    } else if (numericPriceForDiscount !== undefined) {
-      const computedDiscount = computeDiscountPrice(numericPriceForDiscount);
-      updates.push(`discount_price = $${paramIndex++}`);
-      values.push(computedDiscount);
-    }
-    if (packagesArr !== undefined) { updates.push(`packages = $${paramIndex++}`); values.push(packagesArr); }
-    if (packagePricesArr !== undefined) { updates.push(`package_prices = $${paramIndex++}`); values.push(packagePricesArr); }
-    if (packageDiscountPricesArr !== undefined) { updates.push(`package_discount_prices = $${paramIndex++}`); values.push(packageDiscountPricesArr); }
-    
-    // If no updates, return current game data
-    if (updates.length === 0) {
-      const currentGame = await pool.query('SELECT id, name, slug, description, price, currency, image, category, is_popular as "isPopular", stock, discount_price as "discountPrice", packages, package_prices as "packagePrices", package_discount_prices as "packageDiscountPrices" FROM games WHERE id = $1', [gameId]);
-      if (currentGame.rows.length === 0) {
-        return res.status(404).json({ message: 'Game not found' });
-      }
-      const row = currentGame.rows[0];
-      row.image = normalizeImageUrl(row.image);
-      row.packages = coerceJsonArray(row.packages);
-      row.packagePrices = coerceJsonArray(row.packagePrices);
-      row.packageDiscountPrices = coerceJsonArray(row.packageDiscountPrices);
-      return res.json(row);
-    }
-    
-    values.push(gameId);
-
-    const query = `
-      UPDATE games 
-      SET ${updates.join(', ')} 
-      WHERE id = $${paramIndex}
-      RETURNING id, name, slug, description, price, currency, image, category, is_popular as "isPopular", stock,
-                discount_price as "discountPrice", packages, package_prices as "packagePrices",
-                package_discount_prices as "packageDiscountPrices"
-    `;
-
-    try {
-      const result = await pool.query(query, values);
-      if (result.rows.length === 0) {
-        return res.status(404).json({ message: 'Game not found' });
-      }
-      const row = result.rows[0];
-      row.image = normalizeImageUrl(row.image);
-      row.packages = coerceJsonArray(row.packages);
-      row.packagePrices = coerceJsonArray(row.packagePrices);
-      row.packageDiscountPrices = coerceJsonArray(row.packageDiscountPrices);
-      return res.json(row);
-    } catch {}
-    const jsonGames = readGamesFile();
-    const idx = jsonGames.findIndex(g => String(g.id) === String(gameId));
-    if (idx === -1) return res.status(404).json({ message: 'Game not found' });
-    const current = jsonGames[idx];
-    const updated = { ...current };
-    if (name !== undefined && name !== null) updated.name = String(name).trim();
-    if (slug !== undefined && slug !== null) updated.slug = String(slug);
-    if (description !== undefined) updated.description = (description !== null) ? String(description).trim() : '';
-    if (price !== undefined && price !== null) updated.price = String(Number(price) || 0);
-    if (currency !== undefined && currency !== null) updated.currency = String(currency);
-    if (image !== undefined && image !== null) updated.image = normalizeImageUrl(image);
-    if (category !== undefined && category !== null) updated.category = String(category);
-    if (isPopular !== undefined && isPopular !== null) updated.isPopular = isPop;
-    if (stock !== undefined && stock !== null) updated.stock = Number(stock) || 0;
-    if (discountPrice !== undefined) updated.discountPrice = discountPrice ? String(Number(discountPrice)) : null;
-    if (packagesArr !== undefined) updated.packages = packagesArr;
-    if (packagePricesArr !== undefined) updated.packagePrices = (packagePricesArr || []).map(n => String(Number(n) || 0));
-    if (packageDiscountPricesArr !== undefined) updated.packageDiscountPrices = (packageDiscountPricesArr || []).map(v => v == null ? null : String(Number(v)));
-    jsonGames[idx] = updated;
-    writeGamesFile(jsonGames);
-    res.json(updated);
-  } catch (err) {
-    console.error('Error updating game:', err);
-    res.status(500).json({ message: err.message });
-  }
-});
-
-// Delete game (Admin)
-app.delete('/api/admin/games/:id', authenticateToken, ensureAdmin, async (req, res) => {
-  try {
-    const { id } = req.params;
-    const idOrSlug = String(id || '').trim();
-    let lookup = await pool.query('SELECT id FROM games WHERE id = $1', [idOrSlug]);
-    if (lookup.rows.length === 0) {
-      lookup = await pool.query('SELECT id FROM games WHERE slug = $1', [idOrSlug]);
-    }
-    if (lookup.rows.length === 0) {
-      return res.status(404).json({ message: 'Game not found' });
-    }
-    const gameId = lookup.rows[0].id;
-
-    // Use a dedicated client transaction so failures don't silently fall back to JSON-only deletion.
-    const client = await pool.connect();
-    try {
-      await client.query('BEGIN');
-
-      // Delete dependent rows first (if any)
-      await client.query('DELETE FROM game_cards WHERE game_id = $1', [gameId]);
-
-      const result = await client.query('DELETE FROM games WHERE id = $1 RETURNING id', [gameId]);
-      if (result.rows.length === 0) {
-        await client.query('ROLLBACK');
-        return res.status(404).json({ message: 'Game not found' });
-      }
-
-      await client.query('COMMIT');
-      return res.json({ ok: true });
-    } catch (dbErr) {
-      try { await client.query('ROLLBACK'); } catch {}
-      return res.status(500).json({ message: dbErr.message || 'Failed to delete game' });
-    } finally {
-      client.release();
-    }
-    const jsonGames2 = readGamesFile();
-    const filtered = jsonGames2.filter(g => String(g.id) !== String(gameId));
-    if (filtered.length === jsonGames2.length) {
-      return res.status(404).json({ message: 'Game not found' });
-    }
-    writeGamesFile(filtered);
-    res.json({ ok: true });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-});
+// [Removed duplicate game routes - see routes/games.js]
 
 app.post('/api/admin/games/wipe', authenticateToken, async (req, res) => {
   try {
@@ -2830,173 +1874,9 @@ app.get('/api/admin/export', authenticateToken, async (req, res) => {
 
 // ===================== PACKAGE MANAGEMENT =====================
 
-// Get packages for a game
-app.get('/api/admin/games/:id/packages', authenticateToken, ensureAdmin, async (req, res) => {
-  try {
-    const { id } = req.params;
-    // Try by ID first, then by slug
-    let result = await pool.query(
-      'SELECT packages, package_prices as "packagePrices", package_discount_prices as "packageDiscountPrices", package_thumbnails as "packageThumbnails" FROM games WHERE id = $1',
-      [id]
-    );
-    
-    if (result.rows.length === 0) {
-      // Try by slug
-      result = await pool.query(
-        'SELECT packages, package_prices as "packagePrices", package_discount_prices as "packageDiscountPrices", package_thumbnails as "packageThumbnails" FROM games WHERE slug = $1',
-        [id]
-      );
-    }
-    
-    if (result.rows.length === 0) {
-      try {
-        const gamesPath = path.join(__dirname, 'data', 'games.json');
-        if (fs.existsSync(gamesPath)) {
-          const data = fs.readFileSync(gamesPath, 'utf8');
-          const all = JSON.parse(data);
-          const found = Array.isArray(all) ? all.find(g => String(g.id) === String(id) || String(g.slug) === String(id)) : null;
-          if (found) {
-            const packages = coerceJsonArray(found.packages);
-            const prices = coerceJsonArray(found.packagePrices);
-            const discountPrices = coerceJsonArray(found.packageDiscountPrices);
-            const thumbnails = coerceJsonArray(found.packageThumbnails || found.package_thumbnails);
-            const packageObjects = packages.map((pkg, index) => ({
-              amount: typeof pkg === 'string' ? pkg : (pkg?.amount || ''),
-              price: Number(prices[index] || 0),
-              discountPrice: discountPrices[index] ? Number(discountPrices[index]) : null,
-              image: thumbnails[index] ? String(thumbnails[index]) : null
-            }));
-            return res.json(packageObjects);
-          }
-        }
-      } catch {}
-      return res.status(404).json({ message: 'Game not found' });
-    }
-    
-    const game = result.rows[0];
-    // Convert to package objects if needed
-    const packages = coerceJsonArray(game.packages);
-    const prices = coerceJsonArray(game.packagePrices);
-    const discountPrices = coerceJsonArray(game.packageDiscountPrices);
-    const thumbnails = coerceJsonArray(game.packageThumbnails);
-    
-    // If packages are strings, convert to objects
-    const packageObjects = packages.map((pkg, index) => {
-      if (typeof pkg === 'object' && pkg !== null && pkg.amount) {
-        return pkg; // Already an object
-      }
-      return {
-        amount: String(pkg || ''),
-        price: Number(prices[index] || 0),
-        discountPrice: discountPrices[index] ? Number(discountPrices[index]) : null,
-        image: thumbnails[index] ? String(thumbnails[index]) : null
-      };
-    });
-    
-    res.json(packageObjects);
-  } catch (err) {
-    console.error('Error fetching packages:', err);
-    res.status(500).json({ message: err.message });
-  }
-});
 
-// Update packages for a game
-app.put('/api/admin/games/:id/packages', authenticateToken, ensureAdmin, async (req, res) => {
-  const client = await pool.connect();
-  try {
-    const { id } = req.params;
-    let { packages } = req.body;
-    const legacyPrices = Array.isArray(req.body.packagePrices) ? req.body.packagePrices : Array.isArray(req.body.prices) ? req.body.prices : [];
-    const legacyDiscounts = Array.isArray(req.body.packageDiscountPrices) ? req.body.packageDiscountPrices : Array.isArray(req.body.discountPrices) ? req.body.discountPrices : [];
-    const legacyThumbs = Array.isArray(req.body.packageThumbnails) ? req.body.packageThumbnails : Array.isArray(req.body.thumbnails) ? req.body.thumbnails : [];
-    if (!Array.isArray(packages)) {
-      if (Array.isArray(req.body.amounts)) {
-        packages = req.body.amounts;
-      } else if (legacyPrices.length || legacyDiscounts.length || legacyThumbs.length) {
-        const len = Math.max(legacyPrices.length, legacyDiscounts.length, legacyThumbs.length);
-        packages = new Array(len).fill('').map((_, i) => `package_${i + 1}`);
-      } else {
-        return res.status(400).json({ message: 'Packages must be an array (accepts array of strings or objects {amount, price, discountPrice, image})' });
-      }
-    }
-    const sanitized = packages.map((p, i) => {
-      if (typeof p === 'string') {
-        const amount = String(p || '').trim();
-        const price = Number(legacyPrices[i] ?? 0);
-        const discountPrice = legacyDiscounts[i] != null ? Number(legacyDiscounts[i]) : null;
-        const image = legacyThumbs[i] ? String(legacyThumbs[i]).trim() : null;
-        return { amount, price, discountPrice, image };
-      }
-      const amount = String((p && p.amount) ? p.amount : '').trim();
-      const price = Number((p && p.price) ? p.price : (legacyPrices[i] ?? 0));
-      const discountPrice = (p && p.discountPrice !== undefined && p.discountPrice !== null)
-        ? Number(p.discountPrice)
-        : (legacyDiscounts[i] != null ? Number(legacyDiscounts[i]) : null);
-      const image = (p && p.image) ? String(p.image).trim() : (legacyThumbs[i] ? String(legacyThumbs[i]).trim() : null);
-      return { amount, price, discountPrice, image };
-    });
-    // Relaxed validation to support legacy editors
-    for (const pkg of sanitized) {
-      if (!pkg.amount) {
-        pkg.amount = 'package';
-      }
-      if (!Number.isFinite(pkg.price) || pkg.price < 0) {
-        pkg.price = 0;
-      }
-      if (pkg.discountPrice !== null && (!Number.isFinite(pkg.discountPrice) || pkg.discountPrice < 0)) {
-        pkg.discountPrice = null;
-      }
-    }
-    
-    // Validate game exists - try by ID first, then by slug
-    let gameCheck = await client.query('SELECT id FROM games WHERE id = $1', [id]);
-    if (gameCheck.rows.length === 0) {
-      gameCheck = await client.query('SELECT id FROM games WHERE slug = $1', [id]);
-    }
-    if (gameCheck.rows.length === 0) {
-      return res.status(404).json({ message: 'Game not found' });
-    }
-    const actualGameId = gameCheck.rows[0].id;
 
-    // Extract arrays for JSONB columns and ensure same length
-    const amounts = sanitized.map(p => p.amount);
-    const prices = sanitized.map(p => p.price);
-    const discountPrices = sanitized.map(p => p.discountPrice);
-    while (discountPrices.length < amounts.length) discountPrices.push(null);
-    const thumbnails = sanitized.map(p => (p.image ? normalizeImageUrl(p.image) : null));
-    while (thumbnails.length < amounts.length) thumbnails.push(null);
 
-    await client.query('BEGIN');
-    await client.query(
-      'UPDATE games SET packages = $1::jsonb, package_prices = $2::jsonb, package_discount_prices = $3::jsonb, package_thumbnails = $4::jsonb, updated_at = CURRENT_TIMESTAMP WHERE id = $5',
-      [JSON.stringify(amounts), JSON.stringify(prices), JSON.stringify(discountPrices), JSON.stringify(thumbnails), actualGameId]
-    );
-    const updatedResult = await client.query(
-      'SELECT packages, package_prices as "packagePrices", package_discount_prices as "packageDiscountPrices", package_thumbnails as "packageThumbnails" FROM games WHERE id = $1',
-      [actualGameId]
-    );
-    await client.query('COMMIT');
-
-    const updatedGame = updatedResult.rows[0];
-    const updatedPackages = coerceJsonArray(updatedGame.packages);
-    const updatedPrices = coerceJsonArray(updatedGame.packagePrices);
-    const updatedDiscountPrices = coerceJsonArray(updatedGame.packageDiscountPrices);
-    const updatedThumbnails = coerceJsonArray(updatedGame.packageThumbnails);
-    const packageObjects = updatedPackages.map((pkg, index) => ({
-      amount: typeof pkg === 'string' ? pkg : (pkg?.amount || ''),
-      price: Number(updatedPrices[index] || 0),
-      discountPrice: updatedDiscountPrices[index] ? Number(updatedDiscountPrices[index]) : null,
-      image: updatedThumbnails[index] ? String(updatedThumbnails[index]) : null
-    }));
-    res.json({ message: 'Packages updated successfully', packages: packageObjects });
-  } catch (err) {
-    try { await client.query('ROLLBACK'); } catch {}
-    console.error('Error updating packages:', err);
-    res.status(500).json({ message: 'Failed to update packages', error: err.message });
-  } finally {
-    client.release();
-  }
-});
 
 // Get games by category (for category management)
 app.get('/api/admin/categories/:id/games', authenticateToken, async (req, res) => {
