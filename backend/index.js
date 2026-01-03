@@ -63,6 +63,9 @@ const CLOUDINARY_CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME || '';
 const CLOUDINARY_API_KEY = process.env.CLOUDINARY_API_KEY || '';
 const CLOUDINARY_API_SECRET = process.env.CLOUDINARY_API_SECRET || '';
 const DEFAULT_PLACEHOLDER_IMAGE = process.env.DEFAULT_PLACEHOLDER_IMAGE || 'https://placehold.co/800x450/png?text=GameCart';
+const CSRF_ENABLED = String(process.env.CSRF_ENABLED ?? 'false').toLowerCase() === 'true';
+const CSRF_ALLOW_HEADER_ONLY = String(process.env.CSRF_ALLOW_HEADER_ONLY ?? (process.env.NODE_ENV !== 'production' ? 'true' : 'false')).toLowerCase() === 'true';
+const CSRF_STATIC_TOKEN = process.env.CSRF_STATIC_TOKEN || '';
 // Image behavior flags
 const ENABLE_IMAGE_SEEDING = String(process.env.ENABLE_IMAGE_SEEDING || '').toLowerCase() === 'true';
 const ENABLE_IMAGE_OVERRIDES = String(process.env.ENABLE_IMAGE_OVERRIDES || '').toLowerCase() === 'true';
@@ -334,6 +337,46 @@ const authenticateToken = (req, res, next) => {
   });
 };
 
+function ensureAdmin(req, res, next) {
+  if (!req.user || req.user.role !== 'admin') {
+    return res.status(403).json({ message: 'Admin privileges required' });
+  }
+  next();
+}
+
+function parseCookies(cookieHeader) {
+  const out = {};
+  if (!cookieHeader) return out;
+  const parts = String(cookieHeader).split(';');
+  for (const p of parts) {
+    const idx = p.indexOf('=');
+    if (idx > -1) {
+      const k = p.slice(0, idx).trim();
+      const v = p.slice(idx + 1).trim();
+      out[k] = decodeURIComponent(v);
+    }
+  }
+  return out;
+}
+
+function csrfProtection(req, res, next) {
+  const method = req.method.toUpperCase();
+  const isMutation = method === 'POST' || method === 'PUT' || method === 'DELETE' || method === 'PATCH';
+  if (!isMutation || !CSRF_ENABLED) return next();
+  const pathStr = req.path || '';
+  if (pathStr.startsWith('/api/admin') && !pathStr.startsWith('/api/admin/login')) {
+    const headerToken = req.headers['x-csrf-token'];
+    const cookies = parseCookies(req.headers['cookie'] || '');
+    const cookieToken = cookies['csrf_token'];
+    const allowHeaderOnly = CSRF_ALLOW_HEADER_ONLY && !!headerToken;
+    const staticTokenOk = CSRF_STATIC_TOKEN && headerToken === CSRF_STATIC_TOKEN;
+    if ((!headerToken || !cookieToken || headerToken !== cookieToken) && !allowHeaderOnly && !staticTokenOk) {
+      return res.status(403).json({ message: 'CSRF token invalid' });
+    }
+  }
+  next();
+}
+
 // Middleware
 app.use(cors({
   origin: [
@@ -351,6 +394,7 @@ app.use(cors({
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use(requestLogger);
+app.use(csrfProtection);
 app.use('/api/admin', adminRateLimiter);
 
 // Game verification routes
@@ -979,6 +1023,19 @@ async function initializeDatabase() {
       );
     `);
     
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS packages (
+        id VARCHAR(50) PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        base_price DECIMAL(10,2) NOT NULL DEFAULT 0,
+        discount_rate DECIMAL(5,2) NOT NULL DEFAULT 0,
+        special_offers JSONB DEFAULT '[]',
+        game_id VARCHAR(50),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+    
     // Logo configuration
     await pool.query(`
       CREATE TABLE IF NOT EXISTS logo_config (
@@ -1375,7 +1432,11 @@ app.post('/api/admin/login', async (req, res) => {
 
     if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
       const token = jwt.sign({ email, role: 'admin' }, JWT_SECRET, { expiresIn: '24h' });
-      return res.json({ token, email, role: 'admin' });
+      const csrfToken = crypto.randomBytes(16).toString('hex');
+      const sameSite = process.env.NODE_ENV === 'production' ? 'None' : 'Lax';
+      const secure = process.env.NODE_ENV === 'production' ? '; Secure' : '';
+      res.setHeader('Set-Cookie', `csrf_token=${encodeURIComponent(csrfToken)}; Path=/; SameSite=${sameSite}${secure}`);
+      return res.json({ token, email, role: 'admin', csrfToken });
     }
 
     res.status(401).json({ message: 'Invalid credentials' });
@@ -1699,20 +1760,25 @@ function normalizeGamePayload(body) {
 // GAMES ENDPOINTS
 // ===============================================
 
-// Get all games
 app.get('/api/games', async (req, res) => {
   try {
     try {
-      const result = await pool.query(`
-        SELECT id, name, slug, description, price, currency, image, category, 
+      const pageQ = parseInt(req.query.page);
+      const limitQ = parseInt(req.query.limit);
+      const usePaging = Number.isFinite(pageQ) || Number.isFinite(limitQ);
+      const page = Math.max(1, Number.isFinite(pageQ) ? pageQ : 1);
+      const limit = Math.min(100, Math.max(1, Number.isFinite(limitQ) ? limitQ : 20));
+      const offset = (page - 1) * limit;
+      const rows = await pool.query(`
+        SELECT id, name, slug, description, price, currency, image, category,
                is_popular as "isPopular", stock, packages, package_prices as "packagePrices",
                discount_price as "discountPrice", package_discount_prices as "packageDiscountPrices",
-               discount_prices as "discountPrices",
-               image_url as "image_url", package_thumbnails as "packageThumbnails"
-        FROM games 
+               discount_prices as "discountPrices", image_url as "image_url", package_thumbnails as "packageThumbnails"
+        FROM games
         ORDER BY id DESC
+        ${usePaging ? `LIMIT ${limit} OFFSET ${offset}` : ``}
       `);
-      const games = result.rows.map(game => ({
+      const games = rows.rows.map(game => ({
         ...game,
         image: normalizeImageUrl(game.image),
         image_url: game.image_url ? normalizeImageUrl(game.image_url) : null,
@@ -1722,12 +1788,21 @@ app.get('/api/games', async (req, res) => {
         discountPrices: coerceJsonArray(game.discountPrices),
         packageThumbnails: coerceJsonArray(game.packageThumbnails)
       }));
-      return res.json(games);
+      if (!usePaging) return res.json(games);
+      const totalRes = await pool.query(`SELECT COUNT(*)::int AS c FROM games`);
+      const total = totalRes.rows?.[0]?.c || 0;
+      const totalPages = Math.max(1, Math.ceil(total / limit));
+      return res.json({ items: games, page, limit, total, totalPages });
     } catch {}
     const gamesPath = path.join(__dirname, 'data', 'games.json');
     if (fs.existsSync(gamesPath)) {
       const data = fs.readFileSync(gamesPath, 'utf8');
       const games = JSON.parse(data);
+      const pageQ = parseInt(req.query.page);
+      const limitQ = parseInt(req.query.limit);
+      const usePaging = Number.isFinite(pageQ) || Number.isFinite(limitQ);
+      const page = Math.max(1, Number.isFinite(pageQ) ? pageQ : 1);
+      const limit = Math.min(100, Math.max(1, Number.isFinite(limitQ) ? limitQ : 20));
       const normalized = Array.isArray(games)
         ? games.map(g => ({
             ...g,
@@ -1739,7 +1814,12 @@ app.get('/api/games', async (req, res) => {
             stock: Number(g.stock ?? 0)
           }))
         : [];
-      return res.json(normalized);
+      if (!usePaging) return res.json(normalized);
+      const total = normalized.length;
+      const totalPages = Math.max(1, Math.ceil(total / limit));
+      const start = (page - 1) * limit;
+      const items = normalized.slice(start, start + limit);
+      return res.json({ items, page, limit, total, totalPages });
     }
     res.json([]);
   } catch (err) {
@@ -1748,6 +1828,86 @@ app.get('/api/games', async (req, res) => {
   }
 });
 
+function validatePackagePayload(body) {
+  const name = String(body.name || '').trim();
+  const basePrice = Number(body.base_price ?? body.basePrice ?? 0);
+  const discountRate = Number(body.discount_rate ?? body.discountRate ?? 0);
+  const specialOffers = Array.isArray(body.special_offers ?? body.specialOffers) ? (body.special_offers ?? body.specialOffers) : [];
+  const gameId = body.game_id ? String(body.game_id).trim() : null;
+  if (!name) return { ok: false, message: 'name required' };
+  if (!Number.isFinite(basePrice) || basePrice < 0) return { ok: false, message: 'base_price invalid' };
+  if (!Number.isFinite(discountRate) || discountRate < 0 || discountRate > 100) return { ok: false, message: 'discount_rate invalid' };
+  return { ok: true, value: { name, basePrice, discountRate, specialOffers, gameId } };
+}
+
+app.get('/api/packages', async (req, res) => {
+  try {
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 20));
+    const offset = (page - 1) * limit;
+    const rows = await pool.query(
+      'SELECT id, name, base_price as "basePrice", discount_rate as "discountRate", special_offers as "specialOffers", game_id as "gameId" FROM packages ORDER BY updated_at DESC LIMIT $1 OFFSET $2',
+      [limit, offset]
+    );
+    const totalRes = await pool.query('SELECT COUNT(*)::int AS c FROM packages');
+    const total = totalRes.rows?.[0]?.c || 0;
+    const totalPages = Math.max(1, Math.ceil(total / limit));
+    res.json({ items: rows.rows || [], page, limit, total, totalPages });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+app.post('/api/packages', authenticateToken, ensureAdmin, async (req, res) => {
+  try {
+    const v = validatePackagePayload(req.body || {});
+    if (!v.ok) return res.status(400).json({ message: v.message });
+    const id = `pkg_${Date.now()}_${Math.random().toString(36).slice(2,9)}`;
+    await pool.query('BEGIN');
+    await pool.query(
+      'INSERT INTO packages (id, name, base_price, discount_rate, special_offers, game_id) VALUES ($1, $2, $3, $4, $5, $6)',
+      [id, v.value.name, v.value.basePrice, v.value.discountRate, JSON.stringify(v.value.specialOffers), v.value.gameId]
+    );
+    await pool.query('COMMIT');
+    res.status(201).json({ id, ...v.value });
+  } catch (err) {
+    try { await pool.query('ROLLBACK'); } catch {}
+    res.status(500).json({ message: err.message });
+  }
+});
+
+app.put('/api/packages/:id', authenticateToken, ensureAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const v = validatePackagePayload(req.body || {});
+    if (!v.ok) return res.status(400).json({ message: v.message });
+    await pool.query('BEGIN');
+    const up = await pool.query(
+      'UPDATE packages SET name = $1, base_price = $2, discount_rate = $3, special_offers = $4, game_id = $5, updated_at = CURRENT_TIMESTAMP WHERE id = $6 RETURNING id',
+      [v.value.name, v.value.basePrice, v.value.discountRate, JSON.stringify(v.value.specialOffers), v.value.gameId, id]
+    );
+    await pool.query('COMMIT');
+    if (!up.rows.length) return res.status(404).json({ message: 'Not found' });
+    res.json({ id, ...v.value });
+  } catch (err) {
+    try { await pool.query('ROLLBACK'); } catch {}
+    res.status(500).json({ message: err.message });
+  }
+});
+
+app.delete('/api/packages/:id', authenticateToken, ensureAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    await pool.query('BEGIN');
+    const del = await pool.query('DELETE FROM packages WHERE id = $1 RETURNING id', [id]);
+    await pool.query('COMMIT');
+    if (!del.rows.length) return res.status(404).json({ message: 'Not found' });
+    res.json({ id });
+  } catch (err) {
+    try { await pool.query('ROLLBACK'); } catch {}
+    res.status(500).json({ message: err.message });
+  }
+});
 // Get popular games (must come before /api/games/:slug)
 app.get('/api/games/popular', async (req, res) => {
   try {
@@ -2014,7 +2174,7 @@ app.get('/api/games/:slug', async (req, res) => {
 
 
 // Create game (Admin)
-app.post('/api/admin/games', authenticateToken, imageUpload.single('image'), async (req, res) => {
+app.post('/api/admin/games', authenticateToken, ensureAdmin, imageUpload.single('image'), async (req, res) => {
   try {
     const { name, slug, description, price, currency, category, isPopular, stock, discountPrice, packages, packagePrices, packageDiscountPrices } = req.body;
     const image = await useProvidedImage(req);
@@ -2066,7 +2226,17 @@ app.post('/api/admin/games', authenticateToken, imageUpload.single('image'), asy
     }
 
     const numericPrice = Number(price) || 0;
-    const computedDiscount = computeDiscountPrice(numericPrice);
+    let discountNumeric = null;
+    if (discountPrice !== undefined && discountPrice !== null && String(discountPrice).trim() !== '') {
+      const dp = Number(discountPrice);
+      if (Number.isFinite(dp) && dp > 0 && dp < numericPrice) {
+        discountNumeric = dp;
+      } else {
+        return res.status(400).json({ message: 'Invalid discount price: must be numeric, > 0 and < price' });
+      }
+    } else {
+      discountNumeric = computeDiscountPrice(numericPrice);
+    }
 
     try {
       const result = await pool.query(
@@ -2076,7 +2246,7 @@ app.post('/api/admin/games', authenticateToken, imageUpload.single('image'), asy
                    discount_price as "discountPrice", packages, package_prices as "packagePrices", 
                    package_discount_prices as "packageDiscountPrices"`,
         [id, name.trim(), finalSlug, safeDescription, numericPrice, currency || 'EGP', image || DEFAULT_PLACEHOLDER_IMAGE, category || 'other', isPop, Number(stock) || 100, 
-         computedDiscount, JSON.stringify(packagesArr), JSON.stringify(packagePricesArr), JSON.stringify(packageDiscountPricesArr)]
+         discountNumeric, JSON.stringify(packagesArr), JSON.stringify(packagePricesArr), JSON.stringify(packageDiscountPricesArr)]
       );
       return res.status(201).json(result.rows[0]);
     } catch (dbErr) {
@@ -2109,7 +2279,7 @@ app.post('/api/admin/games', authenticateToken, imageUpload.single('image'), asy
 });
 
 // Update game (Admin)
-app.put('/api/admin/games/:id', authenticateToken, imageUpload.single('image'), async (req, res) => {
+app.put('/api/admin/games/:id', authenticateToken, ensureAdmin, imageUpload.single('image'), async (req, res) => {
   try {
     const { id } = req.params;
     const idOrSlug = String(id || '').trim();
@@ -2170,7 +2340,7 @@ app.put('/api/admin/games/:id', authenticateToken, imageUpload.single('image'), 
     if (category !== undefined && category !== null) { updates.push(`category = $${paramIndex++}`); values.push(category); }
     if (isPopular !== undefined && isPopular !== null) { updates.push(`is_popular = $${paramIndex++}`); values.push(isPop); }
     if (stock !== undefined && stock !== null) { updates.push(`stock = $${paramIndex++}`); values.push(Number(stock) || 0); }
-    if (discountPrice !== undefined || numericPriceForDiscount !== undefined) {
+    if (discountPrice !== undefined) {
       let basePrice = numericPriceForDiscount;
       if (basePrice === undefined) {
         try {
@@ -2181,8 +2351,21 @@ app.put('/api/admin/games/:id', authenticateToken, imageUpload.single('image'), 
           basePrice = undefined;
         }
       }
-
-      const computedDiscount = basePrice !== undefined ? computeDiscountPrice(basePrice) : null;
+      let finalDiscount = null;
+      const provided = String(discountPrice).trim();
+      if (provided === '' || discountPrice === null) {
+        finalDiscount = null;
+      } else {
+        const dp = Number(discountPrice);
+        if (!Number.isFinite(dp) || dp <= 0 || (basePrice !== undefined && dp >= basePrice)) {
+          return res.status(400).json({ message: 'Invalid discount price: must be numeric, > 0 and < price' });
+        }
+        finalDiscount = dp;
+      }
+      updates.push(`discount_price = $${paramIndex++}`);
+      values.push(finalDiscount);
+    } else if (numericPriceForDiscount !== undefined) {
+      const computedDiscount = computeDiscountPrice(numericPriceForDiscount);
       updates.push(`discount_price = $${paramIndex++}`);
       values.push(computedDiscount);
     }
@@ -2255,7 +2438,7 @@ app.put('/api/admin/games/:id', authenticateToken, imageUpload.single('image'), 
 });
 
 // Delete game (Admin)
-app.delete('/api/admin/games/:id', authenticateToken, async (req, res) => {
+app.delete('/api/admin/games/:id', authenticateToken, ensureAdmin, async (req, res) => {
   try {
     const { id } = req.params;
     const idOrSlug = String(id || '').trim();
@@ -2267,14 +2450,29 @@ app.delete('/api/admin/games/:id', authenticateToken, async (req, res) => {
       return res.status(404).json({ message: 'Game not found' });
     }
     const gameId = lookup.rows[0].id;
-    
+
+    // Use a dedicated client transaction so failures don't silently fall back to JSON-only deletion.
+    const client = await pool.connect();
     try {
-      const result = await pool.query('DELETE FROM games WHERE id = $1 RETURNING *', [gameId]);
+      await client.query('BEGIN');
+
+      // Delete dependent rows first (if any)
+      await client.query('DELETE FROM game_cards WHERE game_id = $1', [gameId]);
+
+      const result = await client.query('DELETE FROM games WHERE id = $1 RETURNING id', [gameId]);
       if (result.rows.length === 0) {
+        await client.query('ROLLBACK');
         return res.status(404).json({ message: 'Game not found' });
       }
+
+      await client.query('COMMIT');
       return res.json({ ok: true });
-    } catch {}
+    } catch (dbErr) {
+      try { await client.query('ROLLBACK'); } catch {}
+      return res.status(500).json({ message: dbErr.message || 'Failed to delete game' });
+    } finally {
+      client.release();
+    }
     const jsonGames2 = readGamesFile();
     const filtered = jsonGames2.filter(g => String(g.id) !== String(gameId));
     if (filtered.length === jsonGames2.length) {
@@ -2633,7 +2831,7 @@ app.get('/api/admin/export', authenticateToken, async (req, res) => {
 // ===================== PACKAGE MANAGEMENT =====================
 
 // Get packages for a game
-app.get('/api/admin/games/:id/packages', authenticateToken, async (req, res) => {
+app.get('/api/admin/games/:id/packages', authenticateToken, ensureAdmin, async (req, res) => {
   try {
     const { id } = req.params;
     // Try by ID first, then by slug
@@ -2651,6 +2849,27 @@ app.get('/api/admin/games/:id/packages', authenticateToken, async (req, res) => 
     }
     
     if (result.rows.length === 0) {
+      try {
+        const gamesPath = path.join(__dirname, 'data', 'games.json');
+        if (fs.existsSync(gamesPath)) {
+          const data = fs.readFileSync(gamesPath, 'utf8');
+          const all = JSON.parse(data);
+          const found = Array.isArray(all) ? all.find(g => String(g.id) === String(id) || String(g.slug) === String(id)) : null;
+          if (found) {
+            const packages = coerceJsonArray(found.packages);
+            const prices = coerceJsonArray(found.packagePrices);
+            const discountPrices = coerceJsonArray(found.packageDiscountPrices);
+            const thumbnails = coerceJsonArray(found.packageThumbnails || found.package_thumbnails);
+            const packageObjects = packages.map((pkg, index) => ({
+              amount: typeof pkg === 'string' ? pkg : (pkg?.amount || ''),
+              price: Number(prices[index] || 0),
+              discountPrice: discountPrices[index] ? Number(discountPrices[index]) : null,
+              image: thumbnails[index] ? String(thumbnails[index]) : null
+            }));
+            return res.json(packageObjects);
+          }
+        }
+      } catch {}
       return res.status(404).json({ message: 'Game not found' });
     }
     
@@ -2682,33 +2901,50 @@ app.get('/api/admin/games/:id/packages', authenticateToken, async (req, res) => 
 });
 
 // Update packages for a game
-app.put('/api/admin/games/:id/packages', authenticateToken, async (req, res) => {
+app.put('/api/admin/games/:id/packages', authenticateToken, ensureAdmin, async (req, res) => {
   const client = await pool.connect();
   try {
     const { id } = req.params;
-    const { packages } = req.body;
-    
+    let { packages } = req.body;
+    const legacyPrices = Array.isArray(req.body.packagePrices) ? req.body.packagePrices : Array.isArray(req.body.prices) ? req.body.prices : [];
+    const legacyDiscounts = Array.isArray(req.body.packageDiscountPrices) ? req.body.packageDiscountPrices : Array.isArray(req.body.discountPrices) ? req.body.discountPrices : [];
+    const legacyThumbs = Array.isArray(req.body.packageThumbnails) ? req.body.packageThumbnails : Array.isArray(req.body.thumbnails) ? req.body.thumbnails : [];
     if (!Array.isArray(packages)) {
-      return res.status(400).json({ message: 'Packages must be an array' });
+      if (Array.isArray(req.body.amounts)) {
+        packages = req.body.amounts;
+      } else if (legacyPrices.length || legacyDiscounts.length || legacyThumbs.length) {
+        const len = Math.max(legacyPrices.length, legacyDiscounts.length, legacyThumbs.length);
+        packages = new Array(len).fill('').map((_, i) => `package_${i + 1}`);
+      } else {
+        return res.status(400).json({ message: 'Packages must be an array (accepts array of strings or objects {amount, price, discountPrice, image})' });
+      }
     }
-    
-    // Basic validation and sanitization
-    const sanitized = packages.map((p) => ({
-      amount: String((p && p.amount) ? p.amount : '').trim(),
-      price: Number((p && p.price) ? p.price : 0),
-      discountPrice: (p && p.discountPrice !== undefined && p.discountPrice !== null) ? Number(p.discountPrice) : null,
-      image: (p && p.image) ? String(p.image).trim() : null
-    }));
-    // Validate amounts and prices
+    const sanitized = packages.map((p, i) => {
+      if (typeof p === 'string') {
+        const amount = String(p || '').trim();
+        const price = Number(legacyPrices[i] ?? 0);
+        const discountPrice = legacyDiscounts[i] != null ? Number(legacyDiscounts[i]) : null;
+        const image = legacyThumbs[i] ? String(legacyThumbs[i]).trim() : null;
+        return { amount, price, discountPrice, image };
+      }
+      const amount = String((p && p.amount) ? p.amount : '').trim();
+      const price = Number((p && p.price) ? p.price : (legacyPrices[i] ?? 0));
+      const discountPrice = (p && p.discountPrice !== undefined && p.discountPrice !== null)
+        ? Number(p.discountPrice)
+        : (legacyDiscounts[i] != null ? Number(legacyDiscounts[i]) : null);
+      const image = (p && p.image) ? String(p.image).trim() : (legacyThumbs[i] ? String(legacyThumbs[i]).trim() : null);
+      return { amount, price, discountPrice, image };
+    });
+    // Relaxed validation to support legacy editors
     for (const pkg of sanitized) {
       if (!pkg.amount) {
-        return res.status(400).json({ message: 'Each package must have a non-empty amount' });
+        pkg.amount = 'package';
       }
-      if (isNaN(pkg.price) || pkg.price < 0) {
-        return res.status(400).json({ message: 'Each package must have a valid non-negative price' });
+      if (!Number.isFinite(pkg.price) || pkg.price < 0) {
+        pkg.price = 0;
       }
-      if (pkg.discountPrice !== null && (isNaN(pkg.discountPrice) || pkg.discountPrice < 0)) {
-        return res.status(400).json({ message: 'discountPrice must be null or a valid non-negative number' });
+      if (pkg.discountPrice !== null && (!Number.isFinite(pkg.discountPrice) || pkg.discountPrice < 0)) {
+        pkg.discountPrice = null;
       }
     }
     
@@ -4013,6 +4249,27 @@ app.get('/api/admin/whatsapp/status', authenticateToken, (req, res) => {
   res.json(getConnectionStatus());
 });
 
+app.post('/api/admin/whatsapp/reset-auth', authenticateToken, ensureAdmin, async (req, res) => {
+  try {
+    const authDir = path.join(process.cwd(), 'baileys_auth_info');
+    try {
+      if (fs.existsSync(authDir)) {
+        fs.rmSync(authDir, { recursive: true, force: true });
+      }
+    } catch (err) {
+      return res.status(500).json({ message: 'Failed to remove auth folder', error: err.message });
+    }
+    try {
+      startWhatsApp();
+    } catch (err) {
+      // continue; start will retry internally
+    }
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 const WHATSAPP_TOKEN = process.env.WHATSAPP_TOKEN || '';
 const WHATSAPP_PHONE_NUMBER_ID = process.env.WHATSAPP_PHONE_NUMBER_ID || '';
 const WHATSAPP_VERIFY_TOKEN = process.env.WHATSAPP_VERIFY_TOKEN || '';
@@ -4783,6 +5040,11 @@ const startServer = async () => {
       console.log(`║     Environment: ${process.env.NODE_ENV || "development"}         ║`);
       console.log(`║     Database: ${isConnected ? "Connected ✅" : "Disconnected ❌"}       ║`);
       console.log(`╚════════════════════════════════════════╝`);
+      try {
+        startWhatsApp();
+      } catch (err) {
+        console.error('WhatsApp init failed:', err?.message || err);
+      }
     });
   } catch (err) {
     console.error("❌ Critical server error:", err.message);

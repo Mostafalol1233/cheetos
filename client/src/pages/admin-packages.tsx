@@ -6,9 +6,18 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { ArrowLeft, Plus, Trash2, Save, Upload } from 'lucide-react';
-import { queryClient } from '@/lib/queryClient';
+import { API_BASE_URL, queryClient } from '@/lib/queryClient';
 import { Link } from 'wouter';
 import ImageWithFallback from '@/components/image-with-fallback';
+
+const apiPath = (path: string) => {
+  const base = (API_BASE_URL || '').replace(/\/+$/, '');
+  const p = String(path || '');
+  if (!base) return p;
+  if (/^https?:\/\//i.test(p)) return p;
+  if (p.startsWith('/')) return `${base}${p}`;
+  return `${base}/${p}`;
+};
 
 interface Package {
   amount: string;
@@ -29,7 +38,7 @@ export default function AdminPackagesPage() {
     queryKey: [`/api/games/id/${gameId}`],
     enabled: !!gameId,
     queryFn: async () => {
-      const res = await fetch(`/api/games/id/${gameId}`);
+      const res = await fetch(apiPath(`/api/games/id/${gameId}`));
       if (!res.ok) throw new Error('Failed to fetch game');
       return res.json();
     }
@@ -41,7 +50,7 @@ export default function AdminPackagesPage() {
     enabled: !!gameId,
     queryFn: async () => {
       const token = localStorage.getItem('adminToken');
-      const res = await fetch(`/api/admin/games/${gameId}/packages`, {
+      const res = await fetch(apiPath(`/api/admin/games/${gameId}/packages`), {
         headers: token ? { Authorization: `Bearer ${token}` } : {}
       });
       if (!res.ok) throw new Error('Failed to fetch packages');
@@ -76,7 +85,7 @@ export default function AdminPackagesPage() {
   const updatePackagesMutation = useMutation({
     mutationFn: async (packages: Package[]) => {
       const token = localStorage.getItem('adminToken');
-      const res = await fetch(`/api/admin/games/${gameId}/packages`, {
+      const res = await fetch(apiPath(`/api/admin/games/${gameId}/packages`), {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -89,6 +98,9 @@ export default function AdminPackagesPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/admin/games/${gameId}/packages`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/games/id/${gameId}`] });
+      queryClient.invalidateQueries({ queryKey: ['/api/games'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/games/popular'] });
       setIsEditing(false);
     }
   });
