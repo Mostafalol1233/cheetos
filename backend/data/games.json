@@ -1,138 +1,5 @@
 [
   {
-    "id": "game_1767231279583",
-    "name": "Test Game Admin",
-    "slug": "test-game-admin",
-    "description": "Created via automated test",
-    "price": "100",
-    "currency": "EGP",
-    "image": "/media/placeholder.jpg",
-    "category": "action",
-    "isPopular": false,
-    "stock": 50,
-    "discountPrice": null,
-    "packages": [
-      "100 Points"
-    ],
-    "packagePrices": [
-      "100"
-    ],
-    "packageDiscountPrices": [
-      null
-    ]
-  },
-  {
-    "id": "game_1",
-    "name": "Valorant",
-    "slug": "valorant",
-    "description": "Tactical 5v5 team-based competitive shooter",
-    "price": 360,
-    "currency": "EGP",
-    "image": "https://i.postimg.cc/wRzp9C8N/image-29-1754874736252.png",
-    "category": "shooters",
-    "isPopular": true,
-    "stock": 100,
-    "packages": [
-      "285 VP",
-      "575 VP",
-      "1150 VP",
-      "2350 VP",
-      "4800 VP",
-      "9800 VP"
-    ],
-    "packagePrices": [
-      "260",
-      "410",
-      "710",
-      "1300",
-      "2500",
-      "4900"
-    ],
-    "discountPrices": [
-      "160",
-      "310",
-      "610",
-      "1200",
-      "2400",
-      "4800"
-    ],
-    "discountPrice": "260"
-  },
-  {
-    "id": "game_3",
-    "name": "Crossfire",
-    "slug": "crossfire",
-    "description": "CrossFire tends to have a wide range of ZP packages that allow players to purchase weapons, characters, and other items in the game.",
-    "price": 100,
-    "currency": "EGP",
-    "image": "https://i.postimg.cc/tnbj9KQY/image-32-1754945434846.png",
-    "category": "shooters",
-    "isPopular": true,
-    "stock": 100,
-    "packages": [
-      "5,000 ZP",
-      "10,000 ZP",
-      "20,000 ZP",
-      "50,000 ZP",
-      "100,000 ZP"
-    ],
-    "packagePrices": [
-      "230",
-      "450",
-      "900",
-      "2250",
-      "4500"
-    ],
-    "discountPrices": [
-      "0",
-      "0",
-      "0",
-      "0",
-      "0"
-    ],
-    "discountPrice": "0"
-  },
-  {
-    "id": "game_4",
-    "name": "Roblox",
-    "slug": "roblox",
-    "description": "Roblox uses Robux for purchasing in-game items, avatar accessories, and access to specific game passes within Roblox games.",
-    "price": 228,
-    "currency": "EGP",
-    "image": "https://i.postimg.cc/RJmBvk57/image-33-1754945434846.png",
-    "category": "casual",
-    "isPopular": true,
-    "stock": 100,
-    "packages": [
-      "80 Robux",
-      "400 Robux",
-      "800 Robux",
-      "1,700 Robux",
-      "4,500 Robux",
-      "10,000 Robux",
-      "22,500 Robux"
-    ],
-    "packagePrices": [
-      "128",
-      "240",
-      "380",
-      "700",
-      "1680",
-      "3600",
-      "7980"
-    ],
-    "discountPrices": [
-      "28",
-      "140",
-      "280",
-      "600",
-      "1580",
-      "3500",
-      "7880"
-    ],
-    "discountPrice": "128"
-  },
-  {
     "id": "game_5",
     "name": "PUBG Mobile",
     "slug": "pubg-mobile",
@@ -496,5 +363,60 @@
       "1710"
     ],
     "discountPrice": "134"
+  },
+  {
+    "id": "game_1767466325987",
+    "name": "Valorant Test",
+    "slug": "valorant-test",
+    "description": "",
+    "price": 360,
+    "currency": "EGP",
+    "image": "/images/ps-store-64x64.webp",
+    "category": "shooters",
+    "isPopular": false,
+    "stock": 50,
+    "packages": [
+      "285 VP",
+      "575 VP"
+    ],
+    "packagePrices": [
+      "260",
+      "410"
+    ],
+    "discountPrice": null,
+    "packageDiscountPrices": [
+      "160",
+      "310"
+    ],
+    "created_at": "2026-01-03T18:52:05.987Z"
+  },
+  {
+    "id": "game_1767466326468",
+    "name": "Gift Card Test",
+    "slug": "gift-card-test",
+    "description": "",
+    "price": 100,
+    "currency": "EGP",
+    "image": "/images/Steam-Logo-White_3.png",
+    "category": "gift_cards",
+    "isPopular": false,
+    "stock": 999,
+    "packages": [
+      "10 USD",
+      "25 USD",
+      "50 USD"
+    ],
+    "packagePrices": [
+      "400",
+      "950",
+      "1900"
+    ],
+    "discountPrice": null,
+    "packageDiscountPrices": [
+      null,
+      null,
+      null
+    ],
+    "created_at": "2026-01-03T18:52:06.468Z"
   }
 ]
