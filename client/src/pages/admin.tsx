@@ -55,6 +55,8 @@ export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('games');
   const [searchGameTerm, setSearchGameTerm] = useState('');
   const [editingGame, setEditingGame] = useState<Game | null>(null);
+  const [packagesGameId, setPackagesGameId] = useState<string | null>(null);
+  const [packagesDraft, setPackagesDraft] = useState<Array<{ amount: string; price: number; discountPrice: number | null }>>([]);
   const [selectedSession, setSelectedSession] = useState<string | null>(null);
   const [replyMessage, setReplyMessage] = useState('');
   const [cardsPage, setCardsPage] = useState(1);
@@ -68,6 +70,54 @@ export default function AdminDashboard() {
   // Fetch games
   const { data: allGames = [] } = useQuery<Game[]>({
     queryKey: ['/api/games'],
+  });
+
+  const { data: adminPackagesData = [], isFetching: isFetchingAdminPackages } = useQuery<Array<{ amount: string; price: number; discountPrice: number | null }>>({
+    queryKey: packagesGameId ? [`/api/admin/games/${packagesGameId}/packages`] : ['_disabled_admin_packages'],
+    enabled: !!packagesGameId,
+    queryFn: async () => {
+      const token = localStorage.getItem('adminToken');
+      const res = await fetch(apiPath(`/api/admin/games/${packagesGameId}/packages`), {
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+      });
+      const data = await res.json().catch(() => ([]));
+      if (!res.ok) throw new Error((data as any)?.message || 'Failed to fetch packages');
+      return Array.isArray(data) ? data : [];
+    }
+  });
+  useEffect(() => {
+    if (!packagesGameId) return;
+    const normalized = (Array.isArray(adminPackagesData) ? adminPackagesData : []).map((p: any) => ({
+      amount: String(p?.amount || ''),
+      price: Number(p?.price || 0),
+      discountPrice: p?.discountPrice != null ? Number(p.discountPrice) : null,
+    }));
+    setPackagesDraft(normalized);
+  }, [packagesGameId, adminPackagesData]);
+
+  const savePackagesMutation = useMutation({
+    mutationFn: async (payload: { gameId: string; packages: Array<{ amount: string; price: number; discountPrice: number | null }> }) => {
+      const token = localStorage.getItem('adminToken');
+      const res = await fetch(apiPath(`/api/admin/games/${payload.gameId}/packages`), {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: JSON.stringify({ packages: payload.packages })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error((data as any)?.message || 'Failed to update packages');
+      return data;
+    },
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: [`/api/admin/games/${variables.gameId}/packages`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/games/id/${variables.gameId}`] });
+      queryClient.invalidateQueries({ queryKey: ['/api/games'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/games/popular'] });
+      const g = allGames.find((gg) => gg.id === variables.gameId);
+      if (g?.slug) {
+        queryClient.invalidateQueries({ queryKey: [`/api/games/${g.slug}`] });
+        queryClient.invalidateQueries({ queryKey: [`/api/games/slug/${g.slug}`] });
+      }
+    }
   });
 
   // Filter games based on search
@@ -1069,7 +1119,7 @@ export default function AdminDashboard() {
                       variant="outline"
                       className="w-full"
                       onClick={() => {
-                        window.location.href = `/admin/packages/${game.id}`;
+                        setPackagesGameId(game.id);
                       }}
                     >
                       <Package className="w-4 h-4 mr-2" />
@@ -1079,6 +1129,76 @@ export default function AdminDashboard() {
                 </Card>
               ))}
             </div>
+
+            <Dialog open={!!packagesGameId} onOpenChange={(open) => { if (!open) setPackagesGameId(null); }}>
+              <DialogContent className="max-w-2xl">
+                <DialogHeader>
+                  <DialogTitle>Edit Packages</DialogTitle>
+                  <DialogDescription>
+                    Edit package price and discount price. Changes apply on the website after saving.
+                  </DialogDescription>
+                </DialogHeader>
+
+                <div className="space-y-4">
+                  {isFetchingAdminPackages ? (
+                    <div className="text-sm text-muted-foreground">Loading packages…</div>
+                  ) : packagesDraft.length === 0 ? (
+                    <div className="text-sm text-muted-foreground">No packages found for this game.</div>
+                  ) : (
+                    <div className="space-y-3">
+                      {packagesDraft.map((p, idx) => (
+                        <div key={idx} className="grid grid-cols-12 gap-2 items-end">
+                          <div className="col-span-5">
+                            <Label>Package</Label>
+                            <Input value={p.amount} readOnly />
+                          </div>
+                          <div className="col-span-3">
+                            <Label>Price</Label>
+                            <Input
+                              type="number"
+                              value={Number.isFinite(p.price) ? p.price : 0}
+                              onChange={(e) => {
+                                const v = e.target.value;
+                                const next = [...packagesDraft];
+                                next[idx] = { ...next[idx], price: v === '' ? 0 : Number(v) };
+                                setPackagesDraft(next);
+                              }}
+                            />
+                          </div>
+                          <div className="col-span-4">
+                            <Label>Discount Price</Label>
+                            <Input
+                              type="number"
+                              value={p.discountPrice ?? ''}
+                              onChange={(e) => {
+                                const v = e.target.value;
+                                const next = [...packagesDraft];
+                                next[idx] = { ...next[idx], discountPrice: v === '' ? null : Number(v) };
+                                setPackagesDraft(next);
+                              }}
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setPackagesGameId(null)}>Close</Button>
+                  <Button
+                    onClick={() => {
+                      if (!packagesGameId) return;
+                      savePackagesMutation.mutate({ gameId: packagesGameId, packages: packagesDraft });
+                    }}
+                    disabled={!packagesGameId || savePackagesMutation.isPending || isFetchingAdminPackages}
+                    className="bg-gold-primary"
+                  >
+                    Save
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
           </TabsContent>
 
           {/* Categories Tab */}
