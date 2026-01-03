@@ -3,82 +3,13 @@ import pool from '../db.js';
 import { authenticateToken, ensureAdmin } from '../middleware/auth.js';
 import { sendWhatsAppMessage } from '../whatsapp.js';
 import { logAudit } from '../utils/audit.js';
-import nodemailer from 'nodemailer';
+import { sendEmail } from '../utils/email.js';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
 const router = express.Router();
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-
-// Brevo Config
-const transporter = nodemailer.createTransport({
-  host: 'smtp-relay.brevo.com',
-  port: 587,
-  auth: {
-    user: process.env.BREVO_USER,
-    pass: process.env.BREVO_PASS
-  }
-});
-
-const sendOrderEmail = async (order) => {
-  try {
-    const info = await transporter.sendMail({
-      from: '"GameCart" <no-reply@gamecart.com>',
-      to: order.customer_email,
-      subject: `Order Confirmation #${order.id}`,
-      text: `Thank you for your order! Order ID: ${order.id}. Total: ${order.total_amount} ${order.currency}. Track here: ${process.env.FRONTEND_URL}/track-order/${order.id}`, 
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h1 style="color: #4CAF50;">Order Confirmation</h1>
-          <p>Hi ${order.customer_name},</p>
-          <p>Thank you for your order! We have received it and are processing it.</p>
-          <div style="background: #f9f9f9; padding: 15px; border-radius: 5px;">
-            <p><strong>Order ID:</strong> ${order.id}</p>
-            <p><strong>Total Amount:</strong> ${order.total_amount} ${order.currency}</p>
-            <p><strong>Status:</strong> ${order.status}</p>
-            <p><strong>Payment Method:</strong> ${order.payment_method}</p>
-          </div>
-          <p>You can track your order status here: <a href="${process.env.FRONTEND_URL}/track-order/${order.id}">Track Order</a></p>
-          <p>We will notify you once your order is completed.</p>
-        </div>
-      `
-    });
-    console.log('Email sent:', info.messageId);
-    return true;
-  } catch (error) {
-    console.error('Error sending email:', error);
-    return false;
-  }
-};
-
-const sendOrderStatusEmail = async (order) => {
-  try {
-    const info = await transporter.sendMail({
-      from: '"GameCart" <no-reply@gamecart.com>',
-      to: order.customer_email,
-      subject: `Order Update #${order.id}`,
-      text: `Your order #${order.id} status has been updated to: ${order.status}.`,
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h1 style="color: #2196F3;">Order Update</h1>
-          <p>Hi ${order.customer_name},</p>
-          <p>Your order status has been updated.</p>
-          <div style="background: #f9f9f9; padding: 15px; border-radius: 5px;">
-            <p><strong>Order ID:</strong> ${order.id}</p>
-            <p><strong>New Status:</strong> <span style="font-weight:bold; color:#2196F3">${order.status}</span></p>
-          </div>
-          <p>Thank you for shopping with GameCart!</p>
-        </div>
-      `
-    });
-    console.log('Status Email sent:', info.messageId);
-    return true;
-  } catch (error) {
-    console.error('Error sending status email:', error);
-    return false;
-  }
-};
 
 // JSON fallback helpers
 const getOrdersFile = () => path.join(__dirname, '../data/orders.json');
@@ -146,7 +77,9 @@ router.post('/', async (req, res) => {
   }
 
   // Send Email
-  await sendOrderEmail(newOrder);
+  if (newOrder.customer_email) {
+    await sendEmail(newOrder.customer_email, 'orderConfirmation', newOrder);
+  }
 
   res.status(201).json(newOrder);
 });
@@ -204,7 +137,9 @@ router.put('/:id/status', authenticateToken, ensureAdmin, async (req, res) => {
   }
 
   // Notify user via Email
-  await sendOrderStatusEmail(order);
+  if (order.customer_email) {
+    await sendEmail(order.customer_email, 'orderStatusUpdate', order);
+  }
 
   // Audit log
   await logAudit('update_order_status', `Updated order ${id} status to ${status}`, req.user);

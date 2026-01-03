@@ -22,6 +22,7 @@ import gamesRouter from './routes/games.js';
 import ordersRouter from './routes/orders.js';
 import authRouter from './routes/auth.js';
 import { authenticateToken, ensureAdmin } from './middleware/auth.js';
+import { sendEmail } from './utils/email.js';
 // Optional image processor (module may not exist in some deployments)
 let initImageProcessor = null;
 try {
@@ -958,6 +959,12 @@ async function initializeDatabase() {
       );
     `);
     
+    // Make email/password nullable for guest users
+    try {
+      await pool.query('ALTER TABLE users ALTER COLUMN email DROP NOT NULL');
+      await pool.query('ALTER TABLE users ALTER COLUMN password_hash DROP NOT NULL');
+    } catch (e) { /* ignore if fails */ }
+
     // Logo configuration
     await pool.query(`
       CREATE TABLE IF NOT EXISTS logo_config (
@@ -2392,7 +2399,7 @@ app.put('/api/admin/navigation', authenticateToken, async (req, res) => {
 
 app.post('/api/transactions/checkout', async (req, res) => {
   try {
-    const { customerName, customerPhone, paymentMethod, items } = req.body;
+    const { customerName, customerPhone, customerEmail, paymentMethod, items } = req.body;
     if (!customerName || !customerPhone || !Array.isArray(items) || items.length === 0) {
       return res.status(400).json({ message: 'Invalid request' });
     }
@@ -2403,10 +2410,26 @@ app.post('/api/transactions/checkout', async (req, res) => {
     );
     const total = items.reduce((sum, it) => sum + Number(it.price) * Number(it.quantity), 0);
     const transactionId = `txn_${Date.now()}`;
+    
+    // Insert into transactions (Legacy/Security)
     await pool.query(
       'INSERT INTO transactions (id, user_id, payment_method, total, status) VALUES ($1, $2, $3, $4, $5)',
       [transactionId, userId, paymentMethod || 'Unknown', total, 'pending']
     );
+
+    // Insert into orders (Tracking/Admin)
+    try {
+      await pool.query(
+        `INSERT INTO orders (id, user_id, customer_name, customer_email, customer_phone, items, total_amount, currency, status, payment_method, created_at, updated_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW(), NOW())
+         ON CONFLICT (id) DO NOTHING`,
+        [transactionId, userId, customerName, customerEmail || null, customerPhone, JSON.stringify(items), total, 'EGP', 'pending', paymentMethod || 'Unknown']
+      );
+    } catch (dbError) {
+      console.error('Failed to sync order to orders table:', dbError.message);
+      // Fallback to JSON if DB fails (using legacy write if needed, or just log error)
+    }
+
     for (const it of items) {
       // Validate game exists before inserting transaction item
       const gameCheck = await pool.query('SELECT id FROM games WHERE id = $1', [it.id]);
@@ -2425,7 +2448,7 @@ app.post('/api/transactions/checkout', async (req, res) => {
     
     // Send WhatsApp Confirmation
     try {
-      const waMessage = `New Order #${transactionId}\nTotal: $${total}\nCustomer: ${customerName} (${customerPhone})\nItems:\n${items.map(i => `- ${i.title} (x${i.quantity})`).join('\n')}`;
+      const waMessage = `New Order #${transactionId}\nTotal: ${total} EGP\nCustomer: ${customerName} (${customerPhone})\nItems:\n${items.map(i => `- ${i.title || i.name} (x${i.quantity})`).join('\n')}`;
       await sendWhatsAppMessage(customerPhone, `Thank you for your order #${transactionId}! We are processing it.`);
       // Optionally notify admin
       if (process.env.ADMIN_PHONE) {
@@ -2433,6 +2456,18 @@ app.post('/api/transactions/checkout', async (req, res) => {
       }
     } catch (waErr) {
       console.error('Failed to send WhatsApp confirmation:', waErr.message);
+    }
+
+    // Send Email Confirmation (Brevo)
+    if (customerEmail) {
+      await sendEmail(customerEmail, 'orderConfirmation', {
+        id: transactionId,
+        customerName,
+        total,
+        currency: 'EGP',
+        paymentMethod: paymentMethod || 'Unknown',
+        status: 'pending'
+      });
     }
 
     res.status(201).json({ id: transactionId, total });
