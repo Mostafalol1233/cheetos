@@ -1,4 +1,3 @@
-
 [
   {
     "id": "game_1767231279583",
@@ -439,19 +438,11 @@
     "stock": 100,
     "packages": [
       "50 Primogems",
-      "300 Primogems",
-      "980 Primogems",
-      "1,600 Primogems",
-      "3,200 Primogems",
-      "6,400 Primogems"
+      "300 Primogems"
     ],
     "packagePrices": [
-      "125",
-      "250",
-      "590",
-      "900",
-      "1700",
-      "3300"
+      125,
+      250
     ],
     "discountPrices": [
       "25",
@@ -461,7 +452,16 @@
       "1600",
       "3200"
     ],
-    "discountPrice": "125"
+    "discountPrice": "125",
+    "packageDiscountPrices": [
+      100,
+      null
+    ],
+    "packageThumbnails": [
+      null,
+      null
+    ],
+    "updated_at": "2026-01-03T16:13:20.439Z"
   },
   {
     "id": "game_1766468555324_bqa5x",

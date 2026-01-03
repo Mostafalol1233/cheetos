@@ -810,6 +810,7 @@ app.get('/images/:filename', (req, res) => {
 app.use('/api/games', gamesRouter);
 app.use('/api/orders', ordersRouter);
 app.use('/api/auth', authRouter);
+app.use('/api', authRouter); // Expose auth routes at root api level as well (e.g. /api/admin/login)
 
 // Get all categories
 app.get('/api/categories', async (req, res) => {
@@ -3003,6 +3004,28 @@ app.post('/api/admin/images/upload-batch', authenticateToken, (req, res) => {
       res.status(500).json({ message: e.message });
     }
   });
+});
+
+app.post('/api/public/confirmations/:id/resend', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const r = await pool.query('SELECT c.id, c.transaction_id, t.user_id, u.phone, u.name FROM payment_confirmations c LEFT JOIN transactions t ON c.transaction_id = t.id LEFT JOIN users u ON t.user_id = u.id WHERE c.id = $1', [id]);
+    if (r.rows.length === 0) return res.status(404).json({ message: 'Not found' });
+    const row = r.rows[0];
+    const alertId = `al_${Date.now()}_${Math.random().toString(36).slice(2,9)}`;
+    const summary = `Resend requested for confirmation ${row.id} (TX ${row.transaction_id})`;
+    try { await pool.query('INSERT INTO seller_alerts (id, type, summary) VALUES ($1, $2, $3)', [alertId, 'resend_request', summary]); } catch {}
+    const sellerPhones = (process.env.SELLER_PHONES || '').split(',').map(p => p.trim()).filter(p => p);
+    if (sellerPhones.length > 0) {
+      const forwardMessage = `🔁 Resend requested for confirmation ${row.id}\nTransaction: ${row.transaction_id}\nUser: ${row.name || ''} ${row.phone || ''}`;
+      for (const phone of sellerPhones) {
+        try { await sendWhatsAppMessage(phone, forwardMessage); } catch {}
+      }
+    }
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
 });
 
 function httpsGetToFile(srcUrl, destPath) {
