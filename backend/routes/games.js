@@ -2,10 +2,16 @@ import express from 'express';
 import pool from '../db.js';
 import { authenticateToken, ensureAdmin } from '../middleware/auth.js';
 import { logAudit } from '../utils/audit.js';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const router = express.Router();
 
-// Helper to normalize image URL (keep existing logic)
+// Helper to normalize image URL
 const normalizeImageUrl = (raw) => {
   const v = String(raw || '').trim();
   if (!v) return v;
@@ -15,13 +21,42 @@ const normalizeImageUrl = (raw) => {
   return v;
 };
 
+// Helper to read games from JSON fallback
+const readGamesFile = () => {
+  try {
+    const filePath = path.join(__dirname, '../data/games.json');
+    if (!fs.existsSync(filePath)) return [];
+    const data = fs.readFileSync(filePath, 'utf8');
+    return JSON.parse(data);
+  } catch (error) {
+    console.error('Error reading games.json:', error);
+    return [];
+  }
+};
+
 // Helper to format game response
 const formatGame = (game, packages = []) => {
-  // Parse packages if they came from JSONB/Text array in legacy DB structure (just in case)
-  // But we prefer the joined packages_data
+  // If packages is empty, try to construct it from game legacy fields
+  let pkgList = Array.isArray(packages) ? packages : [];
   
-  const pkgList = Array.isArray(packages) ? packages : [];
-  
+  if (pkgList.length === 0 && Array.isArray(game.packages) && game.packages.length > 0) {
+     // Construct from legacy
+     const prices = Array.isArray(game.packagePrices) ? game.packagePrices : [];
+     const discounts = Array.isArray(game.packageDiscountPrices) ? game.packageDiscountPrices : [];
+     const thumbnails = Array.isArray(game.packageThumbnails) ? game.packageThumbnails : []; // Handle both cases
+     
+     pkgList = game.packages.map((p, i) => {
+       if (typeof p === 'object' && p !== null) return p;
+       return {
+         id: `pkg_${game.id}_${i}`,
+         name: String(p),
+         price: Number(prices[i] || 0),
+         discount_price: discounts[i] ? Number(discounts[i]) : null,
+         image: thumbnails[i] || null
+       };
+     });
+  }
+
   // Backward compatibility fields
   const legacyPackages = pkgList.map(p => p.name);
   const legacyPrices = pkgList.map(p => Number(p.price));
@@ -33,7 +68,7 @@ const formatGame = (game, packages = []) => {
     price: Number(game.price),
     stock: Number(game.stock),
     discountPrice: game.discount_price ? Number(game.discount_price) : null,
-    isPopular: game.is_popular,
+    isPopular: !!game.isPopular || !!game.is_popular,
     image: normalizeImageUrl(game.image),
     // Legacy arrays
     packages: legacyPackages,
@@ -42,7 +77,7 @@ const formatGame = (game, packages = []) => {
     packageThumbnails: legacyThumbnails,
     // New structure
     packagesList: pkgList.map(p => ({
-      id: p.id,
+      id: p.id || `pkg_${Math.random()}`,
       name: p.name,
       price: Number(p.price),
       discountPrice: p.discount_price ? Number(p.discount_price) : null,
@@ -53,15 +88,11 @@ const formatGame = (game, packages = []) => {
 
 // GET /api/games
 router.get('/', async (req, res) => {
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 20;
+  const offset = (page - 1) * limit;
+
   try {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 20;
-    const offset = (page - 1) * limit;
-
-    // We check if game_packages table exists by trying to query it.
-    // If it doesn't, we might fallback or return error. 
-    // Assuming migration ran.
-
     const gamesRes = await pool.query(`
       SELECT g.*, 
              COALESCE(json_agg(gp ORDER BY gp.price) FILTER (WHERE gp.id IS NOT NULL), '[]') as packages_data
@@ -88,8 +119,21 @@ router.get('/', async (req, res) => {
       totalPages: Math.ceil(total / limit)
     });
   } catch (error) {
-    console.error('GET /api/games error:', error);
-    res.status(500).json({ message: error.message });
+    console.error('DB Error, falling back to JSON:', error.message);
+    // Fallback to JSON
+    const allGames = readGamesFile();
+    const total = allGames.length;
+    const items = allGames
+      .slice(offset, offset + limit)
+      .map(g => formatGame(g)); // formatGame will reconstruct packages from legacy fields
+
+    res.json({
+      items,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit)
+    });
   }
 });
 
@@ -113,14 +157,17 @@ router.get('/popular', async (req, res) => {
 
     res.json(items);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error('DB Error (popular), falling back to JSON:', error.message);
+    const allGames = readGamesFile();
+    const popular = allGames.filter(g => g.isPopular || g.is_popular).slice(0, 10);
+    res.json(popular.map(g => formatGame(g)));
   }
 });
 
 // GET /api/games/:id (or slug)
 router.get('/:id', async (req, res) => {
+  const { id } = req.params;
   try {
-    const { id } = req.params;
     const gamesRes = await pool.query(`
       SELECT g.*, 
              COALESCE(json_agg(gp ORDER BY gp.price) FILTER (WHERE gp.id IS NOT NULL), '[]') as packages_data
@@ -131,13 +178,20 @@ router.get('/:id', async (req, res) => {
     `, [id]);
     
     if (gamesRes.rows.length === 0) {
+      // Try JSON before 404? Or maybe DB connection is fine but game not found.
+      // If DB connection is fine (no error thrown), then it's a 404.
+      // But if DB connection failed, we land in catch block.
       return res.status(404).json({ message: 'Game not found' });
     }
 
     const { packages_data, ...game } = gamesRes.rows[0];
     res.json(formatGame(game, packages_data));
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error('DB Error (get one), falling back to JSON:', error.message);
+    const allGames = readGamesFile();
+    const game = allGames.find(g => g.id === id || g.slug === id);
+    if (!game) return res.status(404).json({ message: 'Game not found' });
+    res.json(formatGame(game));
   }
 });
 
@@ -327,8 +381,8 @@ router.delete('/:id', authenticateToken, ensureAdmin, async (req, res) => {
 
 // Support legacy routes if needed (e.g. /category/:cat)
 router.get('/category/:category', async (req, res) => {
+  const { category } = req.params;
   try {
-    const { category } = req.params;
     const gamesRes = await pool.query(`
       SELECT g.*, 
              COALESCE(json_agg(gp ORDER BY gp.price) FILTER (WHERE gp.id IS NOT NULL), '[]') as packages_data
@@ -345,14 +399,17 @@ router.get('/category/:category', async (req, res) => {
 
     res.json(items);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error('DB Error (category), falling back to JSON:', error.message);
+    const allGames = readGamesFile();
+    const filtered = allGames.filter(g => (g.category || '').toLowerCase() === category.toLowerCase());
+    res.json(filtered.map(g => formatGame(g)));
   }
 });
 
 // GET /api/games/:id/packages
 router.get('/:id/packages', async (req, res) => {
+  const { id } = req.params;
   try {
-    const { id } = req.params;
     const resDb = await pool.query('SELECT * FROM game_packages WHERE game_id = $1 ORDER BY price ASC', [id]);
     
     // Map to frontend expected format if needed, but for now return raw
@@ -365,7 +422,20 @@ router.get('/:id/packages', async (req, res) => {
     }));
     res.json(items);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error('DB Error (packages), falling back to JSON:', error.message);
+    const allGames = readGamesFile();
+    const game = allGames.find(g => g.id === id || g.slug === id);
+    if (!game) return res.status(404).json({ message: 'Game not found' });
+    
+    const formatted = formatGame(game);
+    // formatted.packagesList contains the standard objects
+    const items = formatted.packagesList.map(p => ({
+      ...p,
+      amount: p.name,
+      discountPrice: p.discountPrice,
+      price: p.price
+    }));
+    res.json(items);
   }
 });
 

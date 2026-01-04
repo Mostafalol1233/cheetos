@@ -30,11 +30,11 @@ export default defineConfig({
       deny: ["**/.*"],
     },
     proxy: {
-      "/api": { target: "http://51.75.118.165:20291", changeOrigin: true },
-      "/uploads": { target: "http://51.75.118.165:20291", changeOrigin: true },
-      "/media": { target: "http://51.75.118.165:20291", changeOrigin: true },
-      "/images": { target: "http://51.75.118.165:20291", changeOrigin: true },
-      "/attached_assets": { target: "http://51.75.118.165:20291", changeOrigin: true }
+      "/api": { target: "http://localhost:3001", changeOrigin: true },
+      "/uploads": { target: "http://localhost:3001", changeOrigin: true },
+      "/media": { target: "http://localhost:3001", changeOrigin: true },
+      "/images": { target: "http://localhost:3001", changeOrigin: true },
+      "/attached_assets": { target: "http://localhost:3001", changeOrigin: true }
     }
   },
 });

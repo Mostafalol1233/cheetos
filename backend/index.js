@@ -802,6 +802,31 @@ app.get('/images/:filename', (req, res) => {
   );
 });
 
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, uploadDir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
+  }
+});
+
+const upload = multer({ 
+  storage,
+  limits: { fileSize: 50 * 1024 * 1024 }
+});
+
+const imageUpload = multer({
+  storage,
+  limits: { fileSize: 10 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    const allowed = ['.jpg', '.jpeg', '.png', '.webp', '.svg'];
+    const ext = path.extname(file.originalname).toLowerCase();
+    if (allowed.includes(ext)) cb(null, true); else cb(new Error('Unsupported image type'));
+  }
+});
+
 // ===============================================
 // API ENDPOINTS (Added as requested)
 // ===============================================
@@ -898,30 +923,7 @@ app.get('/api/categories', async (req, res) => {
 // Global Error Handler
 app.use(errorHandler);
 
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, uploadDir);
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
-  }
-});
 
-const upload = multer({ 
-  storage,
-  limits: { fileSize: 50 * 1024 * 1024 }
-});
-
-const imageUpload = multer({
-  storage,
-  limits: { fileSize: 10 * 1024 * 1024 },
-  fileFilter: (req, file, cb) => {
-    const allowed = ['.jpg', '.jpeg', '.png', '.webp', '.svg'];
-    const ext = path.extname(file.originalname).toLowerCase();
-    if (allowed.includes(ext)) cb(null, true); else cb(new Error('Unsupported image type'));
-  }
-});
 
 // Initialize Database Tables
 async function initializeDatabase() {
@@ -997,6 +999,20 @@ async function initializeDatabase() {
       );
     `);
     
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS game_packages (
+        id SERIAL PRIMARY KEY,
+        game_id VARCHAR(50),
+        name VARCHAR(255) NOT NULL,
+        price DECIMAL(10, 2) DEFAULT 0,
+        discount_price DECIMAL(10, 2),
+        image VARCHAR(255),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+    
+    // Legacy/Unused packages table (renamed/replaced by game_packages)
+    // We keep this just in case, but game_packages is the active one.
     await pool.query(`
       CREATE TABLE IF NOT EXISTS packages (
         id VARCHAR(50) PRIMARY KEY,
