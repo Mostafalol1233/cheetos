@@ -34,7 +34,7 @@ export function PopularGames() {
         <h2 className="text-2xl font-bold text-foreground">{t('popular_games')}</h2>
       </div>
       
-      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6">
         {Array.isArray(games) && games.map((game) => {
           const isAdding = addingItems.includes(game.id);
           const isOutOfStock = false;
@@ -42,12 +42,12 @@ export function PopularGames() {
           return (
             <div key={game.id} className="relative group perspective">
               <Link href={`/game/${game.slug}`} className="block">
-              <div className="relative rounded-2xl overflow-hidden border-2 border-cyan-400/30 bg-gradient-to-b from-gray-900 to-black p-4 h-[340px] sm:h-[360px] flex flex-col justify-between shadow-lg hover:shadow-2xl hover:shadow-cyan-500/50 transition-all duration-300 hover:border-cyan-400/60 group-hover:glow-cyan cursor-pointer">
+              <div className="relative rounded-2xl overflow-hidden border-2 border-cyan-400/30 bg-gradient-to-b from-gray-900 to-black p-3 sm:p-4 h-[300px] sm:h-[360px] flex flex-col justify-between shadow-lg hover:shadow-2xl hover:shadow-cyan-500/50 transition-all duration-300 hover:border-cyan-400/60 group-hover:glow-cyan cursor-pointer">
                 {/* Card glow effect */}
                 <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/0 via-cyan-500/0 to-cyan-500/0 group-hover:from-cyan-500/10 group-hover:via-cyan-500/5 group-hover:to-cyan-500/10 transition-all duration-300 pointer-events-none"></div>
                 
                 {/* Game Image */}
-                <div className="relative mb-3 aspect-[4/3] sm:aspect-auto sm:h-56">
+                <div className="relative mb-2 sm:mb-3 aspect-[4/3] sm:aspect-auto sm:h-56">
                   <div className="relative rounded-lg overflow-hidden border border-cyan-400/20 bg-gray-800 w-full h-full flex items-center justify-center">
                     <ImageWithFallback
                       src={game.image || ''}

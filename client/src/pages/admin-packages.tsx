@@ -66,15 +66,24 @@ export default function AdminPackagesPage() {
     } else if (game && packages.length === 0 && gamePackages.length === 0) {
       // Try to get packages from game data if API returns empty
       const gamePackagesArray = Array.isArray(game.packages) ? game.packages : [];
-      const gamePrices = Array.isArray(game.packagePrices) ? game.packagePrices : [];
-      const gameDiscountPrices = Array.isArray((game as any).packageDiscountPrices) ? (game as any).packageDiscountPrices : [];
+      const gamePrices = Array.isArray((game as any).packagePrices)
+        ? (game as any).packagePrices
+        : (Array.isArray((game as any).package_prices) ? (game as any).package_prices : []);
+      const gameDiscountPrices = Array.isArray((game as any).packageDiscountPrices)
+        ? (game as any).packageDiscountPrices
+        : (Array.isArray((game as any).package_discount_prices) ? (game as any).package_discount_prices : []);
+      const gameThumbnails = Array.isArray((game as any).packageThumbnails)
+        ? (game as any).packageThumbnails
+        : (Array.isArray((game as any).package_thumbnails) ? (game as any).package_thumbnails : []);
       
       if (gamePackagesArray.length > 0) {
         const initialPackages = gamePackagesArray.map((pkg: any, index: number) => ({
           amount: typeof pkg === 'string' ? pkg : (pkg?.amount || ''),
           price: Number(gamePrices[index] || 0),
-          discountPrice: gameDiscountPrices[index] ? Number(gameDiscountPrices[index]) : null,
-          image: null
+          discountPrice: (gameDiscountPrices[index] !== undefined && gameDiscountPrices[index] !== null && gameDiscountPrices[index] !== '')
+            ? Number(gameDiscountPrices[index])
+            : null,
+          image: gameThumbnails[index] ? String(gameThumbnails[index]) : null
         }));
         setPackages(initialPackages);
       }

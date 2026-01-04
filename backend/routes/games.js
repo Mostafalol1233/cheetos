@@ -49,7 +49,7 @@ const formatGame = (game, packages = []) => {
            id: `pkg_${game.id}_${i}`,
            name: String(p),
            price: Number(prices[i] || 0),
-           discount_price: discounts[i] ? Number(discounts[i]) : null,
+           discount_price: (discounts[i] !== undefined && discounts[i] !== null && discounts[i] !== '') ? Number(discounts[i]) : null,
            image: thumbnails[i] || null
          };
        });
@@ -58,7 +58,7 @@ const formatGame = (game, packages = []) => {
     // Backward compatibility fields
     const legacyPackages = pkgList.map(p => p.name);
     const legacyPrices = pkgList.map(p => Number(p.price));
-    const legacyDiscounts = pkgList.map(p => p.discount_price ? Number(p.discount_price) : null);
+    const legacyDiscounts = pkgList.map(p => (p.discount_price !== undefined && p.discount_price !== null && p.discount_price !== '') ? Number(p.discount_price) : null);
     const legacyThumbnails = pkgList.map(p => p.image ? normalizeImageUrl(p.image) : null);
 
     return {
@@ -80,7 +80,9 @@ const formatGame = (game, packages = []) => {
         id: p.id || `pkg_${Math.random()}`,
         name: p.name || p.amount || '',
         price: Number(p.price || 0),
-        discountPrice: p.discount_price || p.discountPrice ? Number(p.discount_price || p.discountPrice) : null,
+        discountPrice: (p.discount_price !== undefined && p.discount_price !== null && p.discount_price !== ''
+          ? Number(p.discount_price)
+          : (p.discountPrice !== undefined && p.discountPrice !== null && p.discountPrice !== '' ? Number(p.discountPrice) : null)),
         image: p.image ? normalizeImageUrl(p.image) : null
       }))
     };
@@ -552,7 +554,7 @@ router.get('/:id/packages', async (req, res) => {
       const items = resDb.rows.map(p => ({
         ...p,
         amount: p.name,
-        discountPrice: p.discount_price ? Number(p.discount_price) : null,
+        discountPrice: (p.discount_price !== undefined && p.discount_price !== null && p.discount_price !== '') ? Number(p.discount_price) : null,
         price: Number(p.price)
       }));
       return res.json(items);
@@ -571,7 +573,7 @@ router.get('/:id/packages', async (req, res) => {
         id: `pkg_${id}_${i}`,
         amount: String(name ?? ''),
         price: Number(prices[i] ?? 0),
-        discountPrice: discounts[i] != null ? Number(discounts[i]) : null,
+        discountPrice: (discounts[i] !== undefined && discounts[i] !== null && discounts[i] !== '') ? Number(discounts[i]) : null,
         image: thumbnails[i] ?? null,
       })).filter((p) => p.amount);
 
@@ -659,7 +661,7 @@ router.put('/:id/packages', authenticateToken, ensureAdmin, async (req, res) => 
         const items = resDb.rows.map(p => ({
         ...p,
         amount: p.name,
-        discountPrice: p.discount_price ? Number(p.discount_price) : null,
+        discountPrice: (p.discount_price !== undefined && p.discount_price !== null && p.discount_price !== '') ? Number(p.discount_price) : null,
         price: Number(p.price)
         }));
         
