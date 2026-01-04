@@ -54,6 +54,7 @@ interface Alert {
 const apiPath = (path: string) => (path.startsWith('http') ? path : `${API_BASE_URL}${path}`);
 
 export default function AdminDashboard() {
+  const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('games');
   const [searchGameTerm, setSearchGameTerm] = useState('');
   const [editingGame, setEditingGame] = useState<Game | null>(null);
@@ -2773,8 +2774,8 @@ function WhatsAppConnectionPanel() {
   useEffect(() => {
     if (status?.qr) {
       QRCode.toDataURL(status.qr)
-        .then(url => setQrDataUrl(url))
-        .catch(err => console.error(err));
+        .then((url: string) => setQrDataUrl(url))
+        .catch((err: unknown) => console.error(err));
     } else {
       setQrDataUrl(null);
     }

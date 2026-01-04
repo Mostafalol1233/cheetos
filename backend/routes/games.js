@@ -32,7 +32,9 @@ const formatGame = (game, packages = []) => {
     if (pkgList.length === 0 && Array.isArray(game.packages) && game.packages.length > 0) {
        // Construct from legacy
        const prices = Array.isArray(game.packagePrices) ? game.packagePrices : [];
-       const discounts = Array.isArray(game.packageDiscountPrices) ? game.packageDiscountPrices : [];
+       const discounts = Array.isArray(game.packageDiscountPrices)
+         ? game.packageDiscountPrices
+         : (Array.isArray(game.discountPrices) ? game.discountPrices : []);
        const thumbnails = Array.isArray(game.packageThumbnails) ? game.packageThumbnails : []; // Handle both cases
        
        pkgList = game.packages.map((p, i) => {
@@ -57,7 +59,9 @@ const formatGame = (game, packages = []) => {
       ...game,
       price: Number(game.price || 0),
       stock: Number(game.stock || 0),
-      discountPrice: game.discount_price ? Number(game.discount_price) : null,
+      discountPrice: (game.discountPrice !== undefined && game.discountPrice !== null)
+        ? Number(game.discountPrice)
+        : (game.discount_price ? Number(game.discount_price) : null),
       isPopular: !!(game.isPopular || game.is_popular),
       image: normalizeImageUrl(game.image),
       // Legacy arrays
@@ -165,6 +169,60 @@ router.get('/popular', async (req, res) => {
     const allGames = localDb.getGames();
     const popular = allGames.filter(g => g.isPopular || g.is_popular).slice(0, 10);
     res.json(popular.map(g => formatGame(g)));
+  }
+});
+
+// GET /api/games/id/:id
+router.get('/id/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const gamesRes = await pool.query(`
+      SELECT g.*, 
+             COALESCE(json_agg(gp ORDER BY gp.price) FILTER (WHERE gp.id IS NOT NULL), '[]') as packages_data
+      FROM games g
+      LEFT JOIN game_packages gp ON g.id = gp.game_id
+      WHERE g.id = $1
+      GROUP BY g.id
+    `, [id]);
+
+    if (gamesRes.rows.length === 0) {
+      return res.status(404).json({ message: 'Game not found' });
+    }
+
+    const { packages_data, ...game } = gamesRes.rows[0];
+    res.json(formatGame(game, packages_data));
+  } catch (error) {
+    console.error('DB Error (get by id), falling back to local DB:', error.message);
+    const game = localDb.findGame(id);
+    if (!game) return res.status(404).json({ message: 'Game not found' });
+    res.json(formatGame(game));
+  }
+});
+
+// GET /api/games/slug/:slug
+router.get('/slug/:slug', async (req, res) => {
+  const { slug } = req.params;
+  try {
+    const gamesRes = await pool.query(`
+      SELECT g.*, 
+             COALESCE(json_agg(gp ORDER BY gp.price) FILTER (WHERE gp.id IS NOT NULL), '[]') as packages_data
+      FROM games g
+      LEFT JOIN game_packages gp ON g.id = gp.game_id
+      WHERE g.slug = $1
+      GROUP BY g.id
+    `, [slug]);
+
+    if (gamesRes.rows.length === 0) {
+      return res.status(404).json({ message: 'Game not found' });
+    }
+
+    const { packages_data, ...game } = gamesRes.rows[0];
+    res.json(formatGame(game, packages_data));
+  } catch (error) {
+    console.error('DB Error (get by slug), falling back to local DB:', error.message);
+    const game = localDb.findGame(slug);
+    if (!game) return res.status(404).json({ message: 'Game not found' });
+    res.json(formatGame(game));
   }
 });
 

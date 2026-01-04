@@ -6,8 +6,13 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const DATA_DIR = path.join(__dirname, '../data');
-const SEED_FILE = path.join(DATA_DIR, 'games.json');
-const PERSISTENT_FILE = path.join(DATA_DIR, 'games_persistent.json');
+const GAME_FILE = path.join(DATA_DIR, 'game.json');
+const GAMES_FILE = path.join(DATA_DIR, 'games.json');
+
+const getCanonicalFile = () => {
+  if (fs.existsSync(GAME_FILE)) return GAME_FILE;
+  return GAMES_FILE;
+};
 
 // Ensure data directory exists
 if (!fs.existsSync(DATA_DIR)) {
@@ -16,14 +21,9 @@ if (!fs.existsSync(DATA_DIR)) {
 
 const init = () => {
   try {
-    if (!fs.existsSync(PERSISTENT_FILE)) {
-      console.log('Initializing persistent game data from seed...');
-      if (fs.existsSync(SEED_FILE)) {
-        const seedData = fs.readFileSync(SEED_FILE, 'utf8');
-        fs.writeFileSync(PERSISTENT_FILE, seedData);
-      } else {
-        fs.writeFileSync(PERSISTENT_FILE, '[]');
-      }
+    const canonical = getCanonicalFile();
+    if (!fs.existsSync(canonical)) {
+      fs.writeFileSync(canonical, '[]');
     }
   } catch (error) {
     console.error('Error initializing local DB:', error);
@@ -33,8 +33,10 @@ const init = () => {
 const getGames = () => {
   try {
     init(); // Ensure file exists
-    const data = fs.readFileSync(PERSISTENT_FILE, 'utf8');
-    return JSON.parse(data);
+    const canonical = getCanonicalFile();
+    const data = fs.readFileSync(canonical, 'utf8');
+    const parsed = JSON.parse(data);
+    return Array.isArray(parsed) ? parsed : [];
   } catch (error) {
     console.error('Error reading local DB:', error);
     return [];
@@ -43,7 +45,11 @@ const getGames = () => {
 
 const saveGames = (games) => {
   try {
-    fs.writeFileSync(PERSISTENT_FILE, JSON.stringify(games, null, 2));
+    init();
+    const canonical = getCanonicalFile();
+    const tmp = `${canonical}.tmp`;
+    fs.writeFileSync(tmp, JSON.stringify(Array.isArray(games) ? games : [], null, 2));
+    fs.renameSync(tmp, canonical);
     return true;
   } catch (error) {
     console.error('Error writing local DB:', error);
