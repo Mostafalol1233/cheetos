@@ -113,3 +113,30 @@ export const sendEmail = async (to, templateName, data) => {
     return false;
   }
 };
+
+export const sendRawEmail = async (to, subject, text, html) => {
+  if (!to) {
+    console.warn('⚠️ No email recipient provided, skipping email.');
+    return false;
+  }
+
+  if (!process.env.BREVO_USER || !process.env.BREVO_PASS) {
+    console.warn('⚠️ Brevo credentials missing, skipping email.');
+    return false;
+  }
+
+  try {
+    const info = await transporter.sendMail({
+      from: '"GameCart" <no-reply@gamecart.com>',
+      to,
+      subject: String(subject || ''),
+      text: String(text || ''),
+      html: html ? String(html) : undefined
+    });
+    console.log(`📧 Email sent to ${to}: ${info.messageId}`);
+    return true;
+  } catch (error) {
+    console.error('❌ Error sending email:', error.message);
+    return false;
+  }
+};

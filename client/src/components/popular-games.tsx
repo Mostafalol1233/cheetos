@@ -48,11 +48,12 @@ export function PopularGames() {
                 
                 {/* Game Image */}
                 <div className="relative mb-2 sm:mb-3 aspect-[4/3] sm:aspect-auto sm:h-56">
-                  <div className="relative rounded-lg overflow-hidden border border-cyan-400/20 bg-gray-800 w-full h-full flex items-center justify-center">
+                  <div className="relative rounded-lg overflow-hidden border border-cyan-400/20 bg-gray-800 w-full h-full flex items-center justify-center p-3">
+                    <div className="absolute inset-0 bg-cyan-400/10 blur-xl"></div>
                     <ImageWithFallback
                       src={game.image || ''}
                       alt={game.name}
-                      className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-[1.03]"
+                      className="relative w-full h-full object-contain transition-transform duration-500 group-hover:scale-[1.03]"
                     />
                     {game.isPopular && (
                       <div className="absolute top-2 right-2 bg-gradient-to-r from-cyan-400 to-blue-500 text-black px-2 py-1 rounded-full text-xs font-bold flex items-center shadow-lg">

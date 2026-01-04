@@ -18,12 +18,10 @@ export default function GameDetails() {
   const [addingToCart, setAddingToCart] = useState(false);
   const [amount, setAmount] = useState(1);
 
-  const computeDiscount = (base: number) => {
-    if (!Number.isFinite(base) || base < 50) return null;
-    const d = base - 100;
-    if (!Number.isFinite(d) || d <= 0) return null;
-    if (d >= base) return null;
-    return d;
+  const coerceNumberOrNull = (v: unknown) => {
+    if (v === null || v === undefined || v === '') return null;
+    const n = Number(v);
+    return Number.isFinite(n) ? n : null;
   };
 
   const { data: game, isLoading } = useQuery<Game>({
@@ -54,13 +52,36 @@ export default function GameDetails() {
     }, 1000);
   };
 
+  const packagesList = Array.isArray((game as any)?.packagesList) ? (game as any).packagesList : [];
+  const packageNames = Array.isArray((game as any)?.packages) && (game as any).packages.length > 0
+    ? (game as any).packages
+    : packagesList.map((p: any) => p?.name || p?.amount || '').filter(Boolean);
+  const packagePrices = Array.isArray((game as any)?.packagePrices) && (game as any).packagePrices.length > 0
+    ? (game as any).packagePrices
+    : packagesList.map((p: any) => p?.price ?? 0);
+  const packageDiscountPrices = Array.isArray((game as any)?.packageDiscountPrices) && (game as any).packageDiscountPrices.length > 0
+    ? (game as any).packageDiscountPrices
+    : (Array.isArray((game as any)?.discountPrices) && (game as any).discountPrices.length > 0
+      ? (game as any).discountPrices
+      : packagesList.map((p: any) => (p?.discountPrice ?? null)));
+
+  const getPackagePricing = (index: number) => {
+    const base = Number(packagePrices[index] ?? game?.price ?? 0);
+    const discount = coerceNumberOrNull(packageDiscountPrices[index]);
+    const hasDiscount = discount != null && discount > 0 && discount < base;
+    return {
+      base,
+      final: hasDiscount ? (discount as number) : base,
+      original: hasDiscount ? base : null,
+    };
+  };
+
   const handlePackageChange = (packageName: string) => {
     if (!game) return;
-    
+    const idx = packageNames.findIndex((p: any) => String(p) === String(packageName));
+    const pricing = getPackagePricing(idx >= 0 ? idx : 0);
     setSelectedPackage(packageName);
-    const base = parseFloat(String(game.price));
-    const computed = computeDiscount(base);
-    setSelectedPrice(computed ?? base);
+    setSelectedPrice(pricing.final);
   };
 
   if (!match) return null;
@@ -192,14 +213,10 @@ export default function GameDetails() {
               </div>
               
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                {game.packages && game.packages.length > 0 ? (
-                  game.packages.map((pkg: string, index: number) => {
-                    const rawPrice = game.packagePrices && game.packagePrices[index] ? parseFloat(String(game.packagePrices[index])) : parseFloat(String(game.price));
-                    const computedDiscount = computeDiscount(rawPrice);
-                    const hasDiscount = computedDiscount != null;
-                    const originalPrice = rawPrice;
-                    const displayPrice = computedDiscount ?? rawPrice;
-                    
+                {packageNames && packageNames.length > 0 ? (
+                  packageNames.map((pkg: string, index: number) => {
+                    const pricing = getPackagePricing(index);
+
                     const isSelected = selectedPackage === pkg;
                     
                     return (
@@ -207,7 +224,7 @@ export default function GameDetails() {
                         key={index}
                         onClick={() => {
                            setSelectedPackage(pkg);
-                           setSelectedPrice(displayPrice);
+                           setSelectedPrice(pricing.final);
                          }}
                         className={`relative p-3 rounded-xl border-2 transition-all duration-200 flex flex-col items-center justify-center text-center h-28 group ${
                           isSelected 
@@ -217,13 +234,13 @@ export default function GameDetails() {
                       >
                         <h4 className="font-bold text-sm mb-1 line-clamp-2">{pkg}</h4>
                         <div className="text-gold-primary font-bold mt-auto">
-                          {hasDiscount && originalPrice !== displayPrice ? (
+                          {pricing.original != null && pricing.original !== pricing.final ? (
                             <span className="inline-flex items-center gap-2">
-                              <span className="line-through opacity-70 text-muted-foreground">{originalPrice} {game.currency}</span>
-                              <span>{displayPrice} {game.currency}</span>
+                              <span className="line-through opacity-70 text-muted-foreground">{pricing.base} {game.currency}</span>
+                              <span>{pricing.final} {game.currency}</span>
                             </span>
                           ) : (
-                            <span>{displayPrice} {game.currency}</span>
+                            <span>{pricing.final} {game.currency}</span>
                           )}
                         </div>
                         {isSelected && (
@@ -252,19 +269,18 @@ export default function GameDetails() {
                       <div className="text-right">
                         <div className="text-2xl font-bold text-gold-primary">
                           {(() => {
-                            const rawPrice = parseFloat(String(game.price));
-                            const computed = computeDiscount(rawPrice);
-                            const hasDiscount = computed != null;
-                            const originalPrice = rawPrice;
-                            const displayPrice = computed ?? rawPrice;
+                            const base = Number(game.price);
+                            const discount = coerceNumberOrNull((game as any).discountPrice);
+                            const hasDiscount = discount != null && discount > 0 && discount < base;
+                            const final = hasDiscount ? (discount as number) : base;
 
-                            return hasDiscount && originalPrice !== displayPrice ? (
+                            return hasDiscount ? (
                               <span className="inline-flex items-center gap-2">
-                                <span className="line-through opacity-70 text-muted-foreground">{originalPrice}</span>
-                                <span>{displayPrice}</span>
+                                <span className="line-through opacity-70 text-muted-foreground">{base}</span>
+                                <span>{final}</span>
                               </span>
                             ) : (
-                              <span>{displayPrice}</span>
+                              <span>{final}</span>
                             );
                           })()}
                         </div>

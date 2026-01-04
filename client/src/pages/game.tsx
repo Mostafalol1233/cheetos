@@ -69,11 +69,20 @@ export default function GamePage() {
     );
   }
 
-  const packages = game.packages || [];
-  const packagePrices = game.packagePrices || [];
-  const packageDiscountPrices = Array.isArray((game as any).packageDiscountPrices)
+  const packagesList = Array.isArray((game as any).packagesList) ? (game as any).packagesList : [];
+  const packages = Array.isArray((game as any).packages) && (game as any).packages.length > 0
+    ? (game as any).packages
+    : packagesList.map((p: any) => p?.name || p?.amount || '').filter(Boolean);
+
+  const packagePrices = Array.isArray((game as any).packagePrices) && (game as any).packagePrices.length > 0
+    ? (game as any).packagePrices
+    : packagesList.map((p: any) => p?.price ?? 0);
+
+  const packageDiscountPrices = Array.isArray((game as any).packageDiscountPrices) && (game as any).packageDiscountPrices.length > 0
     ? (game as any).packageDiscountPrices
-    : (Array.isArray((game as any).packageDiscountPrices) ? (game as any).packageDiscountPrices : []);
+    : (Array.isArray((game as any).discountPrices) && (game as any).discountPrices.length > 0
+      ? (game as any).discountPrices
+      : packagesList.map((p: any) => (p?.discountPrice ?? null)));
   const categoryLabel = (game.category ? String(game.category) : "").replace('-', ' ').toUpperCase();
   const category = Array.isArray(categories)
     ? categories.find((c) => c.slug === game.category)
@@ -108,7 +117,8 @@ export default function GamePage() {
     }
 
     const packageName = packages[selectedPackage] || t('default_package');
-    const packagePrice = packagePrices[selectedPackage] || game.price;
+    const pricing = getPackagePricing(selectedPackage);
+    const packagePrice = pricing.final;
     
     addToCart({
       id: `${game.id}-${selectedPackage}`,
@@ -199,7 +209,7 @@ export default function GamePage() {
             </div>
 
             <ProductPackGrid
-              packs={packages.map((pkg, index) => {
+              packs={packages.map((pkg: unknown, index: number) => {
                 const pricing = getPackagePricing(index);
                 return {
                   id: String(index),

@@ -22,7 +22,7 @@ import gamesRouter from './routes/games.js';
 import ordersRouter from './routes/orders.js';
 import authRouter from './routes/auth.js';
 import { authenticateToken, ensureAdmin } from './middleware/auth.js';
-import { sendEmail } from './utils/email.js';
+import { sendEmail, sendRawEmail } from './utils/email.js';
 // Optional image processor (module may not exist in some deployments)
 let initImageProcessor = null;
 try {
@@ -555,6 +555,17 @@ app.get('/api/contact-info', async (req, res) => {
       paypal: paypal || null,
       etisalat_cash: etisalat_cash || null
     });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+app.post('/api/admin/email/send', authenticateToken, ensureAdmin, async (req, res) => {
+  try {
+    const { to, subject, text, html } = req.body || {};
+    if (!to || (!text && !html)) return res.status(400).json({ message: 'to and text or html required' });
+    const ok = await sendRawEmail(String(to), String(subject || 'GameCart Message'), String(text || ''), html ? String(html) : undefined);
+    res.json({ ok });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -3482,12 +3493,10 @@ app.get('/api/admin/interactions/export', authenticateToken, async (req, res) =>
     res.status(500).json({ message: err.message });
   }
 });
-
-// ===================== ADMIN: CONFIRMATION DETAIL =====================
 app.get('/api/admin/confirmations/:id', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
-    const r = await pool.query('SELECT c.id, c.transaction_id, c.message_encrypted, c.receipt_url, c.created_at, t.user_id, u.name, u.phone FROM payment_confirmations c LEFT JOIN transactions t ON c.transaction_id = t.id LEFT JOIN users u ON t.user_id = u.id WHERE c.id = $1', [id]);
+    const r = await pool.query('SELECT c.id, c.transaction_id, c.message_encrypted, c.receipt_url, c.created_at, t.user_id, u.name, u.phone, u.email FROM payment_confirmations c LEFT JOIN transactions t ON c.transaction_id = t.id LEFT JOIN users u ON t.user_id = u.id WHERE c.id = $1', [id]);
     if (r.rows.length === 0) return res.status(404).json({ message: 'Not found' });
     const row = r.rows[0];
     res.json({
@@ -3496,7 +3505,7 @@ app.get('/api/admin/confirmations/:id', authenticateToken, async (req, res) => {
       message: decryptMessage(row.message_encrypted),
       receiptUrl: row.receipt_url,
       createdAt: new Date(row.created_at).getTime(),
-      user: { id: row.user_id || null, name: row.name || '', phone: row.phone || '' },
+      user: { id: row.user_id || null, name: row.name || '', phone: row.phone || '', email: row.email || '' },
       sessionId: row.phone ? `wa_${row.phone.replace(/[^\d]/g, '')}` : null
     });
   } catch (err) {
@@ -3607,10 +3616,12 @@ app.post('/api/chat/message', async (req, res) => {
       await pool.query('INSERT INTO seller_alerts (id, type, summary) VALUES ($1, $2, $3)', [alertId, 'website_message', summary]);
       
       // Forward to seller WhatsApp numbers if configured
+      const adminPhone = (process.env.ADMIN_PHONE || '').trim();
       const sellerPhones = (process.env.SELLER_PHONES || '').split(',').map(p => p.trim()).filter(p => p);
-      if (sellerPhones.length > 0) {
+      const phonesToNotify = adminPhone ? [adminPhone, ...sellerPhones] : sellerPhones;
+      if (phonesToNotify.length > 0) {
         const forwardMessage = `💬 New chat message from ${sessionId}:\n${String(message).substring(0, 200)}`;
-        for (const phone of sellerPhones) {
+        for (const phone of phonesToNotify) {
           try {
             await sendWhatsAppMessage(phone, forwardMessage);
           } catch (err) {

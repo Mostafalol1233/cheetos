@@ -7,10 +7,12 @@ import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { queryClient } from '@/lib/queryClient';
+import { useToast } from '@/hooks/use-toast';
 
 export default function AdminConfirmationPage() {
   const [, params] = useRoute('/admin/confirmation/:id');
   const id = params?.id || '';
+  const { toast } = useToast();
   const { data } = useQuery<any>({
     queryKey: ['/api/admin/confirmations', id],
     queryFn: async () => {
@@ -32,6 +34,7 @@ export default function AdminConfirmationPage() {
   });
   const [text, setText] = useState('');
   const [imageFile, setImageFile] = useState<File | null>(null);
+  const [sendEmailToo, setSendEmailToo] = useState(false);
   useEffect(() => { setText(''); setImageFile(null); }, [id]);
   const sendMutation = useMutation({
     mutationFn: async () => {
@@ -48,6 +51,15 @@ export default function AdminConfirmationPage() {
       const token = localStorage.getItem('adminToken');
       const payload = { to, text, mediaUrl };
       const res = await fetch('/api/admin/whatsapp/send', { method: 'POST', headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) }, body: JSON.stringify(payload) });
+
+      if (sendEmailToo && data?.user?.email) {
+        await fetch('/api/admin/email/send', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+          body: JSON.stringify({ to: data.user.email, subject: `GameCart Confirmation: ${data?.transactionId || data?.id || ''}`, text })
+        });
+      }
+
       // Record into chat thread for secure threading
       if (data?.sessionId) {
         await fetch('/api/chat/message', {
@@ -62,6 +74,7 @@ export default function AdminConfirmationPage() {
       setText(''); setImageFile(null);
       queryClient.invalidateQueries({ queryKey: ['/api/admin/confirmations', id] });
       queryClient.invalidateQueries({ queryKey: ['/api/admin/chat', data?.sessionId] });
+      toast({ title: 'Sent', description: 'Message sent successfully', duration: 2000 });
     }
   });
 
@@ -135,6 +148,16 @@ export default function AdminConfirmationPage() {
             </div>
             <div className="flex gap-2">
               <Button onClick={() => sendMutation.mutate()} disabled={sendMutation.isPending || !data?.user?.phone || !text.trim()} className="bg-gold-primary">Send via WhatsApp</Button>
+              {data?.user?.email ? (
+                <Button
+                  type="button"
+                  variant={sendEmailToo ? 'default' : 'outline'}
+                  onClick={() => setSendEmailToo(!sendEmailToo)}
+                  disabled={sendMutation.isPending}
+                >
+                  {sendEmailToo ? 'Email: ON' : 'Email: OFF'}
+                </Button>
+              ) : null}
             </div>
           </CardContent>
         </Card>
