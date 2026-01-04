@@ -340,6 +340,10 @@ export default function AdminDashboard() {
         queryClient.invalidateQueries({ queryKey: [`/api/games/slug/${editingGame.slug}`] });
       }
       setEditingGame(null);
+      toast({ title: 'Success', description: 'Game updated successfully' });
+    },
+    onError: (error: any) => {
+      toast({ title: 'Error', description: error.message || 'Failed to update game', variant: 'destructive' });
     }
   });
 
