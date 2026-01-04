@@ -264,11 +264,15 @@ async function seedGamesFromJsonIfEmpty(force = false) {
           }
         }
 
+        const packagesJson = JSON.stringify(Array.isArray(rawPackages) ? rawPackages : []);
+        const packagePricesJson = JSON.stringify(Array.isArray(processedPackagePrices) ? processedPackagePrices : []);
+        const packageDiscountPricesJson = JSON.stringify(Array.isArray(processedDiscountPrices) ? processedDiscountPrices : []);
+
         await pool.query(
           `INSERT INTO games (id, name, slug, description, price, currency, image, category, is_popular, stock, discount_price, packages, package_prices, package_discount_prices)
-           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12::jsonb,$13::jsonb,$14::jsonb)
            ON CONFLICT (id) DO NOTHING`,
-          [id, name, slug, description, price, currency, image, category, is_popular, stock, discount_price, rawPackages, processedPackagePrices, processedDiscountPrices]
+          [id, name, slug, description, price, currency, image, category, is_popular, stock, discount_price, packagesJson, packagePricesJson, packageDiscountPricesJson]
         );
       } catch (err) {
         console.error(`Failed to seed game ${g.name}:`, err.message);

@@ -125,13 +125,25 @@ export default function CategoryPage() {
               {games.map((game) => {
                 const packages = Array.isArray(game.packages) ? game.packages : [];
                 const packagePrices = Array.isArray(game.packagePrices) ? game.packagePrices : [];
-                const packageDiscountPrices = Array.isArray((game as any).packageDiscountPrices) ? (game as any).packageDiscountPrices : [];
-                const computeDiscount = (base: number) => {
-                  if (!Number.isFinite(base) || base < 50) return null;
-                  const d = base - 100;
-                  if (!Number.isFinite(d) || d <= 0) return null;
-                  if (d >= base) return null;
-                  return d;
+                const packageDiscountPrices = Array.isArray((game as any).packageDiscountPrices)
+                  ? (game as any).packageDiscountPrices
+                  : (Array.isArray((game as any).discountPrices) ? (game as any).discountPrices : []);
+
+                const coerceNumberOrNull = (v: unknown) => {
+                  if (v === null || v === undefined || v === '') return null;
+                  const n = Number(v);
+                  return Number.isFinite(n) ? n : null;
+                };
+
+                const getPricing = (index: number) => {
+                  const base = Number(packagePrices[index] ?? game.price ?? 0);
+                  const discount = coerceNumberOrNull(packageDiscountPrices[index]);
+                  const hasDiscount = discount != null && discount > 0 && discount < base;
+                  return {
+                    base,
+                    final: hasDiscount ? (discount as number) : base,
+                    original: hasDiscount ? base : null,
+                  };
                 };
                 
                 const isOutOfStock = Number(game.stock) <= 0;
@@ -176,18 +188,16 @@ export default function CategoryPage() {
                       {packages.length > 0 ? (
                         <div className="mb-3 space-y-1">
                           {packages.slice(0, 2).map((pkg: string, idx: number) => {
-                            const pkgPrice = packagePrices[idx] || game.price;
-                            const pkgDiscountPrice = packageDiscountPrices[idx] || null;
-                            const hasPkgDiscount = pkgDiscountPrice && parseFloat(pkgDiscountPrice) > 0;
+                            const pricing = getPricing(idx);
                             
                             return (
                               <div key={idx} className="flex items-center justify-between text-xs">
                                 <span className="text-gray-600 dark:text-gray-300">{pkg}</span>
                                 <div className="flex items-center gap-1">
-                                  {hasPkgDiscount && (
-                                    <span className="text-red-500 line-through text-[10px]">{pkgPrice} {game.currency}</span>
+                                  {pricing.original != null && (
+                                    <span className="text-red-500 line-through text-[10px]">{pricing.base} {game.currency}</span>
                                   )}
-                                  <span className="text-blue-600 dark:text-blue-400 font-bold">{hasPkgDiscount ? pkgDiscountPrice : pkgPrice} {game.currency}</span>
+                                  <span className="text-blue-600 dark:text-blue-400 font-bold">{pricing.final} {game.currency}</span>
                                 </div>
                               </div>
                             );
@@ -200,9 +210,10 @@ export default function CategoryPage() {
                         <div className="mb-3">
                           {(() => {
                             const base = Number(game.price);
-                            const computed = computeDiscount(base);
-                            const finalPrice = computed ?? base;
-                            return computed != null ? (
+                            const discount = coerceNumberOrNull((game as any).discountPrice);
+                            const hasDiscount = discount != null && discount > 0 && discount < base;
+                            const finalPrice = hasDiscount ? (discount as number) : base;
+                            return hasDiscount ? (
                               <div className="flex items-center gap-2">
                                 <span className="text-gray-500 line-through text-sm">{base} {game.currency}</span>
                                 <span className="text-gold-primary font-bold text-lg">{finalPrice} {game.currency}</span>

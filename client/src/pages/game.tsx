@@ -71,18 +71,30 @@ export default function GamePage() {
 
   const packages = game.packages || [];
   const packagePrices = game.packagePrices || [];
+  const packageDiscountPrices = Array.isArray((game as any).packageDiscountPrices)
+    ? (game as any).packageDiscountPrices
+    : (Array.isArray((game as any).packageDiscountPrices) ? (game as any).packageDiscountPrices : []);
   const categoryLabel = (game.category ? String(game.category) : "").replace('-', ' ').toUpperCase();
   const category = Array.isArray(categories)
     ? categories.find((c) => c.slug === game.category)
     : undefined;
   const isOutOfStock = Number(game.stock) <= 0;
 
-  const computeDiscount = (base: number) => {
-    if (!Number.isFinite(base) || base < 50) return null;
-    const d = base - 100;
-    if (!Number.isFinite(d) || d <= 0) return null;
-    if (d >= base) return null;
-    return d;
+  const coerceNumberOrNull = (v: unknown) => {
+    if (v === null || v === undefined || v === '') return null;
+    const n = Number(v);
+    return Number.isFinite(n) ? n : null;
+  };
+
+  const getPackagePricing = (index: number) => {
+    const base = Number(packagePrices[index] ?? game.price ?? 0);
+    const discount = coerceNumberOrNull(packageDiscountPrices[index]);
+    const hasDiscount = discount != null && discount > 0 && discount < base;
+    return {
+      base,
+      final: hasDiscount ? (discount as number) : base,
+      original: hasDiscount ? base : null,
+    };
   };
 
   const handleAddToCart = () => {
@@ -188,14 +200,12 @@ export default function GamePage() {
 
             <ProductPackGrid
               packs={packages.map((pkg, index) => {
-                const base = Number(packagePrices[index] || game.price || 0);
-                const computedDiscount = computeDiscount(base);
-                const effectiveFinal = computedDiscount ?? base;
+                const pricing = getPackagePricing(index);
                 return {
                   id: String(index),
                   name: String(pkg),
-                  originalPrice: computedDiscount != null ? base : null,
-                  finalPrice: effectiveFinal,
+                  originalPrice: pricing.original,
+                  finalPrice: pricing.final,
                   currency: game.currency,
                   image:
                     (Array.isArray((game as any).packageThumbnails) &&
@@ -219,22 +229,19 @@ export default function GamePage() {
                 </h3>
                 <div className="flex items-center gap-3">
                   {(() => {
-                    const base = Number(packagePrices[selectedPackage] || game.price || 0);
-                    const computed = computeDiscount(base);
-                    const finalPrice = computed ?? base;
-
-                    return computed != null ? (
+                    const pricing = getPackagePricing(selectedPackage);
+                    return pricing.original != null ? (
                       <>
                         <span className="line-through text-red-600 text-xl sm:text-2xl">
-                          {base} {game.currency}
+                          {pricing.base} {game.currency}
                         </span>
                         <span className="bg-gradient-to-r from-gold-primary to-neon-pink bg-clip-text text-3xl font-black text-transparent sm:text-5xl">
-                          {finalPrice} {game.currency}
+                          {pricing.final} {game.currency}
                         </span>
                       </>
                     ) : (
                       <span className="bg-gradient-to-r from-gold-primary to-neon-pink bg-clip-text text-3xl font-black text-transparent sm:text-5xl">
-                        {finalPrice} {game.currency}
+                        {pricing.final} {game.currency}
                       </span>
                     );
                   })()}
@@ -262,30 +269,27 @@ export default function GamePage() {
 
       {/* Mobile Sticky CTA */}
       {ctaVisible && !isOutOfStock && (
-        <div className="fixed inset-x-0 bottom-0 z-30 border-t border-border/80 bg-background/95 px-4 py-3 shadow-[0_-4px_20px_rgba(0,0,0,0.35)] backdrop-blur-sm sm:hidden">
-          <div className="mx-auto flex max-w-md items-center gap-3">
-            <div className="flex-1 text-xs leading-snug text-muted-foreground">
-              <div className="flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wide text-primary">
-                <Zap className="h-3 w-3" />
-                {t("instant_delivery")}
-              </div>
-              <div className="font-semibold text-foreground">
+        <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-gold-primary/20 bg-background/95 p-4 backdrop-blur sm:hidden">
+          <div className="mx-auto flex max-w-4xl items-center justify-between gap-3">
+            <div className="min-w-0">
+              <div className="truncate text-sm font-semibold text-foreground">
                 {packages[selectedPackage] || t("default_package")} · 
                 {(() => {
-                    const base = Number(packagePrices[selectedPackage] || game.price || 0);
-                    const computed = computeDiscount(base);
-                    const finalPrice = computed ?? base;
-                    if (computed != null) {
+                    const pricing = getPackagePricing(selectedPackage);
+                    if (pricing.original != null) {
                       return (
                         <>
-                          <span className="line-through text-red-600 text-[10px]">{base}</span> {finalPrice}
+                          <span className="ml-1 line-through text-xs text-red-500">{pricing.base} {game.currency}</span>
+                          <span className="ml-2 text-gold-primary">{pricing.final} {game.currency}</span>
                         </>
                       );
                     }
-                    return <>{finalPrice}</>;
+                    return (
+                      <span className="ml-1 text-gold-primary">{pricing.final} {game.currency}</span>
+                    );
                 })()}
-                 {game.currency}
               </div>
+              <div className="text-xs text-muted-foreground truncate">{game.name}</div>
             </div>
             <Button
               size="sm"

@@ -541,14 +541,38 @@ router.get('/:id/packages', async (req, res) => {
   const { id } = req.params;
   try {
     const resDb = await pool.query('SELECT * FROM game_packages WHERE game_id = $1 ORDER BY price ASC', [id]);
-    
-    const items = resDb.rows.map(p => ({
-      ...p,
-      amount: p.name,
-      discountPrice: p.discount_price ? Number(p.discount_price) : null,
-      price: Number(p.price)
-    }));
-    res.json(items);
+
+    if (resDb.rows.length > 0) {
+      const items = resDb.rows.map(p => ({
+        ...p,
+        amount: p.name,
+        discountPrice: p.discount_price ? Number(p.discount_price) : null,
+        price: Number(p.price)
+      }));
+      return res.json(items);
+    }
+
+    // If there are no package rows yet, fall back to packages stored on the games row (seeded JSON)
+    const gameRes = await pool.query('SELECT packages, package_prices, package_discount_prices, package_thumbnails FROM games WHERE id = $1 OR slug = $1 LIMIT 1', [id]);
+    const g = gameRes.rows?.[0];
+    if (g) {
+      const packages = Array.isArray(g.packages) ? g.packages : [];
+      const prices = Array.isArray(g.package_prices) ? g.package_prices : [];
+      const discounts = Array.isArray(g.package_discount_prices) ? g.package_discount_prices : [];
+      const thumbnails = Array.isArray(g.package_thumbnails) ? g.package_thumbnails : [];
+
+      const items = packages.map((name, i) => ({
+        id: `pkg_${id}_${i}`,
+        amount: String(name ?? ''),
+        price: Number(prices[i] ?? 0),
+        discountPrice: discounts[i] != null ? Number(discounts[i]) : null,
+        image: thumbnails[i] ?? null,
+      })).filter((p) => p.amount);
+
+      return res.json(items);
+    }
+
+    res.json([]);
   } catch (error) {
     console.error('DB Error (packages), falling back to local DB:', error.message);
     const game = localDb.findGame(id);
@@ -583,21 +607,45 @@ router.put('/:id/packages', authenticateToken, ensureAdmin, async (req, res) => 
 
         await client.query('DELETE FROM game_packages WHERE game_id = $1', [id]);
         
-        if (Array.isArray(packages)) {
-        for (const pkg of packages) {
-            const name = pkg.name || pkg.amount;
-            if (name) {
-            await client.query(`
-                INSERT INTO game_packages (game_id, name, price, discount_price, image)
-                VALUES ($1, $2, $3, $4, $5)
-            `, [
-                id, name, Number(pkg.price || 0), 
-                pkg.discountPrice ? Number(pkg.discountPrice) : null,
-                pkg.image || null
-            ]);
-            }
+        const pkgsArr = Array.isArray(packages) ? packages : [];
+        const legacyPackages = [];
+        const legacyPrices = [];
+        const legacyDiscounts = [];
+        const legacyThumbnails = [];
+
+        for (const pkg of pkgsArr) {
+          const name = pkg.name || pkg.amount;
+          if (!name) continue;
+          const price = Number(pkg.price || 0);
+          const discount = pkg.discountPrice != null && pkg.discountPrice !== '' ? Number(pkg.discountPrice) : null;
+          const image = pkg.image || null;
+
+          legacyPackages.push(String(name));
+          legacyPrices.push(price);
+          legacyDiscounts.push(Number.isFinite(discount) ? discount : null);
+          legacyThumbnails.push(image);
+
+          await client.query(`
+              INSERT INTO game_packages (game_id, name, price, discount_price, image)
+              VALUES ($1, $2, $3, $4, $5)
+          `, [
+              id, name, price,
+              Number.isFinite(discount) ? discount : null,
+              image
+          ]);
         }
-        }
+
+        // Also persist packages onto the games row (so website/game page can render without joining game_packages)
+        await client.query(
+          `UPDATE games
+           SET packages = $2::jsonb,
+               package_prices = $3::jsonb,
+               package_discount_prices = $4::jsonb,
+               package_thumbnails = $5::jsonb,
+               updated_at = CURRENT_TIMESTAMP
+           WHERE id = $1`,
+          [id, JSON.stringify(legacyPackages), JSON.stringify(legacyPrices), JSON.stringify(legacyDiscounts), JSON.stringify(legacyThumbnails)]
+        );
 
         await client.query('COMMIT');
         
