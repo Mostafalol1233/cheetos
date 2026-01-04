@@ -31,11 +31,17 @@ const formatGame = (game, packages = []) => {
     
     if (pkgList.length === 0 && Array.isArray(game.packages) && game.packages.length > 0) {
        // Construct from legacy
-       const prices = Array.isArray(game.packagePrices) ? game.packagePrices : [];
+       const prices = Array.isArray(game.packagePrices)
+         ? game.packagePrices
+         : (Array.isArray(game.package_prices) ? game.package_prices : []);
        const discounts = Array.isArray(game.packageDiscountPrices)
          ? game.packageDiscountPrices
-         : (Array.isArray(game.discountPrices) ? game.discountPrices : []);
-       const thumbnails = Array.isArray(game.packageThumbnails) ? game.packageThumbnails : []; // Handle both cases
+         : (Array.isArray(game.package_discount_prices)
+           ? game.package_discount_prices
+           : (Array.isArray(game.discountPrices) ? game.discountPrices : []));
+       const thumbnails = Array.isArray(game.packageThumbnails)
+         ? game.packageThumbnails
+         : (Array.isArray(game.package_thumbnails) ? game.package_thumbnails : []);
        
        pkgList = game.packages.map((p, i) => {
          if (typeof p === 'object' && p !== null) return p;
