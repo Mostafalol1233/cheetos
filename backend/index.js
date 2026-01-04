@@ -1043,9 +1043,40 @@ async function initializeDatabase() {
     
     // Make email/password nullable for guest users
     try {
+      await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS name VARCHAR(255)');
+      await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS phone VARCHAR(50)');
+      await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS email TEXT');
+      await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS password_hash TEXT');
       await pool.query('ALTER TABLE users ALTER COLUMN email DROP NOT NULL');
       await pool.query('ALTER TABLE users ALTER COLUMN password_hash DROP NOT NULL');
     } catch (e) { /* ignore if fails */ }
+
+    // Chat messages compatibility across older schemas
+    try {
+      await pool.query('ALTER TABLE chat_messages ADD COLUMN IF NOT EXISTS message_encrypted TEXT');
+      await pool.query('ALTER TABLE chat_messages ADD COLUMN IF NOT EXISTS message TEXT');
+      await pool.query(`
+        DO $$
+        BEGIN
+          IF EXISTS (
+            SELECT 1
+            FROM information_schema.columns
+            WHERE table_name = 'chat_messages'
+              AND column_name = 'timestamp'
+              AND data_type IN ('integer', 'bigint')
+          ) THEN
+            ALTER TABLE chat_messages
+              ALTER COLUMN timestamp TYPE TIMESTAMP
+              USING to_timestamp((timestamp::double precision) / 1000.0);
+          END IF;
+        EXCEPTION WHEN undefined_table THEN
+          NULL;
+        END $$;
+      `);
+      await pool.query('ALTER TABLE chat_messages ALTER COLUMN timestamp SET DEFAULT CURRENT_TIMESTAMP');
+    } catch (e) {
+      // ignore
+    }
 
     // Logo configuration
     await pool.query(`
@@ -2487,8 +2518,8 @@ app.post('/api/transactions/checkout', async (req, res) => {
     }
     const userId = `user_${Date.now()}`;
     await pool.query(
-      'INSERT INTO users (id, name, phone) VALUES ($1, $2, $3) ON CONFLICT (id) DO NOTHING',
-      [userId, customerName, customerPhone]
+      'INSERT INTO users (id, name, phone, email) VALUES ($1, $2, $3, $4) ON CONFLICT (id) DO UPDATE SET email = COALESCE(EXCLUDED.email, users.email), name = COALESCE(EXCLUDED.name, users.name), phone = COALESCE(EXCLUDED.phone, users.phone)',
+      [userId, customerName, customerPhone, customerEmail || null]
     );
     const total = items.reduce((sum, it) => sum + Number(it.price) * Number(it.quantity), 0);
     const transactionId = `txn_${Date.now()}`;
@@ -3415,17 +3446,34 @@ app.post('/api/whatsapp/webhook', async (req, res) => {
 app.get('/api/chat/:sessionId', async (req, res) => {
   try {
     const { sessionId } = req.params;
-    const result = await pool.query('SELECT id, sender, message_encrypted, session_id, timestamp FROM chat_messages WHERE session_id = $1 ORDER BY timestamp ASC', [sessionId]);
-    const messages = result.rows.map(r => ({ 
-      id: r.id, 
-      sender: r.sender, 
-      message: (() => { try { return decryptMessage(r.message_encrypted); } catch { return ''; } })(), 
-      sessionId: r.session_id, 
-      timestamp: new Date(r.timestamp).getTime() 
+    const result = await pool.query('SELECT id, sender, message_encrypted, message, session_id, timestamp FROM chat_messages WHERE session_id = $1 ORDER BY timestamp ASC', [sessionId]);
+    const safeDecrypt = (enc, plain) => {
+      if (plain) return String(plain);
+      if (!enc) return '';
+      try { return decryptMessage(enc); } catch { return String(enc); }
+    };
+    const toMs = (ts) => {
+      try {
+        if (ts == null) return Date.now();
+        if (typeof ts === 'number') return ts;
+        const n = Number(ts);
+        if (Number.isFinite(n)) return n;
+        return new Date(ts).getTime();
+      } catch {
+        return Date.now();
+      }
+    };
+    const messages = result.rows.map(r => ({
+      id: r.id,
+      sender: r.sender,
+      message: safeDecrypt(r.message_encrypted, r.message),
+      sessionId: r.session_id,
+      timestamp: toMs(r.timestamp),
+      delivered: true,
+      status: 'delivered'
     }));
     res.json(messages || []);
   } catch (err) {
-    console.error('Error fetching chat messages:', err);
     res.status(500).json({ message: err.message });
   }
 });
@@ -3496,13 +3544,29 @@ app.get('/api/admin/interactions/export', authenticateToken, async (req, res) =>
 app.get('/api/admin/confirmations/:id', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
-    const r = await pool.query('SELECT c.id, c.transaction_id, c.message_encrypted, c.receipt_url, c.created_at, t.user_id, u.name, u.phone, u.email FROM payment_confirmations c LEFT JOIN transactions t ON c.transaction_id = t.id LEFT JOIN users u ON t.user_id = u.id WHERE c.id = $1', [id]);
+    let r;
+    try {
+      r = await pool.query(
+        'SELECT c.id, c.transaction_id, c.message_encrypted, c.receipt_url, c.created_at, t.user_id, u.name, u.phone, u.email FROM payment_confirmations c LEFT JOIN transactions t ON c.transaction_id = t.id LEFT JOIN users u ON t.user_id = u.id WHERE c.id = $1',
+        [id]
+      );
+    } catch (_e) {
+      // Fallback for older schemas where users.email may not exist
+      r = await pool.query(
+        'SELECT c.id, c.transaction_id, c.message_encrypted, c.receipt_url, c.created_at, t.user_id, u.name, u.phone, NULL::text AS email FROM payment_confirmations c LEFT JOIN transactions t ON c.transaction_id = t.id LEFT JOIN users u ON t.user_id = u.id WHERE c.id = $1',
+        [id]
+      );
+    }
     if (r.rows.length === 0) return res.status(404).json({ message: 'Not found' });
     const row = r.rows[0];
+    const safeDecrypt = (v) => {
+      if (!v) return '';
+      try { return decryptMessage(v); } catch { return String(v); }
+    };
     res.json({
       id: row.id,
       transactionId: row.transaction_id,
-      message: decryptMessage(row.message_encrypted),
+      message: safeDecrypt(row.message_encrypted),
       receiptUrl: row.receipt_url,
       createdAt: new Date(row.created_at).getTime(),
       user: { id: row.user_id || null, name: row.name || '', phone: row.phone || '', email: row.email || '' },
@@ -3515,13 +3579,29 @@ app.get('/api/admin/confirmations/:id', authenticateToken, async (req, res) => {
 
 app.get('/api/admin/chat/all', authenticateToken, async (req, res) => {
   try {
-    const result = await pool.query('SELECT id, sender, message_encrypted, session_id, timestamp, read FROM chat_messages ORDER BY timestamp DESC LIMIT 500');
-    const messages = result.rows.map(r => ({ 
-      id: r.id, 
-      sender: r.sender, 
-      message: decryptMessage(r.message_encrypted), 
-      sessionId: r.session_id, 
-      timestamp: new Date(r.timestamp).getTime(),
+    const result = await pool.query('SELECT id, sender, message_encrypted, message, session_id, timestamp, read FROM chat_messages ORDER BY timestamp DESC LIMIT 500');
+    const safeDecrypt = (enc, plain) => {
+      if (plain) return String(plain);
+      if (!enc) return '';
+      try { return decryptMessage(enc); } catch { return String(enc); }
+    };
+    const toMs = (ts) => {
+      try {
+        if (ts == null) return Date.now();
+        if (typeof ts === 'number') return ts;
+        const n = Number(ts);
+        if (Number.isFinite(n)) return n;
+        return new Date(ts).getTime();
+      } catch {
+        return Date.now();
+      }
+    };
+    const messages = result.rows.map(r => ({
+      id: r.id,
+      sender: r.sender,
+      message: safeDecrypt(r.message_encrypted, r.message),
+      sessionId: r.session_id,
+      timestamp: toMs(r.timestamp),
       read: Boolean(r.read)
     }));
     res.json(messages || []);
@@ -3533,13 +3613,29 @@ app.get('/api/admin/chat/all', authenticateToken, async (req, res) => {
 
 app.get('/api/chat/all', async (req, res) => {
   try {
-    const result = await pool.query('SELECT id, sender, message_encrypted, session_id, timestamp FROM chat_messages ORDER BY timestamp DESC LIMIT 500');
-    const messages = result.rows.map(r => ({ 
-      id: r.id, 
-      sender: r.sender, 
-      message: (() => { try { return decryptMessage(r.message_encrypted); } catch { return ''; } })(), 
-      sessionId: r.session_id, 
-      timestamp: new Date(r.timestamp).getTime() 
+    const result = await pool.query('SELECT id, sender, message_encrypted, message, session_id, timestamp FROM chat_messages ORDER BY timestamp DESC LIMIT 500');
+    const safeDecrypt = (enc, plain) => {
+      if (plain) return String(plain);
+      if (!enc) return '';
+      try { return decryptMessage(enc); } catch { return String(enc); }
+    };
+    const toMs = (ts) => {
+      try {
+        if (ts == null) return Date.now();
+        if (typeof ts === 'number') return ts;
+        const n = Number(ts);
+        if (Number.isFinite(n)) return n;
+        return new Date(ts).getTime();
+      } catch {
+        return Date.now();
+      }
+    };
+    const messages = result.rows.map(r => ({
+      id: r.id,
+      sender: r.sender,
+      message: safeDecrypt(r.message_encrypted, r.message),
+      sessionId: r.session_id,
+      timestamp: toMs(r.timestamp)
     }));
     res.json(messages || []);
   } catch (err) {
@@ -3552,15 +3648,31 @@ app.get('/api/admin/chat/:sessionId', authenticateToken, async (req, res) => {
   try {
     const { sessionId } = req.params;
     const result = await pool.query(
-      'SELECT id, sender, message_encrypted, session_id, timestamp, read FROM chat_messages WHERE session_id = $1 ORDER BY timestamp ASC',
+      'SELECT id, sender, message_encrypted, message, session_id, timestamp, read FROM chat_messages WHERE session_id = $1 ORDER BY timestamp ASC',
       [sessionId]
     );
+    const safeDecrypt = (enc, plain) => {
+      if (plain) return String(plain);
+      if (!enc) return '';
+      try { return decryptMessage(enc); } catch { return String(enc); }
+    };
+    const toMs = (ts) => {
+      try {
+        if (ts == null) return Date.now();
+        if (typeof ts === 'number') return ts;
+        const n = Number(ts);
+        if (Number.isFinite(n)) return n;
+        return new Date(ts).getTime();
+      } catch {
+        return Date.now();
+      }
+    };
     const messages = result.rows.map(r => ({
       id: r.id,
       sender: r.sender,
-      message: decryptMessage(r.message_encrypted),
+      message: safeDecrypt(r.message_encrypted, r.message),
       sessionId: r.session_id,
-      timestamp: new Date(r.timestamp).getTime(),
+      timestamp: toMs(r.timestamp),
       read: Boolean(r.read),
       delivered: true,
       status: Boolean(r.read) ? 'read' : 'delivered'
@@ -3588,8 +3700,8 @@ app.post('/api/chat/message', async (req, res) => {
     }
 
     const id = `cm_${Date.now()}_${Math.random().toString(36).slice(2,9)}`;
-    await pool.query('INSERT INTO chat_messages (id, sender, message_encrypted, session_id) VALUES ($1, $2, $3, $4)', [
-      id, sender, encryptMessage(String(message)), sessionId
+    await pool.query('INSERT INTO chat_messages (id, sender, message_encrypted, message, session_id) VALUES ($1, $2, $3, $4, $5)', [
+      id, sender, encryptMessage(String(message)), String(message), sessionId
     ]);
     
     // When admin replies, mark all unread messages in this session as read

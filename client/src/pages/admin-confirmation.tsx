@@ -37,27 +37,67 @@ export default function AdminConfirmationPage() {
   const [sendEmailToo, setSendEmailToo] = useState(false);
   useEffect(() => { setText(''); setImageFile(null); }, [id]);
   const sendMutation = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (mode: 'whatsapp' | 'email') => {
       let mediaUrl: string | undefined = undefined;
       if (imageFile) {
         const fd = new FormData();
         fd.append('file', imageFile);
         const token = localStorage.getItem('adminToken');
         const up = await fetch('/api/admin/upload', { method: 'POST', headers: token ? { Authorization: `Bearer ${token}` } : {}, body: fd });
+        if (!up.ok) throw new Error('Failed to upload image');
         const resp = await up.json();
         mediaUrl = resp?.url;
       }
-      const to = data?.user?.phone || '';
       const token = localStorage.getItem('adminToken');
-      const payload = { to, text, mediaUrl };
-      const res = await fetch('/api/admin/whatsapp/send', { method: 'POST', headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) }, body: JSON.stringify(payload) });
+      let sentWhatsApp = false;
+      let sentEmail = false;
 
-      if (sendEmailToo && data?.user?.email) {
-        await fetch('/api/admin/email/send', {
+      if (mode === 'whatsapp') {
+        const to = data?.user?.phone || '';
+        const payload = { to, text, mediaUrl };
+        const res = await fetch('/api/admin/whatsapp/send', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+          body: JSON.stringify(payload)
+        });
+        if (!res.ok) {
+          const msg = await res.text().catch(() => '');
+          throw new Error(msg || 'WhatsApp send failed');
+        }
+        const j = await res.json().catch(() => ({} as any));
+        if (j && j.ok === false) throw new Error('WhatsApp send failed');
+        sentWhatsApp = true;
+
+        if (sendEmailToo && data?.user?.email) {
+          const er = await fetch('/api/admin/email/send', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+            body: JSON.stringify({ to: data.user.email, subject: `GameCart Confirmation: ${data?.transactionId || data?.id || ''}`, text })
+          });
+          if (!er.ok) {
+            const msg = await er.text().catch(() => '');
+            throw new Error(msg || 'Email send failed');
+          }
+          const ej = await er.json().catch(() => ({} as any));
+          if (ej && ej.ok === false) throw new Error('Email send failed');
+          sentEmail = true;
+        }
+      }
+
+      if (mode === 'email') {
+        if (!data?.user?.email) throw new Error('No customer email available');
+        const er = await fetch('/api/admin/email/send', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
           body: JSON.stringify({ to: data.user.email, subject: `GameCart Confirmation: ${data?.transactionId || data?.id || ''}`, text })
         });
+        if (!er.ok) {
+          const msg = await er.text().catch(() => '');
+          throw new Error(msg || 'Email send failed');
+        }
+        const ej = await er.json().catch(() => ({} as any));
+        if (ej && ej.ok === false) throw new Error('Email send failed');
+        sentEmail = true;
       }
 
       // Record into chat thread for secure threading
@@ -68,13 +108,20 @@ export default function AdminConfirmationPage() {
           body: JSON.stringify({ sender: 'support', message: mediaUrl ? `${text}\n${mediaUrl}` : text, sessionId: data.sessionId })
         });
       }
-      return res.json();
+
+      return { sentWhatsApp, sentEmail };
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
       setText(''); setImageFile(null);
       queryClient.invalidateQueries({ queryKey: ['/api/admin/confirmations', id] });
       queryClient.invalidateQueries({ queryKey: ['/api/admin/chat', data?.sessionId] });
-      toast({ title: 'Sent', description: 'Message sent successfully', duration: 2000 });
+      const parts: string[] = [];
+      if (result?.sentWhatsApp) parts.push('WhatsApp');
+      if (result?.sentEmail) parts.push('Email');
+      toast({ title: 'Sent', description: parts.length ? `Sent via ${parts.join(' + ')}` : 'Sent', duration: 2000 });
+    },
+    onError: (err: any) => {
+      toast({ title: 'Send failed', description: String(err?.message || err || 'Unknown error'), variant: 'destructive', duration: 3500 });
     }
   });
 
@@ -147,16 +194,32 @@ export default function AdminConfirmationPage() {
               <Input type="file" accept="image/*" onChange={(e) => setImageFile(e.target.files?.[0] || null)} className="col-span-3" />
             </div>
             <div className="flex gap-2">
-              <Button onClick={() => sendMutation.mutate()} disabled={sendMutation.isPending || !data?.user?.phone || !text.trim()} className="bg-gold-primary">Send via WhatsApp</Button>
+              <Button
+                onClick={() => sendMutation.mutate('whatsapp')}
+                disabled={sendMutation.isPending || !data?.user?.phone || (!text.trim() && !imageFile)}
+                className="bg-gold-primary"
+              >
+                Send via WhatsApp
+              </Button>
               {data?.user?.email ? (
-                <Button
-                  type="button"
-                  variant={sendEmailToo ? 'default' : 'outline'}
-                  onClick={() => setSendEmailToo(!sendEmailToo)}
-                  disabled={sendMutation.isPending}
-                >
-                  {sendEmailToo ? 'Email: ON' : 'Email: OFF'}
-                </Button>
+                <>
+                  <Button
+                    type="button"
+                    variant={sendEmailToo ? 'default' : 'outline'}
+                    onClick={() => setSendEmailToo(!sendEmailToo)}
+                    disabled={sendMutation.isPending}
+                  >
+                    {sendEmailToo ? 'Also Email: ON' : 'Also Email: OFF'}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => sendMutation.mutate('email')}
+                    disabled={sendMutation.isPending || !data?.user?.email || (!text.trim() && !imageFile)}
+                  >
+                    Send via Email
+                  </Button>
+                </>
               ) : null}
             </div>
           </CardContent>
