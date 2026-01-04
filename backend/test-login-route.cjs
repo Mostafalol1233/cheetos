@@ -1,12 +1,12 @@
 
 const http = require('http');
 
-const data = JSON.stringify({ email: 'admin@diaaldeen.com', password: 'admin123' });
+const data = JSON.stringify({});
 
 const options = {
   hostname: 'localhost',
   port: 3001,
-  path: '/api/auth/admin/login',
+  path: '/api/admin/login',
   method: 'POST',
   headers: {
     'Content-Type': 'application/json',

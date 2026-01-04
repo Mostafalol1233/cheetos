@@ -27,7 +27,7 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }: { childr
         
         if (token && userEmail) {
           // Verify token is still valid
-          const response = await fetch(`${API_BASE_URL}/api/admin/verify`, {
+          const response = await fetch(`${API_BASE_URL}/api/auth/admin/verify`, {
             headers: {
               Authorization: `Bearer ${token}`
             }
@@ -58,7 +58,7 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }: { childr
     setError(null);
     
     try {
-      const response = await fetch(`${API_BASE_URL}/api/admin/login`, {
+      const response = await fetch(`${API_BASE_URL}/api/auth/admin/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

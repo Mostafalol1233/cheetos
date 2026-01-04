@@ -812,6 +812,56 @@ app.use('/api/orders', ordersRouter);
 app.use('/api/auth', authRouter);
 app.use('/api', authRouter); // Expose auth routes at root api level as well (e.g. /api/admin/login)
 
+// Admin Image Upload Endpoint
+app.post('/api/admin/upload-image', authenticateToken, imageUpload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ message: 'No file provided' });
+    
+    let url = `/uploads/${req.file.filename}`;
+    
+    // Try Cloudinary if enabled
+    if (CLOUDINARY_ENABLED) {
+       try {
+         const result = await cloudinary.uploader.upload(req.file.path, { 
+           folder: process.env.CLOUDINARY_FOLDER || 'gamecart/packages', 
+           resource_type: 'image' 
+         });
+         url = result.secure_url;
+         try { fs.unlinkSync(req.file.path); } catch {}
+       } catch (e) {
+         console.error('Cloudinary upload failed', e);
+         // Fallback to local file (already there)
+       }
+    } else {
+       // Try Catbox if not Cloudinary
+       try {
+         const r = await catboxFileUploadFromLocal(req.file.path, req.file.originalname);
+         if (r.ok) {
+           url = r.url;
+           try { fs.unlinkSync(req.file.path); } catch {}
+         }
+       } catch (e) {
+         console.error('Catbox upload failed', e);
+       }
+    }
+    
+    res.json({ url: normalizeImageUrl(url) });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// Admin WhatsApp Status & QR Endpoint
+app.get('/api/admin/whatsapp/qr', authenticateToken, (req, res) => {
+  try {
+    const qr = getQRCode();
+    const status = getConnectionStatus();
+    res.json({ qr, ...status });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 // Get all categories
 app.get('/api/categories', async (req, res) => {
   try {
@@ -2450,7 +2500,8 @@ app.post('/api/transactions/checkout', async (req, res) => {
     // Send WhatsApp Confirmation
     try {
       const waMessage = `New Order #${transactionId}\nTotal: ${total} EGP\nCustomer: ${customerName} (${customerPhone})\nItems:\n${items.map(i => `- ${i.title || i.name} (x${i.quantity})`).join('\n')}`;
-      await sendWhatsAppMessage(customerPhone, `Thank you for your order #${transactionId}! We are processing it.`);
+      const customerMsg = `Thank you for your order #${transactionId}! We are processing it.\n\nشكراً لطلبك رقم #${transactionId}! نحن نقوم بمعالجته الآن.`;
+      await sendWhatsAppMessage(customerPhone, customerMsg);
       // Optionally notify admin
       if (process.env.ADMIN_PHONE) {
          await sendWhatsAppMessage(process.env.ADMIN_PHONE, waMessage);

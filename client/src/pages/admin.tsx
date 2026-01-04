@@ -3,6 +3,7 @@ import { Link } from 'wouter';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
@@ -13,6 +14,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
+import QRCode from 'qrcode';
 
 interface Game {
   id: string;
@@ -56,7 +58,7 @@ export default function AdminDashboard() {
   const [searchGameTerm, setSearchGameTerm] = useState('');
   const [editingGame, setEditingGame] = useState<Game | null>(null);
   const [packagesGameId, setPackagesGameId] = useState<string | null>(null);
-  const [packagesDraft, setPackagesDraft] = useState<Array<{ amount: string; price: number; discountPrice: number | null }>>([]);
+  const [packagesDraft, setPackagesDraft] = useState<Array<{ amount: string; price: number; discountPrice: number | null; image?: string | null }>>([]);
   const [selectedSession, setSelectedSession] = useState<string | null>(null);
   const [replyMessage, setReplyMessage] = useState('');
   const [cardsPage, setCardsPage] = useState(1);
@@ -66,18 +68,19 @@ export default function AdminDashboard() {
   const [alertStatus, setAlertStatus] = useState<string>('all');
   const [alertType, setAlertType] = useState<string>('all');
   const [alertSearch, setAlertSearch] = useState('');
+  const [selectedGames, setSelectedGames] = useState<string[]>([]);
 
   // Fetch games
   const { data: allGames = [] } = useQuery<Game[]>({
     queryKey: ['/api/games'],
   });
 
-  const { data: adminPackagesData = [], isFetching: isFetchingAdminPackages } = useQuery<Array<{ amount: string; price: number; discountPrice: number | null }>>({
-    queryKey: packagesGameId ? [`/api/admin/games/${packagesGameId}/packages`] : ['_disabled_admin_packages'],
+  const { data: adminPackagesData = [], isFetching: isFetchingAdminPackages } = useQuery<Array<{ amount: string; price: number; discountPrice: number | null; image?: string | null }>>({
+    queryKey: packagesGameId ? [`/api/games/${packagesGameId}/packages`] : ['_disabled_admin_packages'],
     enabled: !!packagesGameId,
     queryFn: async () => {
       const token = localStorage.getItem('adminToken');
-      const res = await fetch(apiPath(`/api/admin/games/${packagesGameId}/packages`), {
+      const res = await fetch(apiPath(`/api/games/${packagesGameId}/packages`), {
         headers: token ? { Authorization: `Bearer ${token}` } : {}
       });
       const data = await res.json().catch(() => ([]));
@@ -91,14 +94,15 @@ export default function AdminDashboard() {
       amount: String(p?.amount || ''),
       price: Number(p?.price || 0),
       discountPrice: p?.discountPrice != null ? Number(p.discountPrice) : null,
+      image: p?.image || null
     }));
     setPackagesDraft(normalized);
   }, [packagesGameId, adminPackagesData]);
 
   const savePackagesMutation = useMutation({
-    mutationFn: async (payload: { gameId: string; packages: Array<{ amount: string; price: number; discountPrice: number | null }> }) => {
+    mutationFn: async (payload: { gameId: string; packages: Array<{ amount: string; price: number; discountPrice: number | null; image?: string | null }> }) => {
       const token = localStorage.getItem('adminToken');
-      const res = await fetch(apiPath(`/api/admin/games/${payload.gameId}/packages`), {
+      const res = await fetch(apiPath(`/api/games/${payload.gameId}/packages`), {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
         body: JSON.stringify({ packages: payload.packages })
@@ -108,7 +112,7 @@ export default function AdminDashboard() {
       return data;
     },
     onSuccess: (_data, variables) => {
-      queryClient.invalidateQueries({ queryKey: [`/api/admin/games/${variables.gameId}/packages`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/games/${variables.gameId}/packages`] });
       queryClient.invalidateQueries({ queryKey: [`/api/games/id/${variables.gameId}`] });
       queryClient.invalidateQueries({ queryKey: ['/api/games'] });
       queryClient.invalidateQueries({ queryKey: ['/api/games/popular'] });
@@ -117,8 +121,35 @@ export default function AdminDashboard() {
         queryClient.invalidateQueries({ queryKey: [`/api/games/${g.slug}`] });
         queryClient.invalidateQueries({ queryKey: [`/api/games/slug/${g.slug}`] });
       }
+      toast({ title: 'Saved', description: 'Packages updated', duration: 1500 });
+      setPackagesGameId(null);
     }
   });
+
+  const handlePackageImageUpload = async (index: number, file: File) => {
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      const token = localStorage.getItem('adminToken');
+      const res = await fetch(apiPath('/api/admin/upload-image'), {
+        method: 'POST',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        body: formData
+      });
+      
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Upload failed');
+      
+      const next = [...packagesDraft];
+      next[index] = { ...next[index], image: data.url };
+      setPackagesDraft(next);
+      
+      toast({ title: 'Uploaded', description: 'Image attached to package', duration: 1500 });
+    } catch (err: any) {
+      toast({ title: 'Error', description: err.message || 'Upload failed', variant: 'destructive' });
+    }
+  };
 
   // Filter games based on search
   const games = allGames.filter((game: Game) => 
@@ -183,11 +214,11 @@ export default function AdminDashboard() {
 
   // Fetch all chats
   const { data: allChats = [], refetch: refetchChats } = useQuery<ChatMessage[]>({
-    queryKey: ['/api/admin/chat/all'],
+    queryKey: ['/api/chat/all'],
     enabled: true,
     queryFn: async () => {
       const token = localStorage.getItem('adminToken');
-      const res = await fetch(`${API_BASE_URL}/api/admin/chat/all`, {
+      const res = await fetch(`${API_BASE_URL}/api/chat/all`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {}
       });
       if (!res.ok) throw new Error('Failed to fetch chats');
@@ -270,7 +301,7 @@ export default function AdminDashboard() {
   const deleteGameMutation = useMutation({
     mutationFn: async (gameId: string) => {
       const token = localStorage.getItem('adminToken');
-      const res = await fetch(apiPath(`/api/admin/games/${gameId}`), { 
+      const res = await fetch(apiPath(`/api/games/${gameId}`), { 
         method: 'DELETE',
         headers: token ? { Authorization: `Bearer ${token}` } : undefined,
       });
@@ -289,7 +320,7 @@ export default function AdminDashboard() {
   const updateGameMutation = useMutation({
     mutationFn: async (game: Partial<Game> & { id: string }) => {
       const token = localStorage.getItem('adminToken');
-      const res = await fetch(apiPath(`/api/admin/games/${game.id}`), {
+      const res = await fetch(apiPath(`/api/games/${game.id}`), {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
         body: JSON.stringify(game)
@@ -315,7 +346,7 @@ export default function AdminDashboard() {
   const updateGameImageUrlMutation = useMutation({
     mutationFn: async (payload: { id: string; image_url: string }) => {
       const token = localStorage.getItem('adminToken');
-      const res = await fetch(apiPath(`/api/admin/games/${payload.id}/image-url`), {
+      const res = await fetch(apiPath(`/api/games/${payload.id}/image-url`), {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
         body: JSON.stringify({ image_url: payload.image_url })
@@ -346,7 +377,7 @@ export default function AdminDashboard() {
       const headers: HeadersInit = {};
       if (token) (headers as Record<string, string>).Authorization = `Bearer ${token}`;
 
-      const getRes = await fetch(apiPath(`/api/admin/games/${payload.gameId}/packages`), { headers });
+      const getRes = await fetch(apiPath(`/api/games/${payload.gameId}/packages`), { headers });
       const current = await getRes.json().catch(() => []);
       if (!getRes.ok) throw new Error((current as any)?.message || 'Failed to load packages');
 
@@ -357,7 +388,7 @@ export default function AdminDashboard() {
         image: payload.logoUrl
       }));
 
-      const putRes = await fetch(apiPath(`/api/admin/games/${payload.gameId}/packages`), {
+      const putRes = await fetch(apiPath(`/api/games/${payload.gameId}/packages`), {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
         body: JSON.stringify({ packages })
@@ -369,7 +400,7 @@ export default function AdminDashboard() {
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['/api/games'] });
       queryClient.invalidateQueries({ queryKey: ['/api/games/popular'] });
-      queryClient.invalidateQueries({ queryKey: [`/api/admin/games/${variables.gameId}/packages`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/games/${variables.gameId}/packages`] });
       queryClient.invalidateQueries({ queryKey: [`/api/games/id/${variables.gameId}`] });
       if (editingGame?.slug) {
         queryClient.invalidateQueries({ queryKey: [`/api/games/${editingGame.slug}`] });
@@ -382,7 +413,7 @@ export default function AdminDashboard() {
   const createGameMutation = useMutation({
     mutationFn: async (gameData: Omit<Game, 'id'>) => {
       const token = localStorage.getItem('adminToken');
-      const res = await fetch(apiPath('/api/admin/games'), {
+      const res = await fetch(apiPath('/api/games'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
         body: JSON.stringify(gameData)
@@ -469,7 +500,7 @@ export default function AdminDashboard() {
     onSuccess: () => {
       setReplyMessage('');
       refetchChats();
-      queryClient.invalidateQueries({ queryKey: [`/api/admin/chat/${selectedSession}`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/chat/${selectedSession}`] });
     }
   });
 
@@ -514,6 +545,35 @@ export default function AdminDashboard() {
     }
   });
 
+  const handleSelectGame = (id: string, checked: boolean) => {
+    if (checked) {
+      setSelectedGames(prev => [...prev, id]);
+    } else {
+      setSelectedGames(prev => prev.filter(g => g !== id));
+    }
+  };
+
+  const handleSelectAllGames = (checked: boolean) => {
+    if (checked) {
+      setSelectedGames(games.map(g => g.id));
+    } else {
+      setSelectedGames([]);
+    }
+  };
+
+  const handleBulkDeleteGames = async () => {
+    if (!selectedGames.length) return;
+    if (!confirm(`Are you sure you want to delete ${selectedGames.length} games?`)) return;
+    
+    try {
+      await Promise.all(selectedGames.map(id => deleteGameMutation.mutateAsync(id)));
+      setSelectedGames([]);
+      toast({ title: 'Batch Delete', description: `Deleted ${selectedGames.length} games successfully.` });
+    } catch (error) {
+      toast({ title: 'Error', description: 'Failed to delete some games', variant: 'destructive' });
+    }
+  };
+
   const handleDeleteGame = (gameId: string) => {
     if (confirm('Are you sure you want to delete this game?')) {
       deleteGameMutation.mutate(gameId);
@@ -539,12 +599,12 @@ export default function AdminDashboard() {
 
   // Fetch chat messages for selected session
   const { data: sessionMessages = [] } = useQuery<ChatMessage[]>({
-    queryKey: [`/api/admin/chat/${selectedSession}`],
+    queryKey: [`/api/chat/${selectedSession}`],
     enabled: !!selectedSession,
     refetchInterval: 2000,
     queryFn: async () => {
       const token = localStorage.getItem('adminToken');
-      const res = await fetch(apiPath(`/api/admin/chat/${selectedSession}`), {
+      const res = await fetch(apiPath(`/api/chat/${selectedSession}`), {
         headers: token ? { Authorization: `Bearer ${token}` } : {}
       });
       if (!res.ok) throw new Error('Failed to fetch messages');
@@ -1042,22 +1102,43 @@ export default function AdminDashboard() {
             </div>
 
             {/* Search Games */}
-            <div className="mb-4">
+            <div className="mb-4 flex gap-4 items-center justify-between">
               <Input
                 placeholder="Search games by name or slug..."
                 value={searchGameTerm}
                 onChange={(e) => setSearchGameTerm(e.target.value)}
                 className="max-w-md"
               />
+              <div className="flex items-center gap-2">
+                 <Checkbox 
+                    checked={games.length > 0 && selectedGames.length === games.length}
+                    onCheckedChange={(c) => handleSelectAllGames(!!c)}
+                    id="select-all"
+                 />
+                 <Label htmlFor="select-all">Select All</Label>
+              </div>
             </div>
+
+            {selectedGames.length > 0 && (
+              <div className="mb-4 p-2 bg-secondary rounded flex items-center gap-4">
+                <span className="text-sm font-medium">{selectedGames.length} selected</span>
+                <Button variant="destructive" size="sm" onClick={handleBulkDeleteGames}>
+                  <Trash2 className="w-4 h-4 mr-2" /> Delete Selected
+                </Button>
+              </div>
+            )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {games.map((game: Game) => (
-                <Card key={game.id} className="bg-card/50 border-gold-primary/30">
-                  <CardHeader>
+                <Card key={game.id} className={`bg-card/50 border-gold-primary/30 ${selectedGames.includes(game.id) ? 'ring-2 ring-gold-primary' : ''}`}>
+                  <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
                     <CardTitle className="text-lg">{game.name}</CardTitle>
+                    <Checkbox 
+                      checked={selectedGames.includes(game.id)}
+                      onCheckedChange={(c) => handleSelectGame(game.id, !!c)}
+                    />
                   </CardHeader>
-                  <CardContent className="space-y-4">
+                  <CardContent className="space-y-4 pt-4">
                     <div>
                       <p className="text-sm text-muted-foreground">Price</p>
                       <p className="text-lg font-bold text-gold-primary">{game.price} EGP</p>
@@ -1147,36 +1228,80 @@ export default function AdminDashboard() {
                   ) : (
                     <div className="space-y-3">
                       {packagesDraft.map((p, idx) => (
-                        <div key={idx} className="grid grid-cols-12 gap-2 items-end">
-                          <div className="col-span-5">
-                            <Label>Package</Label>
-                            <Input value={p.amount} readOnly />
+                        <div key={idx} className="border-b pb-4 mb-4 last:border-0 last:mb-0 last:pb-0">
+                          <div className="flex items-center gap-4 mb-3">
+                            {p.image ? (
+                              <img src={p.image} alt="Package" className="w-16 h-16 object-cover rounded border border-gold-primary/30" />
+                            ) : (
+                              <div className="w-16 h-16 bg-muted/50 rounded border border-dashed border-muted-foreground/30 flex items-center justify-center text-xs text-muted-foreground">
+                                No Img
+                              </div>
+                            )}
+                            <div>
+                              <div className="flex gap-2">
+                                <Label 
+                                  htmlFor={`pkg-img-${idx}`} 
+                                  className="cursor-pointer inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80 h-9 px-4 py-2"
+                                >
+                                  {p.image ? 'Change Image' : 'Upload Image'}
+                                </Label>
+                                {p.image && (
+                                  <Button 
+                                    variant="destructive" 
+                                    size="sm"
+                                    onClick={() => {
+                                      const next = [...packagesDraft];
+                                      next[idx] = { ...next[idx], image: null };
+                                      setPackagesDraft(next);
+                                    }}
+                                  >
+                                    Remove
+                                  </Button>
+                                )}
+                              </div>
+                              <Input
+                                id={`pkg-img-${idx}`}
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={(e) => {
+                                  const file = e.target.files?.[0];
+                                  if (file) handlePackageImageUpload(idx, file);
+                                }}
+                              />
+                            </div>
                           </div>
-                          <div className="col-span-3">
-                            <Label>Price</Label>
-                            <Input
-                              type="number"
-                              value={Number.isFinite(p.price) ? p.price : 0}
-                              onChange={(e) => {
-                                const v = e.target.value;
-                                const next = [...packagesDraft];
-                                next[idx] = { ...next[idx], price: v === '' ? 0 : Number(v) };
-                                setPackagesDraft(next);
-                              }}
-                            />
-                          </div>
-                          <div className="col-span-4">
-                            <Label>Discount Price</Label>
-                            <Input
-                              type="number"
-                              value={p.discountPrice ?? ''}
-                              onChange={(e) => {
-                                const v = e.target.value;
-                                const next = [...packagesDraft];
-                                next[idx] = { ...next[idx], discountPrice: v === '' ? null : Number(v) };
-                                setPackagesDraft(next);
-                              }}
-                            />
+                          <div className="grid grid-cols-12 gap-2 items-end">
+                            <div className="col-span-5">
+                              <Label>Package</Label>
+                              <Input value={p.amount} readOnly />
+                            </div>
+                            <div className="col-span-3">
+                              <Label>Price</Label>
+                              <Input
+                                type="number"
+                                value={Number.isFinite(p.price) ? p.price : 0}
+                                onChange={(e) => {
+                                  const v = e.target.value;
+                                  const next = [...packagesDraft];
+                                  next[idx] = { ...next[idx], price: v === '' ? 0 : Number(v) };
+                                  setPackagesDraft(next);
+                                }}
+                              />
+                            </div>
+                            <div className="col-span-4">
+                              <Label>Discount Price</Label>
+                              <Input
+                                type="number"
+                                value={p.discountPrice ?? ''}
+                                onChange={(e) => {
+                                  const v = e.target.value;
+                                  const next = [...packagesDraft];
+                                  next[idx] = { ...next[idx], discountPrice: v === '' ? null : Number(v) };
+                                  setPackagesDraft(next);
+                                }}
+                              />
+                            </div>
                           </div>
                         </div>
                       ))}
@@ -2626,19 +2751,34 @@ function CheckoutTemplatesPanel() {
 }
 
 function WhatsAppConnectionPanel() {
-  const { data: cfg } = useQuery<{ connected: boolean; phoneNumberId: string | null }>({
-    queryKey: ['/api/admin/whatsapp/config'],
+  const { data: status, refetch } = useQuery<{ qr: string | null; connected: boolean; status: string }>({
+    queryKey: ['/api/admin/whatsapp/qr'],
+    refetchInterval: 3000,
     queryFn: async () => {
       const token = localStorage.getItem('adminToken');
-      const res = await fetch(apiPath('/api/admin/whatsapp/config'), {
+      const res = await fetch(apiPath('/api/admin/whatsapp/qr'), {
         headers: token ? { Authorization: `Bearer ${token}` } : {}
       });
-      if (!res.ok) throw new Error('Failed to fetch WhatsApp config');
+      if (!res.ok) throw new Error('Failed to fetch WhatsApp status');
       return res.json();
     }
   });
+
+  const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (status?.qr) {
+      QRCode.toDataURL(status.qr)
+        .then(url => setQrDataUrl(url))
+        .catch(err => console.error(err));
+    } else {
+      setQrDataUrl(null);
+    }
+  }, [status?.qr]);
+
   const [to, setTo] = useState('');
-  const [text, setText] = useState('Hello from Diaa Eldeen!');
+  const [text, setText] = useState('Hello from GameCart!');
+  
   const sendMutation = useMutation({
     mutationFn: async () => {
       const token = localStorage.getItem('adminToken');
@@ -2652,17 +2792,49 @@ function WhatsAppConnectionPanel() {
   });
 
   return (
-    <div className="space-y-3">
-      <p className="text-sm">Connected: <span className={cfg?.connected ? 'text-green-500' : 'text-red-500'}>{cfg?.connected ? 'Yes' : 'No'}</span></p>
-      <p className="text-sm">Phone Number ID: <span className="font-mono">{cfg?.phoneNumberId || 'not set'}</span></p>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mt-2">
-        <Input placeholder="Recipient (E.164)" value={to} onChange={(e) => setTo(e.target.value)} />
-        <Input placeholder="Message" value={text} onChange={(e) => setText(e.target.value)} />
-        <Button onClick={() => sendMutation.mutate()} disabled={!to || !text} className="bg-gold-primary">Send Test</Button>
+    <div className="space-y-6">
+      <div className="flex flex-col md:flex-row gap-8 items-start">
+        <div className="space-y-4 flex-1">
+          <div>
+            <h3 className="text-lg font-medium mb-2">Status</h3>
+            <div className="flex items-center gap-2">
+              <div className={`w-3 h-3 rounded-full ${status?.connected ? 'bg-green-500' : 'bg-red-500'}`} />
+              <span className="font-semibold">{status?.connected ? 'Connected' : 'Disconnected'}</span>
+              <span className="text-sm text-muted-foreground">({status?.status || 'unknown'})</span>
+            </div>
+          </div>
+          
+          {!status?.connected && status?.qr && (
+            <div className="bg-white p-4 rounded-lg inline-block">
+              {qrDataUrl ? (
+                <img src={qrDataUrl} alt="WhatsApp QR Code" className="w-64 h-64" />
+              ) : (
+                <div className="w-64 h-64 flex items-center justify-center text-black">Generating QR...</div>
+              )}
+              <p className="text-center text-black mt-2 text-sm">Scan with WhatsApp</p>
+            </div>
+          )}
+          
+          {!status?.connected && !status?.qr && (
+             <div className="text-sm text-muted-foreground">Waiting for QR code... (Check backend logs if stuck)</div>
+          )}
+        </div>
+
+        <div className="flex-1 space-y-4 w-full max-w-md">
+           <h3 className="text-lg font-medium">Test Message</h3>
+           <div className="space-y-2">
+            <Label>Recipient Phone</Label>
+            <Input placeholder="e.g. 201xxxxxxxxx" value={to} onChange={(e) => setTo(e.target.value)} />
+           </div>
+           <div className="space-y-2">
+            <Label>Message</Label>
+            <Input placeholder="Message" value={text} onChange={(e) => setText(e.target.value)} />
+           </div>
+           <Button onClick={() => sendMutation.mutate()} disabled={!to || !text || !status?.connected} className="bg-gold-primary w-full">
+             Send Test Message
+           </Button>
+        </div>
       </div>
-      {!cfg?.connected && (
-        <p className="text-xs text-muted-foreground">Set WHATSAPP_TOKEN, WHATSAPP_PHONE_NUMBER_ID, and WHATSAPP_VERIFY_TOKEN in backend environment.</p>
-      )}
     </div>
   );
 }

@@ -35,7 +35,7 @@ export function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
 
   const [payInfo, setPayInfo] = useState<{ title: string; value: string } | null>(null);
 
-  const SELLER_WHATSAPP = import.meta.env.VITE_SELLER_WHATSAPP || "+201234567890";
+  const SELLER_WHATSAPP = import.meta.env.VITE_SELLER_WHATSAPP || "+201011696196";
 
   useEffect(() => {
     const load = async () => {
@@ -136,7 +136,7 @@ ${orderSummary}
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <SiWhatsapp className="text-green-500" />

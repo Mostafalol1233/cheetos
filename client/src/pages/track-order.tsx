@@ -27,7 +27,7 @@ export default function TrackOrderPage() {
 
     setLoading(true);
     try {
-      const response = await fetch(`/api/public/track?code=${encodeURIComponent(orderId.trim())}`);
+      const response = await fetch(`/api/orders/${encodeURIComponent(orderId.trim())}`);
       if (!response.ok) {
         throw new Error("Order not found");
       }

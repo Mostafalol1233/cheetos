@@ -46,11 +46,11 @@ export default function AdminPackagesPage() {
 
   // Fetch packages
   const { data: gamePackages = [] } = useQuery<Package[]>({
-    queryKey: [`/api/admin/games/${gameId}/packages`],
+    queryKey: [`/api/games/${gameId}/packages`],
     enabled: !!gameId,
     queryFn: async () => {
       const token = localStorage.getItem('adminToken');
-      const res = await fetch(apiPath(`/api/admin/games/${gameId}/packages`), {
+      const res = await fetch(apiPath(`/api/games/${gameId}/packages`), {
         headers: token ? { Authorization: `Bearer ${token}` } : {}
       });
       if (!res.ok) throw new Error('Failed to fetch packages');
@@ -85,7 +85,7 @@ export default function AdminPackagesPage() {
   const updatePackagesMutation = useMutation({
     mutationFn: async (packages: Package[]) => {
       const token = localStorage.getItem('adminToken');
-      const res = await fetch(apiPath(`/api/admin/games/${gameId}/packages`), {
+      const res = await fetch(apiPath(`/api/games/${gameId}/packages`), {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -97,7 +97,7 @@ export default function AdminPackagesPage() {
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/admin/games/${gameId}/packages`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/games/${gameId}/packages`] });
       queryClient.invalidateQueries({ queryKey: [`/api/games/id/${gameId}`] });
       queryClient.invalidateQueries({ queryKey: ['/api/games'] });
       queryClient.invalidateQueries({ queryKey: ['/api/games/popular'] });

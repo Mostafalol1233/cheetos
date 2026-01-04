@@ -1,6 +1,7 @@
-import { pgTable, text, decimal, boolean, integer, varchar } from "drizzle-orm/pg-core";
+import { pgTable, text, decimal, boolean, integer, varchar, serial } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { z } from "zod";
+import { relations } from "drizzle-orm";
 
 // Games table
 export const games = pgTable("games", {
@@ -31,16 +32,41 @@ export const categories = pgTable("categories", {
   icon: varchar("icon", { length: 50 }).notNull()
 });
 
+export const gamePackages = pgTable("game_packages", {
+  id: serial("id").primaryKey(),
+  gameId: varchar("game_id", { length: 50 }).references(() => games.id, { onDelete: 'cascade' }),
+  name: text("name").notNull(),
+  price: decimal("price", { precision: 10, scale: 2 }).notNull(),
+  discountPrice: decimal("discount_price", { precision: 10, scale: 2 }),
+  image: text("image"),
+  createdAt: integer("created_at").default(Date.now()),
+});
+
+export const gamesRelations = relations(games, ({ many }) => ({
+  packagesList: many(gamePackages),
+}));
+
+export const gamePackagesRelations = relations(gamePackages, ({ one }) => ({
+  game: one(games, {
+    fields: [gamePackages.gameId],
+    references: [games.id],
+  }),
+}));
+
 // Schema types
 export const insertGameSchema = createInsertSchema(games);
 export const selectGameSchema = createSelectSchema(games);
 export const insertCategorySchema = createInsertSchema(categories);
 export const selectCategorySchema = createSelectSchema(categories);
+export const insertGamePackageSchema = createInsertSchema(gamePackages);
+export const selectGamePackageSchema = createSelectSchema(gamePackages);
 
-export type Game = z.infer<typeof selectGameSchema>;
+export type Game = z.infer<typeof selectGameSchema> & { packagesList?: GamePackage[] };
 export type InsertGame = z.infer<typeof insertGameSchema>;
 export type Category = z.infer<typeof selectCategorySchema>;
 export type InsertCategory = z.infer<typeof insertCategorySchema>;
+export type GamePackage = z.infer<typeof selectGamePackageSchema>;
+export type InsertGamePackage = z.infer<typeof insertGamePackageSchema>;
 
 // Chat Messages table
 export interface ChatMessage {
