@@ -8,11 +8,11 @@ export default defineConfig({
     react(),
   ],
   define: {
-    // Filter console logs in production
+    // Filter console logs in production using valid JSON syntax
     ...(process.env.NODE_ENV === 'production' && {
-      'console.log': '(() => {})',
-      'console.info': '(() => {})',
-      'console.debug': '(() => {})',
+      'console.log': 'void 0',
+      'console.info': 'void 0',
+      'console.debug': 'void 0',
     }),
   },
   resolve: {

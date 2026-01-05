@@ -1,10 +1,19 @@
 // Console filter for production - hides API calls and sensitive data
+// Note: In production, console.log/info/debug are replaced with void 0 via vite.config.ts
+// This file provides additional runtime filtering for any remaining console calls
+
 (function() {
+  'use strict';
+  
+  // Only run in production
   if (process.env.NODE_ENV !== 'production') return;
   
+  // Store original methods before they might be replaced
   const originalLog = console.log;
   const originalInfo = console.info;
   const originalDebug = console.debug;
+  const originalWarn = console.warn;
+  const originalError = console.error;
   
   // Filter patterns to hide
   const filterPatterns = [
@@ -25,10 +34,12 @@
   ];
   
   function shouldFilter(message: any): boolean {
+    if (!message) return false;
     const str = typeof message === 'string' ? message : JSON.stringify(message);
     return filterPatterns.some(pattern => pattern.test(str));
   }
   
+  // Override console methods with filtering
   console.log = function(...args: any[]) {
     if (!args.some(shouldFilter)) {
       originalLog.apply(console, args);
@@ -47,5 +58,34 @@
     }
   };
   
-  // Keep console.warn and console.error for debugging
+  // Filter warnings and errors but be less aggressive
+  console.warn = function(...args: any[]) {
+    // Only filter very sensitive warnings
+    const hasSensitive = args.some(arg => {
+      const str = typeof arg === 'string' ? arg : JSON.stringify(arg);
+      return /(token|password|secret|key|auth)/i.test(str);
+    });
+    
+    if (!hasSensitive) {
+      originalWarn.apply(console, args);
+    }
+  };
+  
+  console.error = function(...args: any[]) {
+    // Only filter very sensitive errors
+    const hasSensitive = args.some(arg => {
+      const str = typeof arg === 'string' ? arg : JSON.stringify(arg);
+      return /(token|password|secret|key|auth)/i.test(str);
+    });
+    
+    if (!hasSensitive) {
+      originalError.apply(console, args);
+    }
+  };
+  
+  // Export for potential use elsewhere
+  (window as any).__consoleFilter = {
+    shouldFilter,
+    patterns: filterPatterns
+  };
 })();
