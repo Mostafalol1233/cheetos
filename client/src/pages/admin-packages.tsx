@@ -198,15 +198,17 @@ export default function AdminPackagesPage() {
                     onChange={(e) => handleUpdatePackage(index, 'price', parseFloat(e.target.value) || 0)}
                     placeholder="200"
                   />
+                  <p className="text-xs text-muted-foreground mt-1">Original price (shown as strikethrough if final price is set)</p>
                 </div>
                 <div>
-                  <Label>Discount Price (optional)</Label>
+                  <Label>Final Price (optional)</Label>
                   <Input
                     type="number"
                     value={pkg.discountPrice || ''}
                     onChange={(e) => handleUpdatePackage(index, 'discountPrice', e.target.value ? parseFloat(e.target.value) : null)}
                     placeholder="250"
                   />
+                  <p className="text-xs text-muted-foreground mt-1">Final displayed price (big font)</p>
                 </div>
                 <div>
                   <Label>Image URL (optional)</Label>

@@ -2098,28 +2098,34 @@ export default function AdminDashboard() {
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="price" className="text-right">Price</Label>
-                <Input
-                  id="price"
-                  value={gameHasPackages(editingGame) ? String(getDerivedMinPackagePrice(editingGame) ?? '') : editingGame.price}
-                  onChange={(e) => {
-                    if (gameHasPackages(editingGame)) return;
-                    setEditingGame({ ...editingGame, price: e.target.value });
-                  }}
-                  disabled={gameHasPackages(editingGame)}
-                  placeholder={gameHasPackages(editingGame) ? 'Managed by packages' : undefined}
-                  className="col-span-3"
-                />
+                <div className="col-span-3">
+                  <Input
+                    id="price"
+                    value={gameHasPackages(editingGame) ? String(getDerivedMinPackagePrice(editingGame) ?? '') : editingGame.price}
+                    onChange={(e) => {
+                      if (gameHasPackages(editingGame)) return;
+                      setEditingGame({ ...editingGame, price: e.target.value });
+                    }}
+                    disabled={gameHasPackages(editingGame)}
+                    placeholder={gameHasPackages(editingGame) ? 'Managed by packages' : undefined}
+                  />
+                  {!gameHasPackages(editingGame) && (
+                    <p className="text-xs text-muted-foreground mt-1">Original price (shown as strikethrough if final price is set)</p>
+                  )}
+                </div>
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="discountPrice" className="text-right">Discount Price</Label>
-                <Input
-                  id="discountPrice"
-                  type="number"
-                  value={(editingGame as any).discountPrice || ''}
-                  onChange={(e) => setEditingGame({ ...editingGame, discountPrice: e.target.value || null } as any)}
-                  placeholder="Optional - shows as strikethrough"
-                  className="col-span-3"
-                />
+                <Label htmlFor="discountPrice" className="text-right">Final Price</Label>
+                <div className="col-span-3">
+                  <Input
+                    id="discountPrice"
+                    type="number"
+                    value={(editingGame as any).discountPrice || ''}
+                    onChange={(e) => setEditingGame({ ...editingGame, discountPrice: e.target.value || null } as any)}
+                    placeholder="Optional - shown as the main price"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">Final displayed price (big font)</p>
+                </div>
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="stock" className="text-right">Stock</Label>

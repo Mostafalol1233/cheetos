@@ -166,14 +166,14 @@ export default function GamePage() {
       <div className="space-y-8">
         {/* Game Image - Large Square Box at Top */}
         <div className="relative w-full">
-          <div className="aspect-square overflow-hidden rounded-3xl shadow-2xl border border-gold-primary/20">
-            <ImageWithFallback src={(game as any).image_url || game.image} alt={game.name} className="w-full h-full object-cover" />
-          {game.isPopular && (
-            <div className="absolute top-6 right-6 bg-gradient-to-r from-gold-primary to-neon-pink text-white px-4 py-2 rounded-full text-sm font-bold flex items-center shadow-lg">
-              <Star className="w-5 h-5 mr-2" />
-              {t('popular')}
-            </div>
-          )}
+          <div className="aspect-square overflow-hidden rounded-3xl shadow-2xl border border-gold-primary/20 bg-gray-100 dark:bg-gray-800">
+            <ImageWithFallback src={(game as any).image_url || game.image} alt={game.name} className="w-full h-full object-contain" />
+            {game.isPopular && (
+              <div className="absolute top-6 right-6 bg-gradient-to-r from-gold-primary to-neon-pink text-white px-4 py-2 rounded-full text-sm font-bold flex items-center shadow-lg">
+                <Star className="w-5 h-5 mr-2" />
+                {t('popular')}
+              </div>
+            )}
           </div>
         </div>
 
