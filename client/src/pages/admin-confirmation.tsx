@@ -35,7 +35,12 @@ export default function AdminConfirmationPage() {
   const [text, setText] = useState('');
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [sendEmailToo, setSendEmailToo] = useState(false);
+  const [emailTo, setEmailTo] = useState('');
   useEffect(() => { setText(''); setImageFile(null); }, [id]);
+  useEffect(() => {
+    const v = (data?.user?.email || '').trim();
+    setEmailTo(v);
+  }, [data?.user?.email]);
   const sendMutation = useMutation({
     mutationFn: async (mode: 'whatsapp' | 'email') => {
       let mediaUrl: string | undefined = undefined;
@@ -51,6 +56,7 @@ export default function AdminConfirmationPage() {
       const token = localStorage.getItem('adminToken');
       let sentWhatsApp = false;
       let sentEmail = false;
+      const resolvedEmail = String(emailTo || data?.user?.email || '').trim();
 
       if (mode === 'whatsapp') {
         const to = data?.user?.phone || '';
@@ -68,11 +74,12 @@ export default function AdminConfirmationPage() {
         if (j && j.ok === false) throw new Error('WhatsApp send failed');
         sentWhatsApp = true;
 
-        if (sendEmailToo && data?.user?.email) {
+        if (sendEmailToo) {
+          if (!resolvedEmail) throw new Error('No customer email available');
           const er = await fetch('/api/admin/email/send', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-            body: JSON.stringify({ to: data.user.email, subject: `GameCart Confirmation: ${data?.transactionId || data?.id || ''}`, text })
+            body: JSON.stringify({ to: resolvedEmail, subject: `GameCart Confirmation: ${data?.transactionId || data?.id || ''}`, text })
           });
           if (!er.ok) {
             const msg = await er.text().catch(() => '');
@@ -85,11 +92,11 @@ export default function AdminConfirmationPage() {
       }
 
       if (mode === 'email') {
-        if (!data?.user?.email) throw new Error('No customer email available');
+        if (!resolvedEmail) throw new Error('No customer email available');
         const er = await fetch('/api/admin/email/send', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-          body: JSON.stringify({ to: data.user.email, subject: `GameCart Confirmation: ${data?.transactionId || data?.id || ''}`, text })
+          body: JSON.stringify({ to: resolvedEmail, subject: `GameCart Confirmation: ${data?.transactionId || data?.id || ''}`, text })
         });
         if (!er.ok) {
           const msg = await er.text().catch(() => '');
@@ -193,6 +200,15 @@ export default function AdminConfirmationPage() {
               <Label className="text-right">Image</Label>
               <Input type="file" accept="image/*" onChange={(e) => setImageFile(e.target.files?.[0] || null)} className="col-span-3" />
             </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label className="text-right">Email</Label>
+              <Input
+                value={emailTo}
+                onChange={(e) => setEmailTo(e.target.value)}
+                placeholder="customer@email.com"
+                className="col-span-3"
+              />
+            </div>
             <div className="flex gap-2">
               <Button
                 onClick={() => sendMutation.mutate('whatsapp')}
@@ -201,26 +217,22 @@ export default function AdminConfirmationPage() {
               >
                 Send via WhatsApp
               </Button>
-              {data?.user?.email ? (
-                <>
-                  <Button
-                    type="button"
-                    variant={sendEmailToo ? 'default' : 'outline'}
-                    onClick={() => setSendEmailToo(!sendEmailToo)}
-                    disabled={sendMutation.isPending}
-                  >
-                    {sendEmailToo ? 'Also Email: ON' : 'Also Email: OFF'}
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => sendMutation.mutate('email')}
-                    disabled={sendMutation.isPending || !data?.user?.email || (!text.trim() && !imageFile)}
-                  >
-                    Send via Email
-                  </Button>
-                </>
-              ) : null}
+              <Button
+                type="button"
+                variant={sendEmailToo ? 'default' : 'outline'}
+                onClick={() => setSendEmailToo(!sendEmailToo)}
+                disabled={sendMutation.isPending}
+              >
+                {sendEmailToo ? 'Also Email: ON' : 'Also Email: OFF'}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => sendMutation.mutate('email')}
+                disabled={sendMutation.isPending || !String(emailTo || '').trim() || (!text.trim() && !imageFile)}
+              >
+                Send via Email
+              </Button>
             </div>
           </CardContent>
         </Card>

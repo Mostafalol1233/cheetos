@@ -21,6 +21,7 @@ import pool, { checkConnection, preferIPv4 } from './db.js';
 import gamesRouter from './routes/games.js';
 import ordersRouter from './routes/orders.js';
 import authRouter from './routes/auth.js';
+import adminAiRouter from './routes/admin-ai.js';
 import { authenticateToken, ensureAdmin } from './middleware/auth.js';
 import { sendEmail, sendRawEmail } from './utils/email.js';
 // Optional image processor (module may not exist in some deployments)
@@ -32,11 +33,12 @@ try {
   initImageProcessor = null;
 }
 
-dotenv.config();
-
-// Auto-install dependencies if node_modules is missing
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+dotenv.config({ path: path.join(__dirname, '.env') });
+
+// Auto-install dependencies if node_modules is missing
 const nodeModulesPath = path.join(__dirname, 'node_modules');
 const pgModulePath = path.join(nodeModulesPath, 'pg');
 const baileysModulePath = path.join(nodeModulesPath, '@whiskeysockets', 'baileys');
@@ -574,7 +576,7 @@ app.post('/api/admin/email/send', authenticateToken, ensureAdmin, async (req, re
 
 
 // Bulk update game images using provided Postimg links (Admin)
-app.post('/api/admin/games/bulk-update-images', authenticateToken, async (req, res) => {
+app.post('/api/admin/games/bulk-update-images', authenticateToken, ensureAdmin, async (req, res) => {
   try {
     const updates = {
       crossfire: 'https://i.postimg.cc/4Y7FFWjm/crossfire-icon.webp',
@@ -674,7 +676,7 @@ app.post('/api/admin/games/bulk-update-images', authenticateToken, async (req, r
 });
 
 // Remove unwanted categories and reassign games (Admin)
-app.post('/api/admin/categories/prune', authenticateToken, async (req, res) => {
+app.post('/api/admin/categories/prune', authenticateToken, ensureAdmin, async (req, res) => {
   try {
     const raw = Array.isArray(req.body?.slugs) ? req.body.slugs : ['rpg', 'shooters', 'shotter', 'casual'];
     const slugs = raw.map((s) => String(s || '').trim().toLowerCase()).filter(Boolean);
@@ -716,7 +718,7 @@ app.post('/api/admin/categories/prune', authenticateToken, async (req, res) => {
 });
 
 // Randomize stock for all games (Admin)
-app.post('/api/admin/games/randomize-stock', authenticateToken, async (req, res) => {
+app.post('/api/admin/games/randomize-stock', authenticateToken, ensureAdmin, async (req, res) => {
   try {
     const min = Number(req.body?.min ?? 10);
     const max = Number(req.body?.max ?? 50);
@@ -841,19 +843,18 @@ const imageUpload = multer({
     if (allowed.includes(ext)) cb(null, true); else cb(new Error('Unsupported image type'));
   }
 });
-
-// ===============================================
 // API ENDPOINTS (Added as requested)
 // ===============================================
 
 // Mount Games Router
 app.use('/api/games', gamesRouter);
 app.use('/api/orders', ordersRouter);
+app.use('/api/admin/ai', adminAiRouter);
 app.use('/api/auth', authRouter);
 app.use('/api', authRouter); // Expose auth routes at root api level as well (e.g. /api/admin/login)
 
 // Admin Image Upload Endpoint
-app.post('/api/admin/upload-image', authenticateToken, imageUpload.single('file'), async (req, res) => {
+app.post('/api/admin/upload-image', authenticateToken, ensureAdmin, imageUpload.single('file'), async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ message: 'No file provided' });
     
@@ -892,7 +893,7 @@ app.post('/api/admin/upload-image', authenticateToken, imageUpload.single('file'
 });
 
 // Admin WhatsApp Status & QR Endpoint
-app.get('/api/admin/whatsapp/qr', authenticateToken, (req, res) => {
+app.get('/api/admin/whatsapp/qr', authenticateToken, ensureAdmin, (req, res) => {
   try {
     const qr = getQRCode();
     const status = getConnectionStatus();
@@ -1466,7 +1467,7 @@ async function seedProductImages() {
 // ===============================================
 // [Moved to routes/auth.js]
 
-app.get('/api/admin/seeding/status', authenticateToken, async (req, res) => {
+app.get('/api/admin/seeding/status', authenticateToken, ensureAdmin, async (req, res) => {
   try {
     const r = await pool.query('SELECT * FROM seeding_runs ORDER BY finished_at DESC NULLS LAST LIMIT 1');
     res.json(r.rows?.[0] || null);
@@ -1475,7 +1476,7 @@ app.get('/api/admin/seeding/status', authenticateToken, async (req, res) => {
   }
 });
 
-app.get('/api/admin/seeding/report', authenticateToken, async (req, res) => {
+app.get('/api/admin/seeding/report', authenticateToken, ensureAdmin, async (req, res) => {
   try {
     const r = await pool.query('SELECT * FROM seeding_runs ORDER BY finished_at DESC NULLS LAST LIMIT 20');
     const total = await pool.query('SELECT COUNT(*)::int AS c FROM seeding_runs');
@@ -1492,7 +1493,7 @@ function sanitizeString(input) {
   const s = String(input || '').trim();
   return s.replace(/[\r\n\t]/g, '').slice(0, 200);
 }
-app.get('/api/admin/game-cards', authenticateToken, async (req, res) => {
+app.get('/api/admin/game-cards', authenticateToken, ensureAdmin, async (req, res) => {
   try {
     const page = Math.max(1, parseInt(req.query.page)) || 1;
     const limit = Math.min(100, Math.max(1, parseInt(req.query.limit))) || 20;
@@ -1517,7 +1518,7 @@ app.get('/api/admin/game-cards', authenticateToken, async (req, res) => {
   }
 });
 
-app.post('/api/admin/game-cards', authenticateToken, async (req, res) => {
+app.post('/api/admin/game-cards', authenticateToken, ensureAdmin, async (req, res) => {
   try {
     const { game_id } = req.body || {};
     const card_code = sanitizeString(req.body?.card_code);
@@ -1541,7 +1542,7 @@ app.post('/api/admin/game-cards', authenticateToken, async (req, res) => {
   }
 });
 
-app.put('/api/admin/game-cards/:id', authenticateToken, async (req, res) => {
+app.put('/api/admin/game-cards/:id', authenticateToken, ensureAdmin, async (req, res) => {
   try {
     const { id } = req.params;
     const { is_used } = req.body || {};
@@ -1555,7 +1556,7 @@ app.put('/api/admin/game-cards/:id', authenticateToken, async (req, res) => {
   }
 });
 
-app.delete('/api/admin/game-cards/:id', authenticateToken, async (req, res) => {
+app.delete('/api/admin/game-cards/:id', authenticateToken, ensureAdmin, async (req, res) => {
   try {
     const { id } = req.params;
     const result = await pool.query('DELETE FROM game_cards WHERE id = $1 RETURNING *', [id]);
@@ -1592,7 +1593,7 @@ app.get('/api/public/payment-details', async (req, res) => {
   }
 });
 
-app.put('/api/admin/games/:id/hotdeal', authenticateToken, async (req, res) => {
+app.put('/api/admin/games/:id/hotdeal', authenticateToken, ensureAdmin, async (req, res) => {
   try {
     const { id } = req.params; const { hot } = req.body || {};
     const rows = await pool.query('UPDATE games SET hot_deal = $1 WHERE id = $2 OR slug = $2 RETURNING id, name, slug, hot_deal', [Boolean(hot), id]);
@@ -1601,7 +1602,7 @@ app.put('/api/admin/games/:id/hotdeal', authenticateToken, async (req, res) => {
   } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
-app.post('/api/admin/game-cards/bulk', authenticateToken, async (req, res) => {
+app.post('/api/admin/game-cards/bulk', authenticateToken, ensureAdmin, async (req, res) => {
   try {
     const { items } = req.body || {};
     if (!Array.isArray(items) || items.length === 0) return res.status(400).json({ message: 'items array required' });
@@ -1649,7 +1650,7 @@ function normalizeGamePayload(body) {
 
 // [Removed duplicate game routes - see routes/games.js]
 
-app.post('/api/admin/games/wipe', authenticateToken, async (req, res) => {
+app.post('/api/admin/games/wipe', authenticateToken, ensureAdmin, async (req, res) => {
   try {
     try {
       await pool.query('DELETE FROM game_cards');
@@ -1664,7 +1665,7 @@ app.post('/api/admin/games/wipe', authenticateToken, async (req, res) => {
   }
 });
 
-app.post('/api/admin/games/seed', authenticateToken, async (req, res) => {
+app.post('/api/admin/games/seed', authenticateToken, ensureAdmin, async (req, res) => {
   try {
     if (typeof initializeDatabase === 'function') {
       await initializeDatabase();
@@ -1677,7 +1678,7 @@ app.post('/api/admin/games/seed', authenticateToken, async (req, res) => {
   }
 });
 
-app.post('/api/admin/games/reset-seed', authenticateToken, async (req, res) => {
+app.post('/api/admin/games/reset-seed', authenticateToken, ensureAdmin, async (req, res) => {
   try {
     try { await pool.query('DELETE FROM game_cards'); } catch {}
     try { await pool.query('DELETE FROM games'); } catch {}
@@ -1698,7 +1699,7 @@ app.post('/api/admin/games/reset-seed', authenticateToken, async (req, res) => {
   }
 });
 
-app.post('/api/admin/images/upload-cloudinary', authenticateToken, imageUpload.single('file'), async (req, res) => {
+app.post('/api/admin/images/upload-cloudinary', authenticateToken, ensureAdmin, imageUpload.single('file'), async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ message: 'file required' });
     const localPath = req.file.path;
@@ -1756,7 +1757,7 @@ app.get('/api/categories/:id', async (req, res) => {
 });
 
 // Create category (Admin)
-app.post('/api/admin/categories', authenticateToken, imageUpload.single('image'), async (req, res) => {
+app.post('/api/admin/categories', authenticateToken, ensureAdmin, imageUpload.single('image'), async (req, res) => {
   try {
     const { name, slug, description, gradient, icon } = req.body;
     const image = await useProvidedImage(req);
@@ -1774,7 +1775,7 @@ app.post('/api/admin/categories', authenticateToken, imageUpload.single('image')
 });
 
 // Update category (Admin)
-app.put('/api/admin/categories/:id', authenticateToken, imageUpload.single('image'), async (req, res) => {
+app.put('/api/admin/categories/:id', authenticateToken, ensureAdmin, imageUpload.single('image'), async (req, res) => {
   try {
     const { id } = req.params;
     const { name, slug, description, gradient, icon } = req.body;
@@ -1828,7 +1829,7 @@ app.put('/api/admin/categories/:id', authenticateToken, imageUpload.single('imag
 });
 
 // Delete category (Admin)
-app.delete('/api/admin/categories/:id', authenticateToken, async (req, res) => {
+app.delete('/api/admin/categories/:id', authenticateToken, ensureAdmin, async (req, res) => {
   try {
     const { id } = req.params;
     
@@ -1852,7 +1853,7 @@ app.delete('/api/admin/categories/:id', authenticateToken, async (req, res) => {
 // IMPORT / EXPORT UTILS
 // ===============================================
 
-app.post('/api/admin/import-cards', authenticateToken, async (req, res) => {
+app.post('/api/admin/import-cards', authenticateToken, ensureAdmin, async (req, res) => {
   try {
     const datasetPath = path.join(__dirname, '..', 'digital_cards_egp_dataset.json');
     if (!fs.existsSync(datasetPath)) {
@@ -1954,7 +1955,7 @@ app.get('/api/search', async (req, res) => {
 });
 
 // Get stats (Admin)
-app.get('/api/admin/stats', authenticateToken, async (req, res) => {
+app.get('/api/admin/stats', authenticateToken, ensureAdmin, async (req, res) => {
   try {
     const gamesCount = await pool.query('SELECT COUNT(*) as count FROM games');
     const categoriesCount = await pool.query('SELECT COUNT(*) as count FROM categories');
@@ -1977,7 +1978,7 @@ app.get('/api/admin/stats', authenticateToken, async (req, res) => {
 });
 
 // Export data (Admin)
-app.get('/api/admin/export', authenticateToken, async (req, res) => {
+app.get('/api/admin/export', authenticateToken, ensureAdmin, async (req, res) => {
   try {
     const games = await pool.query('SELECT * FROM games');
     const categories = await pool.query('SELECT * FROM categories');
@@ -1999,7 +2000,7 @@ app.get('/api/admin/export', authenticateToken, async (req, res) => {
 
 
 // Get games by category (for category management)
-app.get('/api/admin/categories/:id/games', authenticateToken, async (req, res) => {
+app.get('/api/admin/categories/:id/games', authenticateToken, ensureAdmin, async (req, res) => {
   try {
     const { id } = req.params;
     const result = await pool.query(
@@ -2013,7 +2014,7 @@ app.get('/api/admin/categories/:id/games', authenticateToken, async (req, res) =
 });
 
 // Update game category assignment
-app.put('/api/admin/games/:gameId/category', authenticateToken, async (req, res) => {
+app.put('/api/admin/games/:gameId/category', authenticateToken, ensureAdmin, async (req, res) => {
   try {
     const { gameId } = req.params;
     const { categoryId, category } = req.body;
@@ -2055,7 +2056,7 @@ app.put('/api/admin/games/:gameId/category', authenticateToken, async (req, res)
 // ===================== CHAT WIDGET CONFIGURATION =====================
 
 // Get chat widget config
-app.get('/api/admin/chat-widget/config', authenticateToken, async (req, res) => {
+app.get('/api/admin/chat-widget/config', authenticateToken, ensureAdmin, async (req, res) => {
   try {
     const result = await pool.query('SELECT * FROM chat_widget_config WHERE id = $1', ['widget_1']);
     if (result.rows.length === 0) {
@@ -2080,7 +2081,7 @@ app.get('/api/admin/chat-widget/config', authenticateToken, async (req, res) => 
 });
 
 // Update chat widget config
-app.put('/api/admin/chat-widget/config', authenticateToken, async (req, res) => {
+app.put('/api/admin/chat-widget/config', authenticateToken, ensureAdmin, async (req, res) => {
   try {
     const { enabled, iconUrl, welcomeMessage, position } = req.body;
     
@@ -2128,7 +2129,7 @@ app.put('/api/admin/chat-widget/config', authenticateToken, async (req, res) => 
 // ===================== LOGO CONFIGURATION =====================
 
 // Get logo config
-app.get('/api/admin/logo/config', authenticateToken, async (req, res) => {
+app.get('/api/admin/logo/config', authenticateToken, ensureAdmin, async (req, res) => {
   try {
     const result = await pool.query('SELECT * FROM logo_config WHERE id = $1', ['logo_1']);
     if (result.rows.length === 0) {
@@ -2147,7 +2148,7 @@ app.get('/api/admin/logo/config', authenticateToken, async (req, res) => {
 });
 
 // Update logo config
-app.put('/api/admin/logo/config', authenticateToken, async (req, res) => {
+app.put('/api/admin/logo/config', authenticateToken, ensureAdmin, async (req, res) => {
   try {
     const { smallLogoUrl, largeLogoUrl, faviconUrl } = req.body;
     
@@ -2176,7 +2177,7 @@ app.put('/api/admin/logo/config', authenticateToken, async (req, res) => {
 });
 
 // Generic admin image upload (PNG, SVG)
-app.post('/api/admin/upload', authenticateToken, imageUpload.single('file'), async (req, res) => {
+app.post('/api/admin/upload', authenticateToken, ensureAdmin, imageUpload.single('file'), async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ message: 'No file uploaded' });
     const url = normalizeImageUrl(`/uploads/${req.file.filename}`);
@@ -2222,7 +2223,7 @@ app.get('/api/countdown/current', async (req, res) => {
   }
 });
 
-app.put('/api/admin/countdown', authenticateToken, async (req, res) => {
+app.put('/api/admin/countdown', authenticateToken, ensureAdmin, async (req, res) => {
   try {
     const { id, title, targetAt, text } = req.body || {};
     if (!targetAt || isNaN(Date.parse(String(targetAt)))) {
@@ -2261,7 +2262,7 @@ app.get('/api/hot-deals', async (req, res) => {
   }
 });
 
-app.put('/api/admin/hot-deals/order', authenticateToken, async (req, res) => {
+app.put('/api/admin/hot-deals/order', authenticateToken, ensureAdmin, async (req, res) => {
   try {
     const { ids } = req.body || {};
     if (!Array.isArray(ids)) return res.status(400).json({ message: 'ids[] required' });
@@ -2275,7 +2276,7 @@ app.put('/api/admin/hot-deals/order', authenticateToken, async (req, res) => {
   }
 });
 
-app.put('/api/admin/games/:id/hot-deal', authenticateToken, async (req, res) => {
+app.put('/api/admin/games/:id/hot-deal', authenticateToken, ensureAdmin, async (req, res) => {
   try {
     const { id } = req.params;
     const { hotDeal, priority } = req.body || {};
@@ -2316,7 +2317,7 @@ app.get('/api/chat-widget/config', async (req, res) => {
 });
 
 // Upload file
-app.post('/api/admin/upload', authenticateToken, upload.single('file'), (req, res) => {
+app.post('/api/admin/upload', authenticateToken, ensureAdmin, upload.single('file'), (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ message: 'No file uploaded' });
@@ -2417,7 +2418,7 @@ app.get('/api/public/settings/site', async (req, res) => {
   }
 });
 
-app.put('/api/admin/settings/site', authenticateToken, async (req, res) => {
+app.put('/api/admin/settings/site', authenticateToken, ensureAdmin, async (req, res) => {
   try {
     const { default_locale, nav_links, version } = req.body || {};
     await pool.query(
@@ -2435,7 +2436,7 @@ app.put('/api/admin/settings/site', authenticateToken, async (req, res) => {
 });
 
 const logoUpload = multer({ storage, limits: { fileSize: 5 * 1024 * 1024 } });
-app.post('/api/admin/settings/site/logo', authenticateToken, logoUpload.single('file'), async (req, res) => {
+app.post('/api/admin/settings/site/logo', authenticateToken, ensureAdmin, logoUpload.single('file'), async (req, res) => {
   try {
     const bodyPath = (req.body && (req.body.image_path || req.body.path)) || null;
     let url = null;
@@ -2474,7 +2475,7 @@ app.post('/api/admin/settings/site/logo', authenticateToken, logoUpload.single('
 });
 
 const headerUpload = multer({ storage, limits: { fileSize: 20 * 1024 * 1024 } });
-app.post('/api/admin/settings/site/header', authenticateToken, headerUpload.single('file'), async (req, res) => {
+app.post('/api/admin/settings/site/header', authenticateToken, ensureAdmin, headerUpload.single('file'), async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ message: 'file required' });
     const { width, height, crop } = req.body || {};
@@ -2502,7 +2503,7 @@ app.get('/api/public/navigation', async (req, res) => {
   } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
-app.put('/api/admin/navigation', authenticateToken, async (req, res) => {
+app.put('/api/admin/navigation', authenticateToken, ensureAdmin, async (req, res) => {
   try {
     const { nav_links } = req.body || {};
     await pool.query('UPDATE site_settings SET nav_links = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2', [nav_links || [], 'site']);
@@ -2757,7 +2758,7 @@ app.post('/api/transactions/confirm', receiptUpload.single('receipt'), async (re
 });
 
 // Alerts
-app.get('/api/admin/alerts/mem', authenticateToken, async (req, res) => {
+app.get('/api/admin/alerts/mem', authenticateToken, ensureAdmin, async (req, res) => {
   try {
     const { status, type, q } = req.query;
     let alerts = await memStorage.getSellerAlerts();
@@ -2781,7 +2782,7 @@ app.get('/api/admin/alerts/mem', authenticateToken, async (req, res) => {
   }
 });
 
-app.put('/api/admin/alerts/mem/:id/read', authenticateToken, async (req, res) => {
+app.put('/api/admin/alerts/mem/:id/read', authenticateToken, ensureAdmin, async (req, res) => {
   await memStorage.markSellerAlertRead(req.params.id);
   res.json({ success: true });
 });
@@ -2794,7 +2795,7 @@ app.get('/api/posts', async (req, res) => {
   res.json(posts);
 });
 
-app.post('/api/admin/posts', authenticateToken, async (req, res) => {
+app.post('/api/admin/posts', authenticateToken, ensureAdmin, async (req, res) => {
   try {
     const post = await memStorage.createPost(req.body);
     res.status(201).json(post);
@@ -2803,7 +2804,7 @@ app.post('/api/admin/posts', authenticateToken, async (req, res) => {
   }
 });
 
-app.put('/api/admin/posts/:id', authenticateToken, async (req, res) => {
+app.put('/api/admin/posts/:id', authenticateToken, ensureAdmin, async (req, res) => {
   try {
     const post = await memStorage.updatePost(req.params.id, req.body);
     if (!post) return res.status(404).json({ message: 'Post not found' });
@@ -2813,7 +2814,7 @@ app.put('/api/admin/posts/:id', authenticateToken, async (req, res) => {
   }
 });
 
-app.delete('/api/admin/posts/:id', authenticateToken, async (req, res) => {
+app.delete('/api/admin/posts/:id', authenticateToken, ensureAdmin, async (req, res) => {
   await memStorage.deletePost(req.params.id);
   res.sendStatus(204);
 });
@@ -2824,7 +2825,7 @@ app.get('/api/tutorials', async (req, res) => {
   res.json(tutorials);
 });
 
-app.post('/api/admin/tutorials', authenticateToken, async (req, res) => {
+app.post('/api/admin/tutorials', authenticateToken, ensureAdmin, async (req, res) => {
   try {
     const tut = await memStorage.createTutorial(req.body);
     res.status(201).json(tut);
@@ -2833,7 +2834,7 @@ app.post('/api/admin/tutorials', authenticateToken, async (req, res) => {
   }
 });
 
-app.put('/api/admin/tutorials/:id', authenticateToken, async (req, res) => {
+app.put('/api/admin/tutorials/:id', authenticateToken, ensureAdmin, async (req, res) => {
   try {
     const tut = await memStorage.updateTutorial(req.params.id, req.body);
     if (!tut) return res.status(404).json({ message: 'Tutorial not found' });
@@ -2843,7 +2844,7 @@ app.put('/api/admin/tutorials/:id', authenticateToken, async (req, res) => {
   }
 });
 
-app.delete('/api/admin/tutorials/:id', authenticateToken, async (req, res) => {
+app.delete('/api/admin/tutorials/:id', authenticateToken, ensureAdmin, async (req, res) => {
   await memStorage.deleteTutorial(req.params.id);
   res.sendStatus(204);
 });
@@ -2854,7 +2855,7 @@ app.get('/api/public/settings/seo', async (req, res) => {
   res.json(seo);
 });
 
-app.post('/api/admin/settings/seo', authenticateToken, async (req, res) => {
+app.post('/api/admin/settings/seo', authenticateToken, ensureAdmin, async (req, res) => {
   try {
     const seo = await memStorage.updateSeoSettings(req.body);
     res.json(seo);
@@ -2864,7 +2865,7 @@ app.post('/api/admin/settings/seo', authenticateToken, async (req, res) => {
 });
 
 // Cards Import
-app.post('/api/admin/import-cards', authenticateToken, async (req, res) => {
+app.post('/api/admin/import-cards', authenticateToken, ensureAdmin, async (req, res) => {
   try {
     const { cards } = req.body;
     if (!Array.isArray(cards)) return res.status(400).json({ message: 'cards array required' });
@@ -2929,7 +2930,7 @@ async function catboxFileUploadFromLocal(filePath, filename) {
 }
 
 // Accept and store Catbox image URLs with metadata, then apply to game/category
-app.post('/api/admin/images/catbox-url', authenticateToken, async (req, res) => {
+app.post('/api/admin/images/catbox-url', authenticateToken, ensureAdmin, async (req, res) => {
   try {
     const { url, type, id, filename } = req.body || {};
     const urlStr = String(url || '').trim();

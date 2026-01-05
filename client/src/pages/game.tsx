@@ -95,13 +95,29 @@ export default function GamePage() {
     return Number.isFinite(n) ? n : null;
   };
 
+  const gameLevelDiscount = coerceNumberOrNull((game as any)?.discountPrice ?? (game as any)?.discount_price ?? null);
+
+  const computeAutoDiscount = (base: number, index: number) => {
+    if (!Number.isFinite(base) || base <= 0) return null;
+    const key = `${(game as any)?.id || ''}:${String(slug || '')}:${index}`;
+    let h = 0;
+    for (let i = 0; i < key.length; i++) h = (h * 31 + key.charCodeAt(i)) >>> 0;
+    const pct = 0.06 + ((h % 8) / 100); // 6% .. 13%
+    const discounted = Math.floor(base * (1 - pct));
+    if (!Number.isFinite(discounted) || discounted <= 0 || discounted >= base) return null;
+    return discounted;
+  };
+
   const getPackagePricing = (index: number) => {
     const base = Number(packagePrices[index] ?? game.price ?? 0);
     const discount = coerceNumberOrNull(packageDiscountPrices[index]);
-    const hasDiscount = discount != null && discount > 0 && discount < base;
+    const discountOrGame = discount != null ? discount : gameLevelDiscount;
+    const computed = computeAutoDiscount(base, index);
+    const effective = (discountOrGame != null && discountOrGame > 0 && discountOrGame < base) ? discountOrGame : computed;
+    const hasDiscount = effective != null && effective > 0 && effective < base;
     return {
       base,
-      final: hasDiscount ? (discount as number) : base,
+      final: hasDiscount ? (effective as number) : base,
       original: hasDiscount ? base : null,
     };
   };

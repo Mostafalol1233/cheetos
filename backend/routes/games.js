@@ -344,12 +344,7 @@ router.post('/', authenticateToken, ensureAdmin, async (req, res) => {
     }
   } catch (error) {
     console.error('DB Error (create), falling back to local DB:', error.message);
-    try {
-        const created = localDb.createGame(gameData);
-        res.status(201).json(formatGame(created));
-    } catch (localErr) {
-        res.status(500).json({ message: 'Failed to create game in both DB and Local: ' + localErr.message });
-    }
+    return res.status(503).json({ message: 'Database unavailable' });
   }
 });
 
@@ -452,48 +447,7 @@ router.put('/:id', authenticateToken, ensureAdmin, async (req, res) => {
     }
   } catch (error) {
     console.error('DB Error (update), falling back to local DB:', error.message);
-    
-    const existing = localDb.findGame(id);
-    if (!existing) return res.status(404).json({ message: 'Game not found' });
-
-    const updates = {};
-    if (name !== undefined) updates.name = name;
-    if (slug !== undefined) updates.slug = slug;
-    if (description !== undefined) updates.description = description;
-    if (price !== undefined) updates.price = Number(price);
-    if (currency !== undefined) updates.currency = currency;
-    if (image !== undefined) updates.image = image;
-    if (category !== undefined) updates.category = category;
-    if (isPopular !== undefined) {
-        updates.is_popular = !!isPopular;
-        updates.isPopular = !!isPopular;
-    }
-    if (stock !== undefined) updates.stock = Number(stock);
-    if (discountPrice !== undefined) updates.discount_price = discountPrice ? Number(discountPrice) : null;
-    
-    // Packages
-    if (packagesList || packages) {
-        let pkgsToInsert = [];
-        if (Array.isArray(packagesList)) {
-          pkgsToInsert = packagesList;
-        } else if (Array.isArray(packages)) {
-          pkgsToInsert = packages.map((p, i) => ({
-            id: `pkg_${existing.id}_${i}`,
-            name: p,
-            price: Number(packagePrices?.[i] || 0),
-            discount_price: packageDiscountPrices?.[i] ? Number(packageDiscountPrices[i]) : null,
-            image: null
-          }));
-        }
-        updates.packagesList = pkgsToInsert;
-        // Also update legacy fields for consistency
-        updates.packages = pkgsToInsert.map(p => p.name);
-        updates.packagePrices = pkgsToInsert.map(p => p.price);
-        updates.packageDiscountPrices = pkgsToInsert.map(p => p.discount_price);
-    }
-
-    const updated = localDb.updateGame(existing.id, updates);
-    res.json(formatGame(updated));
+    return res.status(503).json({ message: 'Database unavailable' });
   }
 });
 
@@ -511,9 +465,7 @@ router.delete('/:id', authenticateToken, ensureAdmin, async (req, res) => {
     res.json({ message: 'Game deleted successfully' });
   } catch (error) {
     console.error('DB Error (delete), falling back to local DB:', error.message);
-    const success = localDb.deleteGame(id);
-    if (!success) return res.status(404).json({ message: 'Game not found' });
-    res.json({ message: 'Game deleted successfully' });
+    return res.status(503).json({ message: 'Database unavailable' });
   }
 });
 
@@ -675,40 +627,7 @@ router.put('/:id/packages', authenticateToken, ensureAdmin, async (req, res) => 
     }
   } catch (error) {
     console.error('DB Error (update packages), falling back to local DB:', error.message);
-    
-    const existing = localDb.findGame(id);
-    if (!existing) return res.status(404).json({ message: 'Game not found' });
-
-    let pkgsToInsert = [];
-    if (Array.isArray(packages)) {
-        pkgsToInsert = packages.map((p, i) => ({
-            id: `pkg_${existing.id}_${i}`,
-            name: p.name || p.amount,
-            price: Number(p.price || 0),
-            discount_price: p.discountPrice ? Number(p.discountPrice) : null,
-            image: p.image || null
-        }));
-    }
-
-    const updates = {
-        packagesList: pkgsToInsert,
-        // Legacy
-        packages: pkgsToInsert.map(p => p.name),
-        packagePrices: pkgsToInsert.map(p => p.price),
-        packageDiscountPrices: pkgsToInsert.map(p => p.discount_price),
-        packageThumbnails: pkgsToInsert.map(p => p.image)
-    };
-
-    localDb.updateGame(existing.id, updates);
-    
-    // Return format matching the route's contract
-    const items = pkgsToInsert.map(p => ({
-        ...p,
-        amount: p.name,
-        discountPrice: p.discount_price,
-        price: p.price
-    }));
-    res.json(items);
+    return res.status(503).json({ message: 'Database unavailable' });
   }
 });
 

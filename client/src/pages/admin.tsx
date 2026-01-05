@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
-import { Trash2, Edit, Plus, MessageSquare, Bell, Check, AlertCircle, Info, Search, Package, Shield, ShoppingCart } from 'lucide-react';
+import { Trash2, Edit, Plus, MessageSquare, Bell, Check, AlertCircle, Info, Search, Package, Shield, ShoppingCart, Wand2 } from 'lucide-react';
 import { API_BASE_URL, queryClient } from '@/lib/queryClient';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Label } from '@/components/ui/label';
@@ -51,6 +51,14 @@ interface Alert {
   read: boolean;
 }
 
+type AiPlannedAction =
+  | { type: 'set_game_price'; gameSlug: string; price: number }
+  | { type: 'set_game_discount'; gameSlug: string; discountPrice: number | null }
+  | { type: 'set_game_stock'; gameSlug: string; stock: number }
+  | { type: 'set_package_price'; gameSlug: string; packageName: string; price: number }
+  | { type: 'set_package_discount'; gameSlug: string; packageName: string; discountPrice: number | null }
+  | { type: 'bulk_add_cards'; gameSlug: string; cards: string[] };
+
 const apiPath = (path: string) => (path.startsWith('http') ? path : `${API_BASE_URL}${path}`);
 
 export default function AdminDashboard() {
@@ -70,6 +78,12 @@ export default function AdminDashboard() {
   const [alertType, setAlertType] = useState<string>('all');
   const [alertSearch, setAlertSearch] = useState('');
   const [selectedGames, setSelectedGames] = useState<string[]>([]);
+
+  // AI Assistant
+  const [aiPrompt, setAiPrompt] = useState('');
+  const [aiPlanSource, setAiPlanSource] = useState<string>('');
+  const [aiPlannedActions, setAiPlannedActions] = useState<AiPlannedAction[]>([]);
+  const [aiRejected, setAiRejected] = useState<Array<{ message: string; action: any }>>([]);
 
   // Fetch games
   const { data: allGames = [] } = useQuery<Game[]>({
@@ -198,6 +212,63 @@ export default function AdminDashboard() {
     }
   });
 
+  const aiPlanMutation = useMutation({
+    mutationFn: async () => {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('adminToken') : null;
+      const res = await fetch(apiPath('/api/admin/ai/plan'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: JSON.stringify({ prompt: aiPrompt })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error((data as any)?.message || 'Failed to plan');
+      return data as { ok: boolean; source: string; actions: AiPlannedAction[]; rejected: Array<{ action: any; message: string }> };
+    },
+    onSuccess: (data) => {
+      setAiPlanSource(data?.source || '');
+      setAiPlannedActions(Array.isArray(data?.actions) ? data.actions : []);
+      setAiRejected(Array.isArray(data?.rejected) ? data.rejected.map((r) => ({ message: r.message, action: r.action })) : []);
+      toast({ title: 'AI plan ready', description: `Planned ${data?.actions?.length || 0} action(s)`, duration: 1500 });
+    },
+    onError: (err: any) => {
+      toast({ title: 'AI plan failed', description: err?.message || 'Failed to plan', variant: 'destructive' });
+    }
+  });
+
+  const aiExecuteMutation = useMutation({
+    mutationFn: async () => {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('adminToken') : null;
+      const res = await fetch(apiPath('/api/admin/ai/execute'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: JSON.stringify({ actions: aiPlannedActions })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error((data as any)?.message || 'Failed to execute');
+      return data as { ok: boolean; results: Array<{ action: AiPlannedAction; ok: boolean; message?: string; created?: number; skipped?: number }> };
+    },
+    onSuccess: (data) => {
+      const results = Array.isArray(data?.results) ? data.results : [];
+      const okCount = results.filter((r) => r.ok).length;
+      const failCount = results.filter((r) => !r.ok).length;
+      toast({ title: 'AI actions applied', description: `Success ${okCount}, Failed ${failCount}`, duration: 2000 });
+
+      // Refresh affected admin data
+      queryClient.invalidateQueries({ queryKey: ['/api/games'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/game-cards'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/games/popular'] });
+      if (packagesGameId) queryClient.invalidateQueries({ queryKey: [`/api/games/${packagesGameId}/packages`] });
+
+      setAiPlanSource('');
+      setAiPlannedActions([]);
+      setAiRejected([]);
+      setAiPrompt('');
+    },
+    onError: (err: any) => {
+      toast({ title: 'AI apply failed', description: err?.message || 'Failed to apply', variant: 'destructive' });
+    }
+  });
+
   // Fetch game cards (admin)
   const { data: cardsResponse } = useQuery<{ items: Array<{ id: string; game_id: string; card_code: string; is_used: boolean; created_at: string }>; page: number; limit: number; total: number }>({
     queryKey: ['/api/admin/game-cards', `?page=${cardsPage}&limit=${cardsLimit}`],
@@ -219,7 +290,7 @@ export default function AdminDashboard() {
     enabled: true,
     queryFn: async () => {
       const token = localStorage.getItem('adminToken');
-      const res = await fetch(`${API_BASE_URL}/api/chat/all`, {
+      const res = await fetch(`${API_BASE_URL}/api/admin/chat/all`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {}
       });
       if (!res.ok) throw new Error('Failed to fetch chats');
@@ -609,7 +680,7 @@ export default function AdminDashboard() {
     refetchInterval: 2000,
     queryFn: async () => {
       const token = localStorage.getItem('adminToken');
-      const res = await fetch(apiPath(`/api/chat/${selectedSession}`), {
+      const res = await fetch(apiPath(`/api/admin/chat/${selectedSession}`), {
         headers: token ? { Authorization: `Bearer ${token}` } : {}
       });
       if (!res.ok) throw new Error('Failed to fetch messages');
@@ -895,9 +966,124 @@ export default function AdminDashboard() {
           <TabsTrigger value="catbox-upload" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Catbox Image Upload</TabsTrigger>
           <TabsTrigger value="image-manager" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Image Manager</TabsTrigger>
           <TabsTrigger value="content" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Content</TabsTrigger>
+          <TabsTrigger value="ai" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">AI Assistant</TabsTrigger>
         </TabsList>
             <ScrollBar orientation="horizontal" />
           </ScrollArea>
+
+          <TabsContent value="ai" className="space-y-6">
+            <div className="flex items-center gap-2">
+              <Wand2 className="w-5 h-5 text-gold-primary" />
+              <h2 className="text-2xl font-bold text-foreground">AI Assistant</h2>
+            </div>
+            <Card className="bg-card/50 border-gold-primary/30">
+              <CardHeader>
+                <CardTitle className="text-lg">Describe what you want to change</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Request</Label>
+                  <Textarea
+                    value={aiPrompt}
+                    onChange={(e) => setAiPrompt(e.target.value)}
+                    placeholder="Example: Set pubg-mobile price to 120 and discount to 99"
+                    className="min-h-28"
+                  />
+                  <div className="text-xs text-muted-foreground">
+                    The AI will only propose safe, whitelisted actions. You must confirm before applying.
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    onClick={() => aiPlanMutation.mutate()}
+                    disabled={!aiPrompt.trim() || aiPlanMutation.isPending}
+                    className="bg-gold-primary hover:bg-gold-primary/80"
+                  >
+                    {aiPlanMutation.isPending ? 'Planning...' : 'Generate Plan'}
+                  </Button>
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button variant="outline" disabled={aiPlannedActions.length === 0 || aiExecuteMutation.isPending}>
+                        Apply Actions
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Confirm Apply</DialogTitle>
+                        <DialogDescription>
+                          This will execute {aiPlannedActions.length} action(s) on your live database.
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="space-y-2 text-sm">
+                        {aiPlannedActions.map((a, idx) => (
+                          <div key={idx} className="border rounded p-2 bg-muted/30 font-mono text-xs overflow-x-auto">
+                            {JSON.stringify(a)}
+                          </div>
+                        ))}
+                      </div>
+                      <DialogFooter>
+                        <Button
+                          onClick={() => aiExecuteMutation.mutate()}
+                          disabled={aiExecuteMutation.isPending}
+                          className="bg-gold-primary hover:bg-gold-primary/80"
+                        >
+                          {aiExecuteMutation.isPending ? 'Applying...' : 'Confirm & Apply'}
+                        </Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
+                  <Button
+                    variant="ghost"
+                    onClick={() => {
+                      setAiPlanSource('');
+                      setAiPlannedActions([]);
+                      setAiRejected([]);
+                    }}
+                  >
+                    Clear
+                  </Button>
+                </div>
+
+                {(aiPlanSource || aiPlannedActions.length || aiRejected.length) ? (
+                  <div className="space-y-3">
+                    <div className="text-sm text-muted-foreground">
+                      Source: <span className="font-mono">{aiPlanSource || '—'}</span>
+                    </div>
+
+                    <div>
+                      <div className="text-sm font-semibold mb-2">Planned actions ({aiPlannedActions.length})</div>
+                      <div className="grid gap-2">
+                        {aiPlannedActions.length === 0 ? (
+                          <div className="text-sm text-muted-foreground">No actions planned.</div>
+                        ) : (
+                          aiPlannedActions.map((a, idx) => (
+                            <div key={idx} className="border rounded p-2 bg-muted/30 font-mono text-xs overflow-x-auto">
+                              {JSON.stringify(a)}
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </div>
+
+                    {aiRejected.length > 0 && (
+                      <div>
+                        <div className="text-sm font-semibold mb-2 text-yellow-500">Rejected ({aiRejected.length})</div>
+                        <div className="grid gap-2">
+                          {aiRejected.map((r, idx) => (
+                            <div key={idx} className="border rounded p-2 bg-yellow-500/10">
+                              <div className="text-xs font-semibold">{r.message}</div>
+                              <div className="mt-1 font-mono text-xs overflow-x-auto">{JSON.stringify(r.action)}</div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ) : null}
+              </CardContent>
+            </Card>
+          </TabsContent>
 
           {/* Alerts Tab */}
           <TabsContent value="alerts" className="space-y-6">
