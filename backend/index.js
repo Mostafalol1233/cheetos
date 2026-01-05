@@ -1570,6 +1570,31 @@ app.delete('/api/admin/game-cards/:id', authenticateToken, ensureAdmin, async (r
 
 
 
+// Update admin WhatsApp number
+app.put('/api/admin/settings/whatsapp-number', authenticateToken, ensureAdmin, async (req, res) => {
+  try {
+    const { adminPhone } = req.body || {};
+    if (typeof adminPhone !== 'string' || !adminPhone.trim()) {
+      return res.status(400).json({ message: 'adminPhone (string) is required' });
+    }
+    // In production, you’d persist this to DB or env; for now, just update in-memory env
+    process.env.ADMIN_PHONE = adminPhone.trim();
+    await logAudit('update_admin_phone', `Updated admin WhatsApp number to ${adminPhone.trim()}`, req.user);
+    res.json({ adminPhone: process.env.ADMIN_PHONE });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// Get current admin WhatsApp number
+app.get('/api/admin/settings/whatsapp-number', authenticateToken, ensureAdmin, async (req, res) => {
+  try {
+    res.json({ adminPhone: process.env.ADMIN_PHONE || null });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 function getPaymentDetails(paymentMethod) {
   const method = String(paymentMethod || '').trim();
   const orDefault = (v, d) => (v && String(v).trim() ? String(v).trim() : d);

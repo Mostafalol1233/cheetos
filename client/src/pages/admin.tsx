@@ -97,6 +97,12 @@ export default function AdminDashboard() {
   const [aiPlannedActions, setAiPlannedActions] = useState<AiPlannedAction[]>([]);
   const [aiRejected, setAiRejected] = useState<Array<{ message: string; action: any }>>([]);
 
+  // WhatsApp & Email
+  const [adminPhone, setAdminPhone] = useState('');
+  const [testEmailTo, setTestEmailTo] = useState('');
+  const [testEmailSubject, setTestEmailSubject] = useState('Test from GameCart Admin');
+  const [testEmailBody, setTestEmailBody] = useState('This is a test email from the admin dashboard.');
+
   // Fetch games
   const { data: allGames = [] } = useQuery<Game[]>({
     queryKey: ['/api/games'],
@@ -161,17 +167,76 @@ export default function AdminDashboard() {
       return data;
     },
     onSuccess: (_data, variables) => {
-      queryClient.invalidateQueries({ queryKey: [`/api/games/${variables.gameId}/packages`] });
-      queryClient.invalidateQueries({ queryKey: [`/api/games/id/${variables.gameId}`] });
       queryClient.invalidateQueries({ queryKey: ['/api/games'] });
       queryClient.invalidateQueries({ queryKey: ['/api/games/popular'] });
-      const g = allGames.find((gg) => gg.id === variables.gameId);
-      if (g?.slug) {
-        queryClient.invalidateQueries({ queryKey: [`/api/games/${g.slug}`] });
-        queryClient.invalidateQueries({ queryKey: [`/api/games/slug/${g.slug}`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/games/${variables.gameId}/packages`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/games/id/${variables.gameId}`] });
+      if (editingGame?.slug) {
+        queryClient.invalidateQueries({ queryKey: [`/api/games/${editingGame.slug}`] });
+        queryClient.invalidateQueries({ queryKey: [`/api/games/slug/${editingGame.slug}`] });
       }
-      toast({ title: 'Saved', description: 'Packages updated', duration: 1500 });
-      setPackagesGameId(null);
+    },
+    onError: (error: any) => {
+      toast({ title: 'Error', description: error.message || 'Failed to update packages', variant: 'destructive' });
+    }
+  });
+
+  // Admin phone & test email
+  const { data: adminPhoneData, refetch: refetchAdminPhone, isLoading: isLoadingAdminPhone } = useQuery<{ adminPhone: string | null }>({
+    queryKey: ['/api/admin/settings/whatsapp-number'],
+    enabled: true,
+    queryFn: async () => {
+      const token = localStorage.getItem('adminToken');
+      const res = await fetch(apiPath('/api/admin/settings/whatsapp-number'), {
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error((data as any)?.message || 'Failed to fetch admin phone');
+      return data;
+    }
+  });
+  useEffect(() => {
+    if (adminPhoneData?.adminPhone) setAdminPhone(adminPhoneData.adminPhone);
+  }, [adminPhoneData?.adminPhone]);
+
+  const updateAdminPhoneMutation = useMutation({
+    mutationFn: async (adminPhone: string) => {
+      const token = localStorage.getItem('adminToken');
+      const res = await fetch(apiPath('/api/admin/settings/whatsapp-number'), {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: JSON.stringify({ adminPhone })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error((data as any)?.message || 'Failed to update admin phone');
+      return data;
+    },
+    onSuccess: () => {
+      toast({ title: 'Success', description: 'Admin WhatsApp number updated', duration: 2000 });
+      refetchAdminPhone();
+    },
+    onError: (error: any) => {
+      toast({ title: 'Error', description: error.message || 'Failed to update admin phone', variant: 'destructive' });
+    }
+  });
+
+  const testEmailMutation = useMutation({
+    mutationFn: async () => {
+      const token = localStorage.getItem('adminToken');
+      const res = await fetch(apiPath('/api/admin/email/send'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: JSON.stringify({ to: testEmailTo, subject: testEmailSubject, text: testEmailBody })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error((data as any)?.message || 'Failed to send test email');
+      return data;
+    },
+    onSuccess: () => {
+      toast({ title: 'Email sent', description: `Test email sent to ${testEmailTo}`, duration: 2000 });
+    },
+    onError: (error: any) => {
+      toast({ title: 'Error', description: error.message || 'Failed to send test email', variant: 'destructive' });
     }
   });
 
@@ -1015,6 +1080,29 @@ export default function AdminDashboard() {
                 <CardTitle className="text-lg">Describe what you want to change</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Quick Templates (click to edit)</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {[
+                      'Set game {game} price to {price}',
+                      'Set game {game} discount to {price}',
+                      'Set game {game} stock to {stock}',
+                      'Set package {package} price to {price} for game {game}',
+                      'Set package {package} discount to {price} for game {game}',
+                      'Bulk add cards for game {game}: {cards}',
+                    ].map((tpl) => (
+                      <Button
+                        key={tpl}
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setAiPrompt(tpl)}
+                        className="text-xs"
+                      >
+                        {tpl}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
                 <div className="space-y-2">
                   <Label>Request</Label>
                   <Textarea
@@ -1878,6 +1966,36 @@ export default function AdminDashboard() {
             <h2 className="text-2xl font-bold text-foreground mb-2">WhatsApp Integration</h2>
             <p className="text-sm text-muted-foreground mb-4">Manage your connected WhatsApp number and send test messages.</p>
 
+            {/* Admin Phone Number Editor */}
+            <Card className="bg-card/50 border-gold-primary/30">
+              <CardHeader>
+                <CardTitle>Admin WhatsApp Number</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="adminPhone" className="text-right">Admin Phone</Label>
+                  <Input
+                    id="adminPhone"
+                    value={adminPhone}
+                    onChange={(e) => setAdminPhone(e.target.value)}
+                    placeholder="+201234567890"
+                    className="col-span-3"
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <Button onClick={() => updateAdminPhoneMutation.mutate()} disabled={updateAdminPhoneMutation.isPending} className="bg-gold-primary">
+                    {updateAdminPhoneMutation.isPending ? 'Saving...' : 'Save Number'}
+                  </Button>
+                  <Button variant="outline" onClick={() => refetchAdminPhone()} disabled={isLoadingAdminPhone}>
+                    Refresh
+                  </Button>
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  This number receives order confirmations and admin alerts via WhatsApp.
+                </div>
+              </CardContent>
+            </Card>
+
             {/* Connection Status */}
             <Card className="bg-card/50 border-gold-primary/30">
               <CardHeader>
@@ -1885,6 +2003,53 @@ export default function AdminDashboard() {
               </CardHeader>
               <CardContent>
                 <WhatsAppConnectionPanel />
+              </CardContent>
+            </Card>
+
+            {/* Test Email */}
+            <Card className="bg-card/50 border-gold-primary/30">
+              <CardHeader>
+                <CardTitle>Test Email</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="testEmailTo" className="text-right">To</Label>
+                  <Input
+                    id="testEmailTo"
+                    value={testEmailTo}
+                    onChange={(e) => setTestEmailTo(e.target.value)}
+                    placeholder="admin@example.com"
+                    className="col-span-3"
+                  />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="testEmailSubject" className="text-right">Subject</Label>
+                  <Input
+                    id="testEmailSubject"
+                    value={testEmailSubject}
+                    onChange={(e) => setTestEmailSubject(e.target.value)}
+                    placeholder="Test from GameCart Admin"
+                    className="col-span-3"
+                  />
+                </div>
+                <div className="grid grid-cols-4 items-start gap-4">
+                  <Label htmlFor="testEmailBody" className="text-right">Message</Label>
+                  <Textarea
+                    id="testEmailBody"
+                    value={testEmailBody}
+                    onChange={(e) => setTestEmailBody(e.target.value)}
+                    placeholder="This is a test email from the admin dashboard."
+                    className="col-span-3 h-24"
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <Button onClick={() => testEmailMutation.mutate()} disabled={testEmailMutation.isPending || !testEmailTo.trim()} className="bg-gold-primary">
+                    {testEmailMutation.isPending ? 'Sending...' : 'Send Test Email'}
+                  </Button>
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  Ensure BREVO_USER and BREVO_PASS are configured in backend .env for email delivery.
+                </div>
               </CardContent>
             </Card>
 

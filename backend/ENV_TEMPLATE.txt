@@ -32,6 +32,10 @@ WHATSAPP_PHONE_NUMBER_ID=your_phone_number_id
 WHATSAPP_VERIFY_TOKEN=your_verify_token
 ADMIN_PHONE=+201234567890
 
+# Email Configuration (Brevo/Sendinblue)
+BREVO_USER=your_brevo_login_email
+BREVO_PASS=your_brevo_smtp_key
+
 # CDN Configuration (Optional)
 CDN_BASE_URL=https://your-cdn-url.com
 

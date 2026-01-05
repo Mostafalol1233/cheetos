@@ -70,6 +70,7 @@ const formatGame = (game, packages = []) => {
         : (game.discount_price ? Number(game.discount_price) : null),
       isPopular: !!(game.isPopular || game.is_popular),
       image: normalizeImageUrl(game.image),
+      image_url: normalizeImageUrl(game.image_url || game.image), // ensure large image is included
       // Legacy arrays
       packages: legacyPackages,
       packagePrices: legacyPrices,
@@ -95,6 +96,8 @@ const formatGame = (game, packages = []) => {
       name: game?.name || 'Error loading game',
       price: 0,
       stock: 0,
+      image: normalizeImageUrl(game?.image),
+      image_url: normalizeImageUrl(game?.image_url || game?.image),
       packagesList: [],
       packages: [],
       packagePrices: [],
@@ -627,6 +630,49 @@ router.put('/:id/packages', authenticateToken, ensureAdmin, async (req, res) => 
     }
   } catch (error) {
     console.error('DB Error (update packages), falling back to local DB:', error.message);
+    return res.status(503).json({ message: 'Database unavailable' });
+  }
+});
+
+// PUT /api/games/:id/image-url
+router.put('/:id/image-url', authenticateToken, ensureAdmin, async (req, res) => {
+  const { id } = req.params;
+  const { image_url } = req.body;
+  if (!image_url || typeof image_url !== 'string') {
+    return res.status(400).json({ message: 'image_url (string) is required' });
+  }
+
+  try {
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+
+      // Check if game exists
+      const checkRes = await client.query('SELECT id FROM games WHERE id = $1 OR slug = $1', [id]);
+      if (checkRes.rows.length === 0) {
+        await client.query('ROLLBACK');
+        return res.status(404).json({ message: 'Game not found' });
+      }
+      const gameId = checkRes.rows[0].id;
+
+      // Update only image_url
+      await client.query(
+        'UPDATE games SET image_url = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
+        [image_url, gameId]
+      );
+
+      await client.query('COMMIT');
+      await logAudit('update_game_image_url', `Updated game image_url for ${gameId}`, req.user);
+
+      res.json({ id: gameId, image_url });
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
+    }
+  } catch (error) {
+    console.error('DB Error (update image_url), falling back to local DB:', error.message);
     return res.status(503).json({ message: 'Database unavailable' });
   }
 });
