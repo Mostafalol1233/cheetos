@@ -1547,52 +1547,50 @@ export default function AdminDashboard() {
                   ) : (
                     <div className="space-y-3">
                       {packagesDraft.map((p, idx) => (
-                        <div key={idx} className="border-b pb-4 mb-4 last:border-0 last:mb-0 last:pb-0">
-                          <div className="flex items-center justify-between mb-3">
-                            <div className="flex items-center gap-4">
+                        <div key={idx} className="border rounded-lg p-4 space-y-3">
+                          <div className="flex items-start justify-between">
+                            <div className="flex items-center gap-4 flex-1">
                               {p.image ? (
-                                <img src={p.image} alt="Package" className="w-16 h-16 object-cover rounded border border-gold-primary/30" />
+                                <img src={p.image} alt="Package" className="w-16 h-16 object-cover rounded border" />
                               ) : (
-                                <div className="w-16 h-16 bg-muted/50 rounded border border-dashed border-muted-foreground/30 flex items-center justify-center text-xs text-muted-foreground">
-                                  No Img
+                                <div className="w-16 h-16 bg-muted rounded flex items-center justify-center text-xs text-muted-foreground">
+                                  No Image
                                 </div>
                               )}
-                              <div>
+                              <div className="flex-1 space-y-2">
                                 <div className="flex gap-2">
                                   <Label 
                                     htmlFor={`pkg-img-${idx}`} 
-                                    className="cursor-pointer inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80 h-9 px-4 py-2"
+                                    className="cursor-pointer inline-flex items-center justify-center rounded-md text-sm font-medium bg-secondary text-secondary-foreground px-3 py-1"
                                   >
                                     {p.image ? 'Change Image' : 'Upload Image'}
                                   </Label>
                                   {p.image && (
-                                  <Button 
-                                    variant="destructive" 
-                                    size="sm"
-                                    onClick={() => {
-                                      const next = [...packagesDraft];
-                                      next[idx] = { ...next[idx], image: null };
-                                      setPackagesDraft(next);
-                                    }}
-                                  >
-                                    Remove
-                                  </Button>
-                                )}
+                                    <Button 
+                                      variant="destructive" 
+                                      size="sm"
+                                      onClick={() => {
+                                        const next = [...packagesDraft];
+                                        next[idx] = { ...next[idx], image: null };
+                                        setPackagesDraft(next);
+                                      }}
+                                    >
+                                      Remove Image
+                                    </Button>
+                                  )}
+                                </div>
+                                <Input
+                                  id={`pkg-img-${idx}`}
+                                  type="file"
+                                  accept="image/*"
+                                  className="hidden"
+                                  onChange={(e) => {
+                                    const file = e.target.files?.[0];
+                                    if (file) handlePackageImageUpload(idx, file);
+                                  }}
+                                />
                               </div>
-                              <Input
-                                id={`pkg-img-${idx}`}
-                                type="file"
-                                accept="image/*"
-                                className="hidden"
-                                onChange={(e) => {
-                                  const file = e.target.files?.[0];
-                                  if (file) handlePackageImageUpload(idx, file);
-                                }}
-                              />
                             </div>
-                          </div>
-                          {/* Delete Package Button */}
-                          <div className="flex justify-end">
                             <Button
                               variant="destructive"
                               size="sm"
@@ -1601,13 +1599,14 @@ export default function AdminDashboard() {
                                 setPackagesDraft(next);
                               }}
                             >
-                              <Trash2 className="w-4 h-4 mr-2" />
-                              Delete Package
+                              <Trash2 className="w-4 h-4 mr-1" />
+                              Delete
                             </Button>
                           </div>
-                          <div className="grid grid-cols-12 gap-2 items-end">
-                            <div className="col-span-5">
-                              <Label>Package Amount (e.g., "10000 ZP")</Label>
+                          
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                            <div>
+                              <Label>Package Amount</Label>
                               <Input 
                                 value={p.amount}
                                 onChange={(e) => {
@@ -1615,11 +1614,11 @@ export default function AdminDashboard() {
                                   next[idx] = { ...next[idx], amount: e.target.value };
                                   setPackagesDraft(next);
                                 }}
-                                placeholder="10000 ZP"
+                                placeholder="e.g., 10000 ZP"
                               />
                             </div>
-                            <div className="col-span-3">
-                              <Label>Original Price (strikethrough)</Label>
+                            <div>
+                              <Label>Original Price</Label>
                               <Input
                                 type="number"
                                 value={Number.isFinite(p.price) ? p.price : 0}
@@ -1631,8 +1630,8 @@ export default function AdminDashboard() {
                                 }}
                               />
                             </div>
-                            <div className="col-span-4">
-                              <Label>Final Price (shown big)</Label>
+                            <div>
+                              <Label>Final Price (optional)</Label>
                               <Input
                                 type="number"
                                 value={p.discountPrice ?? ''}
@@ -1642,7 +1641,7 @@ export default function AdminDashboard() {
                                   next[idx] = { ...next[idx], discountPrice: v === '' ? null : Number(v) };
                                   setPackagesDraft(next);
                                 }}
-                                placeholder="Leave empty to use original price"
+                                placeholder="Leave empty for no discount"
                               />
                             </div>
                           </div>
@@ -1652,7 +1651,6 @@ export default function AdminDashboard() {
                   )}
                 </div>
 
-                {/* Add Package Button */}
                 <div className="flex justify-center pt-4 border-t">
                   <Button
                     onClick={() => {
