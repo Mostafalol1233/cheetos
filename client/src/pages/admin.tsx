@@ -807,7 +807,7 @@ export default function AdminDashboard() {
     const saveMutation = useMutation({
       mutationFn: async () => {
         const token = localStorage.getItem('adminToken');
-        const res = await fetch(apiPath(`/api/admin/games/${gameId}`), {
+        const res = await fetch(`${API_BASE_URL}/api/games/${gameId}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
           body: JSON.stringify({ id: gameId, discountPrice: finalPrice })
@@ -2894,7 +2894,7 @@ function DiscountsPanel({ games, onSaved }: { games: Game[]; onSaved: () => void
   const updateGameMutation = useMutation({
     mutationFn: async () => {
       const token = localStorage.getItem('adminToken');
-      const res = await fetch(apiPath(`/api/admin/games/${gameId}`), {
+      const res = await fetch(`${API_BASE_URL}/api/games/${gameId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
         body: JSON.stringify({ id: gameId, discountPrice: finalPrice })

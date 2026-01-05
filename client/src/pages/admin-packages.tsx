@@ -38,7 +38,7 @@ export default function AdminPackagesPage() {
     queryKey: [`/api/games/id/${gameId}`],
     enabled: !!gameId,
     queryFn: async () => {
-      const res = await fetch(apiPath(`/api/games/id/${gameId}`));
+      const res = await fetch(`${API_BASE_URL}/api/games/id/${gameId}`);
       if (!res.ok) throw new Error('Failed to fetch game');
       return res.json();
     }
@@ -50,7 +50,7 @@ export default function AdminPackagesPage() {
     enabled: !!gameId,
     queryFn: async () => {
       const token = localStorage.getItem('adminToken');
-      const res = await fetch(apiPath(`/api/games/${gameId}/packages`), {
+      const res = await fetch(`${API_BASE_URL}/api/games/${gameId}/packages`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {}
       });
       if (!res.ok) throw new Error('Failed to fetch packages');
@@ -94,7 +94,7 @@ export default function AdminPackagesPage() {
   const updatePackagesMutation = useMutation({
     mutationFn: async (packages: Package[]) => {
       const token = localStorage.getItem('adminToken');
-      const res = await fetch(apiPath(`/api/games/${gameId}/packages`), {
+      const res = await fetch(`${API_BASE_URL}/api/games/${gameId}/packages`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
