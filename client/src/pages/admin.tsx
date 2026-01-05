@@ -157,7 +157,7 @@ export default function AdminDashboard() {
   const savePackagesMutation = useMutation({
     mutationFn: async (payload: { gameId: string; packages: Array<{ amount: string; price: number; discountPrice: number | null; image?: string | null }> }) => {
       const token = localStorage.getItem('adminToken');
-      const res = await fetch(apiPath(`/api/games/${payload.gameId}/packages`), {
+      const res = await fetch(`${API_BASE_URL}/api/games/${payload.gameId}/packages`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
         body: JSON.stringify({ packages: payload.packages })
