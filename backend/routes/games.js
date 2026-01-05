@@ -69,6 +69,8 @@ const formatGame = (game, packages = []) => {
         ? Number(game.discountPrice)
         : (game.discount_price ? Number(game.discount_price) : null),
       isPopular: !!(game.isPopular || game.is_popular),
+      showOnMainPage: game.showOnMainPage !== undefined ? !!game.showOnMainPage : (game.show_on_main_page !== undefined ? !!game.show_on_main_page : true),
+      displayOrder: game.displayOrder !== undefined ? Number(game.displayOrder) : (game.display_order !== undefined ? Number(game.display_order) : 999),
       image: normalizeImageUrl(game.image),
       image_url: normalizeImageUrl(game.image_url || game.image), // ensure large image is included
       // Legacy arrays
@@ -164,9 +166,9 @@ router.get('/popular', async (req, res) => {
              COALESCE(json_agg(gp ORDER BY gp.price) FILTER (WHERE gp.id IS NOT NULL), '[]') as packages_data
       FROM games g
       LEFT JOIN game_packages gp ON g.id = gp.game_id
-      WHERE g.is_popular = TRUE
-      GROUP BY g.id
-      LIMIT 10
+      WHERE g.show_on_main_page = TRUE
+      ORDER BY g.display_order ASC, g.name ASC
+      LIMIT 50
     `);
     
     const items = gamesRes.rows.map(row => {
@@ -178,8 +180,14 @@ router.get('/popular', async (req, res) => {
   } catch (error) {
     console.error('DB Error (popular), falling back to local DB:', error.message);
     const allGames = localDb.getGames();
-    const popular = allGames.filter(g => g.isPopular || g.is_popular).slice(0, 10);
-    res.json(popular.map(g => formatGame(g)));
+    const visibleGames = allGames.filter(g => (g.showOnMainPage !== undefined ? g.showOnMainPage : (g.show_on_main_page !== undefined ? g.show_on_main_page : true)));
+    const sortedGames = visibleGames.sort((a, b) => {
+      const orderA = a.displayOrder !== undefined ? a.displayOrder : (a.display_order !== undefined ? a.display_order : 999);
+      const orderB = b.displayOrder !== undefined ? b.displayOrder : (b.display_order !== undefined ? b.display_order : 999);
+      if (orderA !== orderB) return orderA - orderB;
+      return a.name.localeCompare(b.name);
+    }).slice(0, 50);
+    res.json(sortedGames.map(g => formatGame(g)));
   }
 });
 
@@ -268,12 +276,15 @@ router.get('/:id', async (req, res) => {
 router.post('/', authenticateToken, ensureAdmin, async (req, res) => {
   const { 
     name, slug, description, price, currency, image, category, isPopular, stock, discountPrice,
-    packagesList, packages, packagePrices, packageDiscountPrices
+    packagesList, packages, packagePrices, packageDiscountPrices,
+    showOnMainPage, displayOrder
   } = req.body;
 
   const gameId = `game_${Date.now()}`;
   const gameSlug = slug || name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
   const isPop = !!isPopular;
+  const showMain = showOnMainPage !== undefined ? !!showOnMainPage : true;
+  const dispOrder = displayOrder !== undefined ? Number(displayOrder) : 999;
 
   // Prepare game object for potential local save
   const gameData = {
@@ -289,6 +300,10 @@ router.post('/', authenticateToken, ensureAdmin, async (req, res) => {
       isPopular: isPop,
       stock: Number(stock) || 0,
       discount_price: discountPrice ? Number(discountPrice) : null,
+      show_on_main_page: showMain,
+      showOnMainPage: showMain,
+      display_order: dispOrder,
+      displayOrder: dispOrder,
       created_at: new Date().toISOString()
   };
 
@@ -313,11 +328,12 @@ router.post('/', authenticateToken, ensureAdmin, async (req, res) => {
       await client.query('BEGIN');
       
       await client.query(`
-        INSERT INTO games (id, name, slug, description, price, currency, image, category, is_popular, stock, discount_price)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+        INSERT INTO games (id, name, slug, description, price, currency, image, category, is_popular, stock, discount_price, show_on_main_page, display_order)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
       `, [
         gameId, name, gameSlug, description || '', Number(price) || 0, currency || 'EGP', 
-        image || '', category || 'other', isPop, Number(stock) || 0, discountPrice ? Number(discountPrice) : null
+        image || '', category || 'other', isPop, Number(stock) || 0, 
+        discountPrice ? Number(discountPrice) : null, showMain, dispOrder
       ]);
 
       for (const pkg of pkgsToInsert) {
@@ -356,7 +372,8 @@ router.put('/:id', authenticateToken, ensureAdmin, async (req, res) => {
   const { id } = req.params;
   const { 
     name, slug, description, price, currency, image, category, isPopular, stock, discountPrice,
-    packagesList, packages, packagePrices, packageDiscountPrices
+    packagesList, packages, packagePrices, packageDiscountPrices,
+    showOnMainPage, displayOrder
   } = req.body;
 
   try {
@@ -386,13 +403,17 @@ router.put('/:id', authenticateToken, ensureAdmin, async (req, res) => {
           is_popular = COALESCE($8, is_popular),
           stock = COALESCE($9, stock),
           discount_price = COALESCE($10, discount_price),
+          show_on_main_page = COALESCE($11, show_on_main_page),
+          display_order = COALESCE($12, display_order),
           updated_at = CURRENT_TIMESTAMP
-        WHERE id = $11
+        WHERE id = $13
       `, [
         name, slug, description, price !== undefined ? Number(price) : undefined, currency,
         image, category, isPopular !== undefined ? !!isPopular : undefined, 
         stock !== undefined ? Number(stock) : undefined, 
         discountPrice !== undefined ? (discountPrice ? Number(discountPrice) : null) : undefined,
+        showOnMainPage !== undefined ? !!showOnMainPage : undefined,
+        displayOrder !== undefined ? Number(displayOrder) : undefined,
         realId
       ]);
 

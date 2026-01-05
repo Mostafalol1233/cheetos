@@ -25,6 +25,8 @@ interface Game {
   stock: number;
   category: string;
   image: string;
+  showOnMainPage?: boolean;
+  displayOrder?: number;
   packagesList?: Array<{
     id?: string;
     name?: string;
@@ -90,6 +92,23 @@ export default function AdminDashboard() {
   const [alertType, setAlertType] = useState<string>('all');
   const [alertSearch, setAlertSearch] = useState('');
   const [selectedGames, setSelectedGames] = useState<string[]>([]);
+
+  // Create Game Dialog
+  const [createGameOpen, setCreateGameOpen] = useState(false);
+  const [newGame, setNewGame] = useState({
+    name: '',
+    slug: '',
+    description: '',
+    price: '',
+    currency: 'EGP',
+    category: 'other',
+    stock: 0,
+    isPopular: false,
+    showOnMainPage: true,
+    displayOrder: 999,
+    discountPrice: '',
+    image: ''
+  });
 
   // AI Assistant
   const [aiPrompt, setAiPrompt] = useState('');
@@ -760,16 +779,21 @@ export default function AdminDashboard() {
   };
 
   const handleCreateGame = () => {
-    const name = prompt('Game name:');
-    if (name) {
-      createGameMutation.mutate({
-        name,
-        price: '99.99',
-        stock: 50,
-        category: 'online-games',
-        image: '/placeholder.jpg'
-      });
-    }
+    setNewGame({
+      name: '',
+      slug: '',
+      description: '',
+      price: '',
+      currency: 'EGP',
+      category: 'other',
+      stock: 0,
+      isPopular: false,
+      showOnMainPage: true,
+      displayOrder: 999,
+      discountPrice: '',
+      image: ''
+    });
+    setCreateGameOpen(true);
   };
 
   // Fetch chat messages for selected session
@@ -1037,6 +1061,169 @@ export default function AdminDashboard() {
     <div className="min-h-screen bg-background p-8">
       <div className="max-w-7xl mx-auto">
         <h1 className="text-3xl font-bold text-gold-primary mb-8">Diaa Eldeen Admin Dashboard</h1>
+
+        {/* Create Game Dialog */}
+        <Dialog open={createGameOpen} onOpenChange={setCreateGameOpen}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Create New Game</DialogTitle>
+              <DialogDescription>
+                Add a new game to your store. Configure whether it appears on main page and its display order.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="game-name">Game Name *</Label>
+                  <Input
+                    id="game-name"
+                    value={newGame.name}
+                    onChange={(e) => setNewGame({ ...newGame, name: e.target.value })}
+                    placeholder="Enter game name"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="game-slug">Slug (optional)</Label>
+                  <Input
+                    id="game-slug"
+                    value={newGame.slug}
+                    onChange={(e) => setNewGame({ ...newGame, slug: e.target.value })}
+                    placeholder="game-name (auto-generated if empty)"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="game-description">Description</Label>
+                <Textarea
+                  id="game-description"
+                  value={newGame.description}
+                  onChange={(e) => setNewGame({ ...newGame, description: e.target.value })}
+                  placeholder="Game description..."
+                  rows={3}
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <Label htmlFor="game-price">Price *</Label>
+                  <Input
+                    id="game-price"
+                    type="number"
+                    value={newGame.price}
+                    onChange={(e) => setNewGame({ ...newGame, price: e.target.value })}
+                    placeholder="0"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="game-currency">Currency</Label>
+                  <Select value={newGame.currency} onValueChange={(v) => setNewGame({ ...newGame, currency: v || 'EGP' })}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="EGP">EGP</SelectItem>
+                      <SelectItem value="USD">USD</SelectItem>
+                      <SelectItem value="EUR">EUR</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="game-stock">Stock</Label>
+                  <Input
+                    id="game-stock"
+                    type="number"
+                    value={newGame.stock}
+                    onChange={(e) => setNewGame({ ...newGame, stock: parseInt(e.target.value) || 0 })}
+                    placeholder="0"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <Label htmlFor="game-category">Category</Label>
+                  <Select value={newGame.category} onValueChange={(v) => setNewGame({ ...newGame, category: v || 'other' })}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="online-games">Online Games</SelectItem>
+                      <SelectItem value="gift-cards">Gift Cards</SelectItem>
+                      <SelectItem value="software">Software</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="game-discount">Discount Price</Label>
+                  <Input
+                    id="game-discount"
+                    type="number"
+                    value={newGame.discountPrice}
+                    onChange={(e) => setNewGame({ ...newGame, discountPrice: e.target.value })}
+                    placeholder="Leave empty for no discount"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="game-image">Image URL</Label>
+                  <Input
+                    id="game-image"
+                    value={newGame.image}
+                    onChange={(e) => setNewGame({ ...newGame, image: e.target.value })}
+                    placeholder="https://example.com/image.jpg"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="game-popular"
+                    checked={newGame.isPopular}
+                    onCheckedChange={(checked) => setNewGame({ ...newGame, isPopular: checked })}
+                  />
+                  <Label htmlFor="game-popular">Popular Game</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="game-main-page"
+                    checked={newGame.showOnMainPage}
+                    onCheckedChange={(checked) => setNewGame({ ...newGame, showOnMainPage: checked })}
+                  />
+                  <Label htmlFor="game-main-page">Show on Main Page</Label>
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="game-display-order">Display Order</Label>
+                <Input
+                  id="game-display-order"
+                  type="number"
+                  value={newGame.displayOrder}
+                  onChange={(e) => setNewGame({ ...newGame, displayOrder: parseInt(e.target.value) || 999 })}
+                  placeholder="999 (higher numbers appear later, 1 appears first)"
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Lower numbers appear first. Games with same order are sorted alphabetically (A-Z).
+                </p>
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setCreateGameOpen(false)}>
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleSaveNewGame} 
+                disabled={createGameMutation.isPending || !newGame.name.trim()}
+                className="bg-gold-primary hover:bg-gold-primary/80"
+              >
+                {createGameMutation.isPending ? 'Creating...' : 'Create Game'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <ScrollArea className="w-full whitespace-nowrap rounded-md border">
@@ -2728,6 +2915,31 @@ function CatboxUploadPanel({ allGames, categories }: { allGames: Game[]; categor
       welcomeMessage,
       position
     });
+  };
+
+  // Create Game Dialog
+  const handleSaveNewGame = () => {
+    if (!newGame.name.trim()) {
+      toast({ title: 'Error', description: 'Game name is required', variant: 'destructive' });
+      return;
+    }
+    
+    createGameMutation.mutate({
+      name: newGame.name.trim(),
+      slug: newGame.slug.trim() || newGame.name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+      description: newGame.description.trim(),
+      price: Number(newGame.price) || 0,
+      currency: newGame.currency,
+      category: newGame.category,
+      stock: Number(newGame.stock) || 0,
+      isPopular: newGame.isPopular,
+      showOnMainPage: newGame.showOnMainPage,
+      displayOrder: Number(newGame.displayOrder) || 999,
+      discountPrice: newGame.discountPrice ? Number(newGame.discountPrice) : null,
+      image: newGame.image
+    });
+    
+    setCreateGameOpen(false);
   };
 
   return (
