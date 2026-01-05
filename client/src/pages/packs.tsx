@@ -29,16 +29,14 @@ export default function PacksPage() {
           const computed = computeDiscount(base);
           const legacy = Array.isArray(g.packageDiscountPrices) ? g.packageDiscountPrices[idx] : null;
           const legacyNum = legacy != null ? Number(legacy) : null;
-          const effectiveDiscount =
-            legacyNum != null && Number.isFinite(legacyNum) && legacyNum > 0 && legacyNum < base
-              ? legacyNum
-              : computed;
-          const finalPrice = effectiveDiscount ?? base;
+          // Treat discountPrice as final price (big font); price as original/strikethrough
+          const final = (legacyNum != null && Number.isFinite(legacyNum) && legacyNum > 0 && legacyNum < base) ? legacyNum : base;
+          const hasDiscount = final !== base;
           out.push({
             id: `${g.id}-pkg-${idx}`,
             name: pkg,
-            originalPrice: effectiveDiscount != null ? base : null,
-            finalPrice,
+            originalPrice: hasDiscount ? base : null,
+            finalPrice: final,
             currency: g.currency || "EGP",
             image: (g.packageThumbnails && g.packageThumbnails[idx]) || g.image,
           });

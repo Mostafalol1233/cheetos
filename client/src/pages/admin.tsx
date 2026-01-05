@@ -20,11 +20,23 @@ interface Game {
   id: string;
   name: string;
   slug?: string;
-  price: string;
+  price: string | number;
   discountPrice?: string | number | null;
   stock: number;
   category: string;
   image: string;
+  packagesList?: Array<{
+    id?: string;
+    name?: string;
+    amount?: string;
+    price?: number;
+    discountPrice?: number | null;
+    discount_price?: number | null;
+    image?: string | null;
+  }>;
+  packages?: string[];
+  packagePrices?: number[];
+  packageDiscountPrices?: Array<number | null>;
 }
 
 interface Category {
@@ -89,6 +101,28 @@ export default function AdminDashboard() {
   const { data: allGames = [] } = useQuery<Game[]>({
     queryKey: ['/api/games'],
   });
+
+  const gameHasPackages = (g: any) => {
+    const list = Array.isArray(g?.packagesList) ? g.packagesList : [];
+    const legacy = Array.isArray(g?.packages) ? g.packages : [];
+    return list.length > 0 || legacy.length > 0;
+  };
+
+  const getDerivedMinPackagePrice = (g: any) => {
+    const list = Array.isArray(g?.packagesList) ? g.packagesList : [];
+    const prices = list
+      .map((p: any) => {
+        const base = Number(p?.price || 0);
+        const rawDiscount = p?.discountPrice ?? p?.discount_price;
+        const discount = rawDiscount !== undefined && rawDiscount !== null && rawDiscount !== '' ? Number(rawDiscount) : null;
+        if (Number.isFinite(discount) && (discount as number) > 0 && (discount as number) < base) return Number(discount);
+        return base;
+      })
+      .filter((n: any) => Number.isFinite(n) && n > 0);
+
+    if (!prices.length) return null;
+    return Math.min(...(prices as number[]));
+  };
 
   const { data: adminPackagesData = [], isFetching: isFetchingAdminPackages } = useQuery<Array<{ amount: string; price: number; discountPrice: number | null; image?: string | null }>>({
     queryKey: packagesGameId ? [`/api/games/${packagesGameId}/packages`] : ['_disabled_admin_packages'],
@@ -1332,7 +1366,13 @@ export default function AdminDashboard() {
                   <CardContent className="space-y-4 pt-4">
                     <div>
                       <p className="text-sm text-muted-foreground">Price</p>
-                      <p className="text-lg font-bold text-gold-primary">{game.price} EGP</p>
+                      {gameHasPackages(game) ? (
+                        <p className="text-lg font-bold text-gold-primary">
+                          From {getDerivedMinPackagePrice(game) ?? 0} EGP
+                        </p>
+                      ) : (
+                        <p className="text-lg font-bold text-gold-primary">{game.price} EGP</p>
+                      )}
                     </div>
                     <div>
                       <p className="text-sm text-muted-foreground">Stock</p>
@@ -1468,7 +1508,7 @@ export default function AdminDashboard() {
                               <Input value={p.amount} readOnly />
                             </div>
                             <div className="col-span-3">
-                              <Label>Price</Label>
+                              <Label>Original Price (strikethrough)</Label>
                               <Input
                                 type="number"
                                 value={Number.isFinite(p.price) ? p.price : 0}
@@ -1481,7 +1521,7 @@ export default function AdminDashboard() {
                               />
                             </div>
                             <div className="col-span-4">
-                              <Label>Discount Price</Label>
+                              <Label>Final Price (shown big)</Label>
                               <Input
                                 type="number"
                                 value={p.discountPrice ?? ''}
@@ -1491,6 +1531,7 @@ export default function AdminDashboard() {
                                   next[idx] = { ...next[idx], discountPrice: v === '' ? null : Number(v) };
                                   setPackagesDraft(next);
                                 }}
+                                placeholder="Leave empty to use original price"
                               />
                             </div>
                           </div>
@@ -1894,8 +1935,13 @@ export default function AdminDashboard() {
                 <Label htmlFor="price" className="text-right">Price</Label>
                 <Input
                   id="price"
-                  value={editingGame.price}
-                  onChange={(e) => setEditingGame({ ...editingGame, price: e.target.value })}
+                  value={gameHasPackages(editingGame) ? String(getDerivedMinPackagePrice(editingGame) ?? '') : editingGame.price}
+                  onChange={(e) => {
+                    if (gameHasPackages(editingGame)) return;
+                    setEditingGame({ ...editingGame, price: e.target.value });
+                  }}
+                  disabled={gameHasPackages(editingGame)}
+                  placeholder={gameHasPackages(editingGame) ? 'Managed by packages' : undefined}
                   className="col-span-3"
                 />
               </div>
@@ -2022,7 +2068,19 @@ export default function AdminDashboard() {
           )}
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditingGame(null)}>Cancel</Button>
-            <Button type="submit" onClick={() => updateGameMutation.mutate(editingGame as Game)}>Save changes</Button>
+            <Button
+              type="submit"
+              onClick={() => {
+                if (!editingGame) return;
+                const payload: any = { ...editingGame };
+                if (gameHasPackages(payload)) {
+                  delete payload.price;
+                }
+                updateGameMutation.mutate(payload);
+              }}
+            >
+              Save changes
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

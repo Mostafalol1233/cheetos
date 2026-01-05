@@ -138,10 +138,12 @@ export default function CategoryPage() {
                 const getPricing = (index: number) => {
                   const base = Number(packagePrices[index] ?? game.price ?? 0);
                   const discount = coerceNumberOrNull(packageDiscountPrices[index]);
-                  const hasDiscount = discount != null && discount > 0 && discount < base;
+                  // Treat discountPrice as final price (big font); price as original/strikethrough
+                  const final = (discount != null && discount > 0 && discount < base) ? (discount as number) : base;
+                  const hasDiscount = final !== base;
                   return {
                     base,
-                    final: hasDiscount ? (discount as number) : base,
+                    final,
                     original: hasDiscount ? base : null,
                   };
                 };

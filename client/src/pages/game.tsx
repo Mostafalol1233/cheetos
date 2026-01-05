@@ -113,11 +113,12 @@ export default function GamePage() {
     const discount = coerceNumberOrNull(packageDiscountPrices[index]);
     const discountOrGame = discount != null ? discount : gameLevelDiscount;
     const computed = computeAutoDiscount(base, index);
-    const effective = (discountOrGame != null && discountOrGame > 0 && discountOrGame < base) ? discountOrGame : computed;
-    const hasDiscount = effective != null && effective > 0 && effective < base;
+    // Treat discountPrice as the final price (big font); price as original/strikethrough
+    const final = (discountOrGame != null && discountOrGame > 0 && discountOrGame < base) ? discountOrGame : base;
+    const hasDiscount = final !== base;
     return {
       base,
-      final: hasDiscount ? (effective as number) : base,
+      final,
       original: hasDiscount ? base : null,
     };
   };

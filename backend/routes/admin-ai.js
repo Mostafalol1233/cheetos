@@ -63,6 +63,23 @@ const ALLOWED_ACTIONS = new Set([
   'bulk_add_cards',
 ]);
 
+function normalizePackageName(raw) {
+  if (!raw || typeof raw !== 'string') return '';
+  return raw.trim().toLowerCase().replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, ' ');
+}
+
+function findPackageByName(packages, target) {
+  if (!Array.isArray(packages) || !target) return null;
+  const normTarget = normalizePackageName(target);
+  const exact = packages.find(p => normalizePackageName(p.name || p.amount || '') === normTarget);
+  if (exact) return exact;
+  const fuzzy = packages.find(p => {
+    const norm = normalizePackageName(p.name || p.amount || '');
+    return norm.includes(normTarget) || normTarget.includes(norm);
+  });
+  return fuzzy || null;
+}
+
 function validatePlannedAction(a) {
   if (!a || typeof a !== 'object') return { ok: false, message: 'Invalid action object' };
   if (!ALLOWED_ACTIONS.has(a.type)) return { ok: false, message: `Action type not allowed: ${String(a.type)}` };
@@ -241,24 +258,32 @@ async function applyAction(action, reqUser) {
   if (action.type === 'set_package_price') {
     const gameId = await resolveGameIdBySlugOrId(action.gameSlug);
     if (!gameId) return { ok: false, message: `Game not found: ${action.gameSlug}` };
-    const res = await pool.query(
-      'UPDATE game_packages SET price = $3 WHERE game_id = $1 AND name = $2 RETURNING id',
-      [gameId, action.packageName, action.price]
-    );
-    if (res.rowCount === 0) return { ok: false, message: `Package not found: ${action.packageName}` };
-    await logAudit('ai_set_package_price', `AI set package price for ${action.gameSlug} / ${action.packageName} to ${action.price}`, reqUser);
+    const pkgRes = await pool.query('SELECT * FROM game_packages WHERE game_id = $1 ORDER BY price ASC', [gameId]);
+    if (!pkgRes.rows.length) return { ok: false, message: `No packages found for game: ${action.gameSlug}` };
+    const available = pkgRes.rows.map(p => ({ id: p.id, name: p.name, amount: p.name }));
+    const match = findPackageByName(available, action.packageName);
+    if (!match) {
+      const names = available.map(p => p.name || p.amount).filter(Boolean).join(', ');
+      return { ok: false, message: `Package "${action.packageName}" not found for game "${action.gameSlug}". Available packages: ${names}` };
+    }
+    await pool.query('UPDATE game_packages SET price = $2 WHERE id = $1', [match.id, action.price]);
+    await logAudit('ai_set_package_price', `AI set package price for ${action.gameSlug} / ${match.name} to ${action.price}`, reqUser);
     return { ok: true };
   }
 
   if (action.type === 'set_package_discount') {
     const gameId = await resolveGameIdBySlugOrId(action.gameSlug);
     if (!gameId) return { ok: false, message: `Game not found: ${action.gameSlug}` };
-    const res = await pool.query(
-      'UPDATE game_packages SET discount_price = $3 WHERE game_id = $1 AND name = $2 RETURNING id',
-      [gameId, action.packageName, action.discountPrice]
-    );
-    if (res.rowCount === 0) return { ok: false, message: `Package not found: ${action.packageName}` };
-    await logAudit('ai_set_package_discount', `AI set package discount for ${action.gameSlug} / ${action.packageName} to ${action.discountPrice}`, reqUser);
+    const pkgRes = await pool.query('SELECT * FROM game_packages WHERE game_id = $1 ORDER BY price ASC', [gameId]);
+    if (!pkgRes.rows.length) return { ok: false, message: `No packages found for game: ${action.gameSlug}` };
+    const available = pkgRes.rows.map(p => ({ id: p.id, name: p.name, amount: p.name }));
+    const match = findPackageByName(available, action.packageName);
+    if (!match) {
+      const names = available.map(p => p.name || p.amount).filter(Boolean).join(', ');
+      return { ok: false, message: `Package "${action.packageName}" not found for game "${action.gameSlug}". Available packages: ${names}` };
+    }
+    await pool.query('UPDATE game_packages SET discount_price = $2 WHERE id = $1', [match.id, action.discountPrice]);
+    await logAudit('ai_set_package_discount', `AI set package discount for ${action.gameSlug} / ${match.name} to ${action.discountPrice}`, reqUser);
     return { ok: true };
   }
 
