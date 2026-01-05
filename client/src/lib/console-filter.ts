@@ -1,14 +1,11 @@
 // Console filter for production - hides API calls and sensitive data
-// Note: In production, console.log/info/debug are replaced with void 0 via vite.config.ts
-// This file provides additional runtime filtering for any remaining console calls
-
 (function() {
   'use strict';
   
   // Only run in production
   if (process.env.NODE_ENV !== 'production') return;
   
-  // Store original methods before they might be replaced
+  // Store original methods
   const originalLog = console.log;
   const originalInfo = console.info;
   const originalDebug = console.debug;

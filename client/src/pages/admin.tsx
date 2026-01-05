@@ -1983,7 +1983,7 @@ export default function AdminDashboard() {
                   />
                 </div>
                 <div className="flex gap-2">
-                  <Button onClick={() => updateAdminPhoneMutation.mutate()} disabled={updateAdminPhoneMutation.isPending} className="bg-gold-primary">
+                  <Button onClick={() => updateAdminPhoneMutation.mutate(adminPhone)} disabled={updateAdminPhoneMutation.isPending} className="bg-gold-primary">
                     {updateAdminPhoneMutation.isPending ? 'Saving...' : 'Save Number'}
                   </Button>
                   <Button variant="outline" onClick={() => refetchAdminPhone()} disabled={isLoadingAdminPhone}>
