@@ -110,11 +110,20 @@ export default function GamePage() {
 
   const getPackagePricing = (index: number) => {
     const base = Number(packagePrices[index] ?? game.price ?? 0);
-    const discount = coerceNumberOrNull(packageDiscountPrices[index]);
-    const discountOrGame = discount != null ? discount : gameLevelDiscount;
+    const packageDiscount = coerceNumberOrNull(packageDiscountPrices[index]);
+    const gameDiscount = gameLevelDiscount;
     const computed = computeAutoDiscount(base, index);
-    // Treat discountPrice as the final price (big font); price as original/strikethrough
-    const final = (discountOrGame != null && discountOrGame > 0 && discountOrGame < base) ? discountOrGame : base;
+    
+    // Priority: package discount > game discount > auto discount > base price
+    let final = base;
+    if (packageDiscount != null && packageDiscount > 0 && packageDiscount < base) {
+      final = packageDiscount;
+    } else if (gameDiscount != null && gameDiscount > 0 && gameDiscount < base) {
+      final = gameDiscount;
+    } else if (computed != null && computed > 0 && computed < base) {
+      final = computed;
+    }
+    
     const hasDiscount = final !== base;
     return {
       base,

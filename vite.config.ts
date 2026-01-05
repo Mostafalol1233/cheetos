@@ -6,8 +6,15 @@ import path from "path";
 export default defineConfig({
   plugins: [
     react(),
-    
   ],
+  define: {
+    // Filter console logs in production
+    ...(process.env.NODE_ENV === 'production' && {
+      'console.log': '(() => {})',
+      'console.info': '(() => {})',
+      'console.debug': '(() => {})',
+    }),
+  },
   resolve: {
     alias: {
       "@": path.resolve(import.meta.dirname, "client", "src"),
@@ -19,6 +26,13 @@ export default defineConfig({
   build: {
     outDir: path.resolve(import.meta.dirname, "dist/public"),
     emptyOutDir: true,
+    rollupOptions: {
+      onwarn(warning, warn) {
+        // Suppress warnings about dynamic imports
+        if (warning.code === 'DYNAMIC_IMPORT') return;
+        warn(warning);
+      },
+    },
   },
   server: {
     host: "0.0.0.0",

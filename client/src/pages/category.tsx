@@ -137,9 +137,17 @@ export default function CategoryPage() {
 
                 const getPricing = (index: number) => {
                   const base = Number(packagePrices[index] ?? game.price ?? 0);
-                  const discount = coerceNumberOrNull(packageDiscountPrices[index]);
-                  // Treat discountPrice as final price (big font); price as original/strikethrough
-                  const final = (discount != null && discount > 0 && discount < base) ? (discount as number) : base;
+                  const packageDiscount = coerceNumberOrNull(packageDiscountPrices[index]);
+                  const gameDiscount = coerceNumberOrNull((game as any)?.discountPrice ?? (game as any)?.discount_price ?? null);
+                  
+                  // Priority: package discount > game discount > base price
+                  let final = base;
+                  if (packageDiscount != null && packageDiscount > 0 && packageDiscount < base) {
+                    final = packageDiscount;
+                  } else if (gameDiscount != null && gameDiscount > 0 && gameDiscount < base) {
+                    final = gameDiscount;
+                  }
+                  
                   const hasDiscount = final !== base;
                   return {
                     base,

@@ -23,22 +23,31 @@ export default function PacksPage() {
   const packs = React.useMemo(() => {
     const out: any[] = [];
     (games || ([] as any[])).forEach((g: any) => {
-      if (Array.isArray(g.packages) && g.packages.length > 0) {
-        g.packages.forEach((pkg: string, idx: number) => {
-          const base = Number((g.packagePrices && g.packagePrices[idx]) || g.price || 0);
-          const computed = computeDiscount(base);
-          const legacy = Array.isArray(g.packageDiscountPrices) ? g.packageDiscountPrices[idx] : null;
-          const legacyNum = legacy != null ? Number(legacy) : null;
+      // Handle both legacy packages and new packagesList
+      const packages = Array.isArray(g.packages) ? g.packages : [];
+      const packagesList = Array.isArray(g.packagesList) ? g.packagesList : [];
+      
+      if (packages.length > 0 || packagesList.length > 0) {
+        const items = packagesList.length > 0 ? packagesList : packages.map((pkg: string, idx: number) => ({
+          name: pkg,
+          price: Number((g.packagePrices && g.packagePrices[idx]) || g.price || 0),
+          discountPrice: Array.isArray(g.packageDiscountPrices) ? g.packageDiscountPrices[idx] : null,
+          image: (g.packageThumbnails && g.packageThumbnails[idx]) || g.image,
+        }));
+        
+        items.forEach((pkg: any, idx: number) => {
+          const base = Number(pkg.price || 0);
+          const discount = pkg.discountPrice != null ? Number(pkg.discountPrice) : null;
           // Treat discountPrice as final price (big font); price as original/strikethrough
-          const final = (legacyNum != null && Number.isFinite(legacyNum) && legacyNum > 0 && legacyNum < base) ? legacyNum : base;
+          const final = (discount != null && Number.isFinite(discount) && discount > 0 && discount < base) ? discount : base;
           const hasDiscount = final !== base;
           out.push({
             id: `${g.id}-pkg-${idx}`,
-            name: pkg,
+            name: pkg.name || pkg,
             originalPrice: hasDiscount ? base : null,
             finalPrice: final,
             currency: g.currency || "EGP",
-            image: (g.packageThumbnails && g.packageThumbnails[idx]) || g.image,
+            image: pkg.image || g.image,
           });
         });
       }
