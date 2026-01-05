@@ -1057,6 +1057,31 @@ export default function AdminDashboard() {
     );
   }
 
+  // Create Game Dialog
+  const handleSaveNewGame = () => {
+    if (!newGame.name.trim()) {
+      toast({ title: 'Error', description: 'Game name is required', variant: 'destructive' });
+      return;
+    }
+    
+    createGameMutation.mutate({
+      name: newGame.name.trim(),
+      slug: newGame.slug.trim() || newGame.name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+      description: newGame.description.trim(),
+      price: Number(newGame.price) || 0,
+      currency: newGame.currency,
+      category: newGame.category,
+      stock: Number(newGame.stock) || 0,
+      isPopular: newGame.isPopular,
+      showOnMainPage: newGame.showOnMainPage,
+      displayOrder: Number(newGame.displayOrder) || 999,
+      discountPrice: newGame.discountPrice ? Number(newGame.discountPrice) : null,
+      image: newGame.image
+    });
+    
+    setCreateGameOpen(false);
+  };
+
   return (
     <div className="min-h-screen bg-background p-8">
       <div className="max-w-7xl mx-auto">
@@ -2915,31 +2940,6 @@ function CatboxUploadPanel({ allGames, categories }: { allGames: Game[]; categor
       welcomeMessage,
       position
     });
-  };
-
-  // Create Game Dialog
-  const handleSaveNewGame = () => {
-    if (!newGame.name.trim()) {
-      toast({ title: 'Error', description: 'Game name is required', variant: 'destructive' });
-      return;
-    }
-    
-    createGameMutation.mutate({
-      name: newGame.name.trim(),
-      slug: newGame.slug.trim() || newGame.name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
-      description: newGame.description.trim(),
-      price: Number(newGame.price) || 0,
-      currency: newGame.currency,
-      category: newGame.category,
-      stock: Number(newGame.stock) || 0,
-      isPopular: newGame.isPopular,
-      showOnMainPage: newGame.showOnMainPage,
-      displayOrder: Number(newGame.displayOrder) || 999,
-      discountPrice: newGame.discountPrice ? Number(newGame.discountPrice) : null,
-      image: newGame.image
-    });
-    
-    setCreateGameOpen(false);
   };
 
   return (
