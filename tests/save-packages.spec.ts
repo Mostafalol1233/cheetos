@@ -109,5 +109,21 @@ test.describe('Admin UI package editing', () => {
     await amountInput.blur();
     await expect(page.getByText(/Saved/i)).toBeVisible();
     await page.getByRole('button', { name: /Close/i }).click();
+    await page.getByRole('link', { name: /Back/i }).click();
+  });
+
+  test('Save validation prevents invalid values and confirms persistence', async ({ page, request }) => {
+    await page.getByRole('tab', { name: /Packages/i }).click();
+    await page.getByRole('button', { name: /Manage Packages/i }).first().click();
+    const dialog = page.getByRole('dialog', { name: /Edit Packages/i });
+    await expect(dialog).toBeVisible();
+    const priceInput = dialog.getByLabel(/Price/i).first();
+    await priceInput.fill('-5');
+    await dialog.getByRole('button', { name: /Save/i }).click();
+    await expect(page.getByText(/Invalid values/i)).toBeVisible();
+    await priceInput.fill('200');
+    await dialog.getByRole('button', { name: /Save/i }).click();
+    await expect(page.getByText(/Saved/i)).toBeVisible();
+    await page.getByRole('button', { name: /Close/i }).click();
   });
 }

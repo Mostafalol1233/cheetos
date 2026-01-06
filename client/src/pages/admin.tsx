@@ -165,17 +165,56 @@ export default function AdminDashboard() {
       return data;
     }
   });
+  const validatePackage = (p: { amount: string; price: number; discountPrice: number | null; value?: number | null; duration?: string; description?: string }) => {
+    const amt = String(p.amount || '').trim();
+    if (!amt) return 'Amount is required';
+    const qty = extractQuantityInt(amt);
+    const v = p.value != null ? Number(p.value) : qty;
+    if (!Number.isInteger(v) || v <= 0) return 'Quantity must be a positive integer';
+    const priceNum = Number(normalizeNumericString(p.price));
+    if (!Number.isFinite(priceNum) || priceNum < 0) return 'Price must be a non-negative number';
+    if (p.discountPrice != null) {
+      const d = Number(normalizeNumericString(p.discountPrice));
+      if (!Number.isFinite(d) || d < 0) return 'Discount price must be non-negative';
+    }
+    if (p.duration && String(p.duration).length > 50) return 'Duration too long';
+    if (p.description && String(p.description).length > 500) return 'Description too long';
+    return null;
+  };
+  const prepareNormalizedPackages = (list: Array<{ amount: string; price: number; discountPrice: number | null; image?: string | null; value?: number | null; duration?: string; description?: string }>) => {
+    return list.map(p => {
+      const qty = extractQuantityInt(p.amount);
+      return {
+        ...p,
+        price: Number(normalizeNumericString(p.price)),
+        discountPrice: p.discountPrice == null ? null : Number(normalizeNumericString(p.discountPrice)),
+        value: p.value != null ? Number(p.value) : (qty > 0 ? qty : null)
+      };
+    });
+  };
   const handleAutoSave = async (idx: number) => {
     if (!packagesGameId) return;
     setSavingIndices(prev => new Set([...Array.from(prev), idx]));
     try {
-      const normalizedPackages = packagesDraft.map(p => ({
-        ...p,
-        price: Number(normalizeNumericString(p.price)),
-        discountPrice: p.discountPrice == null ? null : Number(normalizeNumericString(p.discountPrice))
+      const validationError = validatePackage(packagesDraft[idx]);
+      if (validationError) {
+        throw new Error(validationError);
+      }
+      const normalizedPackages = prepareNormalizedPackages(packagesDraft);
+      const resp = await savePackagesMutationAsync.mutateAsync({ gameId: packagesGameId, packages: normalizedPackages });
+      const serverItems = Array.isArray(resp) ? resp : [];
+      if (!serverItems.length) throw new Error('Server returned empty packages');
+      const next = serverItems.map((p: any) => ({
+        amount: String(p?.amount || ''),
+        price: Number(p?.price || 0),
+        discountPrice: p?.discountPrice != null ? Number(p.discountPrice) : null,
+        image: p?.image || null,
+        value: p?.value != null ? Number(p.value) : null,
+        duration: p?.duration || '',
+        description: p?.description || ''
       }));
-      await savePackagesMutationAsync.mutateAsync({ gameId: packagesGameId, packages: normalizedPackages });
-      setOriginalPackages(normalizedPackages);
+      setPackagesDraft(next);
+      setOriginalPackages(next);
       queryClient.invalidateQueries({ queryKey: [`/api/games/${packagesGameId}/packages`] });
       queryClient.invalidateQueries({ queryKey: [`/api/games/id/${packagesGameId}`] });
       queryClient.invalidateQueries({ queryKey: ['/api/games'] });
@@ -1641,7 +1680,13 @@ export default function AdminDashboard() {
                   <Button
                     onClick={() => {
                       if (!packagesGameId) return;
-                      savePackagesMutation.mutate({ gameId: packagesGameId, packages: packagesDraft });
+                      const errors = packagesDraft.map(validatePackage).filter(Boolean);
+                      if (errors.length) {
+                        toast({ title: 'Invalid values', description: String(errors[0]), variant: 'destructive' });
+                        return;
+                      }
+                      const normalized = prepareNormalizedPackages(packagesDraft);
+                      savePackagesMutation.mutate({ gameId: packagesGameId, packages: normalized });
                     }}
                     disabled={!packagesGameId || savePackagesMutation.isPending || isFetchingAdminPackages}
                     className="bg-gold-primary"
