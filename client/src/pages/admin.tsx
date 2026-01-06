@@ -1519,25 +1519,6 @@ export default function AdminDashboard() {
                           </div>
                           <div className="mt-3 flex gap-2">
                             <Button
-                              variant="secondary"
-                              size="sm"
-                              onClick={() => {
-                                const amt = String(p.amount || '').trim();
-                                const priceOk = Number(p.price) >= 0;
-                                const discOk = p.discountPrice == null || Number(p.discountPrice) >= 0;
-                                const valueOk = p.value == null || Number(p.value) >= 0;
-                                const durationOk = String(p.duration || '').length <= 50;
-                                const descOk = String(p.description || '').length <= 200;
-                                if (!amt || !priceOk || !discOk || !valueOk || !durationOk || !descOk) {
-                                  toast({ title: 'Invalid inputs', description: 'Fix validation errors before saving', variant: 'destructive' });
-                                  return;
-                                }
-                                toast({ title: 'Draft saved', description: 'Package changes stored locally' });
-                              }}
-                            >
-                              Save Draft
-                            </Button>
-                            <Button
                               variant="outline"
                               size="sm"
                               onClick={() => {
