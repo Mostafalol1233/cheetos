@@ -775,21 +775,22 @@ export default function AdminDashboard() {
     const saveMutation = useMutation({
       mutationFn: async () => {
         const token = localStorage.getItem('adminToken');
-        const res = await fetch(apiPath(`/api/admin/games/${gameId}`), {
+        const res = await fetch(apiPath(`/api/games/${gameId}`), {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
           body: JSON.stringify({ id: gameId, discountPrice: finalPrice })
         });
-        return await res.json();
+        const data = await res.json();
+        if (!res.ok) throw new Error((data as any)?.message || 'Failed to update discount');
+        return data;
       },
       onSuccess: (resp) => {
         setSaving(false);
-        if (resp?.id) {
-          toast({ title: 'Saved', description: 'Discount updated', duration: 1200 });
-          onSaved();
-        } else {
-          toast({ title: 'Error', description: resp?.message || 'Failed to save', duration: 1800 });
-        }
+        toast({ title: 'Saved', description: 'Discount updated', duration: 1200 });
+        queryClient.invalidateQueries({ queryKey: ['/api/games'] });
+        queryClient.invalidateQueries({ queryKey: [`/api/games/id/${gameId}`] });
+        queryClient.invalidateQueries({ queryKey: ['/api/games/popular'] });
+        onSaved();
       },
       onError: (err: any) => {
         setSaving(false);
@@ -1106,7 +1107,7 @@ export default function AdminDashboard() {
                               )}
                             </div>
                             <p className="text-sm text-muted-foreground">
-                              {new Date(alert.timestamp).toLocaleString()} • {alert.type.toUpperCase()}
+                              {new Date(alert.timestamp).toLocaleString('en-US')} • {String(alert.type || '').toUpperCase()}
                             </p>
                             {alert.details && (
                               <div className="mt-2 text-xs bg-muted/50 p-2 rounded overflow-x-auto max-w-2xl font-mono">
@@ -1794,17 +1795,23 @@ export default function AdminDashboard() {
                   <CardContent>
                     <ScrollArea className="h-96">
                       <div className="space-y-2">
-                        {Array.from(new Set(allChats.map((msg: ChatMessage) => msg.sessionId))).map((sessionId) => (
-                          <Button
-                            key={sessionId}
-                            variant={selectedSession === sessionId ? 'default' : 'outline'}
-                            onClick={() => setSelectedSession(sessionId as string)}
-                            className="w-full justify-start text-xs"
-                          >
-                            <MessageSquare className="w-4 h-4 mr-2" />
-                            {(sessionId as string).substring(0, 12)}...
-                          </Button>
-                        ))}
+                        {Array.from(new Set(allChats.map((msg: ChatMessage) => msg.sessionId))).length === 0 ? (
+                          <div className="text-sm text-muted-foreground p-3 border rounded">
+                            No active chat sessions yet. New sessions will appear here.
+                          </div>
+                        ) : (
+                          Array.from(new Set(allChats.map((msg: ChatMessage) => msg.sessionId))).map((sessionId) => (
+                            <Button
+                              key={sessionId}
+                              variant={selectedSession === sessionId ? 'default' : 'outline'}
+                              onClick={() => setSelectedSession(sessionId as string)}
+                              className="w-full justify-start text-xs"
+                            >
+                              <MessageSquare className="w-4 h-4 mr-2" />
+                              {(sessionId as string).substring(0, 12)}...
+                            </Button>
+                          ))
+                        )}
                       </div>
                     </ScrollArea>
                   </CardContent>
@@ -1833,7 +1840,7 @@ export default function AdminDashboard() {
                               <p className="text-sm font-bold">{msg.sender === 'user' ? 'Customer' : 'You'}</p>
                               <p className="text-sm">{msg.message}</p>
                               <p className="text-xs opacity-60 mt-1">
-                                {new Date(msg.timestamp).toLocaleTimeString()}
+                                {new Date(msg.timestamp).toLocaleTimeString('en-US')}
                               </p>
                               <p className="text-[10px] mt-1 opacity-70">Status: {msg.status || (msg.read ? 'read' : 'delivered')}</p>
                             </div>
@@ -2723,11 +2730,11 @@ function LogoManagementPanel() {
     }
   }
 
-function DiscountsPanel({ games, onSaved }: { games: Game[]; onSaved: () => void }) {
-  const { toast } = useToast();
-  const [gameId, setGameId] = useState<string>(games[0]?.id || '');
-  const [mode, setMode] = useState<'percentage' | 'amount'>('percentage');
-  const [percentage, setPercentage] = useState<string>('10');
+  function DiscountsPanel({ games, onSaved }: { games: Game[]; onSaved: () => void }) {
+    const { toast } = useToast();
+    const [gameId, setGameId] = useState<string>(games[0]?.id || '');
+    const [mode, setMode] = useState<'percentage' | 'amount'>('percentage');
+    const [percentage, setPercentage] = useState<string>('10');
   const [amount, setAmount] = useState<string>('0');
   const [saving, setSaving] = useState(false);
   const selectedGame = games.find(g => g.id === gameId);
@@ -2741,21 +2748,22 @@ function DiscountsPanel({ games, onSaved }: { games: Game[]; onSaved: () => void
   const updateGameMutation = useMutation({
     mutationFn: async () => {
       const token = localStorage.getItem('adminToken');
-      const res = await fetch(apiPath(`/api/admin/games/${gameId}`), {
+      const res = await fetch(apiPath(`/api/games/${gameId}`), {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
         body: JSON.stringify({ id: gameId, discountPrice: finalPrice })
       });
-      return await res.json();
+      const data = await res.json();
+      if (!res.ok) throw new Error((data as any)?.message || 'Failed to update discount');
+      return data;
     },
-    onSuccess: (resp) => {
+    onSuccess: (_resp) => {
       setSaving(false);
-      if (resp?.id) {
-        toast({ title: 'Saved', description: 'Discount updated', duration: 1200 });
-        onSaved();
-      } else {
-        toast({ title: 'Error', description: resp?.message || 'Failed to save', duration: 1800 });
-      }
+      toast({ title: 'Saved', description: 'Discount updated', duration: 1200 });
+      queryClient.invalidateQueries({ queryKey: ['/api/games'] });
+      queryClient.invalidateQueries({ queryKey: [`/api/games/id/${gameId}`] });
+      queryClient.invalidateQueries({ queryKey: ['/api/games/popular'] });
+      onSaved();
     },
     onError: (err: any) => {
       setSaving(false);
