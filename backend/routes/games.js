@@ -188,6 +188,7 @@ router.get('/popular', async (req, res) => {
       FROM games g
       LEFT JOIN game_packages gp ON g.id = gp.game_id
       WHERE g.show_on_main_page = TRUE
+      GROUP BY g.id
       ORDER BY g.display_order ASC, g.name ASC
       LIMIT 50
     `);
@@ -593,8 +594,11 @@ router.get('/:id/packages', async (req, res) => {
       const items = resDb.rows.map(p => ({
         ...p,
         amount: p.name,
+        price: Number(p.price),
         discountPrice: (p.discount_price !== undefined && p.discount_price !== null && p.discount_price !== '') ? Number(p.discount_price) : null,
-        price: Number(p.price)
+        value: p.value != null ? Number(p.value) : null,
+        duration: p.duration || null,
+        description: p.description || null
       }));
       return res.json(items);
     }
@@ -614,6 +618,9 @@ router.get('/:id/packages', async (req, res) => {
         price: Number(prices[i] ?? 0),
         discountPrice: (discounts[i] !== undefined && discounts[i] !== null && discounts[i] !== '') ? Number(discounts[i]) : null,
         image: thumbnails[i] ?? null,
+        value: null,
+        duration: null,
+        description: null
       })).filter((p) => p.amount);
 
       return res.json(items);
@@ -666,6 +673,19 @@ router.put('/:id/packages', authenticateToken, ensureAdmin, async (req, res) => 
           const price = Number(pkg.price || 0);
           const discount = pkg.discountPrice != null && pkg.discountPrice !== '' ? Number(pkg.discountPrice) : null;
           const image = pkg.image || null;
+          const value = pkg.value != null && pkg.value !== '' ? Number(pkg.value) : null;
+          const duration = pkg.duration ? String(pkg.duration).slice(0, 50) : null;
+          const description = pkg.description ? String(pkg.description).slice(0, 500) : null;
+
+          // Server-side validation
+          if (price < 0 || (value != null && value < 0)) {
+            await client.query('ROLLBACK');
+            return res.status(400).json({ message: 'Price and value must be non-negative' });
+          }
+          if (duration && duration.length > 50) {
+            await client.query('ROLLBACK');
+            return res.status(400).json({ message: 'Duration too long' });
+          }
 
           legacyPackages.push(String(name));
           legacyPrices.push(price);
@@ -673,12 +693,15 @@ router.put('/:id/packages', authenticateToken, ensureAdmin, async (req, res) => 
           legacyThumbnails.push(image);
 
           await client.query(`
-              INSERT INTO game_packages (game_id, name, price, discount_price, image)
-              VALUES ($1, $2, $3, $4, $5)
+              INSERT INTO game_packages (game_id, name, price, discount_price, image, value, duration, description)
+              VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
           `, [
               id, name, price,
               Number.isFinite(discount) ? discount : null,
-              image
+              image,
+              Number.isFinite(value) ? value : null,
+              duration,
+              description
           ]);
         }
 
@@ -700,8 +723,11 @@ router.put('/:id/packages', authenticateToken, ensureAdmin, async (req, res) => 
         const items = resDb.rows.map(p => ({
         ...p,
         amount: p.name,
+        price: Number(p.price),
         discountPrice: (p.discount_price !== undefined && p.discount_price !== null && p.discount_price !== '') ? Number(p.discount_price) : null,
-        price: Number(p.price)
+        value: p.value != null ? Number(p.value) : null,
+        duration: p.duration || null,
+        description: p.description || null
         }));
         
         await logAudit('update_packages', `Updated packages for game: ${id}`, req.user);

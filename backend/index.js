@@ -1026,6 +1026,9 @@ async function initializeDatabase() {
         price DECIMAL(10, 2) DEFAULT 0,
         discount_price DECIMAL(10, 2),
         image VARCHAR(255),
+        value DECIMAL(10, 2),
+        duration VARCHAR(50),
+        description TEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `);

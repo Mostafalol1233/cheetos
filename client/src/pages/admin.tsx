@@ -61,7 +61,10 @@ export default function AdminDashboard() {
   const [searchGameTerm, setSearchGameTerm] = useState('');
   const [editingGame, setEditingGame] = useState<Game | null>(null);
   const [packagesGameId, setPackagesGameId] = useState<string | null>(null);
-  const [packagesDraft, setPackagesDraft] = useState<Array<{ amount: string; price: number; discountPrice: number | null; image?: string | null }>>([]);
+  const [packagesDraft, setPackagesDraft] = useState<Array<{ amount: string; price: number; discountPrice: number | null; image?: string | null; value?: number | null; duration?: string; description?: string }>>([]);
+  const { toast } = useToast();
+  const [originalPackages, setOriginalPackages] = useState<Array<{ amount: string; price: number; discountPrice: number | null; image?: string | null; value?: number | null; duration?: string; description?: string }>>([]);
+  const [addedIndices, setAddedIndices] = useState<Set<number>>(new Set());
   const [selectedSession, setSelectedSession] = useState<string | null>(null);
   const [replyMessage, setReplyMessage] = useState('');
   const [cardsPage, setCardsPage] = useState(1);
@@ -97,13 +100,18 @@ export default function AdminDashboard() {
       amount: String(p?.amount || ''),
       price: Number(p?.price || 0),
       discountPrice: p?.discountPrice != null ? Number(p.discountPrice) : null,
-      image: p?.image || null
+      image: p?.image || null,
+      value: p?.value != null ? Number(p.value) : null,
+      duration: p?.duration || '',
+      description: p?.description || ''
     }));
     setPackagesDraft(normalized);
+    setOriginalPackages(normalized);
+    setAddedIndices(new Set());
   }, [packagesGameId, adminPackagesData]);
 
   const savePackagesMutation = useMutation({
-    mutationFn: async (payload: { gameId: string; packages: Array<{ amount: string; price: number; discountPrice: number | null; image?: string | null }> }) => {
+    mutationFn: async (payload: { gameId: string; packages: Array<{ amount: string; price: number; discountPrice: number | null; image?: string | null; value?: number | null; duration?: string; description?: string }> }) => {
       const token = localStorage.getItem('adminToken');
       const res = await fetch(apiPath(`/api/games/${payload.gameId}/packages`), {
         method: 'PUT',
@@ -153,6 +161,8 @@ export default function AdminDashboard() {
       toast({ title: 'Error', description: err.message || 'Upload failed', variant: 'destructive' });
     }
   };
+
+  const [packagesFilter, setPackagesFilter] = useState('');
 
   // Filter games based on search
   const games = allGames.filter((game: Game) => 
@@ -1356,6 +1366,25 @@ export default function AdminDashboard() {
                   <DialogDescription>
                     Edit package price and discount price. Changes apply on the website after saving.
                   </DialogDescription>
+                  <div className="mt-2 flex items-center gap-2">
+                    <Input
+                      placeholder="Search packages…"
+                      value={packagesFilter}
+                      onChange={(e) => setPackagesFilter(e.target.value)}
+                      className="flex-1"
+                    />
+                    <Button
+                      className="bg-gold-primary"
+                      onClick={() => {
+                        const next = [...packagesDraft, { amount: '', price: 0, discountPrice: null, image: null, value: null, duration: '', description: '' }];
+                        setPackagesDraft(next);
+                        setAddedIndices(prev => new Set([...Array.from(prev), next.length - 1]));
+                      }}
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Add New Package
+                    </Button>
+                  </div>
                 </DialogHeader>
 
                 <div className="space-y-4">
@@ -1365,7 +1394,7 @@ export default function AdminDashboard() {
                     <div className="text-sm text-muted-foreground">No packages found for this game.</div>
                   ) : (
                     <div className="space-y-3">
-                      {packagesDraft.map((p, idx) => (
+                      {(packagesFilter ? packagesDraft.filter(p => String(p.amount || '').toLowerCase().includes(packagesFilter.toLowerCase())) : packagesDraft).map((p, idx) => (
                         <div key={idx} className="border-b pb-4 mb-4 last:border-0 last:mb-0 last:pb-0">
                           <div className="flex items-center gap-4 mb-3">
                             {p.image ? (
@@ -1440,6 +1469,98 @@ export default function AdminDashboard() {
                                 }}
                               />
                             </div>
+                            <div className="col-span-3">
+                              <Label>Value</Label>
+                              <Input
+                                type="number"
+                                value={p.value ?? ''}
+                                onChange={(e) => {
+                                  const v = e.target.value;
+                                  const next = [...packagesDraft];
+                                  next[idx] = { ...next[idx], value: v === '' ? null : Number(v) };
+                                  setPackagesDraft(next);
+                                }}
+                              />
+                            </div>
+                            <div className="col-span-4">
+                              <Label>Duration</Label>
+                              <Input
+                                placeholder="e.g. 30 days"
+                                value={p.duration || ''}
+                                onChange={(e) => {
+                                  const next = [...packagesDraft];
+                                  next[idx] = { ...next[idx], duration: e.target.value };
+                                  setPackagesDraft(next);
+                                }}
+                              />
+                            </div>
+                            <div className="col-span-12">
+                              <Label>Description</Label>
+                              <Textarea
+                                placeholder="Short package description"
+                                value={p.description || ''}
+                                onChange={(e) => {
+                                  const next = [...packagesDraft];
+                                  next[idx] = { ...next[idx], description: e.target.value };
+                                  setPackagesDraft(next);
+                                }}
+                                className="h-20"
+                              />
+                            </div>
+                          </div>
+                          <div className="mt-3 flex gap-2">
+                            <Button
+                              variant="secondary"
+                              size="sm"
+                              onClick={() => {
+                                const amt = String(p.amount || '').trim();
+                                const priceOk = Number(p.price) >= 0;
+                                const discOk = p.discountPrice == null || Number(p.discountPrice) >= 0;
+                                const valueOk = p.value == null || Number(p.value) >= 0;
+                                const durationOk = String(p.duration || '').length <= 50;
+                                const descOk = String(p.description || '').length <= 200;
+                                if (!amt || !priceOk || !discOk || !valueOk || !durationOk || !descOk) {
+                                  toast({ title: 'Invalid inputs', description: 'Fix validation errors before saving', variant: 'destructive' });
+                                  return;
+                                }
+                                toast({ title: 'Draft saved', description: 'Package changes stored locally' });
+                              }}
+                            >
+                              Save Draft
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                if (addedIndices.has(idx)) {
+                                  const next = packagesDraft.filter((_, i) => i !== idx);
+                                  setPackagesDraft(next);
+                                  const nextSet = new Set(Array.from(addedIndices).filter(i => i !== idx));
+                                  setAddedIndices(nextSet);
+                                } else {
+                                  const orig = originalPackages[idx];
+                                  if (orig) {
+                                    const next = [...packagesDraft];
+                                    next[idx] = { ...orig };
+                                    setPackagesDraft(next);
+                                  }
+                                }
+                              }}
+                            >
+                              Cancel
+                            </Button>
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => {
+                                if (window.confirm('Delete this package?')) {
+                                  const next = packagesDraft.filter((_, i) => i !== idx);
+                                  setPackagesDraft(next);
+                                }
+                              }}
+                            >
+                              Delete Package
+                            </Button>
                           </div>
                         </div>
                       ))}
@@ -2907,8 +3028,8 @@ function WhatsAppConnectionPanel() {
   useEffect(() => {
     if (status?.qr) {
       QRCode.toDataURL(status.qr)
-        .then(url => setQrDataUrl(url))
-        .catch(err => console.error(err));
+        .then((url: string) => setQrDataUrl(url))
+        .catch((err: unknown) => console.error(err));
     } else {
       setQrDataUrl(null);
     }
