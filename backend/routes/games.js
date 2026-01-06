@@ -740,7 +740,60 @@ router.put('/:id/packages', authenticateToken, ensureAdmin, async (req, res) => 
     }
   } catch (error) {
     console.error('DB Error (update packages), falling back to local DB:', error.message);
-    return res.status(503).json({ message: 'Database unavailable' });
+    try {
+      const pkgsArr = Array.isArray(packages) ? packages : [];
+      const normalized = pkgsArr.map((pkg, i) => {
+        const name = pkg.name || pkg.amount || '';
+        if (!name) return null;
+        const price = Number(pkg.price || 0);
+        const discount = pkg.discountPrice != null && pkg.discountPrice !== '' ? Number(pkg.discountPrice) : null;
+        const image = pkg.image || null;
+        const value = pkg.value != null && pkg.value !== '' ? Number(pkg.value) : null;
+        const duration = pkg.duration ? String(pkg.duration).slice(0, 50) : null;
+        const description = pkg.description ? String(pkg.description).slice(0, 500) : null;
+        return {
+          id: `pkg_${id}_${i}`,
+          name,
+          price,
+          discountPrice: Number.isFinite(discount) ? discount : null,
+          discount_price: Number.isFinite(discount) ? discount : null,
+          image,
+          value: Number.isFinite(value) ? value : null,
+          duration,
+          description
+        };
+      }).filter(Boolean);
+
+      const legacyPackages = normalized.map(p => String(p.name));
+      const legacyPrices = normalized.map(p => Number(p.price || 0));
+      const legacyDiscounts = normalized.map(p => (p.discountPrice != null ? Number(p.discountPrice) : null));
+      const legacyThumbnails = normalized.map(p => p.image || null);
+
+      const updated = localDb.updateGame(id, {
+        packagesList: normalized,
+        packages: legacyPackages,
+        package_prices: legacyPrices,
+        package_discount_prices: legacyDiscounts,
+        package_thumbnails: legacyThumbnails
+      });
+      if (!updated) {
+        return res.status(404).json({ message: 'Game not found' });
+      }
+
+      const items = normalized.map(p => ({
+        amount: p.name,
+        price: Number(p.price),
+        discountPrice: p.discountPrice != null ? Number(p.discountPrice) : null,
+        image: p.image || null,
+        value: p.value != null ? Number(p.value) : null,
+        duration: p.duration || null,
+        description: p.description || null
+      }));
+      return res.json(items);
+    } catch (err2) {
+      console.error('Local DB fallback failed:', err2.message);
+      return res.status(500).json({ message: 'Failed to update packages' });
+    }
   }
 });
 

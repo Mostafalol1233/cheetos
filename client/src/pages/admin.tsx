@@ -69,6 +69,20 @@ export default function AdminDashboard() {
   const [replyMessage, setReplyMessage] = useState('');
   const [cardsPage, setCardsPage] = useState(1);
   const [cardsLimit, setCardsLimit] = useState(20);
+  const normalizeNumericString = (v: string | number | null | undefined) => {
+    let s = String(v ?? '').trim();
+    if (!s) return '';
+    s = s.replace(/[,\s]+/g, '');
+    s = s.replace(/[\u0660-\u0669]/g, (c) => String(c.charCodeAt(0) - 0x0660));
+    s = s.replace(/[\u06F0-\u06F9]/g, (c) => String(c.charCodeAt(0) - 0x06F0));
+    return s;
+  };
+  const parseNumberSafe = (v: string | number | null | undefined) => {
+    const s = normalizeNumericString(v);
+    if (!s) return 0;
+    const n = Number(s);
+    return Number.isFinite(n) ? n : 0;
+  };
   const [newCardGameId, setNewCardGameId] = useState<string>('');
   const [newCardCode, setNewCardCode] = useState('');
   const [alertStatus, setAlertStatus] = useState<string>('all');
@@ -1460,7 +1474,7 @@ export default function AdminDashboard() {
                                 onChange={(e) => {
                                   const v = e.target.value;
                                   const next = [...packagesDraft];
-                                  next[idx] = { ...next[idx], price: v === '' ? 0 : Number(v) };
+                                  next[idx] = { ...next[idx], price: v === '' ? 0 : parseNumberSafe(v) };
                                   setPackagesDraft(next);
                                 }}
                               />
@@ -1473,7 +1487,7 @@ export default function AdminDashboard() {
                                 onChange={(e) => {
                                   const v = e.target.value;
                                   const next = [...packagesDraft];
-                                  next[idx] = { ...next[idx], discountPrice: v === '' ? null : Number(v) };
+                                  next[idx] = { ...next[idx], discountPrice: v === '' ? null : parseNumberSafe(v) };
                                   setPackagesDraft(next);
                                 }}
                               />
