@@ -1440,8 +1440,16 @@ export default function AdminDashboard() {
                           </div>
                           <div className="grid grid-cols-12 gap-2 items-end">
                             <div className="col-span-5">
-                              <Label>Package</Label>
-                              <Input value={p.amount} readOnly />
+                              <Label>Amount</Label>
+                              <Input 
+                                value={p.amount} 
+                                placeholder="e.g. 5000 ZP"
+                                onChange={(e) => {
+                                  const next = [...packagesDraft];
+                                  next[idx] = { ...next[idx], amount: e.target.value };
+                                  setPackagesDraft(next);
+                                }}
+                              />
                             </div>
                             <div className="col-span-3">
                               <Label>Price</Label>
