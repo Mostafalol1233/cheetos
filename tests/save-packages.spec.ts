@@ -106,7 +106,7 @@ test.describe('Admin UI package editing', () => {
     await expect(dialog).toBeVisible();
     const amountInput = dialog.getByLabel(/Amount/i).first();
     await amountInput.fill('١٠٠٠ ZP');
-    await amountInput.blur();
+    await dialog.getByRole('button', { name: /Save/i }).click();
     await expect(page.getByText(/Saved/i)).toBeVisible();
     await page.getByRole('button', { name: /Close/i }).click();
     await page.getByRole('link', { name: /Back/i }).click();

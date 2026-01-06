@@ -70,7 +70,6 @@ export default function AdminDashboard() {
   const [replyMessage, setReplyMessage] = useState('');
   const [cardsPage, setCardsPage] = useState(1);
   const [cardsLimit, setCardsLimit] = useState(20);
-  const [savingIndices, setSavingIndices] = useState<Set<number>>(new Set());
   const normalizeNumericString = (v: string | number | null | undefined) => {
     let s = String(v ?? '').trim();
     if (!s) return '';
@@ -191,49 +190,6 @@ export default function AdminDashboard() {
         value: p.value != null ? Number(p.value) : (qty > 0 ? qty : null)
       };
     });
-  };
-  const handleAutoSave = async (idx: number) => {
-    if (!packagesGameId) return;
-    setSavingIndices(prev => new Set([...Array.from(prev), idx]));
-    try {
-      const validationError = validatePackage(packagesDraft[idx]);
-      if (validationError) {
-        throw new Error(validationError);
-      }
-      const normalizedPackages = prepareNormalizedPackages(packagesDraft);
-      const resp = await savePackagesMutationAsync.mutateAsync({ gameId: packagesGameId, packages: normalizedPackages });
-      const serverItems = Array.isArray(resp) ? resp : [];
-      if (!serverItems.length) throw new Error('Server returned empty packages');
-      const next = serverItems.map((p: any) => ({
-        amount: String(p?.amount || ''),
-        price: Number(p?.price || 0),
-        discountPrice: p?.discountPrice != null ? Number(p.discountPrice) : null,
-        image: p?.image || null,
-        value: p?.value != null ? Number(p.value) : null,
-        duration: p?.duration || '',
-        description: p?.description || ''
-      }));
-      setPackagesDraft(next);
-      setOriginalPackages(next);
-      queryClient.invalidateQueries({ queryKey: [`/api/games/${packagesGameId}/packages`] });
-      queryClient.invalidateQueries({ queryKey: [`/api/games/id/${packagesGameId}`] });
-      queryClient.invalidateQueries({ queryKey: ['/api/games'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/games/popular'] });
-      const g = allGames.find((gg) => gg.id === packagesGameId);
-      if (g?.slug) {
-        queryClient.invalidateQueries({ queryKey: [`/api/games/${g.slug}`] });
-        queryClient.invalidateQueries({ queryKey: [`/api/games/slug/${g.slug}`] });
-      }
-      toast({ title: 'Saved', description: 'Package changes applied' });
-    } catch (err: any) {
-      toast({ title: 'Error', description: err?.message || 'Failed to save', variant: 'destructive' });
-    } finally {
-      setSavingIndices(prev => {
-        const next = new Set(Array.from(prev));
-        next.delete(idx);
-        return next;
-      });
-    }
   };
 
   const handlePackageImageUpload = async (index: number, file: File) => {
@@ -1551,7 +1507,6 @@ export default function AdminDashboard() {
                                   next[idx] = { ...next[idx], amount: amt, value: qty > 0 ? qty : null };
                                   setPackagesDraft(next);
                                 }}
-                                onBlur={() => handleAutoSave(idx)}
                               />
                               <div className="text-xs mt-1">
                                 {(() => {
@@ -1577,7 +1532,6 @@ export default function AdminDashboard() {
                                   next[idx] = { ...next[idx], price: v === '' ? 0 : parseNumberSafe(v) };
                                   setPackagesDraft(next);
                                 }}
-                                onBlur={() => handleAutoSave(idx)}
                               />
                             </div>
                             <div className="col-span-4">
@@ -1591,7 +1545,6 @@ export default function AdminDashboard() {
                                   next[idx] = { ...next[idx], discountPrice: v === '' ? null : parseNumberSafe(v) };
                                   setPackagesDraft(next);
                                 }}
-                                onBlur={() => handleAutoSave(idx)}
                               />
                             </div>
                             <div className="col-span-3">
@@ -1605,7 +1558,6 @@ export default function AdminDashboard() {
                                   next[idx] = { ...next[idx], value: v === '' ? null : Number(v) };
                                   setPackagesDraft(next);
                                 }}
-                                onBlur={() => handleAutoSave(idx)}
                               />
                             </div>
                             <div className="col-span-4">
