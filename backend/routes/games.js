@@ -759,7 +759,16 @@ router.put('/:id/packages', authenticateToken, ensureAdmin, async (req, res) => 
         const price = Number(pkg.price || 0);
         const discount = pkg.discountPrice != null && pkg.discountPrice !== '' ? Number(pkg.discountPrice) : null;
         const image = pkg.image || null;
-        const value = pkg.value != null && pkg.value !== '' ? Number(pkg.value) : null;
+        let value = pkg.value != null && pkg.value !== '' ? Number(pkg.value) : null;
+        if (value == null) {
+          const amt = String(pkg.amount || pkg.name || '').trim();
+          const normalizedAmt = amt
+            .replace(/[,\s]+/g, '')
+            .replace(/[\u0660-\u0669]/g, (c) => String(c.charCodeAt(0) - 0x0660))
+            .replace(/[\u06F0-\u06F9]/g, (c) => String(c.charCodeAt(0) - 0x06F0));
+          const digits = (normalizedAmt.match(/[0-9]+/) || [''])[0];
+          value = digits ? Number(digits) : null;
+        }
         const duration = pkg.duration ? String(pkg.duration).slice(0, 50) : null;
         const description = pkg.description ? String(pkg.description).slice(0, 500) : null;
         return {

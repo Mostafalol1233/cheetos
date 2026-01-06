@@ -15,7 +15,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import QRCode from 'qrcode';
-import { normalizeNumericString } from '@/lib/quantity';
+import { normalizeNumericString, extractQuantityInt } from '@/lib/quantity';
 
 interface Game {
   id: string;
@@ -1507,7 +1507,9 @@ export default function AdminDashboard() {
                                 placeholder="e.g. 5000 ZP"
                                 onChange={(e) => {
                                   const next = [...packagesDraft];
-                                  next[idx] = { ...next[idx], amount: e.target.value };
+                                  const amt = e.target.value;
+                                  const qty = extractQuantityInt(amt);
+                                  next[idx] = { ...next[idx], amount: amt, value: qty > 0 ? qty : null };
                                   setPackagesDraft(next);
                                 }}
                                 onBlur={() => handleAutoSave(idx)}
