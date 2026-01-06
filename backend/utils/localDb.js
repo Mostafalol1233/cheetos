@@ -6,7 +6,12 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const DATA_DIR = path.join(__dirname, '..', 'data');
-const SEED_FILE = path.join(DATA_DIR, 'game.json');
+const SEED_FILE = (() => {
+  const gamesJson = path.join(DATA_DIR, 'games.json');
+  const legacyJson = path.join(DATA_DIR, 'game.json');
+  if (fs.existsSync(gamesJson)) return gamesJson;
+  return legacyJson;
+})();
 const PERSISTENT_FILE = path.join(DATA_DIR, 'games-persistent.json');
 
 function ensureDataDir() {
@@ -18,12 +23,20 @@ function ensureDataDir() {
 function init() {
   ensureDataDir();
   try {
-    if (!fs.existsSync(PERSISTENT_FILE)) {
-      if (fs.existsSync(SEED_FILE)) {
+    const hasPersistent = fs.existsSync(PERSISTENT_FILE);
+    const hasSeed = fs.existsSync(SEED_FILE);
+    if (!hasPersistent) {
+      if (hasSeed) {
         const seed = fs.readFileSync(SEED_FILE, 'utf8');
-        fs.writeFileSync(PERSISTENT_FILE, seed);
+        fs.writeFileSync(PERSISTENT_FILE, seed || '[]');
       } else {
         fs.writeFileSync(PERSISTENT_FILE, '[]');
+      }
+    } else if (hasSeed) {
+      const current = fs.readFileSync(PERSISTENT_FILE, 'utf8').trim();
+      if (current === '[]') {
+        const seed = fs.readFileSync(SEED_FILE, 'utf8');
+        fs.writeFileSync(PERSISTENT_FILE, seed || '[]');
       }
     }
   } catch (err) {
@@ -98,4 +111,3 @@ export default {
   deleteGame,
   saveGames: writePersistent,
 };
-

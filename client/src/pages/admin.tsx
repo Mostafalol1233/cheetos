@@ -176,6 +176,15 @@ export default function AdminDashboard() {
       }));
       await savePackagesMutationAsync.mutateAsync({ gameId: packagesGameId, packages: normalizedPackages });
       setOriginalPackages(normalizedPackages);
+      queryClient.invalidateQueries({ queryKey: [`/api/games/${packagesGameId}/packages`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/games/id/${packagesGameId}`] });
+      queryClient.invalidateQueries({ queryKey: ['/api/games'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/games/popular'] });
+      const g = allGames.find((gg) => gg.id === packagesGameId);
+      if (g?.slug) {
+        queryClient.invalidateQueries({ queryKey: [`/api/games/${g.slug}`] });
+        queryClient.invalidateQueries({ queryKey: [`/api/games/slug/${g.slug}`] });
+      }
       toast({ title: 'Saved', description: 'Package changes applied' });
     } catch (err: any) {
       toast({ title: 'Error', description: err?.message || 'Failed to save', variant: 'destructive' });
@@ -1555,6 +1564,7 @@ export default function AdminDashboard() {
                                   next[idx] = { ...next[idx], value: v === '' ? null : Number(v) };
                                   setPackagesDraft(next);
                                 }}
+                                onBlur={() => handleAutoSave(idx)}
                               />
                             </div>
                             <div className="col-span-4">
