@@ -15,6 +15,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import QRCode from 'qrcode';
+import { normalizeNumericString } from '@/lib/quantity';
 
 interface Game {
   id: string;
@@ -69,6 +70,7 @@ export default function AdminDashboard() {
   const [replyMessage, setReplyMessage] = useState('');
   const [cardsPage, setCardsPage] = useState(1);
   const [cardsLimit, setCardsLimit] = useState(20);
+  const [savingIndices, setSavingIndices] = useState<Set<number>>(new Set());
   const normalizeNumericString = (v: string | number | null | undefined) => {
     let s = String(v ?? '').trim();
     if (!s) return '';
@@ -150,6 +152,41 @@ export default function AdminDashboard() {
       setPackagesGameId(null);
     }
   });
+  const savePackagesMutationAsync = useMutation({
+    mutationFn: async (payload: { gameId: string; packages: Array<{ amount: string; price: number; discountPrice: number | null; image?: string | null; value?: number | null; duration?: string; description?: string }> }) => {
+      const token = localStorage.getItem('adminToken');
+      const res = await fetch(apiPath(`/api/games/${payload.gameId}/packages`), {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: JSON.stringify({ packages: payload.packages })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error((data as any)?.message || 'Failed to update packages');
+      return data;
+    }
+  });
+  const handleAutoSave = async (idx: number) => {
+    if (!packagesGameId) return;
+    setSavingIndices(prev => new Set([...Array.from(prev), idx]));
+    try {
+      const normalizedPackages = packagesDraft.map(p => ({
+        ...p,
+        price: Number(normalizeNumericString(p.price)),
+        discountPrice: p.discountPrice == null ? null : Number(normalizeNumericString(p.discountPrice))
+      }));
+      await savePackagesMutationAsync.mutateAsync({ gameId: packagesGameId, packages: normalizedPackages });
+      setOriginalPackages(normalizedPackages);
+      toast({ title: 'Saved', description: 'Package changes applied' });
+    } catch (err: any) {
+      toast({ title: 'Error', description: err?.message || 'Failed to save', variant: 'destructive' });
+    } finally {
+      setSavingIndices(prev => {
+        const next = new Set(Array.from(prev));
+        next.delete(idx);
+        return next;
+      });
+    }
+  };
 
   const handlePackageImageUpload = async (index: number, file: File) => {
     try {
@@ -1464,7 +1501,20 @@ export default function AdminDashboard() {
                                   next[idx] = { ...next[idx], amount: e.target.value };
                                   setPackagesDraft(next);
                                 }}
+                                onBlur={() => handleAutoSave(idx)}
                               />
+                              <div className="text-xs mt-1">
+                                {(() => {
+                                  const digitsOnly = normalizeNumericString(p.amount).replace(/[^0-9]/g, '');
+                                  const qty = digitsOnly ? Number(digitsOnly) : 0;
+                                  const valid = Number.isInteger(qty) && qty > 0;
+                                  return valid ? (
+                                    <span className="text-green-500">Quantity parsed: {qty}</span>
+                                  ) : (
+                                    <span className="text-red-500">Enter a positive quantity</span>
+                                  );
+                                })()}
+                              </div>
                             </div>
                             <div className="col-span-3">
                               <Label>Price</Label>
@@ -1477,6 +1527,7 @@ export default function AdminDashboard() {
                                   next[idx] = { ...next[idx], price: v === '' ? 0 : parseNumberSafe(v) };
                                   setPackagesDraft(next);
                                 }}
+                                onBlur={() => handleAutoSave(idx)}
                               />
                             </div>
                             <div className="col-span-4">
@@ -1490,6 +1541,7 @@ export default function AdminDashboard() {
                                   next[idx] = { ...next[idx], discountPrice: v === '' ? null : parseNumberSafe(v) };
                                   setPackagesDraft(next);
                                 }}
+                                onBlur={() => handleAutoSave(idx)}
                               />
                             </div>
                             <div className="col-span-3">

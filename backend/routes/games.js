@@ -673,14 +673,24 @@ router.put('/:id/packages', authenticateToken, ensureAdmin, async (req, res) => 
           const price = Number(pkg.price || 0);
           const discount = pkg.discountPrice != null && pkg.discountPrice !== '' ? Number(pkg.discountPrice) : null;
           const image = pkg.image || null;
-          const value = pkg.value != null && pkg.value !== '' ? Number(pkg.value) : null;
+          let value = pkg.value != null && pkg.value !== '' ? Number(pkg.value) : null;
+          // Derive quantity from amount if value not provided
+          if (value == null) {
+            const amt = String(pkg.amount || pkg.name || '').trim();
+            const normalized = amt
+              .replace(/[,\s]+/g, '')
+              .replace(/[\u0660-\u0669]/g, (c) => String(c.charCodeAt(0) - 0x0660))
+              .replace(/[\u06F0-\u06F9]/g, (c) => String(c.charCodeAt(0) - 0x06F0));
+            const digits = (normalized.match(/[0-9]+/) || [''])[0];
+            value = digits ? Number(digits) : null;
+          }
           const duration = pkg.duration ? String(pkg.duration).slice(0, 50) : null;
           const description = pkg.description ? String(pkg.description).slice(0, 500) : null;
 
           // Server-side validation
-          if (price < 0 || (value != null && value < 0)) {
+          if (price < 0 || (value != null && (!Number.isFinite(value) || value <= 0))) {
             await client.query('ROLLBACK');
-            return res.status(400).json({ message: 'Price and value must be non-negative' });
+            return res.status(400).json({ message: 'Invalid quantity/value or price' });
           }
           if (duration && duration.length > 50) {
             await client.query('ROLLBACK');
@@ -731,6 +741,7 @@ router.put('/:id/packages', authenticateToken, ensureAdmin, async (req, res) => 
         }));
         
         await logAudit('update_packages', `Updated packages for game: ${id}`, req.user);
+        invalidatePopularCache();
         res.json(items);
     } catch (error) {
         await client.query('ROLLBACK');
