@@ -55,12 +55,6 @@ export function PopularGames() {
                       alt={game.name}
                       className="relative w-full h-full object-contain transition-transform duration-500 group-hover:scale-[1.03]"
                     />
-                    {game.isPopular && (
-                      <div className="absolute top-2 right-2 bg-gradient-to-r from-cyan-400 to-blue-500 text-black px-2 py-1 rounded-full text-xs font-bold flex items-center shadow-lg">
-                        <Star className="w-3 h-3 mr-1" />
-                        {t('popular')}
-                      </div>
-                    )}
                   </div>
                 </div>
 
