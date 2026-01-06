@@ -6,6 +6,7 @@ import path from "path";
 export default defineConfig({
   plugins: [
     react(),
+    
   ],
   resolve: {
     alias: {
@@ -18,18 +19,11 @@ export default defineConfig({
   build: {
     outDir: path.resolve(import.meta.dirname, "dist/public"),
     emptyOutDir: true,
-    rollupOptions: {
-      onwarn(warning, warn) {
-        // Suppress warnings about dynamic imports
-        if (warning.code === 'DYNAMIC_IMPORT') return;
-        warn(warning);
-      },
-    },
   },
   server: {
     host: "0.0.0.0",
-    port: 5173,
-    strictPort: false,
+    port: 5000,
+    strictPort: true,
     allowedHosts: true,
     fs: {
       strict: false,

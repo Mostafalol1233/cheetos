@@ -960,6 +960,9 @@ async function initializeDatabase() {
         package_prices JSONB DEFAULT '[]',
         package_discount_prices JSONB DEFAULT '[]',
         package_thumbnails JSONB DEFAULT '[]',
+        show_on_main_page BOOLEAN DEFAULT false,
+        display_order INTEGER DEFAULT 999,
+        deleted BOOLEAN DEFAULT false,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
@@ -1207,6 +1210,13 @@ async function initializeDatabase() {
 
     // Hot deals flag on games
     await pool.query(`ALTER TABLE games ADD COLUMN IF NOT EXISTS hot_deal BOOLEAN DEFAULT false`);
+    // Visibility and ordering controls
+    await pool.query(`ALTER TABLE games ADD COLUMN IF NOT EXISTS show_on_main_page BOOLEAN DEFAULT false`);
+    await pool.query(`ALTER TABLE games ADD COLUMN IF NOT EXISTS display_order INTEGER DEFAULT 999`);
+    await pool.query(`ALTER TABLE games ADD COLUMN IF NOT EXISTS deleted BOOLEAN DEFAULT false`);
+    await pool.query(`ALTER TABLE games ADD CONSTRAINT display_order_positive CHECK (display_order >= 0)`);
+    // Prevent duplicate names (case-insensitive)
+    await pool.query(`CREATE UNIQUE INDEX IF NOT EXISTS uniq_games_lower_name ON games ((lower(name)))`);
 
     // Game cards table
     await pool.query(`
@@ -4190,7 +4200,6 @@ const startServer = async () => {
       console.error("❌ Uploads directory error:", err.message);
     }
 
-    const PORT = process.env.PORT || 3001;
     app.listen(PORT, () => {
       console.log(`╔════════════════════════════════════════╗`);
       console.log(`║     GameCart Backend Server             ║`);

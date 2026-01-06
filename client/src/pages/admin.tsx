@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
-import { Trash2, Edit, Plus, MessageSquare, Bell, Check, AlertCircle, Info, Search, Package, Shield, ShoppingCart, Wand2 } from 'lucide-react';
+import { Trash2, Edit, Plus, MessageSquare, Bell, Check, AlertCircle, Info, Search, Package, Shield, ShoppingCart } from 'lucide-react';
 import { API_BASE_URL, queryClient } from '@/lib/queryClient';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Label } from '@/components/ui/label';
@@ -20,25 +20,14 @@ interface Game {
   id: string;
   name: string;
   slug?: string;
-  price: string | number;
+  price: string;
   discountPrice?: string | number | null;
   stock: number;
   category: string;
   image: string;
   showOnMainPage?: boolean;
   displayOrder?: number;
-  packagesList?: Array<{
-    id?: string;
-    name?: string;
-    amount?: string;
-    price?: number;
-    discountPrice?: number | null;
-    discount_price?: number | null;
-    image?: string | null;
-  }>;
-  packages?: string[];
-  packagePrices?: number[];
-  packageDiscountPrices?: Array<number | null>;
+  deleted?: boolean;
 }
 
 interface Category {
@@ -65,18 +54,9 @@ interface Alert {
   read: boolean;
 }
 
-type AiPlannedAction =
-  | { type: 'set_game_price'; gameSlug: string; price: number }
-  | { type: 'set_game_discount'; gameSlug: string; discountPrice: number | null }
-  | { type: 'set_game_stock'; gameSlug: string; stock: number }
-  | { type: 'set_package_price'; gameSlug: string; packageName: string; price: number }
-  | { type: 'set_package_discount'; gameSlug: string; packageName: string; discountPrice: number | null }
-  | { type: 'bulk_add_cards'; gameSlug: string; cards: string[] };
-
 const apiPath = (path: string) => (path.startsWith('http') ? path : `${API_BASE_URL}${path}`);
 
 export default function AdminDashboard() {
-  const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('games');
   const [searchGameTerm, setSearchGameTerm] = useState('');
   const [editingGame, setEditingGame] = useState<Game | null>(null);
@@ -93,61 +73,10 @@ export default function AdminDashboard() {
   const [alertSearch, setAlertSearch] = useState('');
   const [selectedGames, setSelectedGames] = useState<string[]>([]);
 
-  // Create Game Dialog
-  const [createGameOpen, setCreateGameOpen] = useState(false);
-  const [newGame, setNewGame] = useState({
-    name: '',
-    slug: '',
-    description: '',
-    price: '',
-    currency: 'EGP',
-    category: 'other',
-    stock: 0,
-    isPopular: false,
-    showOnMainPage: true,
-    displayOrder: 999,
-    discountPrice: '',
-    image: ''
-  });
-
-  // AI Assistant
-  const [aiPrompt, setAiPrompt] = useState('');
-  const [aiPlanSource, setAiPlanSource] = useState<string>('');
-  const [aiPlannedActions, setAiPlannedActions] = useState<AiPlannedAction[]>([]);
-  const [aiRejected, setAiRejected] = useState<Array<{ message: string; action: any }>>([]);
-
-  // WhatsApp & Email
-  const [adminPhone, setAdminPhone] = useState('');
-  const [testEmailTo, setTestEmailTo] = useState('');
-  const [testEmailSubject, setTestEmailSubject] = useState('Test from GameCart Admin');
-  const [testEmailBody, setTestEmailBody] = useState('This is a test email from the admin dashboard.');
-
   // Fetch games
   const { data: allGames = [] } = useQuery<Game[]>({
     queryKey: ['/api/games'],
   });
-
-  const gameHasPackages = (g: any) => {
-    const list = Array.isArray(g?.packagesList) ? g.packagesList : [];
-    const legacy = Array.isArray(g?.packages) ? g.packages : [];
-    return list.length > 0 || legacy.length > 0;
-  };
-
-  const getDerivedMinPackagePrice = (g: any) => {
-    const list = Array.isArray(g?.packagesList) ? g.packagesList : [];
-    const prices = list
-      .map((p: any) => {
-        const base = Number(p?.price || 0);
-        const rawDiscount = p?.discountPrice ?? p?.discount_price;
-        const discount = rawDiscount !== undefined && rawDiscount !== null && rawDiscount !== '' ? Number(rawDiscount) : null;
-        if (Number.isFinite(discount) && (discount as number) > 0 && (discount as number) < base) return Number(discount);
-        return base;
-      })
-      .filter((n: any) => Number.isFinite(n) && n > 0);
-
-    if (!prices.length) return null;
-    return Math.min(...(prices as number[]));
-  };
 
   const { data: adminPackagesData = [], isFetching: isFetchingAdminPackages } = useQuery<Array<{ amount: string; price: number; discountPrice: number | null; image?: string | null }>>({
     queryKey: packagesGameId ? [`/api/games/${packagesGameId}/packages`] : ['_disabled_admin_packages'],
@@ -176,7 +105,7 @@ export default function AdminDashboard() {
   const savePackagesMutation = useMutation({
     mutationFn: async (payload: { gameId: string; packages: Array<{ amount: string; price: number; discountPrice: number | null; image?: string | null }> }) => {
       const token = localStorage.getItem('adminToken');
-      const res = await fetch(`${API_BASE_URL}/api/games/${payload.gameId}/packages`, {
+      const res = await fetch(apiPath(`/api/games/${payload.gameId}/packages`), {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
         body: JSON.stringify({ packages: payload.packages })
@@ -186,76 +115,17 @@ export default function AdminDashboard() {
       return data;
     },
     onSuccess: (_data, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['/api/games'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/games/popular'] });
       queryClient.invalidateQueries({ queryKey: [`/api/games/${variables.gameId}/packages`] });
       queryClient.invalidateQueries({ queryKey: [`/api/games/id/${variables.gameId}`] });
-      if (editingGame?.slug) {
-        queryClient.invalidateQueries({ queryKey: [`/api/games/${editingGame.slug}`] });
-        queryClient.invalidateQueries({ queryKey: [`/api/games/slug/${editingGame.slug}`] });
+      queryClient.invalidateQueries({ queryKey: ['/api/games'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/games/popular'] });
+      const g = allGames.find((gg) => gg.id === variables.gameId);
+      if (g?.slug) {
+        queryClient.invalidateQueries({ queryKey: [`/api/games/${g.slug}`] });
+        queryClient.invalidateQueries({ queryKey: [`/api/games/slug/${g.slug}`] });
       }
-    },
-    onError: (error: any) => {
-      toast({ title: 'Error', description: error.message || 'Failed to update packages', variant: 'destructive' });
-    }
-  });
-
-  // Admin phone & test email
-  const { data: adminPhoneData, refetch: refetchAdminPhone, isLoading: isLoadingAdminPhone } = useQuery<{ adminPhone: string | null }>({
-    queryKey: ['/api/admin/settings/whatsapp-number'],
-    enabled: true,
-    queryFn: async () => {
-      const token = localStorage.getItem('adminToken');
-      const res = await fetch(apiPath('/api/admin/settings/whatsapp-number'), {
-        headers: token ? { Authorization: `Bearer ${token}` } : {}
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error((data as any)?.message || 'Failed to fetch admin phone');
-      return data;
-    }
-  });
-  useEffect(() => {
-    if (adminPhoneData?.adminPhone) setAdminPhone(adminPhoneData.adminPhone);
-  }, [adminPhoneData?.adminPhone]);
-
-  const updateAdminPhoneMutation = useMutation({
-    mutationFn: async (adminPhone: string) => {
-      const token = localStorage.getItem('adminToken');
-      const res = await fetch(apiPath('/api/admin/settings/whatsapp-number'), {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-        body: JSON.stringify({ adminPhone })
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error((data as any)?.message || 'Failed to update admin phone');
-      return data;
-    },
-    onSuccess: () => {
-      toast({ title: 'Success', description: 'Admin WhatsApp number updated', duration: 2000 });
-      refetchAdminPhone();
-    },
-    onError: (error: any) => {
-      toast({ title: 'Error', description: error.message || 'Failed to update admin phone', variant: 'destructive' });
-    }
-  });
-
-  const testEmailMutation = useMutation({
-    mutationFn: async () => {
-      const token = localStorage.getItem('adminToken');
-      const res = await fetch(apiPath('/api/admin/email/send'), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-        body: JSON.stringify({ to: testEmailTo, subject: testEmailSubject, text: testEmailBody })
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error((data as any)?.message || 'Failed to send test email');
-      return data;
-    },
-    onSuccess: () => {
-      toast({ title: 'Email sent', description: `Test email sent to ${testEmailTo}`, duration: 2000 });
-    },
-    onError: (error: any) => {
-      toast({ title: 'Error', description: error.message || 'Failed to send test email', variant: 'destructive' });
+      toast({ title: 'Saved', description: 'Packages updated', duration: 1500 });
+      setPackagesGameId(null);
     }
   });
 
@@ -330,63 +200,6 @@ export default function AdminDashboard() {
     }
   });
 
-  const aiPlanMutation = useMutation({
-    mutationFn: async () => {
-      const token = typeof window !== 'undefined' ? localStorage.getItem('adminToken') : null;
-      const res = await fetch(apiPath('/api/admin/ai/plan'), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-        body: JSON.stringify({ prompt: aiPrompt })
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error((data as any)?.message || 'Failed to plan');
-      return data as { ok: boolean; source: string; actions: AiPlannedAction[]; rejected: Array<{ action: any; message: string }> };
-    },
-    onSuccess: (data) => {
-      setAiPlanSource(data?.source || '');
-      setAiPlannedActions(Array.isArray(data?.actions) ? data.actions : []);
-      setAiRejected(Array.isArray(data?.rejected) ? data.rejected.map((r) => ({ message: r.message, action: r.action })) : []);
-      toast({ title: 'AI plan ready', description: `Planned ${data?.actions?.length || 0} action(s)`, duration: 1500 });
-    },
-    onError: (err: any) => {
-      toast({ title: 'AI plan failed', description: err?.message || 'Failed to plan', variant: 'destructive' });
-    }
-  });
-
-  const aiExecuteMutation = useMutation({
-    mutationFn: async () => {
-      const token = typeof window !== 'undefined' ? localStorage.getItem('adminToken') : null;
-      const res = await fetch(apiPath('/api/admin/ai/execute'), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-        body: JSON.stringify({ actions: aiPlannedActions })
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error((data as any)?.message || 'Failed to execute');
-      return data as { ok: boolean; results: Array<{ action: AiPlannedAction; ok: boolean; message?: string; created?: number; skipped?: number }> };
-    },
-    onSuccess: (data) => {
-      const results = Array.isArray(data?.results) ? data.results : [];
-      const okCount = results.filter((r) => r.ok).length;
-      const failCount = results.filter((r) => !r.ok).length;
-      toast({ title: 'AI actions applied', description: `Success ${okCount}, Failed ${failCount}`, duration: 2000 });
-
-      // Refresh affected admin data
-      queryClient.invalidateQueries({ queryKey: ['/api/games'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/game-cards'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/games/popular'] });
-      if (packagesGameId) queryClient.invalidateQueries({ queryKey: [`/api/games/${packagesGameId}/packages`] });
-
-      setAiPlanSource('');
-      setAiPlannedActions([]);
-      setAiRejected([]);
-      setAiPrompt('');
-    },
-    onError: (err: any) => {
-      toast({ title: 'AI apply failed', description: err?.message || 'Failed to apply', variant: 'destructive' });
-    }
-  });
-
   // Fetch game cards (admin)
   const { data: cardsResponse } = useQuery<{ items: Array<{ id: string; game_id: string; card_code: string; is_used: boolean; created_at: string }>; page: number; limit: number; total: number }>({
     queryKey: ['/api/admin/game-cards', `?page=${cardsPage}&limit=${cardsLimit}`],
@@ -408,7 +221,7 @@ export default function AdminDashboard() {
     enabled: true,
     queryFn: async () => {
       const token = localStorage.getItem('adminToken');
-      const res = await fetch(`${API_BASE_URL}/api/admin/chat/all`, {
+      const res = await fetch(`${API_BASE_URL}/api/chat/all`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {}
       });
       if (!res.ok) throw new Error('Failed to fetch chats');
@@ -530,10 +343,6 @@ export default function AdminDashboard() {
         queryClient.invalidateQueries({ queryKey: [`/api/games/slug/${editingGame.slug}`] });
       }
       setEditingGame(null);
-      toast({ title: 'Success', description: 'Game updated successfully' });
-    },
-    onError: (error: any) => {
-      toast({ title: 'Error', description: error.message || 'Failed to update game', variant: 'destructive' });
     }
   });
 
@@ -610,7 +419,7 @@ export default function AdminDashboard() {
       const res = await fetch(apiPath('/api/games'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-        body: JSON.stringify(gameData)
+        body: JSON.stringify({ ...gameData, showOnMainPage: false, displayOrder: 999 })
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error((data as any)?.message || 'Failed to create game');
@@ -642,6 +451,135 @@ export default function AdminDashboard() {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/game-cards'] });
     }
   });
+
+  // Arrangement management
+  const [arrangementFilter, setArrangementFilter] = useState<'active' | 'deleted' | 'all'>('active');
+  const { data: arrangementGames = [], isFetching: isFetchingArrangement } = useQuery<any[]>({
+    queryKey: ['/api/games/admin/arrangement', arrangementFilter],
+    queryFn: async () => {
+      const token = localStorage.getItem('adminToken');
+      const res = await fetch(apiPath(`/api/games/admin/arrangement?filter=${arrangementFilter}`), {
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+      });
+      const data = await res.json().catch(() => ([]));
+      if (!res.ok) throw new Error((data as any)?.message || 'Failed to fetch arrangement');
+      return data;
+    }
+  });
+  const [arrangementDraft, setArrangementDraft] = useState<Record<string, { showOnMainPage?: boolean; displayOrder?: number }>>({});
+  useEffect(() => {
+    const next: Record<string, { showOnMainPage?: boolean; displayOrder?: number }> = {};
+    (Array.isArray(arrangementGames) ? arrangementGames : []).forEach((g: any) => {
+      next[g.id] = {
+        showOnMainPage: !!g.show_on_main_page,
+        displayOrder: Number(g.display_order ?? 999)
+      };
+    });
+    setArrangementDraft(next);
+  }, [arrangementGames]);
+  const bulkArrangementMutation = useMutation({
+    mutationFn: async () => {
+      const token = localStorage.getItem('adminToken');
+      const updates = Object.entries(arrangementDraft).map(([id, v]) => ({
+        id,
+        showOnMainPage: v.showOnMainPage,
+        displayOrder: v.displayOrder
+      }));
+      const res = await fetch(apiPath('/api/games/admin/arrangement/bulk'), {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: JSON.stringify({ updates })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error((data as any)?.message || 'Failed to update arrangement');
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/games/admin/arrangement'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/games/popular'] });
+    }
+  });
+  function ArrangementPanel() {
+    return (
+      <Card className="bg-card/50 border-gold-primary/30">
+        <CardHeader>
+          <CardTitle className="text-lg">Game Arrangement</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center gap-3 mb-3">
+            <Select value={arrangementFilter} onValueChange={(v: any) => setArrangementFilter(v)}>
+              <SelectTrigger className="w-[220px]">
+                <SelectValue placeholder="Filter" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="active">Active</SelectItem>
+                <SelectItem value="deleted">Deleted</SelectItem>
+                <SelectItem value="all">All</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button
+              variant="default"
+              disabled={bulkArrangementMutation.isPending}
+              onClick={() => bulkArrangementMutation.mutate()}
+              className="bg-cyan-600 hover:bg-cyan-500 text-white"
+            >
+              Apply Changes
+            </Button>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-left">
+                  <th className="p-2">Name</th>
+                  <th className="p-2">Slug</th>
+                  <th className="p-2">Visible on Main</th>
+                  <th className="p-2">Display Order</th>
+                  <th className="p-2">Deleted</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(Array.isArray(arrangementGames) ? arrangementGames : []).map((g: any) => {
+                  const draft = arrangementDraft[g.id] || {};
+                  return (
+                    <tr key={g.id} className="border-t">
+                      <td className="p-2">{g.name}</td>
+                      <td className="p-2">{g.slug}</td>
+                      <td className="p-2">
+                        <Checkbox
+                          checked={!!draft.showOnMainPage}
+                          onCheckedChange={(val: any) => {
+                            setArrangementDraft(prev => ({ ...prev, [g.id]: { ...prev[g.id], showOnMainPage: !!val } }));
+                          }}
+                        />
+                      </td>
+                      <td className="p-2">
+                        <Input
+                          type="number"
+                          min={0}
+                          value={Number(draft.displayOrder ?? 999)}
+                          onChange={(e) => {
+                            const n = Number(e.target.value);
+                            setArrangementDraft(prev => ({ ...prev, [g.id]: { ...prev[g.id], displayOrder: Number.isFinite(n) ? n : 999 } }));
+                          }}
+                          className="w-24"
+                        />
+                      </td>
+                      <td className="p-2">{g.deleted ? 'Yes' : 'No'}</td>
+                    </tr>
+                  );
+                })}
+                {(!isFetchingArrangement && (!arrangementGames || arrangementGames.length === 0)) && (
+                  <tr>
+                    <td colSpan={5} className="p-4 text-center text-muted-foreground">No games</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   // Update game card mutation (mark used / update code)
   const updateCardMutation = useMutation({
@@ -780,21 +718,16 @@ export default function AdminDashboard() {
   };
 
   const handleCreateGame = () => {
-    setNewGame({
-      name: '',
-      slug: '',
-      description: '',
-      price: '',
-      currency: 'EGP',
-      category: 'other',
-      stock: 0,
-      isPopular: false,
-      showOnMainPage: true,
-      displayOrder: 999,
-      discountPrice: '',
-      image: ''
-    });
-    setCreateGameOpen(true);
+    const name = prompt('Game name:');
+    if (name) {
+      createGameMutation.mutate({
+        name,
+        price: '99.99',
+        stock: 50,
+        category: 'online-games',
+        image: '/placeholder.jpg'
+      });
+    }
   };
 
   // Fetch chat messages for selected session
@@ -804,7 +737,7 @@ export default function AdminDashboard() {
     refetchInterval: 2000,
     queryFn: async () => {
       const token = localStorage.getItem('adminToken');
-      const res = await fetch(apiPath(`/api/admin/chat/${selectedSession}`), {
+      const res = await fetch(apiPath(`/api/chat/${selectedSession}`), {
         headers: token ? { Authorization: `Bearer ${token}` } : {}
       });
       if (!res.ok) throw new Error('Failed to fetch messages');
@@ -832,7 +765,7 @@ export default function AdminDashboard() {
     const saveMutation = useMutation({
       mutationFn: async () => {
         const token = localStorage.getItem('adminToken');
-        const res = await fetch(`${API_BASE_URL}/api/games/${gameId}`, {
+        const res = await fetch(apiPath(`/api/admin/games/${gameId}`), {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
           body: JSON.stringify({ id: gameId, discountPrice: finalPrice })
@@ -1058,198 +991,10 @@ export default function AdminDashboard() {
     );
   }
 
-  // Create Game Dialog
-  const handleSaveNewGame = () => {
-    if (!newGame.name.trim()) {
-      toast({ title: 'Error', description: 'Game name is required', variant: 'destructive' });
-      return;
-    }
-    
-    createGameMutation.mutate({
-      name: newGame.name.trim(),
-      slug: newGame.slug.trim() || newGame.name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
-      description: newGame.description.trim(),
-      price: Number(newGame.price) || 0,
-      currency: newGame.currency,
-      category: newGame.category,
-      stock: Number(newGame.stock) || 0,
-      isPopular: newGame.isPopular,
-      showOnMainPage: newGame.showOnMainPage,
-      displayOrder: Number(newGame.displayOrder) || 999,
-      discountPrice: newGame.discountPrice ? Number(newGame.discountPrice) : null,
-      image: newGame.image
-    });
-    
-    setCreateGameOpen(false);
-  };
-
   return (
     <div className="min-h-screen bg-background p-8">
       <div className="max-w-7xl mx-auto">
         <h1 className="text-3xl font-bold text-gold-primary mb-8">Diaa Eldeen Admin Dashboard</h1>
-
-        {/* Create Game Dialog */}
-        <Dialog open={createGameOpen} onOpenChange={setCreateGameOpen}>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>Create New Game</DialogTitle>
-              <DialogDescription>
-                Add a new game to your store. Configure whether it appears on main page and its display order.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="game-name">Game Name *</Label>
-                  <Input
-                    id="game-name"
-                    value={newGame.name}
-                    onChange={(e) => setNewGame({ ...newGame, name: e.target.value })}
-                    placeholder="Enter game name"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="game-slug">Slug (optional)</Label>
-                  <Input
-                    id="game-slug"
-                    value={newGame.slug}
-                    onChange={(e) => setNewGame({ ...newGame, slug: e.target.value })}
-                    placeholder="game-name (auto-generated if empty)"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <Label htmlFor="game-description">Description</Label>
-                <Textarea
-                  id="game-description"
-                  value={newGame.description}
-                  onChange={(e) => setNewGame({ ...newGame, description: e.target.value })}
-                  placeholder="Game description..."
-                  rows={3}
-                />
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <Label htmlFor="game-price">Price *</Label>
-                  <Input
-                    id="game-price"
-                    type="number"
-                    value={newGame.price}
-                    onChange={(e) => setNewGame({ ...newGame, price: e.target.value })}
-                    placeholder="0"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="game-currency">Currency</Label>
-                  <Select value={newGame.currency} onValueChange={(v) => setNewGame({ ...newGame, currency: v || 'EGP' })}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="EGP">EGP</SelectItem>
-                      <SelectItem value="USD">USD</SelectItem>
-                      <SelectItem value="EUR">EUR</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label htmlFor="game-stock">Stock</Label>
-                  <Input
-                    id="game-stock"
-                    type="number"
-                    value={newGame.stock}
-                    onChange={(e) => setNewGame({ ...newGame, stock: parseInt(e.target.value) || 0 })}
-                    placeholder="0"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <Label htmlFor="game-category">Category</Label>
-                  <Select value={newGame.category} onValueChange={(v) => setNewGame({ ...newGame, category: v || 'other' })}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="online-games">Online Games</SelectItem>
-                      <SelectItem value="gift-cards">Gift Cards</SelectItem>
-                      <SelectItem value="software">Software</SelectItem>
-                      <SelectItem value="other">Other</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label htmlFor="game-discount">Discount Price</Label>
-                  <Input
-                    id="game-discount"
-                    type="number"
-                    value={newGame.discountPrice}
-                    onChange={(e) => setNewGame({ ...newGame, discountPrice: e.target.value })}
-                    placeholder="Leave empty for no discount"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="game-image">Image URL</Label>
-                  <Input
-                    id="game-image"
-                    value={newGame.image}
-                    onChange={(e) => setNewGame({ ...newGame, image: e.target.value })}
-                    placeholder="https://example.com/image.jpg"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="game-popular"
-                    checked={newGame.isPopular}
-                    onCheckedChange={(checked) => setNewGame({ ...newGame, isPopular: checked })}
-                  />
-                  <Label htmlFor="game-popular">Popular Game</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="game-main-page"
-                    checked={newGame.showOnMainPage}
-                    onCheckedChange={(checked) => setNewGame({ ...newGame, showOnMainPage: checked })}
-                  />
-                  <Label htmlFor="game-main-page">Show on Main Page</Label>
-                </div>
-              </div>
-
-              <div>
-                <Label htmlFor="game-display-order">Display Order</Label>
-                <Input
-                  id="game-display-order"
-                  type="number"
-                  value={newGame.displayOrder}
-                  onChange={(e) => setNewGame({ ...newGame, displayOrder: parseInt(e.target.value) || 999 })}
-                  placeholder="999 (higher numbers appear later, 1 appears first)"
-                />
-                <p className="text-xs text-muted-foreground mt-1">
-                  Lower numbers appear first. Games with same order are sorted alphabetically (A-Z).
-                </p>
-              </div>
-            </div>
-
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setCreateGameOpen(false)}>
-                Cancel
-              </Button>
-              <Button 
-                onClick={handleSaveNewGame} 
-                disabled={createGameMutation.isPending || !newGame.name.trim()}
-                className="bg-gold-primary hover:bg-gold-primary/80"
-              >
-                {createGameMutation.isPending ? 'Creating...' : 'Create Game'}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <ScrollArea className="w-full whitespace-nowrap rounded-md border">
@@ -1261,6 +1006,7 @@ export default function AdminDashboard() {
           <TabsTrigger value="categories" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Categories</TabsTrigger>
           <TabsTrigger value="cards" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Game Cards</TabsTrigger>
           <TabsTrigger value="orders" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Orders</TabsTrigger>
+          <TabsTrigger value="arrangement" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Arrangement</TabsTrigger>
           <TabsTrigger value="chats" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Support Chat</TabsTrigger>
           <TabsTrigger value="checkout-confirmations" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Checkout Confirmations</TabsTrigger>
           <TabsTrigger value="interactions" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Interactions</TabsTrigger>
@@ -1278,147 +1024,9 @@ export default function AdminDashboard() {
           <TabsTrigger value="catbox-upload" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Catbox Image Upload</TabsTrigger>
           <TabsTrigger value="image-manager" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Image Manager</TabsTrigger>
           <TabsTrigger value="content" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Content</TabsTrigger>
-          <TabsTrigger value="ai" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">AI Assistant</TabsTrigger>
         </TabsList>
             <ScrollBar orientation="horizontal" />
           </ScrollArea>
-
-          <TabsContent value="ai" className="space-y-6">
-            <div className="flex items-center gap-2">
-              <Wand2 className="w-5 h-5 text-gold-primary" />
-              <h2 className="text-2xl font-bold text-foreground">AI Assistant</h2>
-            </div>
-            <Card className="bg-card/50 border-gold-primary/30">
-              <CardHeader>
-                <CardTitle className="text-lg">Describe what you want to change</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label>Quick Templates (click to edit)</Label>
-                  <div className="flex flex-wrap gap-2">
-                    {[
-                      'Set game {game} price to {price}',
-                      'Set game {game} discount to {price}',
-                      'Set game {game} stock to {stock}',
-                      'Set package {package} price to {price} for game {game}',
-                      'Set package {package} discount to {price} for game {game}',
-                      'Bulk add cards for game {game}: {cards}',
-                    ].map((tpl) => (
-                      <Button
-                        key={tpl}
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setAiPrompt(tpl)}
-                        className="text-xs"
-                      >
-                        {tpl}
-                      </Button>
-                    ))}
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label>Request</Label>
-                  <Textarea
-                    value={aiPrompt}
-                    onChange={(e) => setAiPrompt(e.target.value)}
-                    placeholder="Example: Set pubg-mobile price to 120 and discount to 99"
-                    className="min-h-28"
-                  />
-                  <div className="text-xs text-muted-foreground">
-                    The AI will only propose safe, whitelisted actions. You must confirm before applying.
-                  </div>
-                </div>
-
-                <div className="flex flex-wrap gap-2">
-                  <Button
-                    onClick={() => aiPlanMutation.mutate()}
-                    disabled={!aiPrompt.trim() || aiPlanMutation.isPending}
-                    className="bg-gold-primary hover:bg-gold-primary/80"
-                  >
-                    {aiPlanMutation.isPending ? 'Planning...' : 'Generate Plan'}
-                  </Button>
-                  <Dialog>
-                    <DialogTrigger asChild>
-                      <Button variant="outline" disabled={aiPlannedActions.length === 0 || aiExecuteMutation.isPending}>
-                        Apply Actions
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>Confirm Apply</DialogTitle>
-                        <DialogDescription>
-                          This will execute {aiPlannedActions.length} action(s) on your live database.
-                        </DialogDescription>
-                      </DialogHeader>
-                      <div className="space-y-2 text-sm">
-                        {aiPlannedActions.map((a, idx) => (
-                          <div key={idx} className="border rounded p-2 bg-muted/30 font-mono text-xs overflow-x-auto">
-                            {JSON.stringify(a)}
-                          </div>
-                        ))}
-                      </div>
-                      <DialogFooter>
-                        <Button
-                          onClick={() => aiExecuteMutation.mutate()}
-                          disabled={aiExecuteMutation.isPending}
-                          className="bg-gold-primary hover:bg-gold-primary/80"
-                        >
-                          {aiExecuteMutation.isPending ? 'Applying...' : 'Confirm & Apply'}
-                        </Button>
-                      </DialogFooter>
-                    </DialogContent>
-                  </Dialog>
-                  <Button
-                    variant="ghost"
-                    onClick={() => {
-                      setAiPlanSource('');
-                      setAiPlannedActions([]);
-                      setAiRejected([]);
-                    }}
-                  >
-                    Clear
-                  </Button>
-                </div>
-
-                {(aiPlanSource || aiPlannedActions.length || aiRejected.length) ? (
-                  <div className="space-y-3">
-                    <div className="text-sm text-muted-foreground">
-                      Source: <span className="font-mono">{aiPlanSource || '—'}</span>
-                    </div>
-
-                    <div>
-                      <div className="text-sm font-semibold mb-2">Planned actions ({aiPlannedActions.length})</div>
-                      <div className="grid gap-2">
-                        {aiPlannedActions.length === 0 ? (
-                          <div className="text-sm text-muted-foreground">No actions planned.</div>
-                        ) : (
-                          aiPlannedActions.map((a, idx) => (
-                            <div key={idx} className="border rounded p-2 bg-muted/30 font-mono text-xs overflow-x-auto">
-                              {JSON.stringify(a)}
-                            </div>
-                          ))
-                        )}
-                      </div>
-                    </div>
-
-                    {aiRejected.length > 0 && (
-                      <div>
-                        <div className="text-sm font-semibold mb-2 text-yellow-500">Rejected ({aiRejected.length})</div>
-                        <div className="grid gap-2">
-                          {aiRejected.map((r, idx) => (
-                            <div key={idx} className="border rounded p-2 bg-yellow-500/10">
-                              <div className="text-xs font-semibold">{r.message}</div>
-                              <div className="mt-1 font-mono text-xs overflow-x-auto">{JSON.stringify(r.action)}</div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                ) : null}
-              </CardContent>
-            </Card>
-          </TabsContent>
 
           {/* Alerts Tab */}
           <TabsContent value="alerts" className="space-y-6">
@@ -1541,6 +1149,10 @@ export default function AdminDashboard() {
               <h2 className="text-2xl font-bold text-foreground">Orders</h2>
             </div>
             <OrdersPanel />
+          </TabsContent>
+          
+          <TabsContent value="arrangement" className="space-y-6">
+            <ArrangementPanel />
           </TabsContent>
 
           <TabsContent value="checkout-confirmations" className="space-y-6">
@@ -1667,13 +1279,7 @@ export default function AdminDashboard() {
                   <CardContent className="space-y-4 pt-4">
                     <div>
                       <p className="text-sm text-muted-foreground">Price</p>
-                      {gameHasPackages(game) ? (
-                        <p className="text-lg font-bold text-gold-primary">
-                          From {getDerivedMinPackagePrice(game) ?? 0} EGP
-                        </p>
-                      ) : (
-                        <p className="text-lg font-bold text-gold-primary">{game.price} EGP</p>
-                      )}
+                      <p className="text-lg font-bold text-gold-primary">{game.price} EGP</p>
                     </div>
                     <div>
                       <p className="text-sm text-muted-foreground">Stock</p>
@@ -1760,78 +1366,56 @@ export default function AdminDashboard() {
                   ) : (
                     <div className="space-y-3">
                       {packagesDraft.map((p, idx) => (
-                        <div key={idx} className="border rounded-lg p-4 space-y-3">
-                          <div className="flex items-start justify-between">
-                            <div className="flex items-center gap-4 flex-1">
-                              {p.image ? (
-                                <img src={p.image} alt="Package" className="w-16 h-16 object-cover rounded border" />
-                              ) : (
-                                <div className="w-16 h-16 bg-muted rounded flex items-center justify-center text-xs text-muted-foreground">
-                                  No Image
-                                </div>
-                              )}
-                              <div className="flex-1 space-y-2">
-                                <div className="flex gap-2">
-                                  <Label 
-                                    htmlFor={`pkg-img-${idx}`} 
-                                    className="cursor-pointer inline-flex items-center justify-center rounded-md text-sm font-medium bg-secondary text-secondary-foreground px-3 py-1"
-                                  >
-                                    {p.image ? 'Change Image' : 'Upload Image'}
-                                  </Label>
-                                  {p.image && (
-                                    <Button 
-                                      variant="destructive" 
-                                      size="sm"
-                                      onClick={() => {
-                                        const next = [...packagesDraft];
-                                        next[idx] = { ...next[idx], image: null };
-                                        setPackagesDraft(next);
-                                      }}
-                                    >
-                                      Remove Image
-                                    </Button>
-                                  )}
-                                </div>
-                                <Input
-                                  id={`pkg-img-${idx}`}
-                                  type="file"
-                                  accept="image/*"
-                                  className="hidden"
-                                  onChange={(e) => {
-                                    const file = e.target.files?.[0];
-                                    if (file) handlePackageImageUpload(idx, file);
-                                  }}
-                                />
+                        <div key={idx} className="border-b pb-4 mb-4 last:border-0 last:mb-0 last:pb-0">
+                          <div className="flex items-center gap-4 mb-3">
+                            {p.image ? (
+                              <img src={p.image} alt="Package" className="w-16 h-16 object-cover rounded border border-gold-primary/30" />
+                            ) : (
+                              <div className="w-16 h-16 bg-muted/50 rounded border border-dashed border-muted-foreground/30 flex items-center justify-center text-xs text-muted-foreground">
+                                No Img
                               </div>
-                            </div>
-                            <Button
-                              variant="destructive"
-                              size="sm"
-                              onClick={() => {
-                                const next = packagesDraft.filter((_, i) => i !== idx);
-                                setPackagesDraft(next);
-                              }}
-                            >
-                              <Trash2 className="w-4 h-4 mr-1" />
-                              Delete
-                            </Button>
-                          </div>
-                          
-                          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                            )}
                             <div>
-                              <Label>Package Amount</Label>
-                              <Input 
-                                value={p.amount}
+                              <div className="flex gap-2">
+                                <Label 
+                                  htmlFor={`pkg-img-${idx}`} 
+                                  className="cursor-pointer inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80 h-9 px-4 py-2"
+                                >
+                                  {p.image ? 'Change Image' : 'Upload Image'}
+                                </Label>
+                                {p.image && (
+                                  <Button 
+                                    variant="destructive" 
+                                    size="sm"
+                                    onClick={() => {
+                                      const next = [...packagesDraft];
+                                      next[idx] = { ...next[idx], image: null };
+                                      setPackagesDraft(next);
+                                    }}
+                                  >
+                                    Remove
+                                  </Button>
+                                )}
+                              </div>
+                              <Input
+                                id={`pkg-img-${idx}`}
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
                                 onChange={(e) => {
-                                  const next = [...packagesDraft];
-                                  next[idx] = { ...next[idx], amount: e.target.value };
-                                  setPackagesDraft(next);
+                                  const file = e.target.files?.[0];
+                                  if (file) handlePackageImageUpload(idx, file);
                                 }}
-                                placeholder="e.g., 10000 ZP"
                               />
                             </div>
-                            <div>
-                              <Label>Original Price</Label>
+                          </div>
+                          <div className="grid grid-cols-12 gap-2 items-end">
+                            <div className="col-span-5">
+                              <Label>Package</Label>
+                              <Input value={p.amount} readOnly />
+                            </div>
+                            <div className="col-span-3">
+                              <Label>Price</Label>
                               <Input
                                 type="number"
                                 value={Number.isFinite(p.price) ? p.price : 0}
@@ -1843,8 +1427,8 @@ export default function AdminDashboard() {
                                 }}
                               />
                             </div>
-                            <div>
-                              <Label>Final Price (optional)</Label>
+                            <div className="col-span-4">
+                              <Label>Discount Price</Label>
                               <Input
                                 type="number"
                                 value={p.discountPrice ?? ''}
@@ -1854,7 +1438,6 @@ export default function AdminDashboard() {
                                   next[idx] = { ...next[idx], discountPrice: v === '' ? null : Number(v) };
                                   setPackagesDraft(next);
                                 }}
-                                placeholder="Leave empty for no discount"
                               />
                             </div>
                           </div>
@@ -1862,24 +1445,6 @@ export default function AdminDashboard() {
                       ))}
                     </div>
                   )}
-                </div>
-
-                <div className="flex justify-center pt-4 border-t">
-                  <Button
-                    onClick={() => {
-                      const newPackage = {
-                        amount: '',
-                        price: 0,
-                        discountPrice: null,
-                        image: null
-                      };
-                      setPackagesDraft([...packagesDraft, newPackage]);
-                    }}
-                    className="bg-gold-primary hover:bg-gold-primary/80"
-                  >
-                    <Plus className="w-4 h-4 mr-2" />
-                    Add Package
-                  </Button>
                 </div>
 
                 <DialogFooter>
@@ -2219,36 +1784,6 @@ export default function AdminDashboard() {
             <h2 className="text-2xl font-bold text-foreground mb-2">WhatsApp Integration</h2>
             <p className="text-sm text-muted-foreground mb-4">Manage your connected WhatsApp number and send test messages.</p>
 
-            {/* Admin Phone Number Editor */}
-            <Card className="bg-card/50 border-gold-primary/30">
-              <CardHeader>
-                <CardTitle>Admin WhatsApp Number</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="adminPhone" className="text-right">Admin Phone</Label>
-                  <Input
-                    id="adminPhone"
-                    value={adminPhone}
-                    onChange={(e) => setAdminPhone(e.target.value)}
-                    placeholder="+201234567890"
-                    className="col-span-3"
-                  />
-                </div>
-                <div className="flex gap-2">
-                  <Button onClick={() => updateAdminPhoneMutation.mutate(adminPhone)} disabled={updateAdminPhoneMutation.isPending} className="bg-gold-primary">
-                    {updateAdminPhoneMutation.isPending ? 'Saving...' : 'Save Number'}
-                  </Button>
-                  <Button variant="outline" onClick={() => refetchAdminPhone()} disabled={isLoadingAdminPhone}>
-                    Refresh
-                  </Button>
-                </div>
-                <div className="text-xs text-muted-foreground">
-                  This number receives order confirmations and admin alerts via WhatsApp.
-                </div>
-              </CardContent>
-            </Card>
-
             {/* Connection Status */}
             <Card className="bg-card/50 border-gold-primary/30">
               <CardHeader>
@@ -2256,53 +1791,6 @@ export default function AdminDashboard() {
               </CardHeader>
               <CardContent>
                 <WhatsAppConnectionPanel />
-              </CardContent>
-            </Card>
-
-            {/* Test Email */}
-            <Card className="bg-card/50 border-gold-primary/30">
-              <CardHeader>
-                <CardTitle>Test Email</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="testEmailTo" className="text-right">To</Label>
-                  <Input
-                    id="testEmailTo"
-                    value={testEmailTo}
-                    onChange={(e) => setTestEmailTo(e.target.value)}
-                    placeholder="admin@example.com"
-                    className="col-span-3"
-                  />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="testEmailSubject" className="text-right">Subject</Label>
-                  <Input
-                    id="testEmailSubject"
-                    value={testEmailSubject}
-                    onChange={(e) => setTestEmailSubject(e.target.value)}
-                    placeholder="Test from GameCart Admin"
-                    className="col-span-3"
-                  />
-                </div>
-                <div className="grid grid-cols-4 items-start gap-4">
-                  <Label htmlFor="testEmailBody" className="text-right">Message</Label>
-                  <Textarea
-                    id="testEmailBody"
-                    value={testEmailBody}
-                    onChange={(e) => setTestEmailBody(e.target.value)}
-                    placeholder="This is a test email from the admin dashboard."
-                    className="col-span-3 h-24"
-                  />
-                </div>
-                <div className="flex gap-2">
-                  <Button onClick={() => testEmailMutation.mutate()} disabled={testEmailMutation.isPending || !testEmailTo.trim()} className="bg-gold-primary">
-                    {testEmailMutation.isPending ? 'Sending...' : 'Send Test Email'}
-                  </Button>
-                </div>
-                <div className="text-xs text-muted-foreground">
-                  Ensure BREVO_USER and BREVO_PASS are configured in backend .env for email delivery.
-                </div>
               </CardContent>
             </Card>
 
@@ -2351,34 +1839,23 @@ export default function AdminDashboard() {
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="price" className="text-right">Price</Label>
-                <div className="col-span-3">
-                  <Input
-                    id="price"
-                    value={gameHasPackages(editingGame) ? String(getDerivedMinPackagePrice(editingGame) ?? '') : editingGame.price}
-                    onChange={(e) => {
-                      if (gameHasPackages(editingGame)) return;
-                      setEditingGame({ ...editingGame, price: e.target.value });
-                    }}
-                    disabled={gameHasPackages(editingGame)}
-                    placeholder={gameHasPackages(editingGame) ? 'Managed by packages' : undefined}
-                  />
-                  {!gameHasPackages(editingGame) && (
-                    <p className="text-xs text-muted-foreground mt-1">Original price (shown as strikethrough if final price is set)</p>
-                  )}
-                </div>
+                <Input
+                  id="price"
+                  value={editingGame.price}
+                  onChange={(e) => setEditingGame({ ...editingGame, price: e.target.value })}
+                  className="col-span-3"
+                />
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="discountPrice" className="text-right">Final Price</Label>
-                <div className="col-span-3">
-                  <Input
-                    id="discountPrice"
-                    type="number"
-                    value={(editingGame as any).discountPrice || ''}
-                    onChange={(e) => setEditingGame({ ...editingGame, discountPrice: e.target.value || null } as any)}
-                    placeholder="Optional - shown as the main price"
-                  />
-                  <p className="text-xs text-muted-foreground mt-1">Final displayed price (big font)</p>
-                </div>
+                <Label htmlFor="discountPrice" className="text-right">Discount Price</Label>
+                <Input
+                  id="discountPrice"
+                  type="number"
+                  value={(editingGame as any).discountPrice || ''}
+                  onChange={(e) => setEditingGame({ ...editingGame, discountPrice: e.target.value || null } as any)}
+                  placeholder="Optional - shows as strikethrough"
+                  className="col-span-3"
+                />
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="stock" className="text-right">Stock</Label>
@@ -2492,19 +1969,7 @@ export default function AdminDashboard() {
           )}
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditingGame(null)}>Cancel</Button>
-            <Button
-              type="submit"
-              onClick={() => {
-                if (!editingGame) return;
-                const payload: any = { ...editingGame };
-                if (gameHasPackages(payload)) {
-                  delete payload.price;
-                }
-                updateGameMutation.mutate(payload);
-              }}
-            >
-              Save changes
-            </Button>
+            <Button type="submit" onClick={() => updateGameMutation.mutate(editingGame as Game)}>Save changes</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -3147,7 +2612,7 @@ function DiscountsPanel({ games, onSaved }: { games: Game[]; onSaved: () => void
   const updateGameMutation = useMutation({
     mutationFn: async () => {
       const token = localStorage.getItem('adminToken');
-      const res = await fetch(`${API_BASE_URL}/api/games/${gameId}`, {
+      const res = await fetch(apiPath(`/api/admin/games/${gameId}`), {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
         body: JSON.stringify({ id: gameId, discountPrice: finalPrice })
@@ -3442,8 +2907,8 @@ function WhatsAppConnectionPanel() {
   useEffect(() => {
     if (status?.qr) {
       QRCode.toDataURL(status.qr)
-        .then((url: string) => setQrDataUrl(url))
-        .catch((err: unknown) => console.error(err));
+        .then(url => setQrDataUrl(url))
+        .catch(err => console.error(err));
     } else {
       setQrDataUrl(null);
     }

@@ -108,6 +108,23 @@ const formatGame = (game, packages = []) => {
   }
 };
 
+// In-memory cache for popular (visible) games
+let popularCache = { items: [], ts: 0 };
+const POPULAR_TTL_MS = 15000;
+function getPopularCache() {
+  const now = Date.now();
+  if (popularCache.items && popularCache.items.length && (now - popularCache.ts) < POPULAR_TTL_MS) {
+    return popularCache.items;
+  }
+  return null;
+}
+function setPopularCache(items) {
+  popularCache = { items, ts: Date.now() };
+}
+function invalidatePopularCache() {
+  popularCache = { items: [], ts: 0 };
+}
+
 // GET /api/games
 router.get('/', async (req, res) => {
   const page = parseInt(req.query.page) || 1;
@@ -161,6 +178,10 @@ router.get('/', async (req, res) => {
 // GET /api/games/popular
 router.get('/popular', async (req, res) => {
   try {
+    const cached = getPopularCache();
+    if (cached) {
+      return res.json(cached);
+    }
     const gamesRes = await pool.query(`
       SELECT g.*, 
              COALESCE(json_agg(gp ORDER BY gp.price) FILTER (WHERE gp.id IS NOT NULL), '[]') as packages_data
@@ -176,6 +197,7 @@ router.get('/popular', async (req, res) => {
       return formatGame(game, packages_data);
     });
 
+    setPopularCache(items);
     res.json(items);
   } catch (error) {
     console.error('DB Error (popular), falling back to local DB:', error.message);
@@ -187,7 +209,9 @@ router.get('/popular', async (req, res) => {
       if (orderA !== orderB) return orderA - orderB;
       return a.name.localeCompare(b.name);
     }).slice(0, 50);
-    res.json(sortedGames.map(g => formatGame(g)));
+    const items = sortedGames.map(g => formatGame(g));
+    setPopularCache(items);
+    res.json(items);
   }
 });
 
@@ -280,10 +304,26 @@ router.post('/', authenticateToken, ensureAdmin, async (req, res) => {
     showOnMainPage, displayOrder
   } = req.body;
 
+  // Validate duplicate name
+  try {
+    const dup = await pool.query('SELECT 1 FROM games WHERE lower(name) = lower($1)', [name]);
+    if (dup.rows.length) {
+      return res.status(409).json({ message: 'Duplicate game name' });
+    }
+  } catch {}
+
+  // Validate order number if provided
+  if (displayOrder !== undefined) {
+    const n = Number(displayOrder);
+    if (!Number.isInteger(n) || n < 0) {
+      return res.status(400).json({ message: 'Display order must be a positive integer' });
+    }
+  }
+
   const gameId = `game_${Date.now()}`;
   const gameSlug = slug || name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
   const isPop = !!isPopular;
-  const showMain = showOnMainPage !== undefined ? !!showOnMainPage : true;
+  const showMain = showOnMainPage !== undefined ? !!showOnMainPage : false;
   const dispOrder = displayOrder !== undefined ? Number(displayOrder) : 999;
 
   // Prepare game object for potential local save
@@ -353,6 +393,7 @@ router.post('/', authenticateToken, ensureAdmin, async (req, res) => {
       await logAudit('create_game', `Created game: ${name} (${gameId})`, req.user);
       
       const created = formatGame(gameData, pkgsToInsert);
+      invalidatePopularCache();
       res.status(201).json(created);
 
     } catch (error) {
@@ -389,6 +430,23 @@ router.put('/:id', authenticateToken, ensureAdmin, async (req, res) => {
       }
       const existingGame = checkRes.rows[0];
       const realId = existingGame.id;
+
+      // Duplicate name validation
+      if (name) {
+        const dup = await client.query('SELECT 1 FROM games WHERE lower(name) = lower($1) AND id <> $2', [name, realId]);
+        if (dup.rows.length) {
+          await client.query('ROLLBACK');
+          return res.status(409).json({ message: 'Duplicate game name' });
+        }
+      }
+      // Order validation
+      if (displayOrder !== undefined) {
+        const n = Number(displayOrder);
+        if (!Number.isInteger(n) || n < 0) {
+          await client.query('ROLLBACK');
+          return res.status(400).json({ message: 'Display order must be a positive integer' });
+        }
+      }
 
       // Update Game
       await client.query(`
@@ -461,6 +519,7 @@ router.put('/:id', authenticateToken, ensureAdmin, async (req, res) => {
       `, [realId]);
       
       const { packages_data, ...game } = finalRes.rows[0];
+      invalidatePopularCache();
       res.json(formatGame(game, packages_data));
 
     } catch (error) {
@@ -479,17 +538,21 @@ router.put('/:id', authenticateToken, ensureAdmin, async (req, res) => {
 router.delete('/:id', authenticateToken, ensureAdmin, async (req, res) => {
   const { id } = req.params;
   try {
-    const resDb = await pool.query('DELETE FROM games WHERE id = $1 OR slug = $1 RETURNING id', [id]);
-    
+    const resDb = await pool.query('UPDATE games SET deleted = TRUE, updated_at = CURRENT_TIMESTAMP WHERE id = $1 OR slug = $1 RETURNING id', [id]);
     if (resDb.rowCount === 0) {
       return res.status(404).json({ message: 'Game not found' });
     }
-    
-    await logAudit('delete_game', `Deleted game: ${id}`, req.user);
-    res.json({ message: 'Game deleted successfully' });
+    await logAudit('delete_game_soft', `Soft-deleted game: ${id}`, req.user);
+    invalidatePopularCache();
+    res.json({ message: 'Game marked as deleted' });
   } catch (error) {
     console.error('DB Error (delete), falling back to local DB:', error.message);
-    return res.status(503).json({ message: 'Database unavailable' });
+    const g = localDb.findGame(id);
+    if (!g) return res.status(404).json({ message: 'Game not found' });
+    localDb.updateGame(g.id, { deleted: true });
+    await logAudit('delete_game_soft', `Soft-deleted game (local): ${id}`, req.user);
+    invalidatePopularCache();
+    res.json({ message: 'Game marked as deleted' });
   }
 });
 
@@ -694,6 +757,94 @@ router.put('/:id/image-url', authenticateToken, ensureAdmin, async (req, res) =>
     }
   } catch (error) {
     console.error('DB Error (update image_url), falling back to local DB:', error.message);
+    return res.status(503).json({ message: 'Database unavailable' });
+  }
+});
+
+// ===================== ADMIN: ARRANGEMENT =====================
+router.get('/admin/arrangement', authenticateToken, ensureAdmin, async (req, res) => {
+  try {
+    const filter = (req.query.filter || 'active').toString();
+    let where = '';
+    if (filter === 'active') where = 'WHERE COALESCE(deleted, FALSE) = FALSE';
+    if (filter === 'deleted') where = 'WHERE COALESCE(deleted, FALSE) = TRUE';
+    const rows = await pool.query(`
+      SELECT id, name, slug, show_on_main_page, display_order, deleted, updated_at
+      FROM games
+      ${where}
+      ORDER BY display_order ASC, name ASC
+    `);
+    res.json(rows.rows || []);
+  } catch (err) {
+    console.error('Arrangement fetch error:', err);
+    try {
+      const all = localDb.getGames();
+      const filter = (req.query.filter || 'active').toString();
+      let items = all;
+      if (filter === 'active') items = all.filter(g => !g.deleted);
+      if (filter === 'deleted') items = all.filter(g => !!g.deleted);
+      items = items.sort((a, b) => {
+        const ao = Number(a.displayOrder ?? a.display_order ?? 999);
+        const bo = Number(b.displayOrder ?? b.display_order ?? 999);
+        if (ao !== bo) return ao - bo;
+        return String(a.name).localeCompare(String(b.name));
+      });
+      res.json(items.map(g => ({
+        id: g.id,
+        name: g.name,
+        slug: g.slug,
+        show_on_main_page: !!(g.showOnMainPage ?? g.show_on_main_page ?? false),
+        display_order: Number(g.displayOrder ?? g.display_order ?? 999),
+        deleted: !!g.deleted,
+        updated_at: g.updated_at || new Date().toISOString()
+      })));
+    } catch {
+      res.json([]);
+    }
+  }
+});
+
+router.put('/admin/arrangement/bulk', authenticateToken, ensureAdmin, async (req, res) => {
+  try {
+    const updates = Array.isArray(req.body?.updates) ? req.body.updates : [];
+    if (!updates.length) return res.status(400).json({ message: 'updates[] required' });
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      for (const u of updates) {
+        const id = u.id;
+        if (!id) continue;
+        let visible = undefined;
+        let order = undefined;
+        if (u.showOnMainPage !== undefined) visible = !!u.showOnMainPage;
+        if (u.displayOrder !== undefined) {
+          const n = Number(u.displayOrder);
+          if (!Number.isInteger(n) || n < 0) {
+            await client.query('ROLLBACK');
+            return res.status(400).json({ message: `Invalid displayOrder for ${id}` });
+          }
+          order = n;
+        }
+        await client.query(`
+          UPDATE games
+          SET show_on_main_page = COALESCE($2, show_on_main_page),
+              display_order = COALESCE($3, display_order),
+              updated_at = CURRENT_TIMESTAMP
+          WHERE id = $1
+        `, [id, visible, order]);
+      }
+      await client.query('COMMIT');
+      await logAudit('bulk_arrangement', `Bulk arrangement updates: ${updates.length}`, req.user);
+      invalidatePopularCache();
+      res.json({ ok: true, updated: updates.length });
+    } catch (err) {
+      await client.query('ROLLBACK');
+      throw err;
+    } finally {
+      client.release();
+    }
+  } catch (err) {
+    console.error('Arrangement bulk error:', err);
     return res.status(503).json({ message: 'Database unavailable' });
   }
 });
