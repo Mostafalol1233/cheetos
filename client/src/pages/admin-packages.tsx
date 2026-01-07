@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { ArrowLeft, Plus, Trash2, Save, Upload } from 'lucide-react';
 import { API_BASE_URL, queryClient } from '@/lib/queryClient';
 import { Link } from 'wouter';
+import { useToast } from '@/hooks/use-toast';
 import ImageWithFallback from '@/components/image-with-fallback';
 
 const apiPath = (path: string) => {
@@ -32,6 +33,8 @@ export default function AdminPackagesPage() {
   
   const [packages, setPackages] = useState<Package[]>([]);
   const [isEditing, setIsEditing] = useState(false);
+
+  const { toast } = useToast();
 
   // Fetch game
   const { data: game } = useQuery({
@@ -102,7 +105,10 @@ export default function AdminPackagesPage() {
         },
         body: JSON.stringify({ packages })
       });
-      if (!res.ok) throw new Error('Failed to update packages');
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData?.message || 'Failed to update packages');
+      }
       return res.json();
     },
     onSuccess: () => {
@@ -111,6 +117,15 @@ export default function AdminPackagesPage() {
       queryClient.invalidateQueries({ queryKey: ['/api/games'] });
       queryClient.invalidateQueries({ queryKey: ['/api/games/popular'] });
       setIsEditing(false);
+      toast({ title: 'Success', description: 'Packages saved successfully!' });
+    },
+    onError: (error: any) => {
+      console.error('Failed to update packages:', error);
+      toast({ 
+        title: 'Error', 
+        description: `Failed to save packages: ${error?.message || 'Unknown error'}`,
+        variant: 'destructive'
+      });
     }
   });
 
