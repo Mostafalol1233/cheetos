@@ -1496,10 +1496,13 @@ export default function AdminDashboard() {
                               />
                             </div>
                           </div>
-                          <div className="grid grid-cols-12 gap-2 items-end">
+                            <div className="grid grid-cols-12 gap-2 items-end">
                             <div className="col-span-5">
-                              <Label>Amount</Label>
+                              <Label htmlFor={`pkg-amount-${idx}`}>Amount</Label>
                               <Input 
+                                id={`pkg-amount-${idx}`}
+                                name={`pkg-amount-${idx}`}
+                                autoComplete="off"
                                 value={p.amount} 
                                 placeholder="e.g. 5000 ZP"
                                 onChange={(e) => {
@@ -1524,8 +1527,11 @@ export default function AdminDashboard() {
                               </div>
                             </div>
                             <div className="col-span-3">
-                              <Label>Price</Label>
+                              <Label htmlFor={`pkg-price-${idx}`}>Price</Label>
                               <Input
+                                id={`pkg-price-${idx}`}
+                                name={`pkg-price-${idx}`}
+                                autoComplete="off"
                                 type="number"
                                 value={Number.isFinite(p.price) ? p.price : 0}
                                 onChange={(e) => {
@@ -1537,8 +1543,11 @@ export default function AdminDashboard() {
                               />
                             </div>
                             <div className="col-span-4">
-                              <Label>Discount Price</Label>
+                              <Label htmlFor={`pkg-discount-${idx}`}>Discount Price</Label>
                               <Input
+                                id={`pkg-discount-${idx}`}
+                                name={`pkg-discount-${idx}`}
+                                autoComplete="off"
                                 type="number"
                                 value={p.discountPrice ?? ''}
                                 onChange={(e) => {
@@ -1550,8 +1559,11 @@ export default function AdminDashboard() {
                               />
                             </div>
                             <div className="col-span-3">
-                              <Label>Value</Label>
+                              <Label htmlFor={`pkg-value-${idx}`}>Value</Label>
                               <Input
+                                id={`pkg-value-${idx}`}
+                                name={`pkg-value-${idx}`}
+                                autoComplete="off"
                                 type="number"
                                 value={p.value ?? ''}
                                 onChange={(e) => {
@@ -1563,8 +1575,11 @@ export default function AdminDashboard() {
                               />
                             </div>
                             <div className="col-span-4">
-                              <Label>Duration</Label>
+                              <Label htmlFor={`pkg-duration-${idx}`}>Duration</Label>
                               <Input
+                                id={`pkg-duration-${idx}`}
+                                name={`pkg-duration-${idx}`}
+                                autoComplete="off"
                                 placeholder="e.g. 30 days"
                                 value={p.duration || ''}
                                 onChange={(e) => {
@@ -1575,8 +1590,11 @@ export default function AdminDashboard() {
                               />
                             </div>
                             <div className="col-span-12">
-                              <Label>Description</Label>
+                              <Label htmlFor={`pkg-description-${idx}`}>Description</Label>
                               <Textarea
+                                id={`pkg-description-${idx}`}
+                                name={`pkg-description-${idx}`}
+                                autoComplete="off"
                                 placeholder="Short package description"
                                 value={p.description || ''}
                                 onChange={(e) => {
