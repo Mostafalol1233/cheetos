@@ -246,7 +246,14 @@ export default function AdminDashboard() {
       const res = await fetch(`${API_BASE_URL}/api/admin/alerts?${params.toString()}`, {
         headers: token ? { Authorization: `Bearer ${token}` } : undefined
       });
-      return await res.json();
+      if (!res.ok) {
+        if (res.status === 403) {
+          throw new Error('Unauthorized - Invalid or missing admin token');
+        }
+        throw new Error('Failed to fetch alerts');
+      }
+      const data = await res.json();
+      return Array.isArray(data) ? data : [];
     }
   });
 
