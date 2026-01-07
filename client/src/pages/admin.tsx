@@ -12,10 +12,9 @@ import { Trash2, Edit, Plus, MessageSquare, Bell, Check, AlertCircle, Info, Sear
 import { API_BASE_URL, queryClient } from '@/lib/queryClient';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import QRCode from 'qrcode';
-import { normalizeNumericString, extractQuantityInt } from '@/lib/quantity';
+import { normalizeNumericString } from '@/lib/quantity';
 
 interface Game {
   id: string;
@@ -62,9 +61,9 @@ export default function AdminDashboard() {
   const [searchGameTerm, setSearchGameTerm] = useState('');
   const [editingGame, setEditingGame] = useState<Game | null>(null);
   const [packagesGameId, setPackagesGameId] = useState<string | null>(null);
-  const [packagesDraft, setPackagesDraft] = useState<Array<{ amount: string; price: number; discountPrice: number | null; image?: string | null; value?: number | null; duration?: string; description?: string }>>([]);
+  const [packagesDraft, setPackagesDraft] = useState<Array<{ amount: string; price: number; discountPrice: number | null; image?: string | null }>>([]);
   const { toast } = useToast();
-  const [originalPackages, setOriginalPackages] = useState<Array<{ amount: string; price: number; discountPrice: number | null; image?: string | null; value?: number | null; duration?: string; description?: string }>>([]);
+  const [originalPackages, setOriginalPackages] = useState<Array<{ amount: string; price: number; discountPrice: number | null; image?: string | null }>>([]);
   const [addedIndices, setAddedIndices] = useState<Set<number>>(new Set());
   const [selectedSession, setSelectedSession] = useState<string | null>(null);
   const [replyMessage, setReplyMessage] = useState('');
@@ -115,10 +114,7 @@ export default function AdminDashboard() {
       amount: String(p?.amount || ''),
       price: Number(p?.price || 0),
       discountPrice: p?.discountPrice != null ? Number(p.discountPrice) : null,
-      image: p?.image || null,
-      value: p?.value != null ? Number(p.value) : null,
-      duration: p?.duration || '',
-      description: p?.description || ''
+      image: p?.image || null
     }));
     setPackagesDraft(normalized);
     setOriginalPackages(normalized);
@@ -126,7 +122,7 @@ export default function AdminDashboard() {
   }, [packagesGameId, adminPackagesData]);
 
   const savePackagesMutation = useMutation({
-    mutationFn: async (payload: { gameId: string; packages: Array<{ amount: string; price: number; discountPrice: number | null; image?: string | null; value?: number | null; duration?: string; description?: string }> }) => {
+    mutationFn: async (payload: { gameId: string; packages: Array<{ amount: string; price: number; discountPrice: number | null; image?: string | null }> }) => {
       const token = localStorage.getItem('adminToken');
       const res = await fetch(apiPath(`/api/games/${payload.gameId}/packages`), {
         method: 'PUT',
@@ -152,7 +148,7 @@ export default function AdminDashboard() {
     }
   });
   const savePackagesMutationAsync = useMutation({
-    mutationFn: async (payload: { gameId: string; packages: Array<{ amount: string; price: number; discountPrice: number | null; image?: string | null; value?: number | null; duration?: string; description?: string }> }) => {
+    mutationFn: async (payload: { gameId: string; packages: Array<{ amount: string; price: number; discountPrice: number | null; image?: string | null }> }) => {
       const token = localStorage.getItem('adminToken');
       const res = await fetch(apiPath(`/api/games/${payload.gameId}/packages`), {
         method: 'PUT',
@@ -164,30 +160,23 @@ export default function AdminDashboard() {
       return data;
     }
   });
-  const validatePackage = (p: { amount: string; price: number; discountPrice: number | null; value?: number | null; duration?: string; description?: string }) => {
+  const validatePackage = (p: { amount: string; price: number; discountPrice: number | null }) => {
     const amt = String(p.amount || '').trim();
     if (!amt) return 'Amount is required';
-    const qty = extractQuantityInt(amt);
-    const v = p.value != null ? Number(p.value) : qty;
-    if (!Number.isInteger(v) || v <= 0) return 'Quantity must be a positive integer';
     const priceNum = Number(normalizeNumericString(p.price));
     if (!Number.isFinite(priceNum) || priceNum < 0) return 'Price must be a non-negative number';
     if (p.discountPrice != null) {
       const d = Number(normalizeNumericString(p.discountPrice));
       if (!Number.isFinite(d) || d < 0) return 'Discount price must be non-negative';
     }
-    if (p.duration && String(p.duration).length > 50) return 'Duration too long';
-    if (p.description && String(p.description).length > 500) return 'Description too long';
     return null;
   };
-  const prepareNormalizedPackages = (list: Array<{ amount: string; price: number; discountPrice: number | null; image?: string | null; value?: number | null; duration?: string; description?: string }>) => {
+  const prepareNormalizedPackages = (list: Array<{ amount: string; price: number; discountPrice: number | null; image?: string | null }>) => {
     return list.map(p => {
-      const qty = extractQuantityInt(p.amount);
       return {
         ...p,
         price: Number(normalizeNumericString(p.price)),
-        discountPrice: p.discountPrice == null ? null : Number(normalizeNumericString(p.discountPrice)),
-        value: p.value != null ? Number(p.value) : (qty > 0 ? qty : null)
+        discountPrice: p.discountPrice == null ? null : Number(normalizeNumericString(p.discountPrice))
       };
     });
   };
@@ -289,15 +278,16 @@ export default function AdminDashboard() {
 
   // Fetch all chats
   const { data: allChats = [], refetch: refetchChats } = useQuery<ChatMessage[]>({
-    queryKey: ['/api/chat/all'],
+    queryKey: ['/api/admin/chat/all'],
     enabled: true,
     queryFn: async () => {
       const token = localStorage.getItem('adminToken');
-      const res = await fetch(`${API_BASE_URL}/api/chat/all`, {
+      const res = await fetch(`${API_BASE_URL}/api/admin/chat/all`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {}
       });
-      if (!res.ok) throw new Error('Failed to fetch chats');
-      return res.json();
+      const data = await res.json().catch(() => ([]));
+      if (!res.ok) throw new Error((data as any)?.message || 'Failed to fetch chats');
+      return Array.isArray(data) ? data : [];
     }
   });
 
@@ -700,12 +690,15 @@ export default function AdminDashboard() {
           sessionId: selectedSession
         })
       });
-      return res.json();
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error((data as any)?.message || 'Failed to send reply');
+      return data;
     },
     onSuccess: () => {
       setReplyMessage('');
       refetchChats();
-      queryClient.invalidateQueries({ queryKey: [`/api/chat/${selectedSession}`] });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/chat/all'] });
+      queryClient.invalidateQueries({ queryKey: [`/api/admin/chat/${selectedSession}`] });
     }
   });
 
@@ -806,16 +799,17 @@ export default function AdminDashboard() {
 
   // Fetch chat messages for selected session
   const { data: sessionMessages = [] } = useQuery<ChatMessage[]>({
-    queryKey: [`/api/chat/${selectedSession}`],
+    queryKey: [`/api/admin/chat/${selectedSession}`],
     enabled: !!selectedSession,
     refetchInterval: 2000,
     queryFn: async () => {
       const token = localStorage.getItem('adminToken');
-      const res = await fetch(apiPath(`/api/chat/${selectedSession}`), {
+      const res = await fetch(apiPath(`/api/admin/chat/${selectedSession}`), {
         headers: token ? { Authorization: `Bearer ${token}` } : {}
       });
-      if (!res.ok) throw new Error('Failed to fetch messages');
-      return res.json();
+      const data = await res.json().catch(() => ([]));
+      if (!res.ok) throw new Error((data as any)?.message || 'Failed to fetch messages');
+      return Array.isArray(data) ? data : [];
     }
   });
 
@@ -1441,7 +1435,7 @@ export default function AdminDashboard() {
                     <Button
                       className="bg-gold-primary"
                       onClick={() => {
-                        const next = [...packagesDraft, { amount: '', price: 0, discountPrice: null, image: null, value: null, duration: '', description: '' }];
+                        const next = [...packagesDraft, { amount: '', price: 0, discountPrice: null, image: null }];
                         setPackagesDraft(next);
                         setAddedIndices(prev => new Set([...Array.from(prev), next.length - 1]));
                       }}
@@ -1515,8 +1509,7 @@ export default function AdminDashboard() {
                                 onChange={(e) => {
                                   const next = [...packagesDraft];
                                   const amt = e.target.value;
-                                  const qty = extractQuantityInt(amt);
-                                  next[idx] = { ...next[idx], amount: amt, value: qty > 0 ? qty : null };
+                                  next[idx] = { ...next[idx], amount: amt };
                                   setPackagesDraft(next);
                                 }}
                               />
@@ -1563,53 +1556,6 @@ export default function AdminDashboard() {
                                   next[idx] = { ...next[idx], discountPrice: v === '' ? null : parseNumberSafe(v) };
                                   setPackagesDraft(next);
                                 }}
-                              />
-                            </div>
-                            <div className="col-span-3">
-                              <Label htmlFor={`pkg-value-${idx}`}>Value</Label>
-                              <Input
-                                id={`pkg-value-${idx}`}
-                                name={`pkg-value-${idx}`}
-                                autoComplete="off"
-                                type="number"
-                                value={p.value ?? ''}
-                                onChange={(e) => {
-                                  const v = e.target.value;
-                                  const next = [...packagesDraft];
-                                  next[idx] = { ...next[idx], value: v === '' ? null : Number(v) };
-                                  setPackagesDraft(next);
-                                }}
-                              />
-                            </div>
-                            <div className="col-span-4">
-                              <Label htmlFor={`pkg-duration-${idx}`}>Duration</Label>
-                              <Input
-                                id={`pkg-duration-${idx}`}
-                                name={`pkg-duration-${idx}`}
-                                autoComplete="off"
-                                placeholder="e.g. 30 days"
-                                value={p.duration || ''}
-                                onChange={(e) => {
-                                  const next = [...packagesDraft];
-                                  next[idx] = { ...next[idx], duration: e.target.value };
-                                  setPackagesDraft(next);
-                                }}
-                              />
-                            </div>
-                            <div className="col-span-12">
-                              <Label htmlFor={`pkg-description-${idx}`}>Description</Label>
-                              <Textarea
-                                id={`pkg-description-${idx}`}
-                                name={`pkg-description-${idx}`}
-                                autoComplete="off"
-                                placeholder="Short package description"
-                                value={p.description || ''}
-                                onChange={(e) => {
-                                  const next = [...packagesDraft];
-                                  next[idx] = { ...next[idx], description: e.target.value };
-                                  setPackagesDraft(next);
-                                }}
-                                className="h-20"
                               />
                             </div>
                           </div>
