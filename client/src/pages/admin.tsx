@@ -708,7 +708,8 @@ export default function AdminDashboard() {
       const token = localStorage.getItem('adminToken');
       const res = await fetch(apiPath(`/api/admin/categories/${categoryId}`), {
         method: 'DELETE',
-        headers: token ? { Authorization: `Bearer ${token}` } : {}
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        credentials: 'include'
       });
       if (!res.ok) throw new Error('Failed to delete category');
       return res.json();
@@ -733,7 +734,8 @@ export default function AdminDashboard() {
       const res = await fetch(apiPath(`/api/admin/categories/${data.id}`), {
         method: 'PUT',
         headers: token ? { Authorization: `Bearer ${token}` } : {},
-        body: formData
+        body: formData,
+        credentials: 'include'
       });
       if (!res.ok) throw new Error('Failed to update category');
       return res.json();

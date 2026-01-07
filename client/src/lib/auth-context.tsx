@@ -30,7 +30,8 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }: { childr
           const response = await fetch(`${API_BASE_URL}/api/auth/admin/verify`, {
             headers: {
               Authorization: `Bearer ${token}`
-            }
+            },
+            credentials: 'include'
           });
           
           if (response.ok) {
@@ -64,6 +65,7 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }: { childr
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ email, password }),
+        credentials: 'include'
       });
 
       if (!response.ok) {
