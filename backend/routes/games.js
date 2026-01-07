@@ -682,13 +682,13 @@ router.put('/:id/packages', authenticateToken, ensureAdmin, async (req, res) => 
               .replace(/[\u0660-\u0669]/g, (c) => String(c.charCodeAt(0) - 0x0660))
               .replace(/[\u06F0-\u06F9]/g, (c) => String(c.charCodeAt(0) - 0x06F0));
             const digits = (normalized.match(/[0-9]+/) || [''])[0];
-            value = digits ? Number(digits) : null;
+            value = digits ? Number(digits) : 1; // Default to 1 if no numbers found
           }
           const duration = pkg.duration ? String(pkg.duration).slice(0, 50) : null;
           const description = pkg.description ? String(pkg.description).slice(0, 500) : null;
 
           // Server-side validation
-          if (price < 0 || (value != null && (!Number.isFinite(value) || value <= 0))) {
+          if (price < 0 || (value != null && (!Number.isFinite(value) || value < 0))) {
             await client.query('ROLLBACK');
             return res.status(400).json({ message: 'Invalid quantity/value or price' });
           }
