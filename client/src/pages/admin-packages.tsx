@@ -96,7 +96,11 @@ export default function AdminPackagesPage() {
   // Update packages mutation
   const updatePackagesMutation = useMutation({
     mutationFn: async (packages: Package[]) => {
+      console.log('Mutation started with packages:', packages);
       const token = localStorage.getItem('adminToken');
+      console.log('Token exists:', !!token);
+      console.log('API URL:', `${API_BASE_URL}/api/games/${gameId}/packages`);
+      
       const res = await fetch(`${API_BASE_URL}/api/games/${gameId}/packages`, {
         method: 'PUT',
         headers: {
@@ -105,13 +109,21 @@ export default function AdminPackagesPage() {
         },
         body: JSON.stringify({ packages })
       });
+      
+      console.log('Response status:', res.status);
+      console.log('Response ok:', res.ok);
+      
       if (!res.ok) {
         const errorData = await res.json().catch(() => ({}));
+        console.log('Error data:', errorData);
         throw new Error(errorData?.message || 'Failed to update packages');
       }
-      return res.json();
+      const result = await res.json();
+      console.log('Success result:', result);
+      return result;
     },
     onSuccess: () => {
+      console.log('Mutation success - invalidating queries');
       queryClient.invalidateQueries({ queryKey: [`/api/games/${gameId}/packages`] });
       queryClient.invalidateQueries({ queryKey: [`/api/games/id/${gameId}`] });
       queryClient.invalidateQueries({ queryKey: ['/api/games'] });
@@ -147,6 +159,8 @@ export default function AdminPackagesPage() {
   };
 
   const handleSave = () => {
+    console.log('Saving packages:', packages);
+    console.log('Game ID:', gameId);
     updatePackagesMutation.mutate(packages);
   };
 
