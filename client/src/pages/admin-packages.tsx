@@ -41,23 +41,24 @@ export default function AdminPackagesPage() {
     queryKey: [`/api/games/id/${gameId}`],
     enabled: !!gameId,
     queryFn: async () => {
-      const res = await fetch(`${API_BASE_URL}/api/games/id/${gameId}`);
-      if (!res.ok) throw new Error('Failed to fetch game');
-      return res.json();
+      const res = await fetch(apiPath(`/api/games/id/${gameId}`));
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error((data as any)?.message || 'Failed to fetch game');
+      return data;
     }
   });
 
   // Fetch packages
-  const { data: gamePackages = [] } = useQuery<Package[]>({
+  const { data: gamePackages = [], refetch: refetchPackages } = useQuery<Package[]>({
     queryKey: [`/api/games/${gameId}/packages`],
     enabled: !!gameId,
     queryFn: async () => {
       const token = localStorage.getItem('adminToken');
-      const res = await fetch(`${API_BASE_URL}/api/games/${gameId}/packages`, {
+      const res = await fetch(apiPath(`/api/games/${gameId}/packages`), {
         headers: token ? { Authorization: `Bearer ${token}` } : {}
       });
-      if (!res.ok) throw new Error('Failed to fetch packages');
-      const data = await res.json();
+      const data = await res.json().catch(() => ([]));
+      if (!res.ok) throw new Error((data as any)?.message || 'Failed to fetch packages');
       return Array.isArray(data) ? data : [];
     }
   });
@@ -66,7 +67,7 @@ export default function AdminPackagesPage() {
   useEffect(() => {
     if (gamePackages && gamePackages.length > 0) {
       setPackages(gamePackages);
-    } else if (game && packages.length === 0 && gamePackages.length === 0) {
+    } else if (game && gamePackages.length === 0) {
       // Try to get packages from game data if API returns empty
       const gamePackagesArray = Array.isArray(game.packages) ? game.packages : [];
       const gamePrices = Array.isArray((game as any).packagePrices)
@@ -89,15 +90,17 @@ export default function AdminPackagesPage() {
           image: gameThumbnails[index] ? String(gameThumbnails[index]) : null
         }));
         setPackages(initialPackages);
+      } else if (packages.length === 0) {
+        setPackages([]);
       }
     }
-  }, [gamePackages, game]);
+  }, [gamePackages, game, packages.length]);
 
   // Update packages mutation
   const updatePackagesMutation = useMutation({
     mutationFn: async (packages: Package[]) => {
       const token = localStorage.getItem('adminToken');
-      const res = await fetch(`${API_BASE_URL}/api/games/${gameId}/packages`, {
+      const res = await fetch(apiPath(`/api/games/${gameId}/packages`), {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -111,11 +114,20 @@ export default function AdminPackagesPage() {
       }
       return res.json();
     },
-    onSuccess: () => {
+    onSuccess: async (resp: any) => {
       queryClient.invalidateQueries({ queryKey: [`/api/games/${gameId}/packages`] });
       queryClient.invalidateQueries({ queryKey: [`/api/games/id/${gameId}`] });
       queryClient.invalidateQueries({ queryKey: ['/api/games'] });
       queryClient.invalidateQueries({ queryKey: ['/api/games/popular'] });
+
+      if (Array.isArray(resp)) {
+        setPackages(resp);
+      }
+
+      try {
+        await refetchPackages();
+      } catch {}
+
       setIsEditing(false);
       toast({ title: 'Success', description: 'Packages saved successfully!' });
     },

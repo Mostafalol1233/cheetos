@@ -6,8 +6,10 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { queryClient } from '@/lib/queryClient';
+import { API_BASE_URL, queryClient } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
+
+const apiPath = (path: string) => (path.startsWith('http') ? path : `${API_BASE_URL}${path}`);
 
 export default function AdminConfirmationPage() {
   const [, params] = useRoute('/admin/confirmation/:id');
@@ -17,9 +19,10 @@ export default function AdminConfirmationPage() {
     queryKey: ['/api/admin/confirmations', id],
     queryFn: async () => {
       const token = localStorage.getItem('adminToken');
-      const res = await fetch(`/api/admin/confirmations/${id}`, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
-      if (!res.ok) throw new Error('Failed to fetch confirmation');
-      return res.json();
+      const res = await fetch(apiPath(`/api/admin/confirmations/${id}`), { headers: token ? { Authorization: `Bearer ${token}` } : {} });
+      const j = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error((j as any)?.message || 'Failed to fetch confirmation');
+      return j;
     }
   });
   const { data: thread } = useQuery<Array<{ id: string; sender: 'user'|'support'; message: string; timestamp: number }>>({
@@ -27,9 +30,10 @@ export default function AdminConfirmationPage() {
     enabled: Boolean(data?.sessionId),
     queryFn: async () => {
       const token = localStorage.getItem('adminToken');
-      const res = await fetch(`/api/admin/chat/${data?.sessionId}`, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
-      if (!res.ok) throw new Error('Failed to fetch chat');
-      return res.json();
+      const res = await fetch(apiPath(`/api/admin/chat/${data?.sessionId}`), { headers: token ? { Authorization: `Bearer ${token}` } : {} });
+      const j = await res.json().catch(() => ([]));
+      if (!res.ok) throw new Error((j as any)?.message || 'Failed to fetch chat');
+      return j;
     }
   });
   const [text, setText] = useState('');
@@ -48,7 +52,7 @@ export default function AdminConfirmationPage() {
         const fd = new FormData();
         fd.append('file', imageFile);
         const token = localStorage.getItem('adminToken');
-        const up = await fetch('/api/admin/upload', { method: 'POST', headers: token ? { Authorization: `Bearer ${token}` } : {}, body: fd });
+        const up = await fetch(apiPath('/api/admin/upload'), { method: 'POST', headers: token ? { Authorization: `Bearer ${token}` } : {}, body: fd });
         if (!up.ok) throw new Error('Failed to upload image');
         const resp = await up.json();
         mediaUrl = resp?.url;
@@ -61,7 +65,7 @@ export default function AdminConfirmationPage() {
       if (mode === 'whatsapp') {
         const to = data?.user?.phone || '';
         const payload = { to, text, mediaUrl };
-        const res = await fetch('/api/admin/whatsapp/send', {
+        const res = await fetch(apiPath('/api/admin/whatsapp/send'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
           body: JSON.stringify(payload)
@@ -76,7 +80,7 @@ export default function AdminConfirmationPage() {
 
         if (sendEmailToo) {
           if (!resolvedEmail) throw new Error('No customer email available');
-          const er = await fetch('/api/admin/email/send', {
+          const er = await fetch(apiPath('/api/admin/email/send'), {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
             body: JSON.stringify({ to: resolvedEmail, subject: `GameCart Confirmation: ${data?.transactionId || data?.id || ''}`, text })
@@ -93,7 +97,7 @@ export default function AdminConfirmationPage() {
 
       if (mode === 'email') {
         if (!resolvedEmail) throw new Error('No customer email available');
-        const er = await fetch('/api/admin/email/send', {
+        const er = await fetch(apiPath('/api/admin/email/send'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
           body: JSON.stringify({ to: resolvedEmail, subject: `GameCart Confirmation: ${data?.transactionId || data?.id || ''}`, text })
@@ -109,7 +113,7 @@ export default function AdminConfirmationPage() {
 
       // Record into chat thread for secure threading
       if (data?.sessionId) {
-        await fetch('/api/chat/message', {
+        await fetch(apiPath('/api/chat/message'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
           body: JSON.stringify({ sender: 'support', message: mediaUrl ? `${text}\n${mediaUrl}` : text, sessionId: data.sessionId })
