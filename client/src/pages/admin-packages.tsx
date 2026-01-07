@@ -181,56 +181,54 @@ export default function AdminPackagesPage() {
                   </Button>
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                {/* Package Image Preview */}
-                {pkg.image && (
-                  <div className="mb-4">
-                    <Label>Package Image Preview</Label>
-                    <div className="mt-2 border rounded-lg p-2 bg-muted/20">
-                      <ImageWithFallback
-                        src={pkg.image}
-                        alt={`Package ${index + 1}`}
-                        className="w-full h-32 object-contain rounded"
+              <CardContent className="p-6 space-y-4">
+                <div className="flex justify-between items-start">
+                  <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label>Amount (e.g., "10000 ZP")</Label>
+                      <Input
+                        value={pkg.amount}
+                        onChange={(e) => handleUpdatePackage(index, 'amount', e.target.value)}
+                        placeholder="10000 ZP"
+                      />
+                    </div>
+                    <div>
+                      <Label>Price</Label>
+                      <Input
+                        type="number"
+                        value={pkg.price}
+                        onChange={(e) => handleUpdatePackage(index, 'price', parseFloat(e.target.value) || 0)}
+                        placeholder="200"
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">Original price (shown as strikethrough if final price is set)</p>
+                    </div>
+                    <div>
+                      <Label>Final Price (optional)</Label>
+                      <Input
+                        type="number"
+                        value={pkg.discountPrice || ''}
+                        onChange={(e) => handleUpdatePackage(index, 'discountPrice', e.target.value ? parseFloat(e.target.value) : null)}
+                        placeholder="250"
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">Final displayed price (big font)</p>
+                    </div>
+                    <div>
+                      <Label>Image URL (optional)</Label>
+                      <Input
+                        value={pkg.image || ''}
+                        onChange={(e) => handleUpdatePackage(index, 'image', e.target.value)}
+                        placeholder="https://example.com/image.jpg or /images/image.jpg"
                       />
                     </div>
                   </div>
-                )}
-                
-                <div>
-                  <Label>Amount (e.g., "10000 ZP")</Label>
-                  <Input
-                    value={pkg.amount}
-                    onChange={(e) => handleUpdatePackage(index, 'amount', e.target.value)}
-                    placeholder="10000 ZP"
-                  />
-                </div>
-                <div>
-                  <Label>Price</Label>
-                  <Input
-                    type="number"
-                    value={pkg.price}
-                    onChange={(e) => handleUpdatePackage(index, 'price', parseFloat(e.target.value) || 0)}
-                    placeholder="200"
-                  />
-                  <p className="text-xs text-muted-foreground mt-1">Original price (shown as strikethrough if final price is set)</p>
-                </div>
-                <div>
-                  <Label>Final Price (optional)</Label>
-                  <Input
-                    type="number"
-                    value={pkg.discountPrice || ''}
-                    onChange={(e) => handleUpdatePackage(index, 'discountPrice', e.target.value ? parseFloat(e.target.value) : null)}
-                    placeholder="250"
-                  />
-                  <p className="text-xs text-muted-foreground mt-1">Final displayed price (big font)</p>
-                </div>
-                <div>
-                  <Label>Image URL (optional)</Label>
-                  <Input
-                    value={pkg.image || ''}
-                    onChange={(e) => handleUpdatePackage(index, 'image', e.target.value)}
-                    placeholder="https://example.com/image.jpg or /images/image.jpg"
-                  />
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => handleRemovePackage(index)}
+                    className="ml-4"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
                 </div>
               </CardContent>
             </Card>
@@ -253,4 +251,3 @@ export default function AdminPackagesPage() {
     </div>
   );
 }
-
