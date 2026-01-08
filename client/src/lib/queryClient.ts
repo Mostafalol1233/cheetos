@@ -35,10 +35,20 @@ export async function apiRequest(
   data?: unknown | undefined,
 ): Promise<Response> {
   const finalUrl = url.startsWith("http") ? url : `${API_BASE_URL}${url}`;
-  
+  const csrf = (() => {
+    try {
+      const m = document.cookie.match(/(?:^|; )csrf_token=([^;]+)/);
+      return m ? decodeURIComponent(m[1]) : "";
+    } catch {
+      return "";
+    }
+  })();
   const res = await fetch(finalUrl, {
     method,
-    headers: data ? { "Content-Type": "application/json" } : {},
+    headers: {
+      ...(data ? { "Content-Type": "application/json" } : {}),
+      ...(csrf ? { "X-CSRF-Token": csrf } : {}),
+    },
     body: data ? JSON.stringify(data) : undefined,
     credentials: "include",
   });
@@ -55,9 +65,19 @@ export const getQueryFn: <T>(options: {
   async ({ queryKey }) => {
     const path = queryKey.join("/") as string;
     const finalUrl = path.startsWith("http") ? path : `${API_BASE_URL}${path}`;
-    
+    const csrf = (() => {
+      try {
+        const m = document.cookie.match(/(?:^|; )csrf_token=([^;]+)/);
+        return m ? decodeURIComponent(m[1]) : "";
+      } catch {
+        return "";
+      }
+    })();
     const res = await fetch(finalUrl, {
       credentials: "include",
+      headers: {
+        ...(csrf ? { "X-CSRF-Token": csrf } : {}),
+      },
     });
 
     if (unauthorizedBehavior === "returnNull" && res.status === 401) {

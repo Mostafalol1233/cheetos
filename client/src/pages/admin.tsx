@@ -12,6 +12,7 @@ import { Trash2, Edit, Plus, MessageSquare, Bell, Check, AlertCircle, Info, Sear
 import { API_BASE_URL, queryClient } from '@/lib/queryClient';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import QRCode from 'qrcode';
 import { normalizeNumericString } from '@/lib/quantity';
@@ -989,7 +990,9 @@ export default function AdminDashboard() {
           headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
           body: JSON.stringify({ title, description, link })
         });
-        return await res.json();
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error((data as any)?.message || 'Failed to save content');
+        return data;
       },
       onSuccess: (resp) => {
         if (resp?.ok) {
@@ -998,6 +1001,9 @@ export default function AdminDashboard() {
         } else {
           toast({ title: 'Error', description: resp?.message || 'Failed to save', duration: 2000 });
         }
+      },
+      onError: (err: any) => {
+        toast({ title: 'Error', description: String(err?.message || err || 'Failed to save'), duration: 2500, variant: 'destructive' });
       }
     });
     const isValidTitle = title.trim().length > 0 && title.trim().length <= 120;
@@ -2968,8 +2974,9 @@ function CheckoutTemplatesPanel() {
       const res = await fetch(apiPath('/api/admin/checkout/templates'), {
         headers: token ? { Authorization: `Bearer ${token}` } : {}
       });
-      if (!res.ok) throw new Error('Failed to fetch templates');
-      return res.json();
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error((data as any)?.message || 'Failed to fetch templates');
+      return data;
     },
     refetchOnWindowFocus: false,
     gcTime: Infinity,
@@ -2989,12 +2996,16 @@ function CheckoutTemplatesPanel() {
         headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
         body: JSON.stringify({ customerMessage, adminMessage })
       });
-      if (!res.ok) throw new Error('Failed to save templates');
-      return res.json();
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error((data as any)?.message || 'Failed to save templates');
+      return data;
     },
     onSuccess: () => {
       toast({ title: 'Saved', description: 'Checkout templates updated', duration: 1500 });
       queryClient.invalidateQueries({ queryKey: ['/api/admin/checkout/templates'] });
+    },
+    onError: (err: any) => {
+      toast({ title: 'Error', description: String(err?.message || err || 'Failed to save'), duration: 2500, variant: 'destructive' });
     }
   });
   return (
