@@ -24,6 +24,7 @@ import authRouter from './routes/auth.js';
 import adminAiRouter from './routes/admin-ai.js';
 import { authenticateToken, ensureAdmin } from './middleware/auth.js';
 import { sendEmail, sendRawEmail } from './utils/email.js';
+import localDb from './utils/localDb.js';
 // Optional image processor (module may not exist in some deployments)
 let initImageProcessor = null;
 try {
@@ -913,27 +914,21 @@ app.get('/api/categories', async (req, res) => {
         return res.json(result.rows.map((c) => ({ ...c, image: normalizeImageUrl(c.image) })));
       }
     } catch (err) {
-      console.error('DB Category fetch error:', err);
+      console.error('DB Category fetch error, falling back to localDb:', err.message);
     }
 
-    const categoriesPath = path.join(__dirname, 'data', 'categories.json');
-    if (fs.existsSync(categoriesPath)) {
-      const data = fs.readFileSync(categoriesPath, 'utf8');
-      const categories = JSON.parse(data);
-      return res.json(
-        Array.isArray(categories)
-          ? categories.map((c) => ({ ...c, image: normalizeImageUrl(c.image) }))
-          : []
-      );
-    }
-
-    res.json([]);
+    // Fallback to localDb
+    const categories = localDb.getCategories();
+    res.json(
+      Array.isArray(categories)
+        ? categories.map((c) => ({ ...c, image: normalizeImageUrl(c.image) }))
+        : []
+    );
   } catch (err) {
     console.error('Error fetching categories:', err);
     res.status(500).json({ 
       message: 'Failed to fetch categories', 
-      error: err.message,
-      stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
+      error: err.message
     });
   }
 });
@@ -1771,29 +1766,24 @@ app.post('/api/admin/images/upload-cloudinary', authenticateToken, ensureAdmin, 
 // CATEGORIES ENDPOINTS
 // ===============================================
 
-// Get all categories
-app.get('/api/categories', async (req, res) => {
-  try {
-    const result = await pool.query('SELECT * FROM categories ORDER BY id DESC');
-    res.json((result.rows || []).map((c) => ({ ...c, image: normalizeImageUrl(c.image) })));
-  } catch (err) {
-    console.error('Error fetching categories:', err);
-    res.status(500).json({ message: err.message, error: 'Failed to fetch categories' });
-  }
-});
-
 // Get category by ID
 app.get('/api/categories/:id', async (req, res) => {
+  const { id } = req.params;
   try {
-    const { id } = req.params;
     const result = await pool.query('SELECT * FROM categories WHERE id = $1', [id]);
     
     if (result.rows.length === 0) {
+      // Fallback check before 404
+      const cat = localDb.findCategory(id);
+      if (cat) return res.json(cat);
       return res.status(404).json({ message: 'Category not found' });
     }
 
     res.json(result.rows[0]);
   } catch (err) {
+    console.error('DB Error in GET /api/categories/:id, falling back to local DB:', err.message);
+    const cat = localDb.findCategory(id);
+    if (cat) return res.json(cat);
     res.status(500).json({ message: err.message });
   }
 });

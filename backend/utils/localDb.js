@@ -13,6 +13,7 @@ const SEED_FILE = (() => {
   return legacyJson;
 })();
 const PERSISTENT_FILE = path.join(DATA_DIR, 'games-persistent.json');
+const CATEGORIES_FILE = path.join(DATA_DIR, 'categories.json');
 
 function ensureDataDir() {
   try {
@@ -102,6 +103,22 @@ function deleteGame(id) {
   return true;
 }
 
+function getCategories() {
+  try {
+    if (fs.existsSync(CATEGORIES_FILE)) {
+      const data = fs.readFileSync(CATEGORIES_FILE, 'utf8');
+      const parsed = JSON.parse(data);
+      return Array.isArray(parsed) ? parsed : [];
+    }
+  } catch {}
+  return [];
+}
+
+function findCategory(idOrSlug) {
+  const all = getCategories();
+  return all.find(c => c.id === idOrSlug || c.slug === idOrSlug) || null;
+}
+
 export default {
   init,
   getGames,
@@ -110,4 +127,6 @@ export default {
   updateGame,
   deleteGame,
   saveGames: writePersistent,
+  getCategories,
+  findCategory
 };

@@ -79,6 +79,18 @@ export async function sendWithRetry(fn, maxRetries = 3) {
 }
 
 export async function startWhatsApp() {
+  if (process.env.RESET_WHATSAPP === 'true') {
+    console.log('🔄 RESET_WHATSAPP is set. Clearing session...');
+    try {
+      if (fs.existsSync(AUTH_FOLDER)) {
+        fs.rmSync(AUTH_FOLDER, { recursive: true, force: true });
+        console.log('✅ WhatsApp session cleared successfully');
+      }
+    } catch (err) {
+      console.error('❌ Failed to clear WhatsApp session:', err.message);
+    }
+  }
+
   const { state, saveCreds } = await useMultiFileAuthState(AUTH_FOLDER);
   const { version, isLatest } = await fetchLatestBaileysVersion();
 

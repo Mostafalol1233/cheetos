@@ -10,7 +10,7 @@ Copy and paste this exactly into your backend server's `.env` file:
 # Backend Environment Variables - Production
 
 # Server Configuration
-PORT=20291
+PORT=22135
 NODE_ENV=production
 HOST=0.0.0.0
 
@@ -49,8 +49,8 @@ SMTP_USER="your_email@gmail.com"
 SMTP_PASSWORD="your_app_password"
 
 # API Server
-API_URL="http://51.75.118.165:20291"
-API_PORT="20291"
+API_URL="http://fi4.bot-hosting.net:22135"
+API_PORT="22135"
 
 # Environment
 APP_NAME="Diaa Eldeen Gaming Store"
@@ -65,10 +65,10 @@ APP_ENVIRONMENT="production"
 
 ```
 Name: VITE_API_URL
-Value: http://51.75.118.165:20291
+Value: http://fi4.bot-hosting.net:22135
 
 Name: VITE_BACKEND_URL
-Value: http://51.75.118.165:20291
+Value: http://fi4.bot-hosting.net:22135
 
 Name: VITE_APP_NAME
 Value: Diaa Eldeen
