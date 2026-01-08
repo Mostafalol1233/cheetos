@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
-const BACKEND_URL = process.env.BACKEND_URL || 'http://51.75.118.165:20291';
+const BACKEND_URL = process.env.BACKEND_URL || 'http://51.75.118.149:20242';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const method = (req.method || 'GET').toUpperCase();

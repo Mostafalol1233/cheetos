@@ -3,29 +3,29 @@
   "outputDirectory": "dist/public",
   "installCommand": "npm install",
   "env": {
-    "VITE_API_URL": "https://1-backendzip--yeogav.replit.app"
+    "VITE_API_URL": "http://51.75.118.149:20242"
   },
   "public": true,
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "https://1-backendzip--yeogav.replit.app/api/$1"
+      "destination": "http://51.75.118.149:20242/api/$1"
     },
     {
       "source": "/uploads/(.*)",
-      "destination": "https://1-backendzip--yeogav.replit.app/uploads/$1"
+      "destination": "http://51.75.118.149:20242/uploads/$1"
     },
     {
       "source": "/images/(.*)",
-      "destination": "https://1-backendzip--yeogav.replit.app/images/$1"
+      "destination": "http://51.75.118.149:20242/images/$1"
     },
     {
       "source": "/media/(.*)",
-      "destination": "https://1-backendzip--yeogav.replit.app/media/$1"
+      "destination": "http://51.75.118.149:20242/media/$1"
     },
     {
       "source": "/attached_assets/(.*)",
-      "destination": "https://1-backendzip--yeogav.replit.app/media/$1"
+      "destination": "http://51.75.118.149:20242/media/$1"
     },
     {
       "source": "/((?!api).*)",
