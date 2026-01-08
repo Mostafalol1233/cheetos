@@ -1,0 +1,95 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - region "Notifications (F8)":
+      - list
+    - banner [ref=e3]:
+      - generic [ref=e5]:
+        - link "Logo Diaa Sadek Premium Store" [ref=e6] [cursor=pointer]:
+          - /url: /
+          - generic [ref=e7]:
+            - img "Logo" [ref=e10]
+            - generic [ref=e11]:
+              - heading "Diaa Sadek" [level=1] [ref=e12]
+              - paragraph [ref=e13]: Premium Store
+        - generic [ref=e14]:
+          - navigation [ref=e15]:
+            - link "Home" [ref=e16] [cursor=pointer]:
+              - /url: /
+              - generic [ref=e17]: Home
+            - link "Categories" [ref=e18] [cursor=pointer]:
+              - /url: /#categories
+              - generic [ref=e19]: Categories
+            - link "Games" [ref=e20] [cursor=pointer]:
+              - /url: /games
+              - generic [ref=e21]: Games
+            - link "Support" [ref=e22] [cursor=pointer]:
+              - /url: /support
+              - generic [ref=e23]: Support
+            - button "Live Chat" [ref=e24] [cursor=pointer]: Live Chat
+          - generic [ref=e26]:
+            - button "Accessibility" [ref=e27] [cursor=pointer]:
+              - img
+              - generic [ref=e28]: Accessibility
+            - button "Switch language" [ref=e29] [cursor=pointer]:
+              - img
+              - generic [ref=e30]: Switch language
+            - button "Toggle Theme" [ref=e31] [cursor=pointer]:
+              - img
+            - button "Shopping Cart with 0 items" [ref=e32] [cursor=pointer]:
+              - img
+              - generic [ref=e33]: Cart
+    - generic [ref=e36]:
+      - generic [ref=e37]:
+        - link "Back to Home" [ref=e38] [cursor=pointer]:
+          - /url: /
+          - img [ref=e39]
+          - text: Back to Home
+        - generic [ref=e42]:
+          - heading "Games" [level=1] [ref=e43]
+          - paragraph [ref=e44]: Browse our complete collection of games
+        - generic [ref=e45]:
+          - generic [ref=e46]:
+            - img [ref=e47]
+            - textbox "Search..." [ref=e50]
+          - combobox [ref=e51] [cursor=pointer]:
+            - img [ref=e52]
+            - generic: All Categories
+            - img [ref=e54]
+        - heading "2 games found" [level=2] [ref=e57]
+      - generic [ref=e58]:
+        - link "Mock Game 1 Mock Game 1 Add" [ref=e59] [cursor=pointer]:
+          - /url: /game/mock1
+          - generic [ref=e60]:
+            - img "Mock Game 1" [ref=e62]
+            - generic [ref=e63]:
+              - heading "Mock Game 1" [level=3] [ref=e64]
+              - button "Add" [ref=e66]:
+                - img
+                - generic [ref=e67]: Add
+        - link "Broken Image Broken Image Add" [ref=e68] [cursor=pointer]:
+          - /url: /game/mock2
+          - generic [ref=e69]:
+            - img "Broken Image" [ref=e71]
+            - generic [ref=e72]:
+              - heading "Broken Image" [level=3] [ref=e73]
+              - button "Add" [ref=e75]:
+                - img
+                - generic [ref=e76]: Add
+    - button [ref=e78] [cursor=pointer]:
+      - img [ref=e79]
+  - generic [ref=e83]:
+    - generic [ref=e84]: URI malformed
+    - generic [ref=e85]: at decodeURI (<anonymous>) at viteTransformMiddleware (file:///D:/GameCart-1/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:62023:13) at call (file:///D:/GameCart-1/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:41364:7) at next (file:///D:/GameCart-1/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:41308:5) at viteServePublicMiddleware (file:///D:/GameCart-1/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:51663:14) at call (file:///D:/GameCart-1/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:41364:7) at next (file:///D:/GameCart-1/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:41308:5) at viteHMRPingMiddleware (file:///D:/GameCart-1/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:63353:7) at call (file:///D:/GameCart-1/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:41364:7) at next (file:///D:/GameCart-1/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:41308:5) at next (file:///D:/GameCart-1/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:41286:14) at viteProxyMiddleware (file:///D:/GameCart-1/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:61862:5) at call (file:///D:/GameCart-1/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:41364:7) at next (file:///D:/GameCart-1/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:41308:5) at viteCachedTransformMiddleware (file:///D:/GameCart-1/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:62010:5) at call (file:///D:/GameCart-1/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:41364:7) at next (file:///D:/GameCart-1/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:41308:5) at cors (file:///D:/GameCart-1/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:41836:7) at file:///D:/GameCart-1/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:41872:17 at originCallback (file:///D:/GameCart-1/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:41862:15) at file:///D:/GameCart-1/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:41867:13 at optionsCallback (file:///D:/GameCart-1/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:41847:9) at corsMiddleware (file:///D:/GameCart-1/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:41852:7) at call (file:///D:/GameCart-1/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:41364:7) at next (file:///D:/GameCart-1/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:41308:5) at viteRejectInvalidRequestMiddleware (file:///D:/GameCart-1/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:62991:12) at call (file:///D:/GameCart-1/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:41364:7) at next (file:///D:/GameCart-1/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:41308:5) at Function.handle (file:///D:/GameCart-1/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:41311:3) at Server.app (file:///D:/GameCart-1/node_modules/vite/dist/node/chunks/dep-C6uTJdX2.js:41176:37
+    - generic [ref=e86]:
+      - text: Click outside, press Esc key, or fix the code to dismiss.
+      - text: You can also disable this overlay by setting
+      - code [ref=e87]: server.hmr.overlay
+      - text: to
+      - code [ref=e88]: "false"
+      - text: in
+      - code [ref=e89]: vite.config.ts
+      - text: .
+```

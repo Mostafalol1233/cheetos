@@ -64,6 +64,55 @@ test.describe('Packages save integration', () => {
     expect(found).toBeTruthy();
     expect(Number(found.value || 0)).toBe(5000);
   });
+  
+  test('PUT /api/games/:id/packages rejects too-long duration and rolls back', async ({ request }) => {
+    const game = await getFirstGame(request);
+    const token = signJWT({ id: 'test-admin', role: 'admin', email: 'admin@test.local' }, 'your_jwt_secret_key_change_this_in_production');
+    const beforeRes = await request.get(`/api/games/${game.id}/packages`);
+    expect(beforeRes.ok()).toBeTruthy();
+    const beforeItems = await beforeRes.json();
+    const invalid = (Array.isArray(beforeItems) ? beforeItems : []).map((p: any) => ({
+      amount: String(p.amount || ''),
+      price: Number(p.price || 0),
+      discountPrice: p.discountPrice != null ? Number(p.discountPrice) : null,
+      image: p.image || null,
+      value: p.value ?? null,
+      duration: 'x'.repeat(100),
+      description: p.description || null
+    }));
+    const putRes = await request.put(`/api/games/${game.id}/packages`, {
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      data: { packages: invalid }
+    });
+    expect(putRes.status()).toBe(400);
+    const afterRes = await request.get(`/api/games/${game.id}/packages`);
+    expect(afterRes.ok()).toBeTruthy();
+    const afterItems = await afterRes.json();
+    expect(JSON.stringify(afterItems)).toBe(JSON.stringify(beforeItems));
+  });
+  
+  test('Description is persisted and truncated at 500 chars', async ({ request }) => {
+    const game = await getFirstGame(request);
+    const token = signJWT({ id: 'test-admin', role: 'admin', email: 'admin@test.local' }, 'your_jwt_secret_key_change_this_in_production');
+    const initial = await request.get(`/api/games/${game.id}/packages`);
+    expect(initial.ok()).toBeTruthy();
+    const initialItems = await initial.json();
+    const longDesc = 'D'.repeat(600);
+    const next = (Array.isArray(initialItems) && initialItems.length ? initialItems.slice(0, 1) : [{
+      amount: '1000 ZP', price: 50, discountPrice: null, image: null, value: null, duration: '30 days', description: ''
+    }]).map((p: any) => ({ ...p, description: longDesc }));
+    const putRes = await request.put(`/api/games/${game.id}/packages`, {
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      data: { packages: next }
+    });
+    expect(putRes.ok()).toBeTruthy();
+    const after = await request.get(`/api/games/${game.id}/packages`);
+    expect(after.ok()).toBeTruthy();
+    const afterItems = await after.json();
+    const found = afterItems.find((p: any) => String(p.description || '').length > 0);
+    expect(found).toBeTruthy();
+    expect(String(found.description).length).toBeLessThanOrEqual(500);
+  });
 
   test('Invalid quantity triggers rollback and leaves packages unchanged', async ({ request }) => {
     const game = await getFirstGame(request);
@@ -126,4 +175,4 @@ test.describe('Admin UI package editing', () => {
     await expect(page.getByText(/Saved/i)).toBeVisible();
     await page.getByRole('button', { name: /Close/i }).click();
   });
-}
+});

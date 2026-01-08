@@ -146,6 +146,10 @@ export default function AdminDashboard() {
       }
       toast({ title: 'Saved', description: 'Packages updated', duration: 1500 });
       setPackagesGameId(null);
+    },
+    onError: (error: any) => {
+      const msg = (error?.message && String(error.message)) || 'Failed to update packages';
+      toast({ title: 'Error', description: msg, variant: 'destructive' });
     }
   });
   const savePackagesMutationAsync = useMutation({
@@ -161,7 +165,7 @@ export default function AdminDashboard() {
       return data;
     }
   });
-  const validatePackage = (p: { amount: string; price: number; discountPrice: number | null }) => {
+  const validatePackage = (p: { amount: string; price: number; discountPrice: number | null; duration?: string; description?: string }) => {
     const amt = String(p.amount || '').trim();
     if (!amt) return 'Amount is required';
     const priceNum = Number(normalizeNumericString(p.price));
@@ -170,6 +174,8 @@ export default function AdminDashboard() {
       const d = Number(normalizeNumericString(p.discountPrice));
       if (!Number.isFinite(d) || d < 0) return 'Discount price must be non-negative';
     }
+    if (p.duration && String(p.duration).length > 50) return 'Duration too long';
+    if (p.description && String(p.description).length > 500) return 'Description too long';
     return null;
   };
   const prepareNormalizedPackages = (list: Array<{ amount: string; price: number; discountPrice: number | null; image?: string | null }>) => {
