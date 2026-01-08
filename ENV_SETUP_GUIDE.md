@@ -10,12 +10,12 @@ Copy and paste this exactly into your backend server's `.env` file:
 # Backend Environment Variables - Production
 
 # Server Configuration
-PORT=22135
+PORT=3000
 NODE_ENV=production
 HOST=0.0.0.0
 
 # Frontend URL (for CORS)
-FRONTEND_URL=https://diaaa.vercel.app
+FRONTEND_URL=https://diaasadek.com
 
 # Database Configuration (PostgreSQL/Supabase)
 DATABASE_URL="postgresql://postgres:4EnM3zwzADEJ\\$Qw@db.enzhpcamsryehittbwuf.supabase.co:5432/postgres"
@@ -49,8 +49,8 @@ SMTP_USER="your_email@gmail.com"
 SMTP_PASSWORD="your_app_password"
 
 # API Server
-API_URL="http://fi4.bot-hosting.net:22135"
-API_PORT="22135"
+API_URL="https://1-backendzip--yeogav.replit.app"
+API_PORT="3000"
 
 # Environment
 APP_NAME="Diaa Eldeen Gaming Store"
@@ -65,10 +65,10 @@ APP_ENVIRONMENT="production"
 
 ```
 Name: VITE_API_URL
-Value: http://fi4.bot-hosting.net:22135
+Value: https://1-backendzip--yeogav.replit.app
 
 Name: VITE_BACKEND_URL
-Value: http://fi4.bot-hosting.net:22135
+Value: https://1-backendzip--yeogav.replit.app
 
 Name: VITE_APP_NAME
 Value: Diaa Eldeen

@@ -3,29 +3,29 @@
   "outputDirectory": "dist/public",
   "installCommand": "npm install",
   "env": {
-    "VITE_API_URL": "http://fi4.bot-hosting.net:22135"
+    "VITE_API_URL": "https://1-backendzip--yeogav.replit.app"
   },
   "public": true,
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "http://fi4.bot-hosting.net:22135/api/$1"
+      "destination": "https://1-backendzip--yeogav.replit.app/api/$1"
     },
     {
       "source": "/uploads/(.*)",
-      "destination": "http://fi4.bot-hosting.net:22135/uploads/$1"
+      "destination": "https://1-backendzip--yeogav.replit.app/uploads/$1"
     },
     {
       "source": "/images/(.*)",
-      "destination": "http://fi4.bot-hosting.net:22135/images/$1"
-    },
-    {
-      "source": "/attached_assets/(.*)",
-      "destination": "http://fi4.bot-hosting.net:22135/media/$1"
+      "destination": "https://1-backendzip--yeogav.replit.app/images/$1"
     },
     {
       "source": "/media/(.*)",
-      "destination": "http://fi4.bot-hosting.net:22135/media/$1"
+      "destination": "https://1-backendzip--yeogav.replit.app/media/$1"
+    },
+    {
+      "source": "/attached_assets/(.*)",
+      "destination": "https://1-backendzip--yeogav.replit.app/media/$1"
     },
     {
       "source": "/((?!api).*)",
