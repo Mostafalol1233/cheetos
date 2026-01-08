@@ -7,8 +7,10 @@ test.describe('Admin Dashboard', () => {
 
   test('tabs render and logo management is accessible', async ({ page }) => {
     await expect(page.getByText('Diaa Eldeen Admin Dashboard')).toBeVisible();
-    await expect(page.getByRole('tab', { name: /Logo/i })).toBeVisible();
-    await page.getByRole('tab', { name: /Logo/i }).click();
+    const logoTab = page.getByTestId('tab-logo');
+    await logoTab.scrollIntoViewIfNeeded();
+    await expect(logoTab).toBeVisible();
+    await logoTab.click();
     await expect(page.getByText(/Logo Settings/i)).toBeVisible();
     await expect(page.getByLabel(/Small Logo/i)).toBeVisible();
     await expect(page.getByLabel(/Large Logo/i)).toBeVisible();
@@ -16,7 +18,9 @@ test.describe('Admin Dashboard', () => {
   });
 
   test('games tab loads', async ({ page }) => {
-    await page.getByRole('tab', { name: /Games & Products/i }).click();
+    const gamesTab = page.getByTestId('tab-games');
+    await gamesTab.scrollIntoViewIfNeeded();
+    await gamesTab.click();
     await expect(page.getByText(/Manage Games/i)).toBeVisible();
   });
 

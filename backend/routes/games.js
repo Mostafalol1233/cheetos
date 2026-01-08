@@ -86,7 +86,10 @@ const formatGame = (game, packages = []) => {
         discountPrice: (p.discount_price !== undefined && p.discount_price !== null && p.discount_price !== ''
           ? Number(p.discount_price)
           : (p.discountPrice !== undefined && p.discountPrice !== null && p.discountPrice !== '' ? Number(p.discountPrice) : null)),
-        image: p.image ? normalizeImageUrl(p.image) : null
+        image: p.image ? normalizeImageUrl(p.image) : null,
+        value: p.value != null ? Number(p.value) : null,
+        duration: p.duration || null,
+        description: p.description || null
       }))
     };
   } catch (error) {
@@ -158,20 +161,29 @@ router.get('/', async (req, res) => {
       totalPages: Math.ceil(total / limit)
     });
   } catch (error) {
-    console.error('DB Error, falling back to local DB:', error.message);
-    const allGames = localDb.getGames();
-    const total = allGames.length;
-    const items = allGames
-      .slice(offset, offset + limit)
-      .map(g => formatGame(g));
+    console.error('DB Error in GET /api/games, falling back to local DB:', error.message);
+    try {
+      const allGames = localDb.getGames();
+      const total = allGames.length;
+      const items = allGames
+        .slice(offset, offset + limit)
+        .map(g => formatGame(g));
 
-    res.json({
-      items,
-      total,
-      page,
-      limit,
-      totalPages: Math.ceil(total / limit)
-    });
+      res.json({
+        items,
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit)
+      });
+    } catch (fallbackError) {
+      console.error('Fallback LocalDB Error in GET /api/games:', fallbackError);
+      res.status(500).json({ 
+        message: 'Failed to fetch games (DB and Fallback failed)', 
+        error: error.message,
+        fallbackError: fallbackError.message 
+      });
+    }
   }
 });
 
@@ -645,6 +657,7 @@ router.get('/:id/packages', async (req, res) => {
 
 // PUT /api/games/:id/packages
 router.put('/:id/packages', authenticateToken, ensureAdmin, async (req, res) => {
+  console.log('PUT /:id/packages called with body:', JSON.stringify(req.body));
   const { id } = req.params;
   const { packages } = req.body; 
 
@@ -677,18 +690,18 @@ router.put('/:id/packages', authenticateToken, ensureAdmin, async (req, res) => 
           // Derive quantity from amount if value not provided
           if (value == null) {
             const amt = String(pkg.amount || pkg.name || '').trim();
-            const normalized = amt
+            const normalizedAmt = amt
               .replace(/[,\s]+/g, '')
               .replace(/[\u0660-\u0669]/g, (c) => String(c.charCodeAt(0) - 0x0660))
               .replace(/[\u06F0-\u06F9]/g, (c) => String(c.charCodeAt(0) - 0x06F0));
-            const digits = (normalized.match(/[0-9]+/) || [''])[0];
-            value = digits ? Number(digits) : 1; // Default to 1 if no numbers found
+            const digits = (normalizedAmt.match(/[0-9]+/) || [''])[0];
+            value = digits ? Number(digits) : null;
           }
-          const duration = pkg.duration ? String(pkg.duration).slice(0, 50) : null;
+          const duration = pkg.duration ? String(pkg.duration) : null;
           const description = pkg.description ? String(pkg.description).slice(0, 500) : null;
 
           // Server-side validation
-          if (price < 0 || (value != null && (!Number.isFinite(value) || value < 0))) {
+          if (price < 0 || (value != null && (!Number.isFinite(value) || value <= 0))) {
             await client.query('ROLLBACK');
             return res.status(400).json({ message: 'Invalid quantity/value or price' });
           }
@@ -753,13 +766,18 @@ router.put('/:id/packages', authenticateToken, ensureAdmin, async (req, res) => 
     console.error('DB Error (update packages), falling back to local DB:', error.message);
     try {
       const pkgsArr = Array.isArray(packages) ? packages : [];
-      const normalized = pkgsArr.map((pkg, i) => {
+      const normalized = [];
+
+      for (let i = 0; i < pkgsArr.length; i++) {
+        const pkg = pkgsArr[i];
         const name = pkg.name || pkg.amount || '';
-        if (!name) return null;
+        if (!name) continue;
+
         const price = Number(pkg.price || 0);
         const discount = pkg.discountPrice != null && pkg.discountPrice !== '' ? Number(pkg.discountPrice) : null;
         const image = pkg.image || null;
         let value = pkg.value != null && pkg.value !== '' ? Number(pkg.value) : null;
+
         if (value == null) {
           const amt = String(pkg.amount || pkg.name || '').trim();
           const normalizedAmt = amt
@@ -769,9 +787,18 @@ router.put('/:id/packages', authenticateToken, ensureAdmin, async (req, res) => 
           const digits = (normalizedAmt.match(/[0-9]+/) || [''])[0];
           value = digits ? Number(digits) : null;
         }
-        const duration = pkg.duration ? String(pkg.duration).slice(0, 50) : null;
+
+        const duration = pkg.duration ? String(pkg.duration) : null;
         const description = pkg.description ? String(pkg.description).slice(0, 500) : null;
-        return {
+
+        if (price < 0 || (value != null && (!Number.isFinite(value) || value <= 0))) {
+          return res.status(400).json({ message: 'Invalid quantity/value or price' });
+        }
+        if (duration && duration.length > 50) {
+          return res.status(400).json({ message: 'Duration too long' });
+        }
+
+        normalized.push({
           id: `pkg_${id}_${i}`,
           name,
           price,
@@ -781,8 +808,8 @@ router.put('/:id/packages', authenticateToken, ensureAdmin, async (req, res) => 
           value: Number.isFinite(value) ? value : null,
           duration,
           description
-        };
-      }).filter(Boolean);
+        });
+      }
 
       const legacyPackages = normalized.map(p => String(p.name));
       const legacyPrices = normalized.map(p => Number(p.price || 0));

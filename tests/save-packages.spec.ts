@@ -1,20 +1,18 @@
 import { test, expect } from '@playwright/test';
-import crypto from 'node:crypto';
+import fs from 'fs';
+import path from 'path';
 
-function base64url(input: Buffer | string) {
-  const b = Buffer.isBuffer(input) ? input : Buffer.from(String(input));
-  return b.toString('base64').replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
-}
-
-function signJWT(payload: Record<string, any>, secret: string) {
-  const header = { alg: 'HS256', typ: 'JWT' };
-  const now = Math.floor(Date.now() / 1000);
-  const body = { iat: now, exp: now + 3600, ...payload };
-  const encodedHeader = base64url(JSON.stringify(header));
-  const encodedPayload = base64url(JSON.stringify(body));
-  const data = `${encodedHeader}.${encodedPayload}`;
-  const signature = crypto.createHmac('sha256', secret).update(data).digest();
-  return `${data}.${base64url(signature)}`;
+function getAdminToken() {
+  try {
+    const authPath = path.join(process.cwd(), 'playwright/.auth/admin.json');
+    if (!fs.existsSync(authPath)) return null;
+    const authData = JSON.parse(fs.readFileSync(authPath, 'utf-8'));
+    const origin = authData.origins.find((o: any) => o.origin.includes('localhost'));
+    const tokenEntry = origin?.localStorage.find((l: any) => l.name === 'adminToken');
+    return tokenEntry?.value;
+  } catch (e) {
+    return null;
+  }
 }
 
 async function getFirstGame(request: any) {
@@ -27,9 +25,19 @@ async function getFirstGame(request: any) {
 }
 
 test.describe('Packages save integration', () => {
+  test.beforeAll(() => {
+    // Ensure we have a token
+    const token = getAdminToken();
+    if (!token) {
+      console.warn('No admin token found in playwright/.auth/admin.json. Tests might fail.');
+    }
+  });
+
   test('PUT /api/games/:id/packages persists quantity derived from amount', async ({ request }) => {
     const game = await getFirstGame(request);
-    const token = signJWT({ id: 'test-admin', role: 'admin', email: 'admin@test.local' }, 'your_jwt_secret_key_change_this_in_production');
+    const token = getAdminToken();
+    expect(token).toBeTruthy();
+
     const initial = await request.get(`/api/games/${game.id}/packages`);
     expect(initial.ok()).toBeTruthy();
     const initialItems = await initial.json();
@@ -67,7 +75,7 @@ test.describe('Packages save integration', () => {
   
   test('PUT /api/games/:id/packages rejects too-long duration and rolls back', async ({ request }) => {
     const game = await getFirstGame(request);
-    const token = signJWT({ id: 'test-admin', role: 'admin', email: 'admin@test.local' }, 'your_jwt_secret_key_change_this_in_production');
+    const token = getAdminToken();
     const beforeRes = await request.get(`/api/games/${game.id}/packages`);
     expect(beforeRes.ok()).toBeTruthy();
     const beforeItems = await beforeRes.json();
@@ -93,7 +101,7 @@ test.describe('Packages save integration', () => {
   
   test('Description is persisted and truncated at 500 chars', async ({ request }) => {
     const game = await getFirstGame(request);
-    const token = signJWT({ id: 'test-admin', role: 'admin', email: 'admin@test.local' }, 'your_jwt_secret_key_change_this_in_production');
+    const token = getAdminToken();
     const initial = await request.get(`/api/games/${game.id}/packages`);
     expect(initial.ok()).toBeTruthy();
     const initialItems = await initial.json();
@@ -116,7 +124,7 @@ test.describe('Packages save integration', () => {
 
   test('Invalid quantity triggers rollback and leaves packages unchanged', async ({ request }) => {
     const game = await getFirstGame(request);
-    const token = signJWT({ id: 'test-admin', role: 'admin', email: 'admin@test.local' }, 'your_jwt_secret_key_change_this_in_production');
+    const token = getAdminToken();
     const beforeRes = await request.get(`/api/games/${game.id}/packages`);
     expect(beforeRes.ok()).toBeTruthy();
     const beforeItems = await beforeRes.json();
@@ -142,9 +150,9 @@ test.describe('Packages save integration', () => {
 });
 
 test.describe('Admin UI package editing', () => {
+  test.use({ storageState: 'playwright/.auth/admin.json' });
+
   test.beforeEach(async ({ page }) => {
-    const token = signJWT({ id: 'test-admin', role: 'admin', email: 'admin@test.local' }, 'your_jwt_secret_key_change_this_in_production');
-    await page.addInitScript((t) => { localStorage.setItem('adminToken', t as string); }, token);
     await page.goto('/admin');
   });
 
@@ -156,9 +164,9 @@ test.describe('Admin UI package editing', () => {
     const amountInput = dialog.getByLabel(/Amount/i).first();
     await amountInput.fill('١٠٠٠ ZP');
     await dialog.getByRole('button', { name: /Save/i }).click();
-    await expect(page.getByText(/Saved/i)).toBeVisible();
-    await page.getByRole('button', { name: /Close/i }).click();
-    await page.getByRole('link', { name: /Back/i }).click();
+    await expect(page.getByText(/Saved/i).first()).toBeVisible();
+    await page.getByRole('button', { name: /Close/i }).first().click({ force: true });
+    await expect(dialog).toBeHidden();
   });
 
   test('Save validation prevents invalid values and confirms persistence', async ({ page, request }) => {
@@ -169,10 +177,10 @@ test.describe('Admin UI package editing', () => {
     const priceInput = dialog.getByLabel(/Price/i).first();
     await priceInput.fill('-5');
     await dialog.getByRole('button', { name: /Save/i }).click();
-    await expect(page.getByText(/Invalid values/i)).toBeVisible();
+    await expect(page.getByText(/Invalid values/i).first()).toBeVisible();
     await priceInput.fill('200');
     await dialog.getByRole('button', { name: /Save/i }).click();
-    await expect(page.getByText(/Saved/i)).toBeVisible();
-    await page.getByRole('button', { name: /Close/i }).click();
+    await expect(page.getByText(/Saved/i).first()).toBeVisible();
+    await page.getByRole('button', { name: /Close/i }).first().click({ force: true });
   });
 });

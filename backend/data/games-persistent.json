@@ -11,14 +11,7 @@
     "isPopular": true,
     "stock": 100,
     "packages": [
-      "100 UC",
-      "300 UC",
-      "600 UC",
-      "1,200 UC",
-      "3,000 UC",
-      "6,000 UC",
-      "10,000 UC",
-      "30,000 UC"
+      "5000 ZP"
     ],
     "packagePrices": [
       "150",
@@ -40,7 +33,30 @@
       "5000",
       "15000"
     ],
-    "discountPrice": "150"
+    "discountPrice": "150",
+    "packagesList": [
+      {
+        "id": "pkg_game_5_0",
+        "name": "5000 ZP",
+        "price": 200,
+        "discountPrice": 50,
+        "discount_price": 50,
+        "image": null,
+        "value": 5000,
+        "duration": "30 days",
+        "description": "DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD"
+      }
+    ],
+    "package_prices": [
+      200
+    ],
+    "package_discount_prices": [
+      50
+    ],
+    "package_thumbnails": [
+      null
+    ],
+    "updated_at": "2026-01-08T15:46:44.386Z"
   },
   {
     "id": "game_6",

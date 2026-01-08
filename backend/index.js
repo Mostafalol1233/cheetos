@@ -930,7 +930,11 @@ app.get('/api/categories', async (req, res) => {
     res.json([]);
   } catch (err) {
     console.error('Error fetching categories:', err);
-    res.status(500).json({ message: 'Failed to fetch categories', error: err.message });
+    res.status(500).json({ 
+      message: 'Failed to fetch categories', 
+      error: err.message,
+      stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
+    });
   }
 });
 
