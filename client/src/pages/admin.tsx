@@ -833,27 +833,50 @@ export default function AdminDashboard() {
     const basePrice = selectedGame ? Number(selectedGame.price) || 0 : 0;
     const pct = Number(percentage);
     const amt = Number(amount);
-    const isPctValid = mode === 'percentage' ? pct >= 0 && pct <= 100 : true;
-    const isAmtValid = mode === 'amount' ? amt >= 0 && amt <= basePrice : true;
-    const effectiveDiscount = mode === 'percentage' ? (basePrice * (pct / 100)) : amt;
-    const finalPrice = Math.max(0, basePrice - effectiveDiscount);
+    const isPctValid = mode === 'percentage' ? pct >= 0 : true;
+    const isAmtValid = mode === 'amount' ? true : true;
+    const finalPrice = mode === 'percentage' ? basePrice * (pct / 100) : basePrice - amt;
     const saveMutation = useMutation({
       mutationFn: async () => {
         const token = localStorage.getItem('adminToken');
-        const res = await fetch(apiPath(`/api/games/${gameId}`), {
+        // First fetch current packages
+        const fetchRes = await fetch(apiPath(`/api/games/${gameId}/packages`), {
+          headers: token ? { Authorization: `Bearer ${token}` } : {}
+        });
+        if (!fetchRes.ok) throw new Error('Failed to fetch packages');
+        const packages = await fetchRes.json();
+        
+        // Apply discount to each package (skip packages with manually set discount prices)
+        const updatedPackages = packages.map((pkg: any) => {
+          // If package already has a manually set discount price, preserve it
+          if (pkg.discountPrice != null && pkg.discountPrice !== '') {
+            return pkg;
+          }
+          // Otherwise apply the bulk discount
+          return {
+            ...pkg,
+            discountPrice: mode === 'percentage' 
+              ? Number(pkg.price) * (pct / 100)
+              : Number(pkg.price) - amt
+          };
+        });
+        
+        // Update packages
+        const res = await fetch(apiPath(`/api/games/${gameId}/packages`), {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-          body: JSON.stringify({ id: gameId, discountPrice: finalPrice })
+          body: JSON.stringify({ packages: updatedPackages })
         });
         const data = await res.json();
-        if (!res.ok) throw new Error((data as any)?.message || 'Failed to update discount');
+        if (!res.ok) throw new Error((data as any)?.message || 'Failed to update package discounts');
         return data;
       },
       onSuccess: (resp) => {
         setSaving(false);
-        toast({ title: 'Saved', description: 'Discount updated', duration: 1200 });
+        toast({ title: 'Saved', description: 'Package discounts updated (manual discounts preserved)', duration: 1200 });
         queryClient.invalidateQueries({ queryKey: ['/api/games'] });
         queryClient.invalidateQueries({ queryKey: [`/api/games/id/${gameId}`] });
+        queryClient.invalidateQueries({ queryKey: [`/api/games/${gameId}/packages`] });
         queryClient.invalidateQueries({ queryKey: ['/api/games/popular'] });
         onSaved();
       },
@@ -875,7 +898,7 @@ export default function AdminDashboard() {
         toast({ title: 'Error', description: 'Select a game', duration: 1500 });
         return;
       }
-      if (!isPctValid || !isAmtValid) {
+      if (!isPctValid) {
         toast({ title: 'Invalid values', description: 'Fix validation errors', duration: 1500 });
         return;
       }
@@ -911,7 +934,7 @@ export default function AdminDashboard() {
         </div>
         {mode === 'percentage' ? (
           <div className="grid grid-cols-4 items-center gap-4">
-            <Label className="text-right">Percentage</Label>
+            <Label className="text-right">Percentage (100+ for increase)</Label>
             <Input
               type="number"
               value={percentage}
@@ -921,7 +944,7 @@ export default function AdminDashboard() {
           </div>
         ) : (
           <div className="grid grid-cols-4 items-center gap-4">
-            <Label className="text-right">Amount</Label>
+            <Label className="text-right">Amount (+ for discount, - for increase)</Label>
             <Input
               type="number"
               value={amount}
@@ -931,15 +954,17 @@ export default function AdminDashboard() {
           </div>
         )}
         <div className="text-xs text-muted-foreground">
-          {!isPctValid ? 'Percentage must be between 0 and 100. ' : ''}
-          {!isAmtValid ? 'Amount must be ≤ base price. ' : ''}
+          {!isPctValid ? 'Percentage must be 0 or greater. ' : ''}
         </div>
         <div className="grid grid-cols-4 items-center gap-4">
           <Label className="text-right">Final Price</Label>
           <Input value={`${finalPrice.toFixed(2)} EGP`} readOnly className="col-span-3" />
         </div>
+        <div className="text-xs text-muted-foreground">
+          Note: Packages with manually set discount prices will keep their custom discounts.
+        </div>
         <div className="flex gap-2">
-          <Button onClick={save} disabled={saving || !isPctValid || !isAmtValid} className="bg-gold-primary">Save</Button>
+          <Button onClick={save} disabled={saving || !isPctValid} className="bg-gold-primary">Save</Button>
           <Button variant="outline" onClick={reset}>Cancel</Button>
         </div>
       </div>
