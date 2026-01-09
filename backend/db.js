@@ -2,8 +2,14 @@ import pkg from 'pg';
 import dotenv from 'dotenv';
 import dns from 'dns';
 import { URL } from 'url';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-dotenv.config();
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Always load env from backend/.env so scripts run from repo root still use the correct DB config
+dotenv.config({ path: path.join(__dirname, '.env') });
 
 const { Pool } = pkg;
 

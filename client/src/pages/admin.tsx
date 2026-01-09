@@ -26,6 +26,7 @@ interface Game {
   stock: number;
   category: string;
   image: string;
+  image_url?: string;
   showOnMainPage?: boolean;
   displayOrder?: number;
   deleted?: boolean;
@@ -438,7 +439,7 @@ export default function AdminDashboard() {
         queryClient.invalidateQueries({ queryKey: [`/api/games/slug/${editingGame.slug}`] });
       }
       if (resp?.id) {
-        setEditingGame((prev) => (prev ? ({ ...prev, image_url: resp.image_url } as any) : prev));
+        setEditingGame((prev) => (prev ? ({ ...prev, image_url: resp.image_url }) : prev));
       }
     }
   });
@@ -989,7 +990,7 @@ export default function AdminDashboard() {
         if (target === 'logo') {
           setEditingGame({ ...editingGame, image: data.url });
         } else {
-          setEditingGame({ ...editingGame, image_url: data.url } as any);
+          setEditingGame({ ...editingGame, image_url: data.url });
         }
       } else if (data.url) {
         alert('Image uploaded: ' + data.url);
@@ -2123,8 +2124,8 @@ export default function AdminDashboard() {
                 <Label htmlFor="image_url" className="text-right">Large Image URL</Label>
                 <Input
                   id="image_url"
-                  value={(editingGame as any).image_url || ''}
-                  onChange={(e) => setEditingGame({ ...editingGame, image_url: e.target.value } as any)}
+                  value={editingGame.image_url || ''}
+                  onChange={(e) => setEditingGame({ ...editingGame, image_url: e.target.value })}
                   className="col-span-3"
                 />
               </div>
@@ -2133,9 +2134,9 @@ export default function AdminDashboard() {
                   <Button
                     type="button"
                     variant="outline"
-                    disabled={!editingGame?.id || !(editingGame as any).image_url || updateGameImageUrlMutation.isPending}
+                    disabled={!editingGame?.id || !editingGame.image_url || updateGameImageUrlMutation.isPending}
                     onClick={() => {
-                      const url = String((editingGame as any).image_url || '').trim();
+                      const url = String(editingGame.image_url || '').trim();
                       if (!editingGame?.id || !url) return;
                       updateGameImageUrlMutation.mutate({ id: editingGame.id, image_url: url });
                     }}
@@ -2160,10 +2161,10 @@ export default function AdminDashboard() {
                   </div>
                 </div>
               )}
-              {(editingGame as any).image_url && (
+              {editingGame.image_url && (
                 <div className="grid grid-cols-4 items-center gap-4">
                   <div className="col-start-2 col-span-3">
-                    <img src={(editingGame as any).image_url} alt="Large Preview" className="h-32 object-contain rounded-md border" />
+                    <img src={editingGame.image_url} alt="Large Preview" className="h-32 object-contain rounded-md border" />
                   </div>
                 </div>
               )}

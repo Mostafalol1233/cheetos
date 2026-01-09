@@ -60,7 +60,16 @@ function writePersistent(games) {
   try {
     ensureDataDir();
     const arr = Array.isArray(games) ? games : [];
-    fs.writeFileSync(PERSISTENT_FILE, JSON.stringify(arr, null, 2), 'utf8');
+    const txt = JSON.stringify(arr, null, 2);
+    fs.writeFileSync(PERSISTENT_FILE, txt, 'utf8');
+    // Also update legacy seed file so parts of the app that read backend/data/games.json
+    // (index.js and admin utilities) will see the latest edits.
+    try {
+      const seedPath = path.join(DATA_DIR, 'games.json');
+      fs.writeFileSync(seedPath, txt, 'utf8');
+    } catch (e) {
+      // non-fatal
+    }
     return true;
   } catch (err) {
     console.error('LocalDB write error:', err);

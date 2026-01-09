@@ -242,6 +242,8 @@ router.get('/id/:id', async (req, res) => {
     `, [id]);
 
     if (gamesRes.rows.length === 0) {
+      const fallback = localDb.findGame(id);
+      if (fallback) return res.json(formatGame(fallback));
       return res.status(404).json({ message: 'Game not found' });
     }
 
@@ -269,6 +271,8 @@ router.get('/slug/:slug', async (req, res) => {
     `, [slug]);
 
     if (gamesRes.rows.length === 0) {
+      const fallback = localDb.findGame(slug);
+      if (fallback) return res.json(formatGame(fallback));
       return res.status(404).json({ message: 'Game not found' });
     }
 
@@ -296,6 +300,8 @@ router.get('/:id', async (req, res) => {
     `, [id]);
     
     if (gamesRes.rows.length === 0) {
+      const fallback = localDb.findGame(id);
+      if (fallback) return res.json(formatGame(fallback));
       return res.status(404).json({ message: 'Game not found' });
     }
 
@@ -532,6 +538,25 @@ router.put('/:id', authenticateToken, ensureAdmin, async (req, res) => {
       `, [realId]);
       
       const { packages_data, ...game } = finalRes.rows[0];
+      // Sync packages into local JSON so static readers see the update
+      try {
+        if (pkgsToInsert && pkgsToInsert.length) {
+          const legacyPackages = pkgsToInsert.map(p => (typeof p === 'string' ? String(p) : String(p.name || p.amount || '')));
+          const legacyPrices = pkgsToInsert.map(p => Number(p.price || 0));
+          const legacyDiscounts = pkgsToInsert.map(p => (p.discountPrice != null ? Number(p.discountPrice) : (p.discount_price != null ? Number(p.discount_price) : null)));
+          const legacyThumbnails = pkgsToInsert.map(p => p.image || null);
+          localDb.updateGame(realId, {
+            packagesList: pkgsToInsert,
+            packages: legacyPackages,
+            package_prices: legacyPrices,
+            package_discount_prices: legacyDiscounts,
+            package_thumbnails: legacyThumbnails
+          });
+        }
+      } catch (e) {
+        console.error('Failed to sync packages to local JSON:', e && e.message);
+      }
+
       invalidatePopularCache();
       res.json(formatGame(game, packages_data));
 
@@ -639,11 +664,15 @@ router.get('/:id/packages', async (req, res) => {
     }
 
     res.json([]);
-  } catch (error) {
+    } catch (error) {
     console.error('DB Error (packages), falling back to local DB:', error.message);
     const game = localDb.findGame(id);
-    if (!game) return res.status(404).json({ message: 'Game not found' });
-    
+    if (!game) {
+      // Return empty array instead of 404 so frontends that fetch packages
+      // for a game that may not yet exist in DB don't fail with a 404 resource error.
+      return res.json([]);
+    }
+
     const formatted = formatGame(game);
     const items = formatted.packagesList.map(p => ({
       ...p,
@@ -659,7 +688,7 @@ router.get('/:id/packages', async (req, res) => {
 router.put('/:id/packages', authenticateToken, ensureAdmin, async (req, res) => {
   console.log('PUT /:id/packages called with body:', JSON.stringify(req.body));
   const { id } = req.params;
-  const { packages } = req.body; 
+  const { packages, packagesList } = req.body; 
 
   try {
     const client = await pool.connect();
@@ -669,12 +698,13 @@ router.put('/:id/packages', authenticateToken, ensureAdmin, async (req, res) => 
         const gameCheck = await client.query('SELECT id FROM games WHERE id = $1', [id]);
         if (gameCheck.rows.length === 0) {
         await client.query('ROLLBACK');
-        return res.status(404).json({ message: 'Game not found' });
+        // Throw to trigger the outer DB-catch fallback which will persist to localDb
+        throw new Error('Game not found in DB, falling back to local');
         }
 
         await client.query('DELETE FROM game_packages WHERE game_id = $1', [id]);
         
-        const pkgsArr = Array.isArray(packages) ? packages : [];
+        const pkgsArr = Array.isArray(packages) ? packages : Array.isArray(packagesList) ? packagesList : [];
         const legacyPackages = [];
         const legacyPrices = [];
         const legacyDiscounts = [];
@@ -754,6 +784,23 @@ router.put('/:id/packages', authenticateToken, ensureAdmin, async (req, res) => 
         }));
         
         await logAudit('update_packages', `Updated packages for game: ${id}`, req.user);
+        // Sync packages to local JSON so static readers see the update
+        try {
+          const lp = (Array.isArray(legacyPackages) && legacyPackages.length) ? legacyPackages : items.map(p => String(p.amount || p.name || ''));
+          const lpPrices = (Array.isArray(legacyPrices) && legacyPrices.length) ? legacyPrices : items.map(p => Number(p.price || 0));
+          const lpDiscounts = (Array.isArray(legacyDiscounts) && legacyDiscounts.length) ? legacyDiscounts : items.map(p => (p.discountPrice != null ? Number(p.discountPrice) : null));
+          const lpThumbs = (Array.isArray(legacyThumbnails) && legacyThumbnails.length) ? legacyThumbnails : items.map(p => p.image || null);
+          localDb.updateGame(id, {
+            packagesList: pkgsArr.map((p, i) => ({ id: `pkg_${id}_${i}`, name: (p && (p.name || p.amount)) || String(p || '') })),
+            packages: lp,
+            package_prices: lpPrices,
+            package_discount_prices: lpDiscounts,
+            package_thumbnails: lpThumbs
+          });
+        } catch (e) {
+          console.error('Failed to sync packages to local JSON (DB path):', e && e.message);
+        }
+
         invalidatePopularCache();
         res.json(items);
     } catch (error) {
@@ -765,7 +812,7 @@ router.put('/:id/packages', authenticateToken, ensureAdmin, async (req, res) => 
   } catch (error) {
     console.error('DB Error (update packages), falling back to local DB:', error.message);
     try {
-      const pkgsArr = Array.isArray(packages) ? packages : [];
+      const pkgsArr = Array.isArray(packages) ? packages : Array.isArray(packagesList) ? packagesList : [];
       const normalized = [];
 
       for (let i = 0; i < pkgsArr.length; i++) {
@@ -816,7 +863,7 @@ router.put('/:id/packages', authenticateToken, ensureAdmin, async (req, res) => 
       const legacyDiscounts = normalized.map(p => (p.discountPrice != null ? Number(p.discountPrice) : null));
       const legacyThumbnails = normalized.map(p => p.image || null);
 
-      const updated = localDb.updateGame(id, {
+      let updated = localDb.updateGame(id, {
         packagesList: normalized,
         packages: legacyPackages,
         package_prices: legacyPrices,
@@ -824,7 +871,33 @@ router.put('/:id/packages', authenticateToken, ensureAdmin, async (req, res) => 
         package_thumbnails: legacyThumbnails
       });
       if (!updated) {
-        return res.status(404).json({ message: 'Game not found' });
+        // If game doesn't exist in local DB, create a minimal game record so packages can be edited.
+        const createdGame = {
+          id,
+          name: String(req.body?.name || id),
+          slug: id,
+          description: '',
+          price: 0,
+          currency: 'EGP',
+          image: '',
+          category: 'other',
+          is_popular: false,
+          isPopular: false,
+          stock: 0,
+          discount_price: null,
+          show_on_main_page: false,
+          showOnMainPage: false,
+          display_order: 999,
+          displayOrder: 999,
+          created_at: new Date().toISOString(),
+          packagesList: normalized,
+          packages: legacyPackages,
+          package_prices: legacyPrices,
+          package_discount_prices: legacyDiscounts,
+          package_thumbnails: legacyThumbnails
+        };
+        localDb.createGame(createdGame);
+        updated = createdGame;
       }
 
       const items = normalized.map(p => ({
@@ -976,3 +1049,240 @@ router.put('/admin/arrangement/bulk', authenticateToken, ensureAdmin, async (req
 });
 
 export default router;
+
+// Additional route: allow updating packages using an admin API key (ADMIN_API_KEY)
+// This is useful when you cannot provide a JWT (for example during scripted edits).
+// Usage: send POST /api/games/:id/packages/key with header `x-admin-key: <key>`
+// Body: { packages: [ ... ] }
+router.post('/:id/packages/key', async (req, res) => {
+  const adminKey = (req.headers['x-admin-key'] || req.body?.adminKey || '').toString();
+  if (!adminKey || adminKey !== process.env.ADMIN_API_KEY) {
+    return res.status(401).json({ message: 'Invalid admin key' });
+  }
+
+  // Reuse the same logic as PUT handler but without auth middleware
+  const { id } = req.params;
+  const { packages, packagesList } = req.body || {};
+  const pkgsArr = Array.isArray(packages) ? packages : Array.isArray(packagesList) ? packagesList : [];
+
+  try {
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+
+      const gameCheck = await client.query('SELECT id FROM games WHERE id = $1', [id]);
+      if (gameCheck.rows.length === 0) {
+        await client.query('ROLLBACK');
+        // Throw to trigger the outer DB-catch fallback which will persist to localDb
+        throw new Error('Game not found in DB, falling back to local');
+      }
+
+      await client.query('DELETE FROM game_packages WHERE game_id = $1', [id]);
+
+      const legacyPackages = [];
+      const legacyPrices = [];
+      const legacyDiscounts = [];
+      const legacyThumbnails = [];
+
+      for (const pkg of pkgsArr) {
+        const name = pkg.name || pkg.amount;
+        if (!name) continue;
+        const price = Number(pkg.price || 0);
+        const discount = pkg.discountPrice != null && pkg.discountPrice !== '' ? Number(pkg.discountPrice) : null;
+        const image = pkg.image || null;
+        let value = pkg.value != null && pkg.value !== '' ? Number(pkg.value) : null;
+        if (value == null) {
+          const amt = String(pkg.amount || pkg.name || '').trim();
+          const normalizedAmt = amt
+            .replace(/[,\s]+/g, '')
+            .replace(/[\u0660-\u0669]/g, (c) => String(c.charCodeAt(0) - 0x0660))
+            .replace(/[\u06F0-\u06F9]/g, (c) => String(c.charCodeAt(0) - 0x06F0));
+          const digits = (normalizedAmt.match(/[0-9]+/) || [''])[0];
+          value = digits ? Number(digits) : null;
+        }
+        const duration = pkg.duration ? String(pkg.duration) : null;
+        const description = pkg.description ? String(pkg.description).slice(0, 500) : null;
+
+        if (price < 0 || (value != null && (!Number.isFinite(value) || value <= 0))) {
+          await client.query('ROLLBACK');
+          return res.status(400).json({ message: 'Invalid quantity/value or price' });
+        }
+        if (duration && duration.length > 50) {
+          await client.query('ROLLBACK');
+          return res.status(400).json({ message: 'Duration too long' });
+        }
+
+        legacyPackages.push(String(name));
+        legacyPrices.push(price);
+        legacyDiscounts.push(Number.isFinite(discount) ? discount : null);
+        legacyThumbnails.push(image);
+
+        await client.query(`
+            INSERT INTO game_packages (game_id, name, price, discount_price, image, value, duration, description)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        `, [
+          id, name, price,
+          Number.isFinite(discount) ? discount : null,
+          image,
+          Number.isFinite(value) ? value : null,
+          duration,
+          description
+        ]);
+      }
+
+      await client.query(
+        `UPDATE games
+         SET packages = $2::jsonb,
+             package_prices = $3::jsonb,
+             package_discount_prices = $4::jsonb,
+             package_thumbnails = $5::jsonb,
+             updated_at = CURRENT_TIMESTAMP
+         WHERE id = $1`,
+        [id, JSON.stringify(legacyPackages), JSON.stringify(legacyPrices), JSON.stringify(legacyDiscounts), JSON.stringify(legacyThumbnails)]
+      );
+
+      await client.query('COMMIT');
+
+      const resDb = await pool.query('SELECT * FROM game_packages WHERE game_id = $1 ORDER BY price ASC', [id]);
+      const items = resDb.rows.map(p => ({
+        ...p,
+        amount: p.name,
+        price: Number(p.price),
+        discountPrice: (p.discount_price !== undefined && p.discount_price !== null && p.discount_price !== '') ? Number(p.discount_price) : null,
+        value: p.value != null ? Number(p.value) : null,
+        duration: p.duration || null,
+        description: p.description || null
+      }));
+
+      await logAudit('update_packages_key', `Updated packages for game: ${id} (via key)`, { system: true });
+      invalidatePopularCache();
+      // Sync packages to local JSON as well
+      try {
+        const lp = (Array.isArray(legacyPackages) && legacyPackages.length) ? legacyPackages : items.map(p => String(p.amount || p.name || ''));
+        const lpPrices = (Array.isArray(legacyPrices) && legacyPrices.length) ? legacyPrices : items.map(p => Number(p.price || 0));
+        const lpDiscounts = (Array.isArray(legacyDiscounts) && legacyDiscounts.length) ? legacyDiscounts : items.map(p => (p.discountPrice != null ? Number(p.discountPrice) : null));
+        const lpThumbs = (Array.isArray(legacyThumbnails) && legacyThumbnails.length) ? legacyThumbnails : items.map(p => p.image || null);
+        localDb.updateGame(id, {
+          packagesList: pkgsArr.map((p, i) => ({ id: `pkg_${id}_${i}`, name: (p && (p.name || p.amount)) || String(p || '') })),
+          packages: lp,
+          package_prices: lpPrices,
+          package_discount_prices: lpDiscounts,
+          package_thumbnails: lpThumbs
+        });
+      } catch (e) {
+        console.error('Failed to sync packages to local JSON (key):', e && e.message);
+      }
+
+      return res.json(items);
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
+    }
+  } catch (error) {
+    console.error('DB Error (update packages via key), falling back to local DB:', error.message);
+    try {
+      const normalized = [];
+
+      for (let i = 0; i < pkgsArr.length; i++) {
+        const pkg = pkgsArr[i];
+        const name = pkg.name || pkg.amount || '';
+        if (!name) continue;
+
+        const price = Number(pkg.price || 0);
+        const discount = pkg.discountPrice != null && pkg.discountPrice !== '' ? Number(pkg.discountPrice) : null;
+        const image = pkg.image || null;
+        let value = pkg.value != null && pkg.value !== '' ? Number(pkg.value) : null;
+
+        if (value == null) {
+          const amt = String(pkg.amount || pkg.name || '').trim();
+          const normalizedAmt = amt
+            .replace(/[,\s]+/g, '')
+            .replace(/[\u0660-\u0669]/g, (c) => String(c.charCodeAt(0) - 0x0660))
+            .replace(/[\u06F0-\u06F9]/g, (c) => String(c.charCodeAt(0) - 0x06F0));
+          const digits = (normalizedAmt.match(/[0-9]+/) || [''])[0];
+          value = digits ? Number(digits) : null;
+        }
+
+        const duration = pkg.duration ? String(pkg.duration) : null;
+        const description = pkg.description ? String(pkg.description).slice(0, 500) : null;
+
+        if (price < 0 || (value != null && (!Number.isFinite(value) || value <= 0))) {
+          return res.status(400).json({ message: 'Invalid quantity/value or price' });
+        }
+        if (duration && duration.length > 50) {
+          return res.status(400).json({ message: 'Duration too long' });
+        }
+
+        normalized.push({
+          id: `pkg_${id}_${i}`,
+          name,
+          price,
+          discountPrice: Number.isFinite(discount) ? discount : null,
+          discount_price: Number.isFinite(discount) ? discount : null,
+          image,
+          value: Number.isFinite(value) ? value : null,
+          duration,
+          description
+        });
+      }
+
+      const legacyPackages = normalized.map(p => String(p.name));
+      const legacyPrices = normalized.map(p => Number(p.price || 0));
+      const legacyDiscounts = normalized.map(p => (p.discountPrice != null ? Number(p.discountPrice) : null));
+      const legacyThumbnails = normalized.map(p => p.image || null);
+
+      let updated = localDb.updateGame(id, {
+        packagesList: normalized,
+        packages: legacyPackages,
+        package_prices: legacyPrices,
+        package_discount_prices: legacyDiscounts,
+        package_thumbnails: legacyThumbnails
+      });
+      if (!updated) {
+        // Create minimal game in local DB so key-based updates succeed when game missing
+        const createdGame = {
+          id,
+          name: String(req.body?.name || id),
+          slug: id,
+          description: '',
+          price: 0,
+          currency: 'EGP',
+          image: '',
+          category: 'other',
+          is_popular: false,
+          isPopular: false,
+          stock: 0,
+          discount_price: null,
+          show_on_main_page: false,
+          showOnMainPage: false,
+          display_order: 999,
+          displayOrder: 999,
+          created_at: new Date().toISOString(),
+          packagesList: normalized,
+          packages: legacyPackages,
+          package_prices: legacyPrices,
+          package_discount_prices: legacyDiscounts,
+          package_thumbnails: legacyThumbnails
+        };
+        localDb.createGame(createdGame);
+        updated = createdGame;
+      }
+
+      const items = normalized.map(p => ({
+        amount: p.name,
+        price: Number(p.price),
+        discountPrice: p.discountPrice != null ? Number(p.discountPrice) : null,
+        image: p.image || null,
+        value: p.value != null ? Number(p.value) : null,
+        duration: p.duration || null,
+        description: p.description || null
+      }));
+      return res.json(items);
+    } catch (err2) {
+      console.error('Local DB fallback failed (key):', err2.message);
+      return res.status(500).json({ message: 'Failed to update packages' });
+    }
+  }
+});
