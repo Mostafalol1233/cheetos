@@ -2325,6 +2325,12 @@ export default function AdminDashboard() {
                     />
                   </div>
                 </div>
+                <Button className="bg-gold-primary hover:bg-gold-secondary">
+                  Update Reviews Content
+                </Button>
+              </CardContent>
+            </Card>
+
             {/* Countdown Section */}
             <Card className="bg-card/50 border-gold-primary/30">
               <CardHeader>
@@ -2383,6 +2389,8 @@ export default function AdminDashboard() {
                 </Button>
               </CardContent>
             </Card>
+
+          </TabsContent>
 
           {/* WhatsApp Tab */}
           <TabsContent value="whatsapp" className="space-y-6">
