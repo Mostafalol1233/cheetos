@@ -1,5 +1,5 @@
 import { ArrowLeft, MessageCircle, Phone, Mail, Clock, HelpCircle, Headphones } from "lucide-react";
-import { SiWhatsapp, SiTelegram, SiDiscord } from "react-icons/si";
+import { SiWhatsapp, SiTelegram, SiFacebook } from "react-icons/si";
 import { Link } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -107,17 +107,17 @@ export default function SupportPage() {
 
           <Card className="hover:shadow-lg transition-shadow duration-300">
             <CardHeader className="text-center">
-              <div className="w-12 h-12 bg-indigo-600 rounded-full flex items-center justify-center mx-auto mb-2">
-                <SiDiscord className="w-6 h-6 text-white" />
+              <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-2">
+                <SiFacebook className="w-6 h-6 text-white" />
               </div>
-              <CardTitle className="text-lg">Discord</CardTitle>
+              <CardTitle className="text-lg">Facebook</CardTitle>
             </CardHeader>
             <CardContent className="text-center">
-              <p className="text-gray-600 dark:text-gray-300 mb-4">Live gaming support</p>
+              <p className="text-gray-600 dark:text-gray-300 mb-4">Follow us for updates</p>
               <a href={facebookHref} target="_blank" rel="noopener noreferrer" className="block">
-                <Button className="w-full bg-indigo-600 hover:bg-indigo-700">
-                  <SiDiscord className="w-4 h-4 mr-2" />
-                  Join Server
+                <Button className="w-full bg-blue-600 hover:bg-blue-700">
+                  <SiFacebook className="w-4 h-4 mr-2" />
+                  Follow Us
                 </Button>
               </a>
             </CardContent>

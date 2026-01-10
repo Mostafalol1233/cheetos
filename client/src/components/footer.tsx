@@ -29,17 +29,20 @@ export function Footer() {
               Your premium destination for gaming currencies, gift cards, and instant digital delivery. Level up your gaming experience today.
             </p>
             <div className="flex space-x-4">
-              <a href="https://www.facebook.com/DiaElDeenSadek" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-gold-primary transition-colors hover:scale-110 transform duration-200">
+              <a href="https://www.facebook.com/diaaaeldeen" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-gold-primary transition-colors hover:scale-110 transform duration-200">
                 <Facebook className="w-5 h-5" />
+              </a>
+              <a href="https://t.me/diaaeldeen1" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-gold-primary transition-colors hover:scale-110 transform duration-200">
+                <SiTelegram className="w-5 h-5" />
+              </a>
+              <a href="https://wa.me/201011696196" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-green-500 transition-colors hover:scale-110 transform duration-200">
+                <SiWhatsapp className="w-5 h-5" />
               </a>
               <a href="https://tiktok.com/@diaa_eldeen" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-gold-primary transition-colors hover:scale-110 transform duration-200">
                 <SiTiktok className="w-5 h-5" />
               </a>
               <a href="https://www.youtube.com/@bemora-site" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-gold-primary transition-colors hover:scale-110 transform duration-200">
                 <Youtube className="w-5 h-5" />
-              </a>
-              <a href="https://t.me/diaaeldeen" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-gold-primary transition-colors hover:scale-110 transform duration-200">
-                <SiTelegram className="w-5 h-5" />
               </a>
             </div>
           </div>

@@ -173,10 +173,14 @@ export default function GamePage() {
       </Button>
 
       <div className="space-y-8">
-        {/* Game Image - Large Square Box at Top */}
+        {/* Game Image - Large Box at Top */}
         <div className="relative w-full">
-          <div className="aspect-square overflow-hidden rounded-3xl shadow-2xl border border-gold-primary/20 bg-gray-100 dark:bg-gray-800">
-            <ImageWithFallback src={(game as any).image_url || game.image} alt={game.name} className="w-full h-full object-contain" />
+          <div className="relative overflow-hidden rounded-3xl shadow-2xl border border-gold-primary/20 bg-gray-100 dark:bg-gray-800 inline-block max-w-full">
+            <ImageWithFallback 
+              src={(game as any).image_url || game.image} 
+              alt={game.name} 
+              className="w-auto h-auto max-w-full max-h-[600px] object-contain" 
+            />
             {game.isPopular && (
               <div className="absolute top-6 right-6 bg-gradient-to-r from-gold-primary to-neon-pink text-white px-4 py-2 rounded-full text-sm font-bold flex items-center shadow-lg">
                 <Star className="w-5 h-5 mr-2" />
@@ -190,7 +194,10 @@ export default function GamePage() {
         <div className="space-y-6">
           <div>
             <h1 className="text-4xl font-black text-foreground mb-3">{game.name}</h1>
-            <p className="text-muted-foreground text-lg leading-relaxed">{game.description}</p>
+            <div 
+              className="text-muted-foreground text-lg leading-relaxed prose prose-lg max-w-none dark:prose-invert"
+              dangerouslySetInnerHTML={{ __html: game.description }}
+            />
           </div>
 
           <div className="flex flex-wrap items-center gap-3">

@@ -30,12 +30,12 @@ export function ProductPackCard({
       type="button"
       onClick={onClick}
       className={cn(
-        "group relative flex flex-col rounded-2xl border bg-card/80 p-4 text-left shadow-sm outline-none transition-all duration-200",
+        "group relative flex flex-col rounded-2xl border bg-card/80 p-6 text-left shadow-sm outline-none transition-all duration-200",
         "hover:-translate-y-1 hover:shadow-xl hover:border-primary/60",
         "focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background",
         highlight &&
           "border-primary bg-gradient-to-br from-primary/5 via-background to-secondary/5 shadow-lg",
-        "min-h-[180px] cursor-pointer"
+        "min-h-[240px] cursor-pointer"
       )}
       aria-label={name}
     >
@@ -48,15 +48,15 @@ export function ProductPackCard({
 
       {/* Product image */}
       {image && (
-        <div className="mb-3 flex w-full items-center justify-center">
-          <div className="relative flex h-20 w-20 items-center justify-center overflow-hidden rounded-xl bg-muted/40 ring-1 ring-border/70">
+        <div className="mb-4 flex w-full items-center justify-center">
+          <div className="relative flex h-32 w-32 items-center justify-center overflow-hidden rounded-xl bg-muted/40 ring-2 ring-border/70">
             <ImageWithFallback
               src={image}
               alt={name}
-              className="h-full w-full object-contain transition-transform duration-200 group-hover:scale-105"
-              width={96}
-              height={96}
-              sizes="(max-width: 640px) 48px, 96px"
+              className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-105"
+              width={128}
+              height={128}
+              sizes="(max-width: 640px) 64px, 128px"
             />
           </div>
         </div>
