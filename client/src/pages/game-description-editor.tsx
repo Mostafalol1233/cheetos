@@ -33,6 +33,7 @@ export default function GameDescriptionEditor() {
   const [description, setDescription] = useState('');
   const [previewMode, setPreviewMode] = useState(false);
   const [hasLoaded, setHasLoaded] = useState(false);
+  const [initialized, setInitialized] = useState(false);
 
   const gameId = params?.id;
 
@@ -97,11 +98,11 @@ export default function GameDescriptionEditor() {
 
   // Initialize description when game data loads (only once)
   useEffect(() => {
-    if (game?.description && !hasLoaded) {
-      setDescription(game.description);
-      setHasLoaded(true);
+    if (!initialized && (game || game === null)) {
+      setDescription(game?.description || '');
+      setInitialized(true);
     }
-  }, [game?.description, hasLoaded]);
+  }, [game, initialized]);
 
   const handleSave = () => {
     if (!gameId) return;
@@ -239,7 +240,6 @@ export default function GameDescriptionEditor() {
             ) : (
               <div className="space-y-4">
                 <RichTextEditor
-                  key={gameId}
                   value={description}
                   onChange={setDescription}
                   onImageUpload={handleImageUpload}

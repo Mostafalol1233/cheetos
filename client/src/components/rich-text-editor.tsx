@@ -20,10 +20,11 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   const quillRef = useRef<ReactQuill>(null);
   const [localValue, setLocalValue] = useState(value);
   const timeoutRef = useRef<NodeJS.Timeout>();
+  const isLocalChangeRef = useRef(false as boolean);
 
-  // Sync local value when external value changes (without clobbering in-progress edits)
+  // Sync local value when external value changes, but don't override in-progress local edits
   React.useEffect(() => {
-    if (value !== localValue) {
+    if (!isLocalChangeRef.current && value !== localValue) {
       setLocalValue(value || '');
     }
   }, [value, localValue]);
@@ -34,10 +35,12 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
       }
+      isLocalChangeRef.current = false;
     };
   }, []);
 
   const debouncedOnChange = useCallback((content: string) => {
+    isLocalChangeRef.current = true;
     setLocalValue(content);
     
     if (timeoutRef.current) {
@@ -46,6 +49,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     
     timeoutRef.current = setTimeout(() => {
       onChange(content);
+      isLocalChangeRef.current = false;
     }, 300); // 300ms debounce
   }, [onChange]);
 
