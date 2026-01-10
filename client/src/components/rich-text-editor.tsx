@@ -21,10 +21,21 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   const [localValue, setLocalValue] = useState(value);
   const timeoutRef = useRef<NodeJS.Timeout>();
 
-  // Sync local value when external value changes
+  // Sync local value when external value changes (without clobbering in-progress edits)
   React.useEffect(() => {
-    setLocalValue(value);
-  }, [value]);
+    if (value !== localValue) {
+      setLocalValue(value || '');
+    }
+  }, [value, localValue]);
+
+  // Cleanup debounce timer on unmount
+  React.useEffect(() => {
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, []);
 
   const debouncedOnChange = useCallback((content: string) => {
     setLocalValue(content);
@@ -111,41 +122,52 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     <>
       <style>{`
         .rich-text-editor .ql-toolbar {
-          border-top: 1px solid hsl(var(--border));
-          border-left: 1px solid hsl(var(--border));
-          border-right: 1px solid hsl(var(--border));
+          border-top: 1px solid hsl(var(--border, 0 0% 80%));
+          border-left: 1px solid hsl(var(--border, 0 0% 80%));
+          border-right: 1px solid hsl(var(--border, 0 0% 80%));
           border-bottom: none;
-          background-color: hsl(var(--muted));
+          background-color: hsl(var(--muted, 0 0% 96%));
         }
         .rich-text-editor .ql-container {
-          border: 1px solid hsl(var(--border));
+          border: 1px solid hsl(var(--border, 0 0% 80%));
           min-height: 120px;
-          background-color: hsl(var(--background));
-          color: hsl(var(--foreground));
+          background-color: hsl(var(--background, 0 0% 100%));
+          color: hsl(var(--foreground, 0 0% 10%));
         }
         .rich-text-editor .ql-editor {
-          color: hsl(var(--foreground));
+          color: hsl(var(--foreground, 0 0% 10%));
           padding: 12px 15px;
           min-height: 200px;
         }
         .rich-text-editor .ql-editor.ql-blank::before {
-          color: hsl(var(--muted-foreground));
+          color: hsl(var(--muted-foreground, 0 0% 45%));
           font-style: normal;
         }
         .rich-text-editor .ql-toolbar .ql-stroke {
-          stroke: hsl(var(--foreground));
+          stroke: currentColor;
+          stroke-width: 2;
+          opacity: 1;
         }
         .rich-text-editor .ql-toolbar .ql-fill {
-          fill: hsl(var(--foreground));
+          fill: currentColor;
+          opacity: 1;
+        }
+        .rich-text-editor .ql-toolbar button {
+          color: hsl(var(--foreground, 0 0% 10%));
+          opacity: 0.9;
+        }
+        .rich-text-editor .ql-toolbar .ql-picker {
+          color: hsl(var(--foreground, 0 0% 10%));
         }
         .rich-text-editor .ql-toolbar button:hover,
         .rich-text-editor .ql-toolbar button:focus {
-          color: hsl(var(--primary));
+          color: hsl(var(--primary, 47 95% 50%));
+          opacity: 1;
         }
         .rich-text-editor .ql-toolbar button.ql-active,
         .rich-text-editor .ql-toolbar .ql-picker-label.ql-active,
         .rich-text-editor .ql-toolbar .ql-picker-item.ql-selected {
-          color: hsl(var(--primary));
+          color: hsl(var(--primary, 47 95% 50%));
         }
         .rich-text-editor .ql-editor img {
           max-width: 100%;
