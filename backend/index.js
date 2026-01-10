@@ -22,6 +22,7 @@ import gamesRouter from './routes/games.js';
 import ordersRouter from './routes/orders.js';
 import authRouter from './routes/auth.js';
 import adminAiRouter from './routes/admin-ai.js';
+import paymentsRouter from './routes/payments.js';
 import { authenticateToken, ensureAdmin } from './middleware/auth.js';
 import { sendEmail, sendRawEmail } from './utils/email.js';
 import localDb from './utils/localDb.js';
@@ -856,6 +857,7 @@ app.use('/api/orders', ordersRouter);
 app.use('/api/admin/ai', adminAiRouter);
 app.use('/api/auth', authRouter);
 app.use('/api', authRouter); // Expose auth routes at root api level as well (e.g. /api/admin/login)
+app.use('/api/payments', paymentsRouter);
 
 // Admin Image Upload Endpoint
 app.post('/api/admin/upload-image', authenticateToken, ensureAdmin, imageUpload.single('file'), async (req, res) => {
