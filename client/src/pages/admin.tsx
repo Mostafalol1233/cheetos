@@ -16,11 +16,13 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import QRCode from 'qrcode';
 import { normalizeNumericString } from '@/lib/quantity';
+import RichTextEditor from '@/components/rich-text-editor';
 
 interface Game {
   id: string;
   name: string;
   slug?: string;
+  description?: string;
   price: string;
   discountPrice?: string | number | null;
   stock: number;
@@ -999,6 +1001,23 @@ export default function AdminDashboard() {
       console.error('Upload failed', err);
       alert('Upload failed');
     }
+  };
+
+  const handleRichTextImageUpload = async (file: File): Promise<string> => {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const token = localStorage.getItem('adminToken');
+    const res = await fetch(apiPath('/api/admin/images/upload-cloudinary'), {
+      method: 'POST',
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      body: formData
+    });
+    const data = await res.json();
+    if (!data.url) {
+      throw new Error('Upload failed');
+    }
+    return data.url;
   };
 
   function ContentEditorPanel() {
@@ -2085,6 +2104,17 @@ export default function AdminDashboard() {
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+              <div className="grid grid-cols-4 items-start gap-4">
+                <Label htmlFor="description" className="text-right pt-2">Description</Label>
+                <div className="col-span-3">
+                  <RichTextEditor
+                    value={(editingGame as any).description || ''}
+                    onChange={(value) => setEditingGame({ ...editingGame, description: value } as any)}
+                    onImageUpload={handleRichTextImageUpload}
+                    placeholder="Enter game description..."
+                  />
+                </div>
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="image" className="text-right">Image URL</Label>

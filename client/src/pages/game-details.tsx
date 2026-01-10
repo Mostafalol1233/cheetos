@@ -178,9 +178,10 @@ export default function GameDetails() {
               <h1 className="text-3xl font-bold text-gold-primary mb-2">
                 {game.name}
               </h1>
-              <p className="text-muted-foreground text-lg">
-                {game.description}
-              </p>
+              <div 
+                className="text-muted-foreground text-lg prose prose-invert prose-lg max-w-none [&_img]:max-w-full [&_img]:h-auto [&_img]:rounded-lg [&_img]:shadow-md"
+                dangerouslySetInnerHTML={{ __html: game.description || '' }}
+              />
             </div>
 
             {/* Package Selection */}
