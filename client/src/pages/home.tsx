@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Gamepad2, Zap, Headphones, Shield, Tag, Flame } from "lucide-react";
 import { SiTelegram, SiTiktok, SiYoutube, SiFacebook, SiWhatsapp } from "react-icons/si";
+import { useQuery } from '@tanstack/react-query';
 
 import { ShoppingCategories } from "@/components/shopping-categories";
 import { PopularGames } from "@/components/popular-games";
@@ -20,8 +21,20 @@ export default function Home() {
   });
   const [pulseKey, setPulseKey] = useState(0);
   
+  // Fetch countdown data
+  const { data: countdownData } = useQuery({
+    queryKey: ['/api/countdown/current'],
+    queryFn: async () => {
+      const res = await fetch('/api/countdown/current');
+      if (!res.ok) throw new Error('Failed to fetch countdown');
+      return res.json();
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+  
   const shareCountdown = async () => {
-    const text = `${daysLeft} days left until 2026! Join me on Diaa Sadek 🎮`;
+    const shareText = countdownData?.shareText || 'Join me on Diaa Sadek';
+    const text = `${daysLeft} days left until 2026! ${shareText} 🎮`;
     const url = window.location.origin;
     if ((navigator as any).share) {
       try { await (navigator as any).share({ title: 'Countdown to 2026', text, url }); } catch {}
@@ -90,9 +103,9 @@ export default function Home() {
             <Flame className="w-10 h-10 text-neon-pink animate-twinkle" />
             <div>
               <div className="text-2xl md:text-3xl font-bold">
-                <span key={pulseKey} className="inline-block animate-fade-in">{daysLeft}</span> days left until 2026
+                <span key={pulseKey} className="inline-block animate-fade-in">{daysLeft}</span> {countdownData?.title || 'days left until 2026'}
               </div>
-              <p className="text-muted-foreground text-sm">Stay tuned for New Year offers and friend collaborations.</p>
+              <p className="text-muted-foreground text-sm">{countdownData?.text || 'Stay tuned for New Year offers and friend collaborations.'}</p>
             </div>
           </div>
           <div className="flex items-center gap-3">

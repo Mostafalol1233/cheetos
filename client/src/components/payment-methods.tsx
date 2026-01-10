@@ -42,7 +42,7 @@ export default function PaymentMethods() {
                 <img 
                   src={method.image} 
                   alt={method.name}
-                  className="w-16 h-16 object-contain opacity-70 hover:opacity-100 transition-opacity duration-300"
+                  className="w-20 h-20 object-contain opacity-70 hover:opacity-100 transition-opacity duration-300"
                 />
               </div>
             ))}
@@ -56,7 +56,7 @@ export default function PaymentMethods() {
                 <img 
                   src={method.image} 
                   alt={method.name}
-                  className="w-16 h-16 object-contain opacity-70 hover:opacity-100 transition-opacity duration-300"
+                  className="w-20 h-20 object-contain opacity-70 hover:opacity-100 transition-opacity duration-300"
                 />
               </div>
             ))}

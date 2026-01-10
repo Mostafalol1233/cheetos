@@ -42,6 +42,9 @@ CDN_BASE_URL=https://your-cdn-url.com
 # Payment Encryption (Optional - must be 32 characters)
 PAYMENT_ENCRYPTION_KEY=your_32_character_encryption_key_here
 
+# Payment Webhook Security
+PAYMENT_WEBHOOK_SECRET=your_webhook_secret_for_hmac_verification
+
 # Maintenance Scripts (Optional)
 DISABLE_MAINTENANCE_SCRIPTS=false
 

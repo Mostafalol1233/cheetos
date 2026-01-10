@@ -388,6 +388,37 @@ app.use(cors({
   credentials: true
 }));
 
+// API Origin Protection Middleware
+const ALLOWED_ORIGINS = [
+  'http://localhost:5173',
+  'http://localhost:5000',
+  'http://diaasadek.com',
+  'https://diaasadek.com',
+  'https://www.diaasadek.com',
+  'https://1-backendzip--yeogav.replit.app',
+  'http://localhost:3000',
+  'https://diaaa.vercel.app',
+  process.env.FRONTEND_URL
+].filter(Boolean);
+
+app.use((req, res, next) => {
+  const path = req.path;
+  if (path.startsWith('/api/') && !path.startsWith('/api/auth/')) {
+    const origin = req.headers.origin;
+    if (!origin || !ALLOWED_ORIGINS.some(allowed => {
+      if (allowed.includes('*')) {
+        // Handle wildcard
+        const pattern = allowed.replace(/\*/g, '.*');
+        return new RegExp(`^${pattern}$`).test(origin);
+      }
+      return allowed === origin;
+    })) {
+      return res.status(403).json({ message: 'Access denied. Requests must come from allowed origins.' });
+    }
+  }
+  next();
+});
+
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use(requestLogger);
@@ -1209,6 +1240,7 @@ async function initializeDatabase() {
         target_at TIMESTAMP NOT NULL,
         image_url TEXT,
         text TEXT,
+        share_text TEXT,
         styles JSONB DEFAULT '{}',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -2249,12 +2281,24 @@ app.get('/api/logo/config', async (req, res) => {
 // Countdown endpoints
 app.get('/api/countdown/current', async (req, res) => {
   try {
-    const result = await pool.query('SELECT id, title, target_at, text FROM countdowns ORDER BY updated_at DESC LIMIT 1');
+    const result = await pool.query('SELECT id, title, target_at, text, share_text FROM countdowns ORDER BY updated_at DESC LIMIT 1');
     if (result.rows.length === 0) {
-      return res.json({ id: 'newyear_2026', title: 'Countdown to 2026', targetAt: '2026-01-01T00:00:00Z', text: 'Stay tuned for New Year offers and friend collaborations.' });
+      return res.json({ 
+        id: 'newyear_2026', 
+        title: 'days left until 2026', 
+        targetAt: '2026-01-01T00:00:00Z', 
+        text: 'Stay tuned for New Year offers and friend collaborations.',
+        shareText: 'Join me on Diaa Sadek'
+      });
     }
     const row = result.rows[0];
-    res.json({ id: row.id, title: row.title, targetAt: new Date(row.target_at).toISOString(), text: row.text || '' });
+    res.json({ 
+      id: row.id, 
+      title: row.title, 
+      targetAt: new Date(row.target_at).toISOString(), 
+      text: row.text || '',
+      shareText: row.share_text || ''
+    });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -2262,21 +2306,27 @@ app.get('/api/countdown/current', async (req, res) => {
 
 app.put('/api/admin/countdown', authenticateToken, ensureAdmin, async (req, res) => {
   try {
-    const { id, title, targetAt, text } = req.body || {};
+    const { id, title, targetAt, text, shareText } = req.body || {};
     if (!targetAt || isNaN(Date.parse(String(targetAt)))) {
       return res.status(400).json({ message: 'Invalid targetAt ISO date' });
     }
     const countdownId = id || 'newyear_2026';
     const result = await pool.query(
-      `INSERT INTO countdowns (id, title, target_at, text, updated_at)
-       VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP)
-       ON CONFLICT (id) DO UPDATE SET title = EXCLUDED.title, target_at = EXCLUDED.target_at, text = EXCLUDED.text, updated_at = CURRENT_TIMESTAMP
-       RETURNING id, title, target_at, text`,
-      [countdownId, String(title || 'Countdown'), new Date(targetAt), String(text || '')]
+      `INSERT INTO countdowns (id, title, target_at, text, share_text, updated_at)
+       VALUES ($1, $2, $3, $4, $5, CURRENT_TIMESTAMP)
+       ON CONFLICT (id) DO UPDATE SET title = EXCLUDED.title, target_at = EXCLUDED.target_at, text = EXCLUDED.text, share_text = EXCLUDED.share_text, updated_at = CURRENT_TIMESTAMP
+       RETURNING id, title, target_at, text, share_text`,
+      [countdownId, String(title || 'Countdown'), new Date(targetAt), String(text || ''), String(shareText || '')]
     );
     try { await pool.query('INSERT INTO admin_audit_logs (id, action, summary) VALUES ($1, $2, $3)', [`al_${Date.now()}_${Math.random().toString(36).slice(2,9)}`, 'countdown_update', `Updated countdown ${countdownId} to ${targetAt}`]); } catch {}
     const row = result.rows[0];
-    res.json({ id: row.id, title: row.title, targetAt: new Date(row.target_at).toISOString(), text: row.text || '' });
+    res.json({ 
+      id: row.id, 
+      title: row.title, 
+      targetAt: new Date(row.target_at).toISOString(), 
+      text: row.text || '',
+      shareText: row.share_text || ''
+    });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

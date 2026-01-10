@@ -59,14 +59,14 @@ const AdvancedRichTextEditor: React.FC<AdvancedRichTextEditorProps> = ({
   const modules = useMemo(() => ({
     toolbar: {
       container: [
-        [{ font: [] }, { size: [] }],
-        [{ header: [1, 2, 3, 4, 5, 6, false] }],
+        [{ 'font': [] }, { 'size': ['small', false, 'large', 'huge'] }],
+        [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
         ['bold', 'italic', 'underline', 'strike', 'blockquote', 'code-block'],
-        [{ color: [] }, { background: [] }],
-        [{ list: 'ordered' }, { list: 'bullet' }, { indent: '-1' }, { indent: '+1' }],
-        [{ align: [] }, { direction: 'rtl' }],
-        ['link', 'image'],
-        ['clean'],
+        [{ 'color': [] }, { 'background': [] }],
+        [{ 'list': 'ordered'}, { 'list': 'bullet' }, { 'indent': '-1'}, { 'indent': '+1' }],
+        [{ 'align': [] }, { 'direction': 'rtl' }],
+        ['link', 'image', 'video'],
+        ['clean']
       ],
       handlers: {
         image: handleImageInsert,
@@ -79,11 +79,6 @@ const AdvancedRichTextEditor: React.FC<AdvancedRichTextEditorProps> = ({
       delay: 800,
       maxStack: 200,
       userOnly: false,
-    },
-    keyboard: {
-      bindings: {
-        // Keep basic bindings; can add custom ones if needed
-      },
     },
   }), [handleImageInsert]);
 
@@ -111,6 +106,8 @@ const AdvancedRichTextEditor: React.FC<AdvancedRichTextEditorProps> = ({
           border-right: 1px solid hsl(var(--border, 0 0% 80%));
           border-bottom: none;
           background-color: hsl(var(--muted, 0 0% 96%));
+          position: relative;
+          z-index: 10;
         }
         .advanced-rich-text-editor .ql-container {
           border: 1px solid hsl(var(--border, 0 0% 80%));
@@ -140,17 +137,33 @@ const AdvancedRichTextEditor: React.FC<AdvancedRichTextEditorProps> = ({
         .advanced-rich-text-editor .ql-toolbar .ql-picker {
           color: hsl(var(--foreground, 0 0% 10%));
           opacity: 0.95;
+          cursor: pointer !important;
+          pointer-events: auto !important;
         }
         .advanced-rich-text-editor .ql-toolbar button:hover,
         .advanced-rich-text-editor .ql-toolbar button:focus,
         .advanced-rich-text-editor .ql-toolbar .ql-picker-label:hover {
           color: hsl(var(--primary, 47 95% 50%));
           opacity: 1;
+          background-color: hsl(var(--accent, 0 0% 96%));
         }
         .advanced-rich-text-editor .ql-toolbar button.ql-active,
         .advanced-rich-text-editor .ql-toolbar .ql-picker-label.ql-active,
         .advanced-rich-text-editor .ql-toolbar .ql-picker-item.ql-selected {
           color: hsl(var(--primary, 47 95% 50%));
+          background-color: hsl(var(--accent, 0 0% 96%));
+        }
+        .advanced-rich-text-editor .ql-toolbar .ql-picker-options {
+          background-color: hsl(var(--popover, 0 0% 100%));
+          border: 1px solid hsl(var(--border, 0 0% 80%));
+          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+          z-index: 1000;
+        }
+        .advanced-rich-text-editor .ql-toolbar .ql-picker-item {
+          color: hsl(var(--foreground, 0 0% 10%));
+        }
+        .advanced-rich-text-editor .ql-toolbar .ql-picker-item:hover {
+          background-color: hsl(var(--accent, 0 0% 96%));
         }
         .advanced-rich-text-editor .ql-editor img {
           max-width: 100%;

@@ -2,6 +2,7 @@ import express from 'express';
 import pool from '../db.js';
 import { sendRawEmail } from '../utils/email.js';
 import { decryptText } from '../utils/crypto.js';
+import crypto from 'crypto';
 
 const router = express.Router();
 
@@ -20,6 +21,24 @@ router.post('/session', async (req, res) => {
 // Confirm payment success (mock)
 router.post('/confirm', async (req, res) => {
   try {
+    // HMAC verification for webhook security
+    const webhookSecret = process.env.PAYMENT_WEBHOOK_SECRET;
+    if (!webhookSecret) {
+      return res.status(500).json({ message: 'Webhook secret not configured' });
+    }
+    
+    const signature = req.headers['x-webhook-signature'];
+    if (!signature) {
+      return res.status(401).json({ message: 'Missing webhook signature' });
+    }
+    
+    const bodyString = JSON.stringify(req.body);
+    const expectedSignature = crypto.createHmac('sha256', webhookSecret).update(bodyString, 'utf8').digest('hex');
+    
+    if (!crypto.timingSafeEqual(Buffer.from(signature, 'hex'), Buffer.from(expectedSignature, 'hex'))) {
+      return res.status(401).json({ message: 'Invalid webhook signature' });
+    }
+    
     const { orderId, game_id, package_name, customer_email } = req.body || {};
     if (!orderId || !game_id || !package_name || !customer_email) return res.status(400).json({ message: 'orderId, game_id, package_name, customer_email required' });
 
