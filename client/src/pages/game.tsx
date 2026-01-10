@@ -173,13 +173,13 @@ export default function GamePage() {
       </Button>
 
       <div className="space-y-8">
-        {/* Game Image - Large Box at Top */}
-        <div className="relative w-full">
-          <div className="relative overflow-hidden rounded-3xl shadow-2xl border border-gold-primary/20 bg-gray-100 dark:bg-gray-800 inline-block max-w-full">
+        {/* Game Image - Large Centered Image */}
+        <div className="relative w-full flex justify-center">
+          <div className="relative max-w-4xl w-full">
             <ImageWithFallback 
               src={(game as any).image_url || game.image} 
               alt={game.name} 
-              className="w-auto h-auto max-w-full max-h-[600px] object-contain" 
+              className="w-full h-auto max-h-[800px] object-contain mx-auto" 
             />
             {game.isPopular && (
               <div className="absolute top-6 right-6 bg-gradient-to-r from-gold-primary to-neon-pink text-white px-4 py-2 rounded-full text-sm font-bold flex items-center shadow-lg">

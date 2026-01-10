@@ -30,40 +30,34 @@ export default function PaymentMethods() {
           Secure payments through multiple trusted providers
         </p>
         
-        {/* Continuous scrolling container */}
-        <div className="relative">
-          <div className={`flex ${reduceMotion ? '' : 'animate-scroll-rtl'} space-x-6`}>
-            {/* First set of payment methods */}
+        {/* Continuous scrolling container - Images Only */}
+        <div className="relative overflow-hidden">
+          <div className={`flex ${reduceMotion ? '' : 'animate-scroll-rtl'} gap-8`}>
+            {/* First set of payment methods - Images Only */}
             {paymentMethods.map((method, index) => (
               <div 
                 key={`first-${method.name}`}
-                className="bg-darker-bg p-4 rounded-lg border border-gray-800 hover:border-gold-primary transition-all duration-300 flex flex-col items-center group min-w-[120px] flex-shrink-0"
+                className="flex-shrink-0"
               >
                 <img 
                   src={method.image} 
                   alt={method.name}
-                  className="w-12 h-12 object-contain mb-2 filter brightness-75 contrast-125"
+                  className="w-16 h-16 object-contain opacity-70 hover:opacity-100 transition-opacity duration-300"
                 />
-                <span className="text-xs text-gray-300 text-center font-medium group-hover:text-gold-primary transition-colors duration-300">
-                  {method.name}
-                </span>
               </div>
             ))}
             
-            {/* Duplicate set for seamless loop */}
+            {/* Duplicate set for seamless loop - Images Only */}
             {paymentMethods.map((method, index) => (
               <div 
                 key={`second-${method.name}`}
-                className="bg-darker-bg p-4 rounded-lg border border-gray-800 hover:border-gold-primary transition-all duration-300 flex flex-col items-center group min-w-[120px] flex-shrink-0"
+                className="flex-shrink-0"
               >
                 <img 
                   src={method.image} 
                   alt={method.name}
-                  className="w-12 h-12 object-contain mb-2 filter brightness-75 contrast-125"
+                  className="w-16 h-16 object-contain opacity-70 hover:opacity-100 transition-opacity duration-300"
                 />
-                <span className="text-xs text-gray-300 text-center font-medium group-hover:text-gold-primary transition-colors duration-300">
-                  {method.name}
-                </span>
               </div>
             ))}
           </div>

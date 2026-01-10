@@ -4,7 +4,7 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
@@ -1245,6 +1245,7 @@ export default function AdminDashboard() {
           <TabsTrigger value="whatsapp" data-testid="tab-whatsapp" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">WhatsApp</TabsTrigger>
           <TabsTrigger value="checkout-templates" data-testid="tab-checkout-templates" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Checkout Templates</TabsTrigger>
           <TabsTrigger value="preview-home" data-testid="tab-preview-home" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Home Preview</TabsTrigger>
+          <TabsTrigger value="main-content" data-testid="tab-main-content" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Main Page Content</TabsTrigger>
           <TabsTrigger value="alerts" data-testid="tab-alerts" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">
             Alerts
             {alerts.some(a => !a.read) && (
@@ -2125,6 +2126,187 @@ export default function AdminDashboard() {
             <div className="rounded-lg border overflow-hidden">
               <iframe title="Home Preview" src="/" className="w-full h-[800px] bg-background" />
             </div>
+          </TabsContent>
+
+          {/* Main Page Content Tab */}
+          <TabsContent value="main-content" className="space-y-6">
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-bold text-foreground">Main Page Content Management</h2>
+              <p className="text-sm text-muted-foreground">Edit homepage text content</p>
+            </div>
+
+            {/* Hero Section */}
+            <Card className="bg-card/50 border-gold-primary/30">
+              <CardHeader>
+                <CardTitle>Hero Section</CardTitle>
+                <CardDescription>Edit the main hero title and subtitle</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <Label htmlFor="hero-title">Hero Title</Label>
+                  <Input
+                    id="hero-title"
+                    placeholder="Enter hero title"
+                    defaultValue="Welcome to Diaa Eldeen"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="hero-subtitle">Hero Subtitle</Label>
+                  <Textarea
+                    id="hero-subtitle"
+                    placeholder="Enter hero subtitle"
+                    defaultValue="Your ultimate destination for premium gaming products"
+                    rows={3}
+                  />
+                </div>
+                <Button className="bg-gold-primary hover:bg-gold-secondary">
+                  Update Hero Content
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* About Section */}
+            <Card className="bg-card/50 border-gold-primary/30">
+              <CardHeader>
+                <CardTitle>About Section</CardTitle>
+                <CardDescription>Edit the about Diaa section content</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <Label htmlFor="about-title">About Title</Label>
+                  <Input
+                    id="about-title"
+                    placeholder="Enter about title"
+                    defaultValue="About Diaa"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="about-p1">About Paragraph 1</Label>
+                  <Textarea
+                    id="about-p1"
+                    placeholder="Enter first paragraph"
+                    defaultValue="Diaa Eldeen is your trusted gaming store offering the best digital products at competitive prices."
+                    rows={3}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="about-p2">About Paragraph 2</Label>
+                  <Textarea
+                    id="about-p2"
+                    placeholder="Enter second paragraph"
+                    defaultValue="We provide instant delivery, secure payments, and 24/7 customer support for all your gaming needs."
+                    rows={3}
+                  />
+                </div>
+                <Button className="bg-gold-primary hover:bg-gold-secondary">
+                  Update About Content
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* Features Section */}
+            <Card className="bg-card/50 border-gold-primary/30">
+              <CardHeader>
+                <CardTitle>Features Section</CardTitle>
+                <CardDescription>Edit the features descriptions</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <Label htmlFor="fast-delivery-desc">Fast Delivery Description</Label>
+                  <Textarea
+                    id="fast-delivery-desc"
+                    placeholder="Enter fast delivery description"
+                    defaultValue="Get your digital products instantly after payment confirmation"
+                    rows={2}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="online-support-desc">Online Support Description</Label>
+                  <Textarea
+                    id="online-support-desc"
+                    placeholder="Enter online support description"
+                    defaultValue="24/7 customer support available via WhatsApp and live chat"
+                    rows={2}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="secure-payment-desc">Secure Payment Description</Label>
+                  <Textarea
+                    id="secure-payment-desc"
+                    placeholder="Enter secure payment description"
+                    defaultValue="Multiple secure payment methods with encrypted transactions"
+                    rows={2}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="best-prices-desc">Best Prices Description</Label>
+                  <Textarea
+                    id="best-prices-desc"
+                    placeholder="Enter best prices description"
+                    defaultValue="Competitive pricing with regular discounts and special offers"
+                    rows={2}
+                  />
+                </div>
+                <Button className="bg-gold-primary hover:bg-gold-secondary">
+                  Update Features Content
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* Reviews Section */}
+            <Card className="bg-card/50 border-gold-primary/30">
+              <CardHeader>
+                <CardTitle>Reviews Section</CardTitle>
+                <CardDescription>Edit customer reviews and testimonials</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <Label htmlFor="reviews-title">Reviews Title</Label>
+                  <Input
+                    id="reviews-title"
+                    placeholder="Enter reviews title"
+                    defaultValue="What Our Customers Say"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="reviews-subtitle">Reviews Subtitle</Label>
+                  <Input
+                    id="reviews-subtitle"
+                    placeholder="Enter reviews subtitle"
+                    defaultValue="Don't just take our word for it"
+                  />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="border rounded-lg p-4">
+                    <Label>Review 1</Label>
+                    <Textarea
+                      placeholder="Enter review 1 content"
+                      defaultValue="Fast delivery and great prices"
+                      rows={2}
+                    />
+                  </div>
+                  <div className="border rounded-lg p-4">
+                    <Label>Review 2</Label>
+                    <Textarea
+                      placeholder="Enter review 2 content"
+                      defaultValue="Best gaming store 10/10"
+                      rows={2}
+                    />
+                  </div>
+                  <div className="border rounded-lg p-4">
+                    <Label>Review 3</Label>
+                    <Textarea
+                      placeholder="Enter review 3 content"
+                      defaultValue="Competitive prices and instant delivery. This is my go-to store for all gaming needs"
+                      rows={2}
+                    />
+                  </div>
+                </div>
+                <Button className="bg-gold-primary hover:bg-gold-secondary">
+                  Update Reviews Content
+                </Button>
+              </CardContent>
+            </Card>
           </TabsContent>
 
           {/* WhatsApp Tab */}
