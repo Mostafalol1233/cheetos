@@ -1441,7 +1441,7 @@ export default function AdminDashboard() {
                               size="sm"
                               className="flex-1 bg-blue-500/10 border-blue-500/30 hover:bg-blue-500/20"
                             >
-                              <MessageSquare className="w-4 h-4" />
+                              <MessageSquare className="w-4 h-4 text-white" />
                             </Button>
                           </TooltipTrigger>
                           <TooltipContent>
