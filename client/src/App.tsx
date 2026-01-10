@@ -33,6 +33,7 @@ import { Header } from "@/components/header";
 import { CartSidebar } from "@/components/cart-sidebar";
 import { CheckoutModal } from "@/components/checkout-modal";
 import { ChristmasSnow } from "@/components/christmas-snow";
+import GameDescriptionEditor from "./pages/game-description-editor";
 
 // Protected admin route component
 function ProtectedAdminRoute() {
@@ -64,6 +65,7 @@ function ProtectedAdminRoute() {
         <Route path="/checkout/security/:id" component={CheckoutSecurityPage} />
         <Route path="/admin/login" component={AdminLoginPage} />
         <Route path="/admin/packages/:gameId" component={AdminPackagesPage} />
+        <Route path="/admin/games/:id/description" component={GameDescriptionEditor} />
         {/* QR login removed */}
         <Route path="/admin" component={ProtectedAdminRoute} />
         <Route path="/admin/confirmation/:id" component={AdminConfirmationPage} />

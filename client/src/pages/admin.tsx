@@ -14,6 +14,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import QRCode from 'qrcode';
 import { normalizeNumericString } from '@/lib/quantity';
 import RichTextEditor from '@/components/rich-text-editor';
@@ -1432,6 +1433,22 @@ export default function AdminDashboard() {
                       >
                         <Edit className="w-4 h-4" />
                       </Button>
+                      <Link href={`/admin/games/${game.id}/description`}>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="flex-1 bg-blue-500/10 border-blue-500/30 hover:bg-blue-500/20"
+                            >
+                              <MessageSquare className="w-4 h-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Edit Description (Rich Editor)</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </Link>
                       <Button
                         variant="destructive"
                         size="sm"
