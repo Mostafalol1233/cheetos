@@ -263,16 +263,6 @@ const translations: Record<Language, Record<string, string>> = {
     "faq_q8": "هل الأسعار تنافسية؟",
     "faq_a8": "بالتأكيد! نقدم أفضل الأسعار مع خصومات وعروض خاصة.",
     
-    // Terms
-    "terms_title": "شروط الخدمة",
-    "last_updated": "آخر تحديث",
-    
-    // Privacy
-    "privacy_title": "سياسة الخصوصية",
-    
-    // Refunds
-    "refunds_title": "سياسة الاسترداد",
-    
     // Track Order
     "track_order_title": "تتبع طلبك",
     "enter_order_id": "أدخل معرف الطلب للتحقق من حالة الشراء.",

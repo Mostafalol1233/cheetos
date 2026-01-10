@@ -1,6 +1,6 @@
 import { Link } from "wouter";
 import { Facebook, Youtube, Mail, Phone, MapPin } from "lucide-react";
-import { SiTelegram, SiTiktok } from "react-icons/si";
+import { SiTelegram, SiTiktok, SiWhatsapp } from "react-icons/si";
 
 const logo = "https://files.catbox.moe/brmkrj.png";
 
