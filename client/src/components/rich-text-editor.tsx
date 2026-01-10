@@ -1,4 +1,4 @@
-import React, { useMemo, useRef } from 'react';
+import React, { useMemo, useRef, useCallback, useState } from 'react';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 
@@ -18,43 +18,60 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   onImageUpload
 }) => {
   const quillRef = useRef<ReactQuill>(null);
+  const [localValue, setLocalValue] = useState(value);
+  const timeoutRef = useRef<NodeJS.Timeout>();
 
-  const imageHandler = useMemo(() => {
-    return () => {
-      if (!onImageUpload) {
-        // Fallback to default behavior - insert image URL
-        const url = prompt('Enter image URL:');
-        if (url) {
+  // Sync local value when external value changes
+  React.useEffect(() => {
+    setLocalValue(value);
+  }, [value]);
+
+  const debouncedOnChange = useCallback((content: string) => {
+    setLocalValue(content);
+    
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+    
+    timeoutRef.current = setTimeout(() => {
+      onChange(content);
+    }, 300); // 300ms debounce
+  }, [onChange]);
+
+  const imageHandler = useCallback(() => {
+    if (!onImageUpload) {
+      // Fallback to default behavior - insert image URL
+      const url = prompt('Enter image URL:');
+      if (url) {
+        const quill = quillRef.current?.getEditor();
+        if (quill) {
+          const range = quill.getSelection();
+          quill.insertEmbed(range?.index || 0, 'image', url);
+        }
+      }
+      return;
+    }
+
+    const input = document.createElement('input');
+    input.setAttribute('type', 'file');
+    input.setAttribute('accept', 'image/*');
+    input.click();
+
+    input.onchange = async () => {
+      const file = input.files?.[0];
+      if (file) {
+        try {
+          const imageUrl = await onImageUpload(file);
           const quill = quillRef.current?.getEditor();
           if (quill) {
             const range = quill.getSelection();
-            quill.insertEmbed(range?.index || 0, 'image', url);
+            quill.insertEmbed(range?.index || 0, 'image', imageUrl);
           }
+        } catch (error) {
+          console.error('Image upload failed:', error);
+          alert('Image upload failed. Please try again.');
         }
-        return;
       }
-
-      const input = document.createElement('input');
-      input.setAttribute('type', 'file');
-      input.setAttribute('accept', 'image/*');
-      input.click();
-
-      input.onchange = async () => {
-        const file = input.files?.[0];
-        if (file) {
-          try {
-            const imageUrl = await onImageUpload(file);
-            const quill = quillRef.current?.getEditor();
-            if (quill) {
-              const range = quill.getSelection();
-              quill.insertEmbed(range?.index || 0, 'image', imageUrl);
-            }
-          } catch (error) {
-            console.error('Image upload failed:', error);
-            alert('Image upload failed. Please try again.');
-          }
-        }
-      };
     };
   }, [onImageUpload]);
 
@@ -77,6 +94,11 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     clipboard: {
       matchVisual: false,
     },
+    history: {
+      delay: 1000,
+      maxStack: 50,
+      userOnly: false
+    }
   }), [imageHandler]);
 
   const formats = [
@@ -104,9 +126,11 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
         .rich-text-editor .ql-editor {
           color: hsl(var(--foreground));
           padding: 12px 15px;
+          min-height: 200px;
         }
         .rich-text-editor .ql-editor.ql-blank::before {
           color: hsl(var(--muted-foreground));
+          font-style: normal;
         }
         .rich-text-editor .ql-toolbar .ql-stroke {
           stroke: hsl(var(--foreground));
@@ -127,20 +151,32 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
           max-width: 100%;
           height: auto;
           cursor: pointer;
+          border-radius: 4px;
+          margin: 5px 0;
         }
         .rich-text-editor .ql-editor img:hover {
           opacity: 0.8;
+        }
+        .rich-text-editor .ql-editor p {
+          margin-bottom: 1em;
+        }
+        .rich-text-editor .ql-editor h1,
+        .rich-text-editor .ql-editor h2,
+        .rich-text-editor .ql-editor h3 {
+          margin-top: 1.5em;
+          margin-bottom: 0.5em;
         }
       `}</style>
       <div className={`rich-text-editor ${className}`}>
         <ReactQuill
           ref={quillRef}
           theme="snow"
-          value={value}
-          onChange={onChange}
+          value={localValue || ''}
+          onChange={debouncedOnChange}
           modules={modules}
           formats={formats}
           placeholder={placeholder}
+          preserveWhitespace={true}
         />
       </div>
     </>

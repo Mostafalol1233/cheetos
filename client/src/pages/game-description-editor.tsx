@@ -32,6 +32,7 @@ export default function GameDescriptionEditor() {
   const { toast } = useToast();
   const [description, setDescription] = useState('');
   const [previewMode, setPreviewMode] = useState(false);
+  const [hasLoaded, setHasLoaded] = useState(false);
 
   const gameId = params?.id;
 
@@ -94,12 +95,13 @@ export default function GameDescriptionEditor() {
     return data.url;
   };
 
-  // Initialize description when game data loads
+  // Initialize description when game data loads (only once)
   useEffect(() => {
-    if (game?.description) {
+    if (game?.description && !hasLoaded) {
       setDescription(game.description);
+      setHasLoaded(true);
     }
-  }, [game]);
+  }, [game?.description, hasLoaded]);
 
   const handleSave = () => {
     if (!gameId) return;
@@ -237,6 +239,7 @@ export default function GameDescriptionEditor() {
             ) : (
               <div className="space-y-4">
                 <RichTextEditor
+                  key={gameId}
                   value={description}
                   onChange={setDescription}
                   onImageUpload={handleImageUpload}
