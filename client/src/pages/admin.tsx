@@ -1021,6 +1021,109 @@ export default function AdminDashboard() {
     return data.url;
   };
 
+  function AdvancedEditorPanel() {
+    const { toast } = useToast();
+    const [selectedId, setSelectedId] = useState<string>(allGames[0]?.id || '');
+    const [description, setDescription] = useState<string>('');
+    const [preview, setPreview] = useState<boolean>(false);
+
+    useEffect(() => {
+      if (!selectedId && allGames.length) setSelectedId(allGames[0].id);
+    }, [allGames, selectedId]);
+
+    const { data: selectedGame, isFetching: isFetchingGame } = useQuery<Game>({
+      queryKey: [`/api/games/id/${selectedId}`],
+      enabled: !!selectedId,
+    });
+
+    useEffect(() => {
+      setDescription(selectedGame?.description || '');
+    }, [selectedGame?.description]);
+
+    const saveMutation = useMutation({
+      mutationFn: async () => {
+        const token = localStorage.getItem('adminToken');
+        const res = await fetch(apiPath(`/api/games/${selectedId}`), {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+          body: JSON.stringify({ description })
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error((data as any)?.message || 'Failed to update description');
+        return data;
+      },
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ['/api/games'] });
+        queryClient.invalidateQueries({ queryKey: ['/api/games/popular'] });
+        queryClient.invalidateQueries({ queryKey: [`/api/games/id/${selectedId}`] });
+        toast({ title: 'Saved', description: 'Description updated', duration: 1500 });
+      },
+      onError: (err: any) => {
+        toast({ title: 'Error', description: err?.message || 'Failed to save', variant: 'destructive' });
+      }
+    });
+
+    return (
+      <Card className="bg-card/50 border-gold-primary/30">
+        <CardHeader>
+          <CardTitle className="text-lg">Advanced Game Description Editor</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <Label>Game</Label>
+              <Select value={selectedId} onValueChange={setSelectedId}>
+                <SelectTrigger><SelectValue placeholder="Select a game" /></SelectTrigger>
+                <SelectContent>
+                  {allGames.map(g => <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="md:col-span-2">
+              {selectedGame ? (
+                <div className="flex items-center gap-3">
+                  {selectedGame.image ? <img src={selectedGame.image} alt="" className="w-12 h-12 rounded border border-gold-primary/30 object-cover" /> : null}
+                  <div>
+                    <div className="font-medium">{selectedGame.name}</div>
+                    <div className="text-xs text-muted-foreground">Category: {selectedGame.category} • Price: {selectedGame.price} EGP</div>
+                  </div>
+                </div>
+              ) : isFetchingGame ? <div className="text-sm text-muted-foreground">Loading game…</div> : <div className="text-sm text-muted-foreground">Select a game</div>}
+            </div>
+          </div>
+
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={() => setPreview(!preview)}>
+              {preview ? 'Edit' : 'Preview'}
+            </Button>
+            <Button
+              onClick={() => saveMutation.mutate()}
+              disabled={!selectedId || saveMutation.isPending}
+              className="bg-gold-primary hover:bg-gold-primary/90"
+              size="sm"
+            >
+              {saveMutation.isPending ? 'Saving…' : 'Save Description'}
+            </Button>
+          </div>
+
+          {preview ? (
+            <div className="prose prose-invert max-w-none border rounded-lg p-4 bg-muted/50 [&_img]:max-w-full [&_img]:h-auto">
+              <div dangerouslySetInnerHTML={{ __html: description || '<p class="text-muted-foreground italic">No description yet...</p>' }} />
+            </div>
+          ) : (
+            <RichTextEditor
+              value={description}
+              onChange={setDescription}
+              onImageUpload={handleRichTextImageUpload}
+              placeholder="Write a detailed description for this game..."
+              className="min-h-[400px]"
+            />
+          )}
+        </CardContent>
+      </Card>
+    );
+  }
+
   function ContentEditorPanel() {
     const { toast } = useToast();
     const { data: content } = useQuery<{ ok: boolean; content: { title?: string; description?: string; link?: string } }>({
@@ -1150,6 +1253,7 @@ export default function AdminDashboard() {
           </TabsTrigger>
           <TabsTrigger value="catbox-upload" data-testid="tab-catbox-upload" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Catbox Image Upload</TabsTrigger>
           <TabsTrigger value="image-manager" data-testid="tab-image-manager" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Image Manager</TabsTrigger>
+          <TabsTrigger value="advanced-editor" data-testid="tab-advanced-editor" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Advanced Editor</TabsTrigger>
           <TabsTrigger value="content" data-testid="tab-content" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Content</TabsTrigger>
         </TabsList>
             <ScrollBar orientation="horizontal" />
@@ -1342,6 +1446,11 @@ export default function AdminDashboard() {
                 <ImageManagerPanel />
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* Advanced Editor Tab */}
+          <TabsContent value="advanced-editor" className="space-y-6">
+            <AdvancedEditorPanel />
           </TabsContent>
 
           {/* Content Tab */}
