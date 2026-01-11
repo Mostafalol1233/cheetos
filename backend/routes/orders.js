@@ -38,7 +38,7 @@ router.post('/', async (req, res) => {
   if (!items || !items.length) return res.status(400).json({ message: 'No items in order' });
   if (!customer_email || !customer_phone) return res.status(400).json({ message: 'Contact info required' });
 
-  const orderId = `order_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+  const orderId = `txn_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
   const newOrder = {
     id: orderId,
     user_id: req.user ? req.user.id : null,
@@ -68,17 +68,34 @@ router.post('/', async (req, res) => {
     writeOrders(orders);
   }
 
-  // Send WhatsApp
+  // Send notifications (customer + admin/connected numbers)
   try {
-    const waText = `*New Order #${orderId}*\nTotal: ${total_amount} EGP\nItems: ${items.length}\nStatus: Pending\n\nThank you for shopping with GameCart!`;
-    await sendWhatsAppMessage(customer_phone, waText);
-  } catch (waError) {
-    console.error('WhatsApp failed:', waError.message);
-  }
+    const itemsList = items.map(i => `- ${i.title || i.name || i.id} (x${i.quantity})`).join('\n');
+    const waText = `*New Order #${orderId}*\nTotal: ${total_amount} EGP\nCustomer: ${customer_name} (${customer_phone})\nEmail: ${customer_email || 'N/A'}\nItems:\n${itemsList}\n\nStatus: Pending`;
 
-  // Send Email
-  if (newOrder.customer_email) {
-    await sendEmail(newOrder.customer_email, 'orderConfirmation', newOrder);
+    // Notify customer (client can pass `deliver_via` = 'whatsapp' to force WhatsApp delivery)
+    const deliverVia = req.body.deliver_via || 'email';
+    const customerMsg = `Thank you for your order #${orderId}! We are processing it.`;
+
+    if (deliverVia === 'whatsapp') {
+      try { await sendWhatsAppMessage(customer_phone, customerMsg); } catch (e) { console.error('Customer WhatsApp failed:', e?.message || e); }
+    } else {
+      if (newOrder.customer_email) {
+        try { await sendEmail(newOrder.customer_email, 'orderConfirmation', newOrder); } catch (e) { console.error('Customer email failed:', e?.message || e); }
+      }
+    }
+
+    // Notify admin and connected numbers with full details
+    const adminPhone = (process.env.ADMIN_PHONE || '').trim();
+    const connectedPhone = (process.env.CONNECTED_PHONE || '').trim();
+    if (adminPhone) {
+      try { await sendWhatsAppMessage(adminPhone, waText); } catch (e) { console.error('Admin WhatsApp failed:', e?.message || e); }
+    }
+    if (connectedPhone && connectedPhone !== adminPhone) {
+      try { await sendWhatsAppMessage(connectedPhone, waText); } catch (e) { console.error('Connected WhatsApp failed:', e?.message || e); }
+    }
+  } catch (waErr) {
+    console.error('Failed to send notifications:', waErr.message || waErr);
   }
 
   res.status(201).json(newOrder);

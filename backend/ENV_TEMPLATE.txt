@@ -30,7 +30,10 @@ AI_MODEL=gemini-1.5-flash
 WHATSAPP_TOKEN=your_whatsapp_token
 WHATSAPP_PHONE_NUMBER_ID=your_phone_number_id
 WHATSAPP_VERIFY_TOKEN=your_verify_token
-ADMIN_PHONE=+201234567890
+# Primary admin/notification WhatsApp number (change as needed)
+ADMIN_PHONE=+201500302461
+# Optional connected number to receive seller alerts in addition to ADMIN_PHONE
+CONNECTED_PHONE=+201500302461
 
 # Email Configuration (Brevo/Sendinblue)
 BREVO_USER=your_brevo_login_email

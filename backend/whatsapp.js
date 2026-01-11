@@ -2,8 +2,10 @@
 import makeWASocket, {
   DisconnectReason,
   useMultiFileAuthState,
-  fetchLatestBaileysVersion
+  fetchLatestBaileysVersion,
+  downloadContentFromMessage
 } from "@whiskeysockets/baileys";
+import pool from './db.js';
 import { Boom } from "@hapi/boom";
 import pino from "pino";
 import fs from "fs";
@@ -169,36 +171,88 @@ export async function startWhatsApp() {
         if (!msg.key.fromMe) {
           const from = msg.key.remoteJid;
           const text = msg.message?.conversation || msg.message?.extendedTextMessage?.text;
-          
-          if (from && text) {
-             try {
-                 const phoneNumber = from.replace('@s.whatsapp.net', '');
-                 const id = `wa_${Date.now()}_${Math.random().toString(36).slice(2,9)}`;
-                 await storage.createWhatsAppMessage({
-                   id,
-                   waMessageId: msg.key.id || null,
-                   direction: 'inbound',
-                   fromPhone: from,
-                   toPhone: null,
-                   message: text,
-                   timestamp: Date.now(),
-                   status: 'received'
-                 });
-                 
-                 await storage.createSellerAlert({
-                   id: `alert_${Date.now()}`,
-                   type: 'whatsapp_message',
-                   summary: `New WhatsApp from ${from}: ${text.slice(0, 50)}`,
-                   read: false,
-                   flagged: false,
-                   createdAt: Date.now()
-                 });
-                 
-                 // Only log user messages (not system messages)
-                 console.log(`📱 User message from ${phoneNumber}: ${text.substring(0, 60)}${text.length > 60 ? '...' : ''}`);
-             } catch (err) {
-                 // Silent fail
-             }
+          const hasImage = !!(msg.message && (msg.message.imageMessage || msg.message.documentMessage && (msg.message.documentMessage.mimetype || '').startsWith('image')));
+
+          if (from && (text || hasImage)) {
+            try {
+              const phoneNumber = from.replace('@s.whatsapp.net', '');
+              const id = `wa_${Date.now()}_${Math.random().toString(36).slice(2,9)}`;
+
+              let mediaUrl = null;
+              if (hasImage) {
+                try {
+                  const stream = await downloadContentFromMessage(msg.message.imageMessage || msg.message.documentMessage, 'image');
+                  const parts = [];
+                  for await (const chunk of stream) parts.push(chunk);
+                  const buffer = Buffer.concat(parts);
+                  const filename = `wa_${Date.now()}_${Math.random().toString(36).slice(2,9)}.jpg`;
+                  const uploadDir = path.join(process.cwd(), 'uploads');
+                  if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
+                  const dest = path.join(uploadDir, filename);
+                  fs.writeFileSync(dest, buffer);
+                  const front = (process.env.FRONTEND_URL || `http://localhost:${process.env.PORT || 20291}`).replace(/\/$/, '');
+                  mediaUrl = `${front}/uploads/${filename}`;
+                } catch (mediaErr) {
+                  console.error('Failed to save inbound media:', mediaErr?.message || mediaErr);
+                }
+              }
+
+              await storage.createWhatsAppMessage({
+                id,
+                waMessageId: msg.key.id || null,
+                direction: 'inbound',
+                fromPhone: from,
+                toPhone: null,
+                message: text || (mediaUrl ? `Image received: ${mediaUrl}` : ''),
+                mediaUrl: mediaUrl || null,
+                timestamp: Date.now(),
+                status: 'received'
+              });
+
+              // Create seller alert
+              const alertId = `alert_${Date.now()}`;
+              const summary = text ? `New WhatsApp from ${phoneNumber}: ${text.slice(0, 80)}` : `Image received from ${phoneNumber}`;
+              await storage.createSellerAlert({ id: alertId, type: hasImage ? 'payment_confirmation' : 'whatsapp_message', summary, read: false, flagged: false, createdAt: Date.now() });
+
+              // Lookup user by phone in database (if available) to include name/email and latest transaction
+              let userInfo = null;
+              try {
+                const phoneDigits = phoneNumber.replace(/[^\d]/g, '');
+                const q = await pool.query('SELECT id, name AS full_name, email FROM users WHERE phone = $1 OR phone = $2 LIMIT 1', [phoneDigits, `+${phoneDigits}`]);
+                if (q.rows.length > 0) userInfo = q.rows[0];
+              } catch (dbErr) {
+                // ignore
+              }
+
+              // Gather recent pending transaction for user (if any)
+              let itemsSummary = '';
+              if (userInfo && userInfo.id) {
+                try {
+                  const tx = await pool.query('SELECT id FROM transactions WHERE user_id = $1 ORDER BY timestamp DESC LIMIT 1', [userInfo.id]);
+                  if (tx.rows.length > 0) {
+                    const txId = tx.rows[0].id;
+                    const tis = await pool.query('SELECT game_id, quantity, price FROM transaction_items WHERE transaction_id = $1', [txId]);
+                    itemsSummary = tis.rows.map(r => `- ${r.game_id} x${r.quantity} @ ${r.price}`).join('\n');
+                  }
+                } catch (txErr) { /* ignore */ }
+              }
+
+              // Notify admin/connected numbers
+              const adminPhone = (process.env.ADMIN_PHONE || '').trim();
+              const connectedPhone = (process.env.CONNECTED_PHONE || '').trim();
+              const userDisplay = userInfo ? `${userInfo.full_name || ''} <${userInfo.email || ''}>` : phoneNumber;
+              const notifyText = `📌 Payment confirmation received\nFrom: ${userDisplay}\nPhone: ${phoneNumber}\n${itemsSummary ? `Items:\n${itemsSummary}\n` : ''}${mediaUrl ? `Image: ${mediaUrl}` : ''}`;
+              if (adminPhone) {
+                try { await sendWhatsAppMessage(adminPhone, notifyText); } catch (e) { console.error('Failed to notify admin about inbound WA:', e?.message || e); }
+              }
+              if (connectedPhone && connectedPhone !== adminPhone) {
+                try { await sendWhatsAppMessage(connectedPhone, notifyText); } catch (e) { console.error('Failed to notify connected about inbound WA:', e?.message || e); }
+              }
+
+              console.log(`📱 User message from ${phoneNumber}: ${ (text || '').substring(0, 60) }${(text && text.length > 60) ? '...' : ''}`);
+            } catch (err) {
+              console.error('Failed processing inbound WhatsApp message:', err?.message || err);
+            }
           }
         }
       }
