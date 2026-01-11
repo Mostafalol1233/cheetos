@@ -1,12 +1,12 @@
 import React, { useEffect } from 'react';
 import { useCheckout } from '@/state/checkout';
 import { useCart } from '@/lib/cart-context';
-import { StepCart } from './checkout/StepCart';
-import { StepDetails } from './checkout/StepDetails';
-import { StepPayment } from './checkout/StepPayment';
-import { StepReview } from './checkout/StepReview';
-import { StepProcessing } from './checkout/StepProcessing';
-import { StepResult } from './checkout/StepResult';
+import { StepCart } from '@/components/checkout/StepCart';
+import { StepDetails } from '@/components/checkout/StepDetails';
+import { StepPayment } from '@/components/checkout/StepPayment';
+import { StepReview } from '@/components/checkout/StepReview';
+import { StepProcessing } from '@/components/checkout/StepProcessing';
+import { StepResult } from '@/components/checkout/StepResult';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Card, CardContent } from '@/components/ui/card';
