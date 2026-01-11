@@ -24,9 +24,12 @@ export function StepResult() {
                 Your order has been placed successfully. We'll contact you soon with the next steps.
               </p>
               {orderId && (
-                <p className="text-sm text-muted-foreground mb-4">
-                  Order ID: {orderId}
-                </p>
+                <div className="flex items-center justify-center gap-2 mb-4">
+                  <p className="text-sm text-muted-foreground">Order ID: {orderId}</p>
+                  <Button size="sm" variant="ghost" onClick={async () => { try { await navigator.clipboard.writeText(orderId); } catch {} }}>
+                    Copy
+                  </Button>
+                </div>
               )}
             </>
           ) : isFailed ? (

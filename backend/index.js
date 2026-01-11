@@ -2727,6 +2727,24 @@ app.get('/api/track/:code', async (req, res) => {
     const { code } = req.params;
     if (!code) return res.status(400).json({ message: 'code required' });
     if (code.startsWith('txn_') || code.startsWith('order_')) {
+      // First, try payment confirmations with txn_ prefix (we moved pc_ -> txn_)
+      try {
+        const confQ = await pool.query('SELECT * FROM payment_confirmations WHERE id = $1', [code]);
+        if (confQ.rows.length > 0) {
+          const conf = confQ.rows[0];
+          let tx = null; let items = [];
+          if (conf.transaction_id) {
+            try {
+              const t = await pool.query('SELECT * FROM transactions WHERE id = $1', [conf.transaction_id]);
+              tx = t.rows[0] || null;
+              const it = await pool.query('SELECT * FROM transaction_items WHERE transaction_id = $1', [conf.transaction_id]);
+              items = it.rows || [];
+            } catch {}
+          }
+          return res.json({ confirmation: conf, transaction: tx, items });
+        }
+      } catch (e) {}
+
       // Try transactions first
       const tx = await pool.query('SELECT * FROM transactions WHERE id = $1', [code]);
       const items = await pool.query('SELECT * FROM transaction_items WHERE transaction_id = $1', [code]);
@@ -2860,7 +2878,7 @@ app.post('/api/transactions/confirm', receiptUpload.single('receipt'), async (re
     const encMsg = message ? encryptMessage(String(message)) : null;
     const relativePath = req.file ? `/uploads/${req.file.filename}` : null;
     const url = relativePath ? (CDN_BASE_URL ? new URL(relativePath, CDN_BASE_URL).toString() : relativePath) : null;
-    const id = `pc_${Date.now()}`;
+    const id = `txn_${Date.now()}_${Math.random().toString(36).slice(2,9)}`;
     await pool.query(
       'INSERT INTO payment_confirmations (id, transaction_id, message_encrypted, receipt_url) VALUES ($1, $2, $3, $4)',
       [id, transactionId, encMsg, url]
@@ -2870,6 +2888,27 @@ app.post('/api/transactions/confirm', receiptUpload.single('receipt'), async (re
       'INSERT INTO payment_audit_logs (id, transaction_id, action, summary) VALUES ($1, $2, $3, $4)',
       [auditId, transactionId, 'confirm', 'Buyer submitted payment confirmation']
     );
+    // Notify admin/connected numbers about the confirmation
+    try {
+      const txq = await pool.query('SELECT * FROM transactions WHERE id = $1', [transactionId]);
+      const tx = txq.rows[0] || null;
+      let user = null;
+      if (tx && tx.user_id) {
+        const uq = await pool.query('SELECT name AS full_name, email, phone FROM users WHERE id = $1', [tx.user_id]);
+        user = uq.rows[0] || null;
+      }
+      const adminPhone = (process.env.ADMIN_PHONE || '').trim();
+      const connectedPhone = (process.env.CONNECTED_PHONE || '').trim();
+      const userDisplay = user ? `${user.full_name || ''} <${user.email || ''}>` : (tx ? tx.customerName || tx.customer_name || '' : 'Unknown');
+      const phone = user ? (user.phone || '') : (tx ? tx.customerPhone || tx.customer_phone || '' : '');
+      const confirmMsg = `📌 Payment confirmation submitted\nConfirmation ID: ${id}\nTransaction: ${transactionId}\nUser: ${userDisplay}\nPhone: ${phone}\nReceipt: ${url || 'N/A'}`;
+      if (adminPhone) {
+        try { await sendWhatsAppMessage(adminPhone, confirmMsg); } catch (e) { console.error('Admin WA notify failed:', e?.message || e); }
+      }
+      if (connectedPhone && connectedPhone !== adminPhone) {
+        try { await sendWhatsAppMessage(connectedPhone, confirmMsg); } catch (e) { console.error('Connected WA notify failed:', e?.message || e); }
+      }
+    } catch (notifyErr) { console.error('Failed to notify about payment confirmation:', notifyErr?.message || notifyErr); }
     res.status(201).json({ id, receiptUrl: url });
   } catch (err) {
     res.status(500).json({ message: err.message });

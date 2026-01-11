@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useCheckout, PAYMENT_METHODS } from '@/state/checkout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,6 +8,7 @@ import { apiRequest } from '@/lib/queryClient';
 
 export function StepReview() {
   const { cart, contact, paymentMethod, subtotal, total, setOrderMeta, setError, setStep } = useCheckout();
+  const [deliverVia, setDeliverVia] = useState<'email'|'whatsapp'>('email');
 
   const selectedPayment = PAYMENT_METHODS.find(m => m.key === paymentMethod);
 
@@ -26,6 +27,8 @@ export function StepReview() {
         })),
         total_amount: total(),
         payment_method: paymentMethod,
+        payment_method_label: PAYMENT_METHODS.find(m => m.key === paymentMethod)?.label || paymentMethod,
+        deliver_via: deliverVia,
       };
 
       const response = await apiRequest('/api/orders', {
@@ -87,6 +90,24 @@ export function StepReview() {
           </CardContent>
         </Card>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Delivery Preference</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex gap-4">
+            <label className="inline-flex items-center space-x-2">
+              <input type="radio" name="deliver" value="email" checked={deliverVia === 'email'} onChange={() => setDeliverVia('email')} />
+              <span>Email</span>
+            </label>
+            <label className="inline-flex items-center space-x-2">
+              <input type="radio" name="deliver" value="whatsapp" checked={deliverVia === 'whatsapp'} onChange={() => setDeliverVia('whatsapp')} />
+              <span>WhatsApp</span>
+            </label>
+          </div>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>

@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { useCheckout } from '@/state/checkout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 export function StepProcessing() {
   const { orderId, orderStatus, setOrderMeta, setStep } = useCheckout();
@@ -28,9 +29,12 @@ export function StepProcessing() {
             Please complete your payment using the selected method.
           </p>
           {orderId && (
-            <p className="text-sm text-muted-foreground">
-              Order ID: {orderId}
-            </p>
+            <div className="flex items-center justify-center gap-2">
+              <p className="text-sm text-muted-foreground">Order ID: {orderId}</p>
+              <Button size="sm" variant="ghost" onClick={async () => { try { await navigator.clipboard.writeText(orderId); } catch {} }}>
+                Copy
+              </Button>
+            </div>
           )}
           <div className="mt-4 text-sm text-muted-foreground">
             This may take a few moments...
