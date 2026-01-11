@@ -2901,12 +2901,24 @@ app.post('/api/transactions/confirm', receiptUpload.single('receipt'), async (re
       const connectedPhone = (process.env.CONNECTED_PHONE || '').trim();
       const userDisplay = user ? `${user.full_name || ''} <${user.email || ''}>` : (tx ? tx.customerName || tx.customer_name || '' : 'Unknown');
       const phone = user ? (user.phone || '') : (tx ? tx.customerPhone || tx.customer_phone || '' : '');
-      const confirmMsg = `📌 Payment confirmation submitted\nConfirmation ID: ${id}\nTransaction: ${transactionId}\nUser: ${userDisplay}\nPhone: ${phone}\nReceipt: ${url || 'N/A'}`;
+      const confirmMsg = `📌 Payment confirmation submitted\nConfirmation ID: ${id}\nTransaction: ${transactionId}\nUser: ${userDisplay}\nPhone: ${phone}`;
       if (adminPhone) {
-        try { await sendWhatsAppMessage(adminPhone, confirmMsg); } catch (e) { console.error('Admin WA notify failed:', e?.message || e); }
+        try {
+          if (url) {
+            await sendWhatsAppMedia(adminPhone, url, confirmMsg);
+          } else {
+            await sendWhatsAppMessage(adminPhone, confirmMsg + '\nReceipt: N/A');
+          }
+        } catch (e) { console.error('Admin WA notify failed:', e?.message || e); }
       }
       if (connectedPhone && connectedPhone !== adminPhone) {
-        try { await sendWhatsAppMessage(connectedPhone, confirmMsg); } catch (e) { console.error('Connected WA notify failed:', e?.message || e); }
+        try {
+          if (url) {
+            await sendWhatsAppMedia(connectedPhone, url, confirmMsg);
+          } else {
+            await sendWhatsAppMessage(connectedPhone, confirmMsg + '\nReceipt: N/A');
+          }
+        } catch (e) { console.error('Connected WA notify failed:', e?.message || e); }
       }
     } catch (notifyErr) { console.error('Failed to notify about payment confirmation:', notifyErr?.message || notifyErr); }
     res.status(201).json({ id, receiptUrl: url });

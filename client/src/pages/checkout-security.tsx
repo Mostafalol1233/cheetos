@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
+import { Copy } from "lucide-react";
 
 type TxItem = { id: string; game_id: string; quantity: number; price: number };
 type Tx = { id: string; payment_method: string; total: number; status: string; created_at: string };
@@ -123,11 +124,20 @@ export default function CheckoutSecurityPage() {
                 </div>
                 <div className="mt-4 border-t pt-3">
                   <h4 className="font-medium mb-2">Items</h4>
-                  <div className="space-y-1">
+                  <div className="space-y-2">
                     {items.map((it) => (
-                      <div key={it.id} className="flex justify-between text-sm">
-                        <span>x{it.quantity}</span>
-                        <span>{(it.price * it.quantity).toFixed(2)} EGP</span>
+                      <div key={it.id} className="flex items-center gap-3 p-2 border rounded">
+                        <img
+                          src={`/images/${it.game_id}.webp` || '/images/placeholder.webp'}
+                          alt={it.game_id}
+                          className="w-12 h-12 object-cover rounded"
+                          onError={(e) => { e.currentTarget.src = '/images/placeholder.webp'; }}
+                        />
+                        <div className="flex-1">
+                          <span className="font-medium">{it.game_id}</span>
+                          <div className="text-sm text-muted-foreground">Qty: {it.quantity} × {it.price.toFixed(2)} EGP</div>
+                        </div>
+                        <span className="font-semibold">{(it.price * it.quantity).toFixed(2)} EGP</span>
                       </div>
                     ))}
                   </div>
@@ -136,7 +146,19 @@ export default function CheckoutSecurityPage() {
                   <div className="mt-4 bg-muted/20 rounded-lg p-3">
                     <div>
                       <p className="font-medium">{payInfo.title || 'Transfer number'}</p>
-                      <p>{payInfo.value}</p>
+                      <div className="flex items-center gap-2">
+                        <p className="flex-1">{payInfo.value}</p>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            navigator.clipboard.writeText(payInfo.value);
+                            toast.success('Copied to clipboard!');
+                          }}
+                        >
+                          <Copy className="w-4 h-4" />
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 ) : null}
