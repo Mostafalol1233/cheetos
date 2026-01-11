@@ -388,47 +388,6 @@ app.use(cors({
   credentials: true
 }));
 
-// API Origin Protection Middleware
-const ALLOWED_ORIGINS = [
-  'http://localhost:5173',
-  'http://localhost:5000',
-  'http://diaasadek.com',
-  'https://diaasadek.com',
-  'https://www.diaasadek.com',
-  'https://1-backendzip--yeogav.replit.app',
-  'http://localhost:3000',
-  'https://diaaa.vercel.app',
-  process.env.FRONTEND_URL
-].filter(Boolean);
-
-app.use((req, res, next) => {
-  const path = req.path;
-  // Allow public endpoints that don't require origin validation
-  const publicEndpoints = [
-    '/api/public/',
-    '/api/countdown/',
-    '/api/games/popular',
-    '/api/chat-widget/config',
-    '/api/categories'
-  ];
-  const isPublicEndpoint = publicEndpoints.some(endpoint => path.startsWith(endpoint));
-
-  if (path.startsWith('/api/') && !path.startsWith('/api/auth/') && !isPublicEndpoint) {
-    const origin = req.headers.origin;
-    if (!origin || !ALLOWED_ORIGINS.some(allowed => {
-      if (allowed.includes('*')) {
-        // Handle wildcard
-        const pattern = allowed.replace(/\*/g, '.*');
-        return new RegExp(`^${pattern}$`).test(origin);
-      }
-      return allowed === origin;
-    })) {
-      return res.status(403).json({ message: 'Access denied. Requests must come from allowed origins.' });
-    }
-  }
-  next();
-});
-
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use(requestLogger);
@@ -976,6 +935,28 @@ app.get('/api/categories', async (req, res) => {
       message: 'Failed to fetch categories', 
       error: err.message
     });
+  }
+});
+
+// Current or next countdown (prevents 500 on /api/countdown/current)
+app.get('/api/countdown/current', async (req, res) => {
+  try {
+    // Prefer the nearest future countdown first
+    const future = await pool.query(
+      "SELECT * FROM countdowns WHERE target_at >= NOW() ORDER BY target_at ASC LIMIT 1"
+    );
+    if (future.rows.length > 0) return res.json(future.rows[0]);
+
+    // Otherwise return the most recent past countdown
+    const past = await pool.query(
+      "SELECT * FROM countdowns WHERE target_at < NOW() ORDER BY target_at DESC LIMIT 1"
+    );
+    if (past.rows.length > 0) return res.json(past.rows[0]);
+
+    return res.json(null);
+  } catch (err) {
+    console.error('Countdown fetch error:', err?.message || err);
+    res.status(500).json({ message: 'Failed to fetch countdown' });
   }
 });
 
@@ -2740,6 +2721,46 @@ app.get('/api/transactions/:id', async (req, res) => {
   }
 });
 
+// Unified track endpoint: supports txn_* (transaction/order) and pc_* (payment confirmation)
+app.get('/api/track/:code', async (req, res) => {
+  try {
+    const { code } = req.params;
+    if (!code) return res.status(400).json({ message: 'code required' });
+    if (code.startsWith('txn_') || code.startsWith('order_')) {
+      // Try transactions first
+      const tx = await pool.query('SELECT * FROM transactions WHERE id = $1', [code]);
+      const items = await pool.query('SELECT * FROM transaction_items WHERE transaction_id = $1', [code]);
+      // Try orders table as well
+      let order = null;
+      try {
+        const r = await pool.query('SELECT * FROM orders WHERE id = $1', [code]);
+        order = r.rows[0] || null;
+      } catch {}
+      return res.json({ transaction: tx.rows[0] || null, items: items.rows || [], order });
+    }
+    if (code.startsWith('pc_')) {
+      // Payment confirmation path
+      const r = await pool.query('SELECT * FROM payment_confirmations WHERE id = $1', [code]);
+      if (!r.rows.length) return res.status(404).json({ message: 'Not found' });
+      const conf = r.rows[0];
+      // Attach transaction info if available
+      let tx = null; let items = [];
+      if (conf.transaction_id) {
+        try {
+          const t = await pool.query('SELECT * FROM transactions WHERE id = $1', [conf.transaction_id]);
+          tx = t.rows[0] || null;
+          const it = await pool.query('SELECT * FROM transaction_items WHERE transaction_id = $1', [conf.transaction_id]);
+          items = it.rows || [];
+        } catch {}
+      }
+      return res.json({ confirmation: conf, transaction: tx, items });
+    }
+    return res.status(404).json({ message: 'Unknown code format' });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 const receiptUpload = multer({
   storage,
   limits: { fileSize: 5 * 1024 * 1024 },
@@ -2837,7 +2858,8 @@ app.post('/api/transactions/confirm', receiptUpload.single('receipt'), async (re
       return res.status(401).json({ message: 'Session expired' });
     }
     const encMsg = message ? encryptMessage(String(message)) : null;
-    const url = req.file ? `${CDN_BASE_URL || ''}/uploads/${req.file.filename}`.replace(/\/\/+/g, '/') : null;
+    const relativePath = req.file ? `/uploads/${req.file.filename}` : null;
+    const url = relativePath ? (CDN_BASE_URL ? new URL(relativePath, CDN_BASE_URL).toString() : relativePath) : null;
     const id = `pc_${Date.now()}`;
     await pool.query(
       'INSERT INTO payment_confirmations (id, transaction_id, message_encrypted, receipt_url) VALUES ($1, $2, $3, $4)',
@@ -3330,17 +3352,33 @@ function sendSMS(phone, text) {
 app.post('/api/admin/transactions/:id/respond', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
-    const { message, link } = req.body;
-    const txRes = await pool.query('SELECT t.*, u.phone FROM transactions t LEFT JOIN users u ON t.user_id = u.id WHERE t.id = $1', [id]);
+    const { message, link } = req.body || {};
+    const txRes = await pool.query('SELECT t.*, u.phone, u.name, u.email FROM transactions t LEFT JOIN users u ON t.user_id = u.id WHERE t.id = $1', [id]);
     if (txRes.rows.length === 0) {
       return res.status(404).json({ message: 'Transaction not found' });
     }
-    const phone = txRes.rows[0].phone;
+    const tx = txRes.rows[0];
+    const phone = tx.phone;
+
+    // Audit
     const auditId = `pa_${Date.now()}`;
     await pool.query('INSERT INTO payment_audit_logs (id, transaction_id, action, summary) VALUES ($1, $2, $3, $4)', [auditId, id, 'respond', 'Seller responded to payment confirmation']);
+
+    // Mark order/transaction as confirmed
+    try { await pool.query("UPDATE transactions SET status = 'confirmed' WHERE id = $1", [id]); } catch {}
+    try { await pool.query("UPDATE orders SET status = 'confirmed', updated_at = NOW() WHERE id = $1", [id]); } catch {}
+
+    // Notify user via SMS placeholder and WhatsApp to admin/sellers
     const siteUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-    const text = `New message regarding your order - please check your account on ${siteUrl}. Ref: ${id}`;
-    sendSMS(phone, text);
+    const notify = `Order ${id} has been confirmed. ${message ? 'Message: ' + String(message).slice(0,200) : ''}`;
+    try { sendSMS(phone, `Your order was confirmed. Check ${siteUrl}/track-order`); } catch {}
+    const adminPhone = (process.env.ADMIN_PHONE || '').trim();
+    const sellerPhones = (process.env.SELLER_PHONES || '').split(',').map(p => p.trim()).filter(Boolean);
+    const phonesToNotify = adminPhone ? [adminPhone, ...sellerPhones] : sellerPhones;
+    for (const p of phonesToNotify) {
+      try { await sendWhatsAppMessage(p, `✅ ${notify}`); } catch {}
+    }
+
     res.json({ ok: true });
   } catch (err) {
     res.status(500).json({ message: err.message });

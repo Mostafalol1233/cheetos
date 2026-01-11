@@ -28,6 +28,7 @@ import TermsPage from "./pages/terms";
 import PrivacyPage from "./pages/privacy";
 import RefundsPage from "./pages/refunds";
 import TrackOrderPage from "./pages/track-order";
+import Checkout from "./pages/Checkout";
 import { LiveChatWidget } from "@/components/live-chat-widget";
 import { Header } from "@/components/header";
 import { CartSidebar } from "@/components/cart-sidebar";
@@ -62,6 +63,7 @@ function ProtectedAdminRoute() {
         <Route path="/games" component={GamesPage} />
         <Route path="/packs" component={PacksPage} />
         <Route path="/support" component={SupportPage} />
+        <Route path="/checkout" component={Checkout} />
         <Route path="/checkout/security/:id" component={CheckoutSecurityPage} />
         <Route path="/admin/login" component={AdminLoginPage} />
         <Route path="/admin/packages/:gameId" component={AdminPackagesPage} />
