@@ -403,7 +403,17 @@ const ALLOWED_ORIGINS = [
 
 app.use((req, res, next) => {
   const path = req.path;
-  if (path.startsWith('/api/') && !path.startsWith('/api/auth/')) {
+  // Allow public endpoints that don't require origin validation
+  const publicEndpoints = [
+    '/api/public/',
+    '/api/countdown/',
+    '/api/games/popular',
+    '/api/chat-widget/config',
+    '/api/categories'
+  ];
+  const isPublicEndpoint = publicEndpoints.some(endpoint => path.startsWith(endpoint));
+
+  if (path.startsWith('/api/') && !path.startsWith('/api/auth/') && !isPublicEndpoint) {
     const origin = req.headers.origin;
     if (!origin || !ALLOWED_ORIGINS.some(allowed => {
       if (allowed.includes('*')) {
@@ -4116,12 +4126,18 @@ app.get('/api/health', (req, res) => {
 
 // Test endpoint to verify API is accessible
 app.get('/api/test', (req, res) => {
-  res.json({ 
-    message: 'API is working!', 
+  res.json({
+    message: 'API is working!',
     timestamp: new Date().toISOString(),
     server: 'GameCart Backend',
     version: '1.0.0'
   });
+});
+
+// Welcome endpoint that logs requests and returns a welcome message
+app.get('/api/welcome', (req, res) => {
+  console.log(`Request received: ${req.method} ${req.path}`);
+  res.json({ message: 'Welcome to the GameCart API Service!' });
 });
 
 // Diagnostics: DB & Storage

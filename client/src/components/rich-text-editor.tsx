@@ -2,7 +2,7 @@ import React, { useMemo, useRef, useCallback } from 'react';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 
-interface AdvancedRichTextEditorProps {
+interface RichTextEditorProps {
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
@@ -12,7 +12,7 @@ interface AdvancedRichTextEditorProps {
 
 // New advanced rich editor built on Quill with a comprehensive toolbar, color controls,
 // headings, lists, alignment, direction, code, blockquote, and robust image upload handler.
-const AdvancedRichTextEditor: React.FC<AdvancedRichTextEditorProps> = ({
+const RichTextEditor: React.FC<RichTextEditorProps> = ({
   value,
   onChange,
   placeholder = 'Enter description...',
@@ -194,4 +194,4 @@ const AdvancedRichTextEditor: React.FC<AdvancedRichTextEditorProps> = ({
   );
 };
 
-export default AdvancedRichTextEditor;
+export default RichTextEditor;
