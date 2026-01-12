@@ -62,6 +62,18 @@ const createTables = async () => {
         gradient TEXT,
         icon TEXT
       );
+
+      CREATE TABLE IF NOT EXISTS countdowns (
+        id VARCHAR(50) PRIMARY KEY,
+        title VARCHAR(120) NOT NULL,
+        target_at TIMESTAMP NOT NULL,
+        image_url TEXT,
+        text TEXT,
+        share_text TEXT,
+        styles JSONB DEFAULT '{}',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
     `);
     console.log('Tables created successfully');
   } catch (err) {
