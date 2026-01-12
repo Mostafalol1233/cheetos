@@ -31,7 +31,16 @@ const createTables = async () => {
         email TEXT UNIQUE NOT NULL,
         password_hash TEXT NOT NULL,
         name TEXT,
+        phone TEXT,
         role TEXT DEFAULT 'user',
+        created_at TIMESTAMP DEFAULT NOW()
+      );
+
+      CREATE TABLE IF NOT EXISTS messages (
+        id TEXT PRIMARY KEY,
+        user_id TEXT REFERENCES users(id),
+        text TEXT NOT NULL,
+        sender TEXT NOT NULL, -- 'user' or 'admin'
         created_at TIMESTAMP DEFAULT NOW()
       );
       

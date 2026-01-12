@@ -1,10 +1,11 @@
 import { Link } from "wouter";
-import { ShoppingCart, Sun, Moon, Menu, X, Gamepad2, Sparkles, Zap } from "lucide-react";
+import { ShoppingCart, Sun, Moon, Menu, X, Gamepad2, Sparkles, Zap, User, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AccessibilityToolbar } from "@/components/accessibility-mode";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { useCart } from "@/lib/cart-context";
 import { useTheme } from "@/components/theme-provider";
+import { useUserAuth } from "@/lib/user-auth-context";
 import { useState, useEffect } from "react";
 import { useTranslation } from "@/lib/translation";
 const logo = "https://files.catbox.moe/brmkrj.png";
@@ -17,6 +18,7 @@ export function Header({ onCartClick }: HeaderProps) {
   const { getItemCount } = useCart();
   const itemCount = getItemCount();
   const { theme, setTheme } = useTheme();
+  const { user, isAuthenticated, logout } = useUserAuth();
   const { t } = useTranslation();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -156,6 +158,37 @@ export function Header({ onCartClick }: HeaderProps) {
                 )}
                 <div className="absolute inset-0 rounded-full bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
               </Button>
+
+              {/* User Authentication */}
+              {isAuthenticated ? (
+                <div className="flex items-center space-x-2">
+                  <Link href="/profile">
+                    <Button
+                      variant="ghost"
+                      className="text-foreground hover:text-gold-primary transition-all duration-300 hover:bg-gold-primary/10 px-4 py-2 rounded-full hover:scale-105"
+                    >
+                      <User className="mr-2 h-4 w-4" />
+                      <span className="hidden sm:inline">{user?.name || 'Profile'}</span>
+                    </Button>
+                  </Link>
+                  <Button
+                    onClick={logout}
+                    variant="ghost"
+                    className="text-foreground hover:text-red-400 transition-all duration-300 hover:bg-red-500/10 px-4 py-2 rounded-full hover:scale-105"
+                  >
+                    <LogOut className="h-4 w-4" />
+                  </Button>
+                </div>
+              ) : (
+                <Link href="/login">
+                  <Button
+                    className="bg-gradient-to-r from-gold-primary to-neon-pink hover:from-gold-secondary hover:to-neon-pink text-black font-semibold px-6 py-3 rounded-full hover:scale-110 transition-all duration-500 shadow-[0_0_20px_rgba(255,204,51,0.4)] hover:shadow-[0_0_40px_rgba(255,204,51,0.8)] border border-gold-primary/30 hover:border-gold-primary/60"
+                  >
+                    <User className="mr-2 h-4 w-4" />
+                    Sign In
+                  </Button>
+                </Link>
+              )}
             </div>
           </div>
 
@@ -231,6 +264,37 @@ export function Header({ onCartClick }: HeaderProps) {
                   <span className="text-2xl group-hover:scale-125 transition-transform duration-300">💫</span>
                   <span className="group-hover:text-neon-blue transition-colors duration-300">{t('live_chat')}</span>
                 </button>
+              </div>
+
+              {/* User Authentication Mobile */}
+              <div className="pt-4 border-t border-border/30">
+                {isAuthenticated ? (
+                  <div className="space-y-4">
+                    <Link href="/profile" onClick={() => setIsMobileMenuOpen(false)}>
+                      <div className="flex items-center space-x-4 text-lg font-medium py-3 border-b border-border/30 hover:border-gold-primary/50 transition-all duration-300 group cursor-pointer">
+                        <span className="text-2xl group-hover:scale-125 transition-transform duration-300">👤</span>
+                        <span className="group-hover:text-gold-primary transition-colors duration-300">{user?.name || 'Profile'}</span>
+                      </div>
+                    </Link>
+                    <button
+                      onClick={() => {
+                        logout();
+                        setIsMobileMenuOpen(false);
+                      }}
+                      className="w-full flex items-center space-x-4 text-lg font-medium py-3 border-b border-border/30 hover:border-red-500/50 transition-all duration-300 group"
+                    >
+                      <span className="text-2xl group-hover:scale-125 transition-transform duration-300">🚪</span>
+                      <span className="group-hover:text-red-400 transition-colors duration-300">Sign Out</span>
+                    </button>
+                  </div>
+                ) : (
+                  <Link href="/login" onClick={() => setIsMobileMenuOpen(false)}>
+                    <div className="flex items-center space-x-4 text-lg font-medium py-3 border-b border-border/30 hover:border-gold-primary/50 transition-all duration-300 group cursor-pointer">
+                      <span className="text-2xl group-hover:scale-125 transition-transform duration-300">🔐</span>
+                      <span className="group-hover:text-gold-primary transition-colors duration-300">Sign In</span>
+                    </div>
+                  </Link>
+                )}
               </div>
               
               {/* Enhanced Theme Toggle */}

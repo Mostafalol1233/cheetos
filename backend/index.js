@@ -21,6 +21,7 @@ import pool, { checkConnection, preferIPv4 } from './db.js';
 import gamesRouter from './routes/games.js';
 import ordersRouter from './routes/orders.js';
 import authRouter from './routes/auth.js';
+import userRouter from './routes/user.js';
 import adminAiRouter from './routes/admin-ai.js';
 import paymentsRouter from './routes/payments.js';
 import { authenticateToken, ensureAdmin } from './middleware/auth.js';
@@ -878,6 +879,7 @@ app.use('/api/orders', ordersRouter);
 app.use('/api/admin/ai', adminAiRouter);
 app.use('/api/auth', authRouter);
 app.use('/api', authRouter); // Expose auth routes at root api level as well (e.g. /api/admin/login)
+app.use('/api/user', userRouter);
 app.use('/api/payments', paymentsRouter);
 
 // Admin Image Upload Endpoint

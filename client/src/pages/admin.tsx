@@ -41,12 +41,15 @@ interface Category {
   slug: string;
 }
 
-interface ChatMessage {
+interface UserMessage {
   id: string;
-  sender: 'user' | 'support';
-  message: string;
-  sessionId: string;
-  timestamp: number;
+  text: string;
+  sender: 'user' | 'admin';
+  timestamp: string;
+  userId: string;
+  userName: string;
+  userEmail: string;
+  userPhone: string;
 }
 
 interface Alert {
@@ -70,7 +73,7 @@ export default function AdminDashboard() {
   const { toast } = useToast();
   const [originalPackages, setOriginalPackages] = useState<Array<{ amount: string; price: number; discountPrice: number | null; image?: string | null }>>([]);
   const [addedIndices, setAddedIndices] = useState<Set<number>>(new Set());
-  const [selectedSession, setSelectedSession] = useState<string | null>(null);
+  const [selectedUser, setSelectedUser] = useState<string | null>(null);
   const [replyMessage, setReplyMessage] = useState('');
   const [cardsPage, setCardsPage] = useState(1);
   const [cardsLimit, setCardsLimit] = useState(20);
@@ -310,18 +313,18 @@ export default function AdminDashboard() {
   const gameCards = cardsResponse?.items || [];
   const gameCardsTotal = cardsResponse?.total || 0;
 
-  // Fetch all chats
-  const { data: allChats = [], refetch: refetchChats } = useQuery<ChatMessage[]>({
-    queryKey: ['/api/admin/chat/all'],
+  // Fetch all user messages
+  const { data: allUserMessages = [], refetch: refetchMessages } = useQuery<UserMessage[]>({
+    queryKey: ['/api/user/admin/messages'],
     enabled: true,
     queryFn: async () => {
       const token = localStorage.getItem('adminToken');
-      const res = await fetch(`${API_BASE_URL}/api/admin/chat/all`, {
+      const res = await fetch(`${API_BASE_URL}/api/user/admin/messages`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {}
       });
-      const data = await res.json().catch(() => ([]));
-      if (!res.ok) throw new Error((data as any)?.message || 'Failed to fetch chats');
-      return Array.isArray(data) ? data : [];
+      const data = await res.json().catch(() => ({ messages: [] }));
+      if (!res.ok) throw new Error((data as any)?.message || 'Failed to fetch messages');
+      return Array.isArray(data.messages) ? data.messages : [];
     }
   });
 
@@ -711,17 +714,17 @@ export default function AdminDashboard() {
   // Send reply mutation
   const replyMutation = useMutation({
     mutationFn: async () => {
+      if (!selectedUser) throw new Error('No user selected');
+
       const token = localStorage.getItem('adminToken');
-      const res = await fetch(apiPath('/api/chat/message'), {
+      const res = await fetch(`${API_BASE_URL}/api/user/admin/reply/${selectedUser}`, {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
           ...(token ? { Authorization: `Bearer ${token}` } : {})
         },
         body: JSON.stringify({
-          sender: 'support',
-          message: replyMessage,
-          sessionId: selectedSession
+          message: replyMessage
         })
       });
       const data = await res.json().catch(() => ({}));
@@ -730,9 +733,16 @@ export default function AdminDashboard() {
     },
     onSuccess: () => {
       setReplyMessage('');
-      refetchChats();
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/chat/all'] });
-      queryClient.invalidateQueries({ queryKey: [`/api/admin/chat/${selectedSession}`] });
+      refetchMessages();
+      queryClient.invalidateQueries({ queryKey: ['/api/user/admin/messages'] });
+      toast({ title: 'Reply sent', description: 'Your message has been sent to the user.' });
+    },
+    onError: (error) => {
+      toast({
+        title: 'Failed to send reply',
+        description: error.message,
+        variant: 'destructive'
+      });
     }
   });
 
@@ -830,24 +840,6 @@ export default function AdminDashboard() {
       });
     }
   };
-
-  // Fetch chat messages for selected session
-  const { data: sessionMessages = [] } = useQuery<ChatMessage[]>({
-    queryKey: [`/api/admin/chat/${selectedSession}`],
-    enabled: !!selectedSession,
-    refetchInterval: 2000,
-    queryFn: async () => {
-      const token = localStorage.getItem('adminToken');
-      const res = await fetch(apiPath(`/api/admin/chat/${selectedSession}`), {
-        headers: token ? { Authorization: `Bearer ${token}` } : {}
-      });
-      const data = await res.json().catch(() => ([]));
-      if (!res.ok) throw new Error((data as any)?.message || 'Failed to fetch messages');
-      return Array.isArray(data) ? data : [];
-    }
-  });
-
-  const sessionChats = sessionMessages;
 
   function DiscountsPanelLocal({ games, onSaved }: { games: Game[]; onSaved: () => void }) {
     const { toast } = useToast();
@@ -2022,31 +2014,47 @@ export default function AdminDashboard() {
             <h2 className="text-2xl font-bold text-foreground">Customer Support Chat</h2>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Chat Sessions List */}
+              {/* User Messages List */}
               <div className="lg:col-span-1">
                 <Card className="bg-card/50 border-gold-primary/30">
                   <CardHeader>
-                    <CardTitle className="text-lg">Active Sessions</CardTitle>
+                    <CardTitle className="text-lg">User Conversations</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <ScrollArea className="h-96">
                       <div className="space-y-2">
-                        {Array.from(new Set(allChats.map((msg: ChatMessage) => msg.sessionId))).length === 0 ? (
+                        {Array.from(new Set(allUserMessages.map((msg: UserMessage) => msg.userId))).length === 0 ? (
                           <div className="text-sm text-muted-foreground p-3 border rounded">
-                            No active chat sessions yet. New sessions will appear here.
+                            No user messages yet. New conversations will appear here.
                           </div>
                         ) : (
-                          Array.from(new Set(allChats.map((msg: ChatMessage) => msg.sessionId))).map((sessionId) => (
-                            <Button
-                              key={sessionId}
-                              variant={selectedSession === sessionId ? 'default' : 'outline'}
-                              onClick={() => setSelectedSession(sessionId as string)}
-                              className="w-full justify-start text-xs"
-                            >
-                              <MessageSquare className="w-4 h-4 mr-2" />
-                              {(sessionId as string).substring(0, 12)}...
-                            </Button>
-                          ))
+                          Array.from(new Set(allUserMessages.map((msg: UserMessage) => msg.userId))).map((userId) => {
+                            const userMessages = allUserMessages.filter((msg: UserMessage) => msg.userId === userId);
+                            const lastMessage = userMessages[userMessages.length - 1];
+                            const userInfo = userMessages.find(msg => msg.userName)?.userName || 'Unknown User';
+
+                            return (
+                              <Button
+                                key={userId}
+                                variant={selectedUser === userId ? 'default' : 'outline'}
+                                onClick={() => setSelectedUser(userId as string)}
+                                className="w-full justify-start text-xs p-3 h-auto"
+                              >
+                                <div className="flex flex-col items-start w-full">
+                                  <div className="flex items-center gap-2 w-full">
+                                    <MessageSquare className="w-4 h-4 flex-shrink-0" />
+                                    <span className="font-medium truncate">{userInfo}</span>
+                                  </div>
+                                  <p className="text-xs text-muted-foreground mt-1 truncate w-full">
+                                    {lastMessage?.text || 'No messages'}
+                                  </p>
+                                  <p className="text-xs text-muted-foreground mt-1">
+                                    {lastMessage ? new Date(lastMessage.timestamp).toLocaleDateString() : ''}
+                                  </p>
+                                </div>
+                              </Button>
+                            );
+                          })
                         )}
                       </div>
                     </ScrollArea>
@@ -2054,17 +2062,25 @@ export default function AdminDashboard() {
                 </Card>
               </div>
 
-              {/* Chat Messages */}
+              {/* User Messages */}
               <div className="lg:col-span-2">
-                {selectedSession ? (
+                {selectedUser ? (
                   <Card className="bg-card/50 border-gold-primary/30 h-full flex flex-col">
                     <CardHeader>
-                      <CardTitle className="text-lg">Chat: {(selectedSession as string).substring(0, 12)}...</CardTitle>
+                      <CardTitle className="text-lg">
+                        Chat with {allUserMessages.find(msg => msg.userId === selectedUser)?.userName || 'User'}
+                      </CardTitle>
+                      <p className="text-sm text-muted-foreground">
+                        {allUserMessages.find(msg => msg.userId === selectedUser)?.userEmail || ''}
+                      </p>
                     </CardHeader>
                     <CardContent className="flex-1 flex flex-col">
                       <ScrollArea className="flex-1 mb-4 p-4 border rounded-lg border-gold-primary/20">
                         <div className="space-y-3">
-                          {sessionChats.map((msg: any) => (
+                          {allUserMessages
+                            .filter((msg: UserMessage) => msg.userId === selectedUser)
+                            .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
+                            .map((msg: UserMessage) => (
                             <div
                               key={msg.id}
                               className={`p-3 rounded-lg ${
@@ -2074,11 +2090,10 @@ export default function AdminDashboard() {
                               }`}
                             >
                               <p className="text-sm font-bold">{msg.sender === 'user' ? 'Customer' : 'You'}</p>
-                              <p className="text-sm">{msg.message}</p>
+                              <p className="text-sm">{msg.text}</p>
                               <p className="text-xs opacity-60 mt-1">
-                                {new Date(msg.timestamp).toLocaleTimeString('en-US')}
+                                {new Date(msg.timestamp).toLocaleString('en-US')}
                               </p>
-                              <p className="text-[10px] mt-1 opacity-70">Status: {msg.status || (msg.read ? 'read' : 'delivered')}</p>
                             </div>
                           ))}
                         </div>

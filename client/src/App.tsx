@@ -8,6 +8,7 @@ import { AccessibilityProvider } from "./components/accessibility-mode";
 import { ThemeProvider } from "./components/theme-provider";
 import { TranslationProvider } from "./lib/translation";
 import { AuthProvider, useAuth } from "./lib/auth-context";
+import { UserAuthProvider } from "./lib/user-auth-context";
 import { useState, useEffect } from "react";
 import Home from "./pages/home";
 import GamePage from "./pages/game";
@@ -20,6 +21,8 @@ import GamesPage from "./pages/games";
 import PacksPage from "./pages/packs";
 import SupportPage from "./pages/support";
 import CheckoutSecurityPage from "./pages/checkout-security";
+import UserLoginPage from "./pages/user-login";
+import UserProfilePage from "./pages/user-profile";
 import NotFound from "@/pages/not-found";
 import QrLoginPage from "./pages/qr-login";
 import QrConfirmPage from "./pages/qr-confirm";
@@ -65,6 +68,8 @@ function ProtectedAdminRoute() {
         <Route path="/support" component={SupportPage} />
         <Route path="/checkout" component={Checkout} />
         <Route path="/checkout/security/:id" component={CheckoutSecurityPage} />
+        <Route path="/login" component={UserLoginPage} />
+        <Route path="/profile" component={UserProfilePage} />
         <Route path="/admin/login" component={AdminLoginPage} />
         <Route path="/admin/packages/:gameId" component={AdminPackagesPage} />
         <Route path="/admin/games/:id/description" component={GameDescriptionEditor} />
@@ -182,14 +187,16 @@ function App() {
       <ThemeProvider>
         <TranslationProvider>
           <AuthProvider>
-            <AccessibilityProvider>
-              <TooltipProvider>
-                <CartProvider>
-                  <Toaster />
-                  <AppShell />
-                </CartProvider>
-              </TooltipProvider>
-            </AccessibilityProvider>
+            <UserAuthProvider>
+              <AccessibilityProvider>
+                <TooltipProvider>
+                  <CartProvider>
+                    <Toaster />
+                    <AppShell />
+                  </CartProvider>
+                </TooltipProvider>
+              </AccessibilityProvider>
+            </UserAuthProvider>
           </AuthProvider>
         </TranslationProvider>
       </ThemeProvider>
