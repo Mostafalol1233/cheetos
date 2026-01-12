@@ -2894,6 +2894,11 @@ app.post('/api/transactions/confirm', receiptUpload.single('receipt'), async (re
     if (existingConfirm.rows.length > 0) {
       return res.status(409).json({ message: 'Payment confirmation already exists for this transaction' });
     }
+    // Get transaction details
+    const txRes = await pool.query('SELECT * FROM transactions WHERE id = $1', [transactionId]);
+    if (txRes.rows.length === 0) {
+      return res.status(404).json({ message: 'Transaction not found' });
+    }
     const tx = txRes.rows[0];
     const createdAt = new Date(tx.created_at);
     if (Date.now() - createdAt.getTime() > 30 * 60 * 1000) {

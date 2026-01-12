@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { useUserAuth } from "@/lib/user-auth-context";
+import { API_BASE_URL } from "@/lib/queryClient";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -56,7 +57,7 @@ export default function UserProfilePage() {
 
   const fetchOrders = async () => {
     try {
-      const response = await fetch('/api/user/orders', {
+      const response = await fetch(`${API_BASE_URL}/api/user/orders`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
