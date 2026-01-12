@@ -32,25 +32,25 @@ export const PAYMENT_METHODS: PaymentConfig[] = [
   {
     key: 'orange_cash',
     label: 'Orange Cash',
-    logo: 'orange', // We'll use this as icon name
+    logo: 'https://i.postimg.cc/wRzp9C8N/image-29-1754874736252.png',
     info: { accountNumber: '+201234567890', instructions: 'Send the exact amount, then share the transaction ID.' }
   },
   {
     key: 'etisalat_cash',
     label: 'Etisalat Cash',
-    logo: 'smartphone',
+    logo: 'https://i.postimg.cc/tnbj9KQY/image-32-1754945434846.png',
     info: { accountNumber: '+201109998877', instructions: 'Transfer via Etisalat Cash and keep your ref code.' }
   },
   {
     key: 'vodafone_cash',
     label: 'Vodafone Cash',
-    logo: 'phone',
+    logo: 'https://i.postimg.cc/RJmBvk57/image-33-1754945434846.png',
     info: { accountNumber: '+201000112233', instructions: 'Use Vodafone Cash; fees are paid by sender.' }
   },
   {
     key: 'other',
     label: 'Other Payment',
-    logo: 'credit-card',
+    logo: 'https://i.postimg.cc/5QJVfhdk/image-34-1754945434846.png',
     info: { instructions: 'Choose this if you want a different method; we will contact you.' }
   }
 ];

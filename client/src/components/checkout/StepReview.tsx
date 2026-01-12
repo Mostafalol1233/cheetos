@@ -81,12 +81,11 @@ export function StepReview() {
           <CardContent>
             {selectedPayment && (
               <div className="flex items-center space-x-3">
-                <div className="text-2xl">
-                  {selectedPayment.logo === 'orange' && <div className="w-8 h-8 bg-orange-500 rounded-full"></div>}
-                  {selectedPayment.logo === 'smartphone' && <div className="w-8 h-8 bg-blue-500 rounded-full"></div>}
-                  {selectedPayment.logo === 'phone' && <div className="w-8 h-8 bg-red-500 rounded-full"></div>}
-                  {selectedPayment.logo === 'credit-card' && <div className="w-8 h-8 bg-gray-500 rounded-full"></div>}
-                </div>
+                <img
+                  src={selectedPayment.logo}
+                  alt={selectedPayment.label}
+                  className="w-8 h-8 object-contain"
+                />
                 <div>
                   <p className="font-medium">{selectedPayment.label}</p>
                   {selectedPayment.info?.accountNumber && (

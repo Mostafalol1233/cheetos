@@ -36,6 +36,26 @@ try {
   initImageProcessor = null;
 }
 
+// Global error handlers to prevent server crashes from WhatsApp errors
+process.on('uncaughtException', (error) => {
+  console.error('🚨 Uncaught Exception (server will continue):', error.message);
+  console.error('Stack:', error.stack);
+  // Don't exit the process - let the server continue running
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('🚨 Unhandled Rejection (server will continue):', reason);
+  // Don't exit the process - let the server continue running
+});
+
+// Disable core dumps to prevent large files from crashing
+try {
+  execSync('ulimit -c 0', { stdio: 'ignore' });
+  console.log('✅ Core dumps disabled');
+} catch (e) {
+  console.warn('⚠️ Could not disable core dumps:', e.message);
+}
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -2867,9 +2887,10 @@ app.post('/api/transactions/confirm', receiptUpload.single('receipt'), async (re
     if (!transactionId) {
       return res.status(400).json({ message: 'transactionId required' });
     }
-    const txRes = await pool.query('SELECT * FROM transactions WHERE id = $1', [transactionId]);
-    if (txRes.rows.length === 0) {
-      return res.status(404).json({ message: 'Transaction not found' });
+    // Check for existing payment confirmation to prevent duplicates
+    const existingConfirm = await pool.query('SELECT id FROM payment_confirmations WHERE transaction_id = $1', [transactionId]);
+    if (existingConfirm.rows.length > 0) {
+      return res.status(409).json({ message: 'Payment confirmation already exists for this transaction' });
     }
     const tx = txRes.rows[0];
     const createdAt = new Date(tx.created_at);
@@ -2906,20 +2927,24 @@ app.post('/api/transactions/confirm', receiptUpload.single('receipt'), async (re
       if (adminPhone) {
         try {
           if (url) {
+            console.log(`📸 Sending payment confirmation image to admin ${adminPhone}: ${url}`);
             await sendWhatsAppMedia(adminPhone, url, confirmMsg);
           } else {
+            console.log(`📱 Sending payment confirmation text to admin ${adminPhone}`);
             await sendWhatsAppMessage(adminPhone, confirmMsg + '\nReceipt: N/A');
           }
-        } catch (e) { console.error('Admin WA notify failed:', e?.message || e); }
+        } catch (e) { console.error(`❌ Admin WA notify failed for ${adminPhone}:`, e?.message || e); }
       }
       if (connectedPhone && connectedPhone !== adminPhone) {
         try {
           if (url) {
+            console.log(`📸 Sending payment confirmation image to connected ${connectedPhone}: ${url}`);
             await sendWhatsAppMedia(connectedPhone, url, confirmMsg);
           } else {
+            console.log(`📱 Sending payment confirmation text to connected ${connectedPhone}`);
             await sendWhatsAppMessage(connectedPhone, confirmMsg + '\nReceipt: N/A');
           }
-        } catch (e) { console.error('Connected WA notify failed:', e?.message || e); }
+        } catch (e) { console.error(`❌ Connected WA notify failed for ${connectedPhone}:`, e?.message || e); }
       }
     } catch (notifyErr) { console.error('Failed to notify about payment confirmation:', notifyErr?.message || notifyErr); }
     res.status(201).json({ id, receiptUrl: url });
@@ -4396,9 +4421,12 @@ const startServer = async () => {
       console.log(`║     Database: ${isConnected ? "Connected ✅" : "Disconnected ❌"}       ║`);
       console.log(`╚════════════════════════════════════════╝`);
       try {
-        startWhatsApp();
+        startWhatsApp().catch((err) => {
+          console.error('❌ WhatsApp initialization failed:', err?.message || err);
+          console.log('🔄 WhatsApp will retry connection automatically...');
+        });
       } catch (err) {
-        console.error('WhatsApp init failed:', err?.message || err);
+        console.error('❌ WhatsApp init failed:', err?.message || err);
       }
     });
   } catch (err) {

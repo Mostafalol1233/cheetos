@@ -1,25 +1,11 @@
 import React from 'react';
 import { PAYMENT_METHODS, PaymentMethod, useCheckout } from '../../state/checkout';
 import { Card, CardContent } from '@/components/ui/card';
-import { CheckCircle, CreditCard, Smartphone, Phone, Circle } from 'lucide-react';
+import { CheckCircle } from 'lucide-react';
 
 function classNames(...xs: Array<string | false | undefined>) {
   return xs.filter(Boolean).join(' ');
 }
-
-const getIcon = (iconName: string) => {
-  switch (iconName) {
-    case 'orange':
-      return <Circle className="h-8 w-8 text-orange-500" />;
-    case 'smartphone':
-      return <Smartphone className="h-8 w-8 text-blue-500" />;
-    case 'phone':
-      return <Phone className="h-8 w-8 text-red-500" />;
-    case 'credit-card':
-    default:
-      return <CreditCard className="h-8 w-8 text-gray-500" />;
-  }
-};
 
 export const PaymentMethods: React.FC = () => {
   const { paymentMethod, setPaymentMethod } = useCheckout();
@@ -54,7 +40,7 @@ export const PaymentMethods: React.FC = () => {
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
-                    {getIcon(m.logo)}
+                    <img src={m.logo} alt="" className="h-12 w-12 object-contain" />
                     <div>
                       <h3 className="font-semibold text-lg">{m.label}</h3>
                       {m.info?.accountNumber && (
@@ -84,7 +70,7 @@ export const PaymentMethods: React.FC = () => {
             return (
               <div className="space-y-3">
                 <div className="flex items-center gap-3">
-                  {getIcon(conf.logo)}
+                  <img src={conf.logo} alt="" className="h-8 w-8 object-contain" />
                   <div>
                     <h4 className="font-medium">{conf.label} Selected</h4>
                     <p className="text-sm text-muted-foreground">Complete your payment using this method</p>
