@@ -61,7 +61,49 @@ export default function Home() {
 
   return (
     <>
-      <SEO />
+      <SEO
+        title="متجر ضياء - شحن ألعاب إلكترونية في مصر | Diaa Gaming Store - أفضل متجر ألعاب"
+        description="متجر ضياء أفضل متجر شحن ألعاب إلكترونية في مصر. اشحن عملات Free Fire, PUBG, وجميع الألعاب بأمان وسرعة مع Diaa Sadek. خدمة موثوقة وأسعار تنافسية."
+        keywords={[
+          "متجر ألعاب", "شحن ألعاب", "Diaa", "ضياء", "top up games Egypt",
+          "شحن ألعاب إلكترونية", "gaming store Egypt", "Diaa Sadek", "متجر ضياء",
+          "شحن عملات ألعاب", "ألعاب إلكترونية مصر", "top up Egypt", "gaming top up",
+          "ضياء ألعاب", "Diaa gaming", "شحن ألعاب اونلاين", "متجر ألعاب مصر",
+          "gaming store", "شحن ألعاب سريع", "Free Fire", "PUBG", "ألعاب موبايل",
+          "شحن ألعاب مجاني", "أفضل متجر ألعاب مصر", "gaming shop Egypt"
+        ]}
+        structuredData={{
+          "@context": "https://schema.org",
+          "@type": "WebPage",
+          "name": "متجر ضياء - الصفحة الرئيسية",
+          "description": "اكتشف متجر ضياء لشحن ألعاب إلكترونية في مصر. شحن آمن وسريع لجميع الألعاب مع Diaa Sadek.",
+          "url": window.location.origin,
+          "isPartOf": {
+            "@type": "WebSite",
+            "name": "متجر ضياء",
+            "url": window.location.origin
+          },
+          "about": {
+            "@type": "Organization",
+            "name": "متجر ضياء",
+            "description": "متخصص في شحن ألعاب إلكترونية في مصر"
+          },
+          "mainEntity": {
+            "@type": "ItemList",
+            "name": "ألعاب متاحة للشحن",
+            "description": "قائمة بجميع الألعاب المتاحة للشحن في متجر ضياء"
+          },
+          "breadcrumb": {
+            "@type": "BreadcrumbList",
+            "itemListElement": [{
+              "@type": "ListItem",
+              "position": 1,
+              "name": "الرئيسية",
+              "item": window.location.origin
+            }]
+          }
+        }}
+      />
       <div className="min-h-screen text-foreground font-gaming overflow-x-hidden custom-cursor bg-gradient-to-b from-darker-bg dark:from-gray-900 dark:via-gray-800 dark:to-black via-white to-gray-50 animate-fade-in">
 
       {/* Hero Section */}

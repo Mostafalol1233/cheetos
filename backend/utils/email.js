@@ -5,11 +5,11 @@ dotenv.config();
 
 // Brevo SMTP Config
 const transporter = nodemailer.createTransport({
-  host: 'smtp-relay.brevo.com',
-  port: 587,
+  host: process.env.SMTP_HOST || 'smtp-relay.brevo.com',
+  port: process.env.SMTP_PORT || 587,
   auth: {
-    user: process.env.BREVO_USER,
-    pass: process.env.BREVO_PASS
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS
   }
 });
 
@@ -85,8 +85,8 @@ export const sendEmail = async (to, templateName, data) => {
     return false;
   }
   
-  if (!process.env.BREVO_USER || !process.env.BREVO_PASS) {
-    console.warn('⚠️ Brevo credentials missing, skipping email.');
+  if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
+    console.warn('⚠️ SMTP credentials missing, skipping email.');
     return false;
   }
 
@@ -120,8 +120,8 @@ export const sendRawEmail = async (to, subject, text, html) => {
     return false;
   }
 
-  if (!process.env.BREVO_USER || !process.env.BREVO_PASS) {
-    console.warn('⚠️ Brevo credentials missing, skipping email.');
+  if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
+    console.warn('⚠️ SMTP credentials missing, skipping email.');
     return false;
   }
 

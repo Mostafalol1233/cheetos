@@ -1,14 +1,71 @@
 User-agent: *
 Allow: /
 
-# Block admin areas
-Disallow: /admin
-Disallow: /api/admin
+# Block access to admin areas
+Disallow: /admin/
+Disallow: /api/admin/
+Disallow: /dashboard/
 
-# Allow important pages
-Allow: /games
-Allow: /categories
-Allow: /support
+# Block access to sensitive files
+Disallow: /api/private/
+Disallow: /private/
+Disallow: /config/
+Disallow: /logs/
 
-# Sitemap
+# Block access to development files
+Disallow: /src/
+Disallow: /node_modules/
+Disallow: /build/
+Disallow: /dist/
+
+# Block access to backup files
+Disallow: *.sql
+Disallow: *.bak
+Disallow: *.tmp
+
+# Allow access to CSS, JS, and images
+Allow: /static/
+Allow: /assets/
+Allow: /images/
+Allow: /css/
+Allow: /js/
+
+# Crawl delay for respectful crawling
+Crawl-delay: 1
+
+# Sitemap location
 Sitemap: https://diaasadek.com/sitemap.xml
+
+# Specific rules for major search engines
+User-agent: Googlebot
+Allow: /
+Crawl-delay: 1
+
+User-agent: Bingbot
+Allow: /
+Crawl-delay: 2
+
+User-agent: Slurp
+Allow: /
+Crawl-delay: 2
+
+User-agent: DuckDuckBot
+Allow: /
+Crawl-delay: 2
+
+User-agent: Baiduspider
+Allow: /
+Crawl-delay: 5
+
+# Block unwanted bots
+User-agent: AhrefsBot
+Disallow: /
+
+User-agent: MJ12bot
+Disallow: /
+
+User-agent: DotBot
+Disallow: /
+
+User-agent: SemrushBot
+Disallow: /

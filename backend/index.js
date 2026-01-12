@@ -25,6 +25,7 @@ import adminAiRouter from './routes/admin-ai.js';
 import paymentsRouter from './routes/payments.js';
 import { authenticateToken, ensureAdmin } from './middleware/auth.js';
 import { sendEmail, sendRawEmail } from './utils/email.js';
+import { generateSitemap } from './utils/sitemap.js';
 import localDb from './utils/localDb.js';
 // Optional image processor (module may not exist in some deployments)
 let initImageProcessor = null;
@@ -3423,6 +3424,21 @@ app.post('/api/admin/transactions/:id/respond', authenticateToken, async (req, r
     const siteUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
     const notify = `Order ${id} has been confirmed. ${message ? 'Message: ' + String(message).slice(0,200) : ''}`;
     try { sendSMS(phone, `Your order was confirmed. Check ${siteUrl}/track-order`); } catch {}
+    
+    // Send WhatsApp to customer
+    if (phone) {
+      try { await sendWhatsAppMessage(phone, `✅ ${notify}`); } catch (e) { console.error('Customer WhatsApp failed:', e?.message || e); }
+    }
+    
+    // Send email to customer
+    if (tx.email) {
+      try {
+        const emailSubject = 'Order Confirmed - GameCart';
+        const emailText = `Your order ${id} has been confirmed.\n\n${message ? 'Message from seller: ' + message : ''}\n\nTrack your order: ${siteUrl}/track-order\n\nThank you for shopping with us!`;
+        await sendRawEmail(tx.email, emailSubject, emailText);
+      } catch (e) { console.error('Customer email failed:', e?.message || e); }
+    }
+    
     const adminPhone = (process.env.ADMIN_PHONE || '').trim();
     const sellerPhones = (process.env.SELLER_PHONES || '').split(',').map(p => p.trim()).filter(Boolean);
     const phonesToNotify = adminPhone ? [adminPhone, ...sellerPhones] : sellerPhones;
@@ -4356,6 +4372,21 @@ const startServer = async () => {
     } catch (err) {
       console.error("❌ Uploads directory error:", err.message);
     }
+
+    // Sitemap
+    app.get('/sitemap.xml', async (req, res) => {
+      try {
+        const sitemap = await generateSitemap();
+        if (sitemap) {
+          res.header('Content-Type', 'application/xml');
+          res.send(sitemap);
+        } else {
+          res.status(500).send('Error generating sitemap');
+        }
+      } catch (err) {
+        res.status(500).send('Error generating sitemap');
+      }
+    });
 
     app.listen(PORT, () => {
       console.log(`╔════════════════════════════════════════╗`);

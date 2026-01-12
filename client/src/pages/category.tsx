@@ -82,11 +82,50 @@ export default function CategoryPage() {
   return (
     <>
       <SEO
-        title={`${category.name} - متجر ضياء | Diaa Gaming Store`}
-        description={`اكتشف ألعاب ${category.name} في متجر ضياء. شحن ألعاب إلكترونية آمن وسريع في مصر مع Diaa Sadek.`}
-        keywords={[category.name, 'ألعاب', 'ضياء', 'Diaa', 'شحن ألعاب', 'gaming Egypt']}
+        title={`${category.name} - متجر ضياء | Diaa Gaming Store - شحن ألعاب ${category.name} في مصر`}
+        description={`اكتشف ألعاب ${category.name} في متجر ضياء. شحن ألعاب إلكترونية آمن وسريع في مصر مع Diaa Sadek. أفضل الأسعار والخدمة الموثوقة.`}
+        keywords={[category.name, 'ألعاب', 'ضياء', 'Diaa', 'شحن ألعاب', 'gaming Egypt', 'ألعاب إلكترونية', 'top up games', 'gaming store مصر']}
         image={category.image || '/logo.png'}
         url={`${window.location.origin}/category/${category.slug}`}
+        structuredData={{
+          "@context": "https://schema.org",
+          "@type": "CollectionPage",
+          "name": `ألعاب ${category.name} - متجر ضياء`,
+          "description": `مجموعة ألعاب ${category.name} المتاحة للشحن في متجر ضياء`,
+          "url": `${window.location.origin}/category/${category.slug}`,
+          "isPartOf": {
+            "@type": "WebSite",
+            "name": "متجر ضياء",
+            "url": window.location.origin
+          },
+          "about": {
+            "@type": "Thing",
+            "name": category.name,
+            "description": `فئة ${category.name} في ألعاب إلكترونية`
+          },
+          "mainEntity": {
+            "@type": "ItemList",
+            "name": `ألعاب ${category.name}`,
+            "description": `قائمة ألعاب ${category.name} المتاحة في متجر ضياء`
+          },
+          "breadcrumb": {
+            "@type": "BreadcrumbList",
+            "itemListElement": [
+              {
+                "@type": "ListItem",
+                "position": 1,
+                "name": "الرئيسية",
+                "item": window.location.origin
+              },
+              {
+                "@type": "ListItem",
+                "position": 2,
+                "name": category.name,
+                "item": `${window.location.origin}/category/${category.slug}`
+              }
+            ]
+          }
+        }}
       />
       <div className="min-h-screen bg-gradient-to-b from-darker-bg dark:from-gray-900 dark:via-gray-800 dark:to-black via-white to-gray-50">
       <div className="container mx-auto px-4 py-8">
