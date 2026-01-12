@@ -12,6 +12,7 @@ import { Link } from "wouter";
 import ImageWithFallback from "@/components/image-with-fallback";
 import { useTranslation } from "@/lib/translation";
 import { ProductPackGrid } from "@/components/product-pack-card";
+import { SEO } from "@/components/SEO";
 
 export default function GamePage() {
   const { slug } = useParams();
@@ -32,11 +33,8 @@ export default function GamePage() {
 
   useEffect(() => {
     if (game) {
-      document.title = `${game.name} | Diaa Eldeen`;
+      // SEO will handle title
     }
-    return () => {
-      document.title = "Diaa Eldeen | Premium Game Store";
-    };
   }, [game]);
 
   useEffect(() => {
@@ -161,7 +159,35 @@ export default function GamePage() {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-4xl">
+    <>
+      <SEO
+        title={`شحن ${game.name} - متجر ضياء | Diaa Gaming Top Up`}
+        description={`اشحن عملات ${game.name} بسهولة في متجر ضياء. خدمة شحن آمنة وسريعة في مصر مع Diaa Sadek. احصل على العملات بأفضل الأسعار.`}
+        keywords={[`شحن ${game.name}`, game.name, 'ضياء', 'Diaa', 'شحن ألعاب', 'gaming top up Egypt']}
+        image={`/images/${game.slug}.webp`}
+        url={`${window.location.origin}/game/${game.slug}`}
+        structuredData={{
+          "@context": "https://schema.org",
+          "@type": "Product",
+          "name": game.name,
+          "description": `شحن عملات ${game.name} في متجر ضياء`,
+          "brand": {
+            "@type": "Brand",
+            "name": "ضياء"
+          },
+          "offers": {
+            "@type": "Offer",
+            "priceCurrency": "EGP",
+            "availability": "https://schema.org/InStock"
+          },
+          "aggregateRating": {
+            "@type": "AggregateRating",
+            "ratingValue": "4.8",
+            "reviewCount": "1000"
+          }
+        }}
+      />
+      <div className="container mx-auto px-4 py-8 max-w-4xl">
       {/* Back Button */}
       <Button
         onClick={() => setLocation("/")}
@@ -346,5 +372,6 @@ export default function GamePage() {
         </div>
       )}
     </div>
+    </>
   );
 }

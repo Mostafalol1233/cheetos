@@ -1,0 +1,14 @@
+User-agent: *
+Allow: /
+
+# Block admin areas
+Disallow: /admin
+Disallow: /api/admin
+
+# Allow important pages
+Allow: /games
+Allow: /categories
+Allow: /support
+
+# Sitemap
+Sitemap: https://diaasadek.com/sitemap.xml

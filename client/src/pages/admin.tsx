@@ -1578,7 +1578,7 @@ export default function AdminDashboard() {
                             </Button>
                           </TooltipTrigger>
                           <TooltipContent>
-                            <p>Edit Description (Rich Editor)</p>
+                            <p>Advanced Game Description Editor</p>
                           </TooltipContent>
                         </Tooltip>
                       </Link>

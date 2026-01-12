@@ -10,6 +10,7 @@ import PaymentMethods from "@/components/payment-methods";
 
 import { Footer } from "@/components/footer";
 import { useTranslation } from "@/lib/translation";
+import { SEO } from "@/components/SEO";
 
 export default function Home() {
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
@@ -59,7 +60,9 @@ export default function Home() {
 
 
   return (
-    <div className="min-h-screen text-foreground font-gaming overflow-x-hidden custom-cursor bg-gradient-to-b from-darker-bg dark:from-gray-900 dark:via-gray-800 dark:to-black via-white to-gray-50 animate-fade-in">
+    <>
+      <SEO />
+      <div className="min-h-screen text-foreground font-gaming overflow-x-hidden custom-cursor bg-gradient-to-b from-darker-bg dark:from-gray-900 dark:via-gray-800 dark:to-black via-white to-gray-50 animate-fade-in">
 
       {/* Hero Section */}
       <section className="relative w-full h-[500px] flex items-center justify-center overflow-hidden">
@@ -278,5 +281,6 @@ export default function Home() {
       {/* Footer */}
       <Footer />
     </div>
+    </>
   );
 }

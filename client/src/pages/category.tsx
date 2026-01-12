@@ -11,6 +11,7 @@ import ImageWithFallback from "@/components/image-with-fallback";
 import { useCart } from "@/lib/cart-context";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "@/lib/translation";
+import { SEO } from "@/components/SEO";
 
 export default function CategoryPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -79,7 +80,15 @@ export default function CategoryPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-darker-bg dark:from-gray-900 dark:via-gray-800 dark:to-black via-white to-gray-50">
+    <>
+      <SEO
+        title={`${category.name} - متجر ضياء | Diaa Gaming Store`}
+        description={`اكتشف ألعاب ${category.name} في متجر ضياء. شحن ألعاب إلكترونية آمن وسريع في مصر مع Diaa Sadek.`}
+        keywords={[category.name, 'ألعاب', 'ضياء', 'Diaa', 'شحن ألعاب', 'gaming Egypt']}
+        image={category.image || '/logo.png'}
+        url={`${window.location.origin}/category/${category.slug}`}
+      />
+      <div className="min-h-screen bg-gradient-to-b from-darker-bg dark:from-gray-900 dark:via-gray-800 dark:to-black via-white to-gray-50">
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-8">
@@ -267,5 +276,6 @@ export default function CategoryPage() {
         )}
       </div>
     </div>
+    </>
   );
 }
