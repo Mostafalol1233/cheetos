@@ -1,9 +1,25 @@
 import React from 'react';
 import { PAYMENT_METHODS, PaymentMethod, useCheckout } from '../../state/checkout';
+import { Card, CardContent } from '@/components/ui/card';
+import { CheckCircle, CreditCard, Smartphone, Phone, Circle } from 'lucide-react';
 
 function classNames(...xs: Array<string | false | undefined>) {
   return xs.filter(Boolean).join(' ');
 }
+
+const getIcon = (iconName: string) => {
+  switch (iconName) {
+    case 'orange':
+      return <Circle className="h-8 w-8 text-orange-500" />;
+    case 'smartphone':
+      return <Smartphone className="h-8 w-8 text-blue-500" />;
+    case 'phone':
+      return <Phone className="h-8 w-8 text-red-500" />;
+    case 'credit-card':
+    default:
+      return <CreditCard className="h-8 w-8 text-gray-500" />;
+  }
+};
 
 export const PaymentMethods: React.FC = () => {
   const { paymentMethod, setPaymentMethod } = useCheckout();
@@ -14,49 +30,72 @@ export const PaymentMethods: React.FC = () => {
 
   return (
     <div>
-      <div role="radiogroup" aria-label="Payment methods" className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div role="radiogroup" aria-label="Payment methods" className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {PAYMENT_METHODS.map((m) => {
           const selected = paymentMethod === m.key;
           return (
-            <button
+            <Card
               key={m.key}
-              type="button"
+              className={classNames(
+                'relative cursor-pointer transition-all duration-200 hover:shadow-md focus-within:ring-2 focus-within:ring-primary',
+                selected ? 'ring-2 ring-primary border-primary bg-primary/5' : 'hover:border-primary/50'
+              )}
+              onClick={() => onSelect(m.key)}
               role="radio"
               aria-checked={selected}
-              onClick={() => onSelect(m.key)}
-              className={classNames(
-                'relative flex flex-col items-center justify-center rounded-lg border p-3 focus:outline-none focus:ring-2 focus:ring-offset-2',
-                selected ? 'border-blue-600 ring-2 ring-blue-600' : 'border-gray-300 hover:border-gray-400'
-              )}
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  onSelect(m.key);
+                }
+              }}
             >
-              <img src={m.logo} alt="" className="h-10 w-10 object-contain" />
-              <span className="mt-2 text-sm font-medium text-gray-900">{m.label}</span>
-              {selected && (
-                <span aria-hidden className="absolute top-1 right-1 h-5 w-5 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs">✓</span>
-              )}
-            </button>
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    {getIcon(m.logo)}
+                    <div>
+                      <h3 className="font-semibold text-lg">{m.label}</h3>
+                      {m.info?.accountNumber && (
+                        <p className="text-sm text-muted-foreground font-mono">{m.info.accountNumber}</p>
+                      )}
+                    </div>
+                  </div>
+                  {selected && (
+                    <CheckCircle className="h-6 w-6 text-primary" aria-hidden="true" />
+                  )}
+                </div>
+                {m.info?.instructions && (
+                  <p className="text-sm text-muted-foreground mt-2">{m.info.instructions}</p>
+                )}
+              </CardContent>
+            </Card>
           );
         })}
       </div>
 
-      {/* Provider-specific info panel */}
+      {/* Selected method details */}
       {paymentMethod && (
-        <div className="mt-4 rounded-md border border-gray-200 p-4 bg-gray-50">
+        <div className="mt-6 p-4 bg-muted rounded-lg">
           {(() => {
             const conf = PAYMENT_METHODS.find(c => c.key === paymentMethod)!;
             const number = conf.info?.accountNumber;
             return (
-              <div className="space-y-2">
+              <div className="space-y-3">
                 <div className="flex items-center gap-3">
-                  <img src={conf.logo} alt="" className="h-6 w-6 object-contain" />
-                  <div className="text-sm font-medium text-gray-900">{conf.label} details</div>
+                  {getIcon(conf.logo)}
+                  <div>
+                    <h4 className="font-medium">{conf.label} Selected</h4>
+                    <p className="text-sm text-muted-foreground">Complete your payment using this method</p>
+                  </div>
                 </div>
                 {number && (
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm text-gray-700 select-all" aria-label="Recipient number">{number}</span>
+                  <div className="flex items-center gap-2 p-2 bg-background rounded border">
+                    <span className="text-sm font-mono select-all" aria-label="Recipient number">{number}</span>
                     <button
                       type="button"
-                      className="ml-2 inline-flex items-center rounded bg-gray-800 px-2 py-1 text-xs font-semibold text-white hover:bg-black focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="ml-auto px-3 py-1 text-xs bg-primary text-primary-foreground rounded hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary"
                       onClick={async () => {
                         try {
                           await navigator.clipboard.writeText(number);
@@ -67,9 +106,6 @@ export const PaymentMethods: React.FC = () => {
                       Copy
                     </button>
                   </div>
-                )}
-                {conf.info?.instructions && (
-                  <p className="text-xs text-gray-600">{conf.info.instructions}</p>
                 )}
               </div>
             );

@@ -5,14 +5,21 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { ensureIdempotencyKey } from '@/state/checkout';
 import { apiRequest } from '@/lib/queryClient';
+import { Loader2 } from 'lucide-react';
 
 export function StepReview() {
   const { cart, contact, paymentMethod, subtotal, total, setOrderMeta, setError, setStep } = useCheckout();
   const [deliverVia, setDeliverVia] = useState<'email'|'whatsapp'>('email');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const selectedPayment = PAYMENT_METHODS.find(m => m.key === paymentMethod);
 
   const handleSubmit = async () => {
+    if (isSubmitting) return;
+
+    setIsSubmitting(true);
+    setError(undefined);
+
     try {
       const key = ensureIdempotencyKey();
       const orderData = {
@@ -45,6 +52,8 @@ export function StepReview() {
     } catch (error) {
       console.error('Order submission failed:', error);
       setError('Failed to submit order. Please try again.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -72,11 +81,12 @@ export function StepReview() {
           <CardContent>
             {selectedPayment && (
               <div className="flex items-center space-x-3">
-                <img
-                  src={selectedPayment.logo}
-                  alt={selectedPayment.label}
-                  className="w-8 h-8 object-contain"
-                />
+                <div className="text-2xl">
+                  {selectedPayment.logo === 'orange' && <div className="w-8 h-8 bg-orange-500 rounded-full"></div>}
+                  {selectedPayment.logo === 'smartphone' && <div className="w-8 h-8 bg-blue-500 rounded-full"></div>}
+                  {selectedPayment.logo === 'phone' && <div className="w-8 h-8 bg-red-500 rounded-full"></div>}
+                  {selectedPayment.logo === 'credit-card' && <div className="w-8 h-8 bg-gray-500 rounded-full"></div>}
+                </div>
                 <div>
                   <p className="font-medium">{selectedPayment.label}</p>
                   {selectedPayment.info?.accountNumber && (
@@ -98,11 +108,25 @@ export function StepReview() {
         <CardContent>
           <div className="flex gap-4">
             <label className="inline-flex items-center space-x-2">
-              <input type="radio" name="deliver" value="email" checked={deliverVia === 'email'} onChange={() => setDeliverVia('email')} />
+              <input
+                type="radio"
+                name="deliver"
+                value="email"
+                checked={deliverVia === 'email'}
+                onChange={() => setDeliverVia('email')}
+                className="text-primary"
+              />
               <span>Email</span>
             </label>
             <label className="inline-flex items-center space-x-2">
-              <input type="radio" name="deliver" value="whatsapp" checked={deliverVia === 'whatsapp'} onChange={() => setDeliverVia('whatsapp')} />
+              <input
+                type="radio"
+                name="deliver"
+                value="whatsapp"
+                checked={deliverVia === 'whatsapp'}
+                onChange={() => setDeliverVia('whatsapp')}
+                className="text-primary"
+              />
               <span>WhatsApp</span>
             </label>
           </div>
@@ -152,8 +176,20 @@ export function StepReview() {
         </CardContent>
       </Card>
 
-      <Button onClick={handleSubmit} className="w-full" size="lg">
-        Place Order
+      <Button
+        onClick={handleSubmit}
+        className="w-full"
+        size="lg"
+        disabled={isSubmitting}
+      >
+        {isSubmitting ? (
+          <>
+            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+            Placing Order...
+          </>
+        ) : (
+          'Place Order'
+        )}
       </Button>
     </div>
   );

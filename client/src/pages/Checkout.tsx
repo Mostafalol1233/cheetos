@@ -10,7 +10,7 @@ import { StepResult } from '@/components/checkout/StepResult';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Card, CardContent } from '@/components/ui/card';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Check } from 'lucide-react';
 
 const steps = [
   { key: 'cart', label: 'Cart', component: StepCart },
@@ -76,23 +76,42 @@ export default function Checkout() {
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8">
-        <div className="max-w-4xl mx-auto">
-          {/* Progress Bar */}
+        <div className="max-w-6xl mx-auto">
+          {/* Stepper Header */}
           {step !== 'processing' && step !== 'result' && (
             <div className="mb-8">
-              <div className="flex justify-between mb-2">
-                {steps.slice(0, -2).map((s, i) => (
-                  <span
-                    key={s.key}
-                    className={`text-sm ${
-                      i <= currentStepIndex ? 'text-primary font-semibold' : 'text-muted-foreground'
-                    }`}
-                  >
-                    {s.label}
-                  </span>
-                ))}
-              </div>
-              <Progress value={progress} className="h-2" />
+              <nav aria-label="Checkout steps" className="mb-6">
+                <ol className="flex items-center justify-center space-x-4">
+                  {steps.slice(0, -2).map((s, i) => {
+                    const isCompleted = i < currentStepIndex;
+                    const isCurrent = i === currentStepIndex;
+                    return (
+                      <li key={s.key} className="flex items-center">
+                        <div className={`flex items-center justify-center w-8 h-8 rounded-full ${
+                          isCompleted ? 'bg-primary text-primary-foreground' :
+                          isCurrent ? 'bg-primary text-primary-foreground' :
+                          'bg-muted text-muted-foreground'
+                        }`}>
+                          {isCompleted ? (
+                            <Check className="w-4 h-4" />
+                          ) : (
+                            <span className="text-sm font-medium">{i + 1}</span>
+                          )}
+                        </div>
+                        <span className={`ml-2 text-sm font-medium ${
+                          isCurrent ? 'text-primary' : isCompleted ? 'text-foreground' : 'text-muted-foreground'
+                        }`}>
+                          {s.label}
+                        </span>
+                        {i < steps.length - 3 && (
+                          <ChevronRight className="w-4 h-4 mx-2 text-muted-foreground" />
+                        )}
+                      </li>
+                    );
+                  })}
+                </ol>
+              </nav>
+              <Progress value={progress} className="h-2" aria-label={`Step ${currentStepIndex + 1} of ${steps.length - 2}`} />
             </div>
           )}
 
@@ -112,7 +131,7 @@ export default function Checkout() {
                 <Card className="sticky top-4">
                   <CardContent className="p-4">
                     <h3 className="font-semibold mb-4">Order Summary</h3>
-                    <div className="space-y-2">
+                    <div className="space-y-2 mb-4">
                       {cart.map((item) => (
                         <div key={item.id} className="flex justify-between text-sm">
                           <span>{item.name} × {item.quantity}</span>
@@ -120,8 +139,8 @@ export default function Checkout() {
                         </div>
                       ))}
                     </div>
-                    <div className="border-t mt-4 pt-4">
-                      <div className="flex justify-between font-semibold">
+                    <div className="border-t pt-4">
+                      <div className="flex justify-between font-semibold text-lg">
                         <span>Total:</span>
                         <span>${cart.reduce((sum, item) => sum + item.price * item.quantity, 0).toFixed(2)}</span>
                       </div>
@@ -139,12 +158,17 @@ export default function Checkout() {
                 variant="outline"
                 onClick={handleBack}
                 disabled={currentStepIndex === 0}
+                aria-label="Go to previous step"
               >
                 <ChevronLeft className="w-4 h-4 mr-2" />
                 Back
               </Button>
               {step !== 'review' && (
-                <Button onClick={handleNext} disabled={!canGoNext()}>
+                <Button
+                  onClick={handleNext}
+                  disabled={!canGoNext()}
+                  aria-label="Go to next step"
+                >
                   Next
                   <ChevronRight className="w-4 h-4 ml-2" />
                 </Button>
@@ -154,7 +178,11 @@ export default function Checkout() {
 
           {/* Error Display */}
           {error && (
-            <div className="mt-4 p-4 bg-destructive/10 border border-destructive rounded-md">
+            <div
+              role="alert"
+              aria-live="assertive"
+              className="mt-4 p-4 bg-destructive/10 border border-destructive rounded-md"
+            >
               <p className="text-destructive">{error}</p>
             </div>
           )}
