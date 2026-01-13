@@ -3,29 +3,29 @@
   "outputDirectory": "dist/public",
   "installCommand": "npm install",
   "env": {
-    "VITE_API_URL": "http://51.75.118.149:20242"
+    "VITE_API_URL": "http://fi4.bot-hosting.net:22135"
   },
   "public": true,
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "http://51.75.118.149:20242/api/$1"
+      "destination": "http://fi4.bot-hosting.net:22135/api/$1"
     },
     {
       "source": "/uploads/(.*)",
-      "destination": "http://51.75.118.149:20242/uploads/$1"
+      "destination": "http://fi4.bot-hosting.net:22135/uploads/$1"
     },
     {
       "source": "/images/(.*)",
-      "destination": "http://51.75.118.149:20242/images/$1"
+      "destination": "http://fi4.bot-hosting.net:22135/images/$1"
     },
     {
       "source": "/media/(.*)",
-      "destination": "http://51.75.118.149:20242/media/$1"
+      "destination": "http://fi4.bot-hosting.net:22135/media/$1"
     },
     {
       "source": "/attached_assets/(.*)",
-      "destination": "http://51.75.118.149:20242/media/$1"
+      "destination": "http://fi4.bot-hosting.net:22135/media/$1"
     },
     {
       "source": "/((?!api).*)",

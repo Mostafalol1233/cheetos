@@ -26,7 +26,7 @@ export function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
   const [customerPhone, setCustomerPhone] = useState("");
   const [customerEmail, setCustomerEmail] = useState("");
   const [countryCode, setCountryCode] = useState("+20");
-  const [paymentMethod, setPaymentMethod] = useState("Orange Cash");
+  const [paymentMethod, setPaymentMethod] = useState("");
   const [confirmMethod, setConfirmMethod] = useState<'whatsapp' | 'live'>('whatsapp');
   const [deliveryChannel, setDeliveryChannel] = useState<'whatsapp' | 'email'>('whatsapp');
   const [paymentMessage, setPaymentMessage] = useState("");
@@ -35,8 +35,54 @@ export function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
 
   const [currentStep, setCurrentStep] = useState(1);
   const totalSteps = 4;
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const [payInfo, setPayInfo] = useState<{ title: string; value: string } | null>(null);
+  const [payInfo, setPayInfo] = useState<{ title: string; value: string; image?: string; instructions?: string } | null>(null);
+  const [availablePaymentMethods, setAvailablePaymentMethods] = useState<Array<{ value: string; label: string; image: string }>>([]);
+
+  // Fetch available payment methods on mount
+  useEffect(() => {
+    const fetchPaymentMethods = async () => {
+      try {
+        const response = await fetch('/api/public/payment-methods');
+        if (response.ok) {
+          const methods = await response.json();
+          setAvailablePaymentMethods(methods);
+          // Set default payment method to first available
+          if (methods.length > 0 && !paymentMethod) {
+            setPaymentMethod(methods[0].value);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch payment methods:', error);
+        // Fallback to hardcoded methods if API fails
+        setAvailablePaymentMethods([
+          { value: "Orange Cash", label: "Orange Cash", image: "/images/payments/orange-cash.png" },
+          { value: "Vodafone Cash", label: "Vodafone Cash", image: "/images/payments/vodafone-cash.png" },
+          { value: "Etisalat Cash", label: "Etisalat Cash", image: "/images/payments/etisalat-cash.png" },
+          { value: "WE Pay", label: "WE Pay", image: "/images/payments/we-pay.png" },
+          { value: "InstaPay", label: "InstaPay", image: "/images/payments/instapay.png" },
+          { value: "PayPal", label: "PayPal", image: "/images/payments/paypal.png" }
+        ]);
+      }
+    };
+
+    if (isOpen) {
+      fetchPaymentMethods();
+    }
+  }, [isOpen]);
+
+  const getPaymentEmoji = (method: string) => {
+    switch (method) {
+      case "Orange Cash": return "📱";
+      case "Vodafone Cash": return "📞";
+      case "Etisalat Cash": return "📶";
+      case "WE Pay": return "💳";
+      case "InstaPay": return "🏦";
+      case "PayPal": return "💰";
+      default: return "💳";
+    }
+  };
 
   const SELLER_WHATSAPP = import.meta.env.VITE_SELLER_WHATSAPP || "+201011696196";
 
@@ -85,8 +131,13 @@ export function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Prevent double submission
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+    
     if (!customerName.trim() || !customerPhone.trim()) {
       alert(t('please_fill_required'));
+      setIsSubmitting(false);
       return;
     }
 
@@ -94,6 +145,7 @@ export function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
       const email = customerEmail.trim();
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
         alert('Invalid email');
+        setIsSubmitting(false);
         return;
       }
     }
@@ -102,6 +154,7 @@ export function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
     const fullPhone = `${countryCode}${customerPhone}`;
     if (!/^\+\d{1,3}\d{7,15}$/.test(fullPhone.replace(/\s/g, ''))) {
       alert(t('invalid_phone'));
+      setIsSubmitting(false);
       return;
     }
 
@@ -149,6 +202,7 @@ ${orderSummary}
       });
     } catch (err) {
       alert(String(err));
+      setIsSubmitting(false);
       return;
     }
 
@@ -160,11 +214,11 @@ ${orderSummary}
     setCustomerPhone("");
     setCustomerEmail("");
     setCountryCode("+20");
-    setPaymentMethod("Orange Cash");
+    setPaymentMethod(availablePaymentMethods.length > 0 ? availablePaymentMethods[0].value : "Orange Cash");
     setConfirmMethod('whatsapp');
     setDeliveryChannel('whatsapp');
     setCurrentStep(1);
-    setCurrentStep(1);
+    setIsSubmitting(false);
   };
 
   if (!isOpen) return null;
@@ -260,14 +314,7 @@ ${orderSummary}
             <div>
               <Label className="text-lg font-medium">Payment Method</Label>
               <div className="mt-4 grid grid-cols-2 gap-3">
-                {[
-                  { value: "Orange Cash", label: "Orange Cash", icon: "📱" },
-                  { value: "Vodafone Cash", label: "Vodafone Cash", icon: "📞" },
-                  { value: "Etisalat Cash", label: "Etisalat Cash", icon: "📶" },
-                  { value: "WE Pay", label: "WE Pay", icon: "💳" },
-                  { value: "InstaPay", label: "InstaPay", icon: "🏦" },
-                  { value: "PayPal", label: "PayPal", icon: "💰" }
-                ].map((method) => (
+                {availablePaymentMethods.map((method) => (
                   <button
                     key={method.value}
                     type="button"
@@ -278,7 +325,22 @@ ${orderSummary}
                         : 'border-gray-300 hover:border-gray-400'
                     }`}
                   >
-                    <div className="text-2xl mb-2">{method.icon}</div>
+                    <div className="w-12 h-12 mx-auto mb-2">
+                      <img
+                        src={method.image}
+                        alt={method.label}
+                        className="w-full h-full object-contain"
+                        onError={(e) => {
+                          // Fallback to emoji if image fails to load
+                          const target = e.target as HTMLImageElement;
+                          target.style.display = 'none';
+                          const parent = target.parentElement;
+                          if (parent) {
+                            parent.innerHTML = getPaymentEmoji(method.value);
+                          }
+                        }}
+                      />
+                    </div>
                     <div className="text-sm font-medium">{method.label}</div>
                   </button>
                 ))}
@@ -286,8 +348,11 @@ ${orderSummary}
               {payInfo?.value ? (
                 <div className="mt-3 text-sm bg-muted/30 rounded-lg p-3">
                   <div>
-                    <p className="font-medium">{payInfo.title || t('transfer_number')}:</p>
-                    <p className="text-foreground">{payInfo.value}</p>
+                    <p className="font-medium">{payInfo.title}:</p>
+                    <p className="text-foreground font-mono">{payInfo.value}</p>
+                    {payInfo.instructions && (
+                      <p className="text-muted-foreground mt-1 text-xs">{payInfo.instructions}</p>
+                    )}
                   </div>
                 </div>
               ) : null}
@@ -405,9 +470,12 @@ ${orderSummary}
             ) : (
               <Button
                 type="submit"
-                className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold text-lg py-3"
+                disabled={isSubmitting}
+                className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold text-lg py-3 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {confirmMethod === 'whatsapp' ? (
+                {isSubmitting ? (
+                  <>Processing...</>
+                ) : confirmMethod === 'whatsapp' ? (
                   <>
                     <SiWhatsapp className="mr-2" />
                     Complete Order

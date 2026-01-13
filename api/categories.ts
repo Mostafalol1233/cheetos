@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
-const BACKEND_URL = process.env.BACKEND_URL || 'http://51.75.118.149:20242';
+const BACKEND_URL = process.env.BACKEND_URL || 'http://fi4.bot-hosting.net:22135';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const method = (req.method || 'GET').toUpperCase();

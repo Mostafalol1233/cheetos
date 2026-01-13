@@ -1723,14 +1723,57 @@ app.get('/api/admin/settings/whatsapp-number', authenticateToken, ensureAdmin, a
 function getPaymentDetails(paymentMethod) {
   const method = String(paymentMethod || '').trim();
   const orDefault = (v, d) => (v && String(v).trim() ? String(v).trim() : d);
-  if (method === 'Orange Cash') return { title: 'Transfer number', value: orDefault(process.env.ORANGE_NUMBER, '01001387284') };
-  if (method === 'Vodafone Cash') return { title: 'Transfer number', value: orDefault(process.env.VODAFONE_NUMBER, '01001387284') };
-  if (method === 'Etisalat Cash') return { title: 'Transfer number', value: orDefault(process.env.ETISALAT_NUMBER, '01001387284') };
-  if (method === 'WE Pay') return { title: 'Transfer numbers', value: orDefault(process.env.WE_NUMBERS, '01001387284 or 01029070780') };
-  if (method === 'InstaPay') return { title: 'Account', value: orDefault(process.env.INSTAPAY_ACCOUNT, 'DiaaEldeenn') };
-  if (method === 'PayPal') return { title: 'PayPal Account', value: orDefault(process.env.PAYPAL_ACCOUNT, 'matrixdiaa2016@gmail.com') };
-  if (method === 'Bank Transfer') return { title: 'Bank', value: orDefault(process.env.BANK_DETAILS, 'CIB Bank - Account Number: 0123456789') };
-  return { title: '', value: '' };
+
+  if (method === 'Orange Cash') return {
+    title: 'Orange Cash Number',
+    value: orDefault(process.env.ORANGE_CASH_NUMBER, '01001387284'),
+    image: orDefault(process.env.ORANGE_CASH_IMAGE, '/images/payments/orange-cash.png'),
+    instructions: orDefault(process.env.ORANGE_CASH_INSTRUCTIONS, 'Send money to this Orange Cash number')
+  };
+
+  if (method === 'Vodafone Cash') return {
+    title: 'Vodafone Cash Number',
+    value: orDefault(process.env.VODAFONE_CASH_NUMBER, '01001387284'),
+    image: orDefault(process.env.VODAFONE_CASH_IMAGE, '/images/payments/vodafone-cash.png'),
+    instructions: orDefault(process.env.VODAFONE_CASH_INSTRUCTIONS, 'Send money to this Vodafone Cash number')
+  };
+
+  if (method === 'Etisalat Cash') return {
+    title: 'Etisalat Cash Number',
+    value: orDefault(process.env.ETISALAT_CASH_NUMBER, '01001387284'),
+    image: orDefault(process.env.ETISALAT_CASH_IMAGE, '/images/payments/etisalat-cash.png'),
+    instructions: orDefault(process.env.ETISALAT_CASH_INSTRUCTIONS, 'Send money to this Etisalat Cash number')
+  };
+
+  if (method === 'WE Pay') return {
+    title: 'WE Pay Numbers',
+    value: orDefault(process.env.WE_PAY_NUMBERS, '01001387284 or 01029070780'),
+    image: orDefault(process.env.WE_PAY_IMAGE, '/images/payments/we-pay.png'),
+    instructions: orDefault(process.env.WE_PAY_INSTRUCTIONS, 'Send money to any of these WE Pay numbers')
+  };
+
+  if (method === 'InstaPay') return {
+    title: 'InstaPay Account',
+    value: orDefault(process.env.INSTAPAY_ACCOUNT, 'DiaaEldeenn'),
+    image: orDefault(process.env.INSTAPAY_IMAGE, '/images/payments/instapay.png'),
+    instructions: orDefault(process.env.INSTAPAY_INSTRUCTIONS, 'Send money to this InstaPay account')
+  };
+
+  if (method === 'PayPal') return {
+    title: 'PayPal Account',
+    value: orDefault(process.env.PAYPAL_EMAIL, 'matrixdiaa2016@gmail.com'),
+    image: orDefault(process.env.PAYPAL_IMAGE, '/images/payments/paypal.png'),
+    instructions: orDefault(process.env.PAYPAL_INSTRUCTIONS, 'Send money to this PayPal account')
+  };
+
+  if (method === 'Bank Transfer') return {
+    title: 'Bank Details',
+    value: orDefault(process.env.BANK_DETAILS, 'CIB Bank - Account: 0123456789 - Name: Diaa Eldeen'),
+    image: orDefault(process.env.BANK_TRANSFER_IMAGE, '/images/payments/bank-transfer.png'),
+    instructions: orDefault(process.env.BANK_TRANSFER_INSTRUCTIONS, 'Transfer money to this bank account')
+  };
+
+  return { title: '', value: '', image: '', instructions: '' };
 }
 
 app.get('/api/public/payment-details', async (req, res) => {
@@ -1738,6 +1781,38 @@ app.get('/api/public/payment-details', async (req, res) => {
     const method = req.query.method;
     if (!method) return res.status(400).json({ message: 'method required' });
     return res.json(getPaymentDetails(method));
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+app.get('/api/public/payment-methods', async (req, res) => {
+  try {
+    const methods = [];
+    
+    // Check each payment method and only include if it has a value
+    const paymentConfigs = [
+      { name: 'Orange Cash', env: 'ORANGE_CASH_NUMBER' },
+      { name: 'Vodafone Cash', env: 'VODAFONE_CASH_NUMBER' },
+      { name: 'Etisalat Cash', env: 'ETISALAT_CASH_NUMBER' },
+      { name: 'WE Pay', env: 'WE_PAY_NUMBERS' },
+      { name: 'InstaPay', env: 'INSTAPAY_ACCOUNT' },
+      { name: 'PayPal', env: 'PAYPAL_EMAIL' },
+      { name: 'Bank Transfer', env: 'BANK_DETAILS' }
+    ];
+
+    for (const config of paymentConfigs) {
+      if (process.env[config.env] && String(process.env[config.env]).trim()) {
+        const details = getPaymentDetails(config.name);
+        methods.push({
+          value: config.name,
+          label: config.name,
+          image: details.image
+        });
+      }
+    }
+
+    return res.json(methods);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
