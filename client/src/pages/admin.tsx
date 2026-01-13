@@ -342,6 +342,10 @@ export default function AdminDashboard() {
   });
 
   function OrdersPanel() {
+    const [selectedOrder, setSelectedOrder] = useState<any>(null);
+    const [responseMessage, setResponseMessage] = useState('');
+    const [showResponseModal, setShowResponseModal] = useState(false);
+
     const { data: orders = [] } = useQuery<Array<{ id: string; paymentMethod: string; total: number; status: string; timestamp: number; customerName: string; customerPhone: string; items: Array<{ gameId: string; quantity: number; price: number }> }>>({
       queryKey: ['/api/admin/transactions'],
       enabled: true,
@@ -353,49 +357,160 @@ export default function AdminDashboard() {
         return await res.json();
       }
     });
+
+    const respondToOrderMutation = useMutation({
+      mutationFn: async ({ orderId, message }: { orderId: string; message: string }) => {
+        const token = localStorage.getItem('adminToken');
+        const res = await fetch(`${API_BASE_URL}/api/admin/transactions/${orderId}/respond`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {})
+          },
+          body: JSON.stringify({ message })
+        });
+        if (!res.ok) throw new Error('Failed to respond to order');
+        return res.json();
+      },
+      onSuccess: () => {
+        toast({ title: 'Response sent', description: 'Order confirmed and customer notified.' });
+        setShowResponseModal(false);
+        setResponseMessage('');
+        setSelectedOrder(null);
+        queryClient.invalidateQueries({ queryKey: ['/api/admin/transactions'] });
+      },
+      onError: (error: any) => {
+        toast({ title: 'Failed to respond', description: error.message, variant: 'destructive' });
+      }
+    });
+
+    const handleRespondToOrder = (order: any) => {
+      setSelectedOrder(order);
+      setResponseMessage(`Your order ${order.id} has been confirmed! Your digital codes will be delivered shortly.`);
+      setShowResponseModal(true);
+    };
+
+    const getStatusColor = (status: string) => {
+      switch (status?.toLowerCase()) {
+        case 'confirmed': return 'text-green-400';
+        case 'pending': return 'text-yellow-400';
+        case 'cancelled': return 'text-red-400';
+        default: return 'text-gray-400';
+      }
+    };
+
     return (
-      <Card className="bg-card/50 border-gold-primary/30">
-        <CardHeader>
-          <CardTitle className="text-lg">Recent Orders</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="text-left">
-                  <th className="p-2">Order</th>
-                  <th className="p-2">Customer</th>
-                  <th className="p-2">Contact</th>
-                  <th className="p-2">Timestamp</th>
-                  <th className="p-2">Payment</th>
-                  <th className="p-2">Total</th>
-                  <th className="p-2">Items</th>
-                </tr>
-              </thead>
-              <tbody>
-                {orders.map((o) => (
-                  <tr key={o.id} className="border-t">
-                    <td className="p-2 font-mono">{o.id}</td>
-                    <td className="p-2">{o.customerName || '-'}</td>
-                    <td className="p-2">{o.customerPhone || '-'}</td>
-                    <td className="p-2">{new Date(o.timestamp).toLocaleString()}</td>
-                    <td className="p-2">{o.paymentMethod}</td>
-                    <td className="p-2">{o.total} EGP</td>
-                    <td className="p-2">
-                      {o.items.length ? o.items.map(it => `${it.gameId} x${it.quantity}`).join(', ') : '-'}
-                    </td>
+      <>
+        <Card className="bg-card/50 border-gold-primary/30">
+          <CardHeader>
+            <CardTitle className="text-lg">Recent Orders</CardTitle>
+            <p className="text-sm text-muted-foreground">Manage customer orders and communicate with users</p>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-left">
+                    <th className="p-2">Order</th>
+                    <th className="p-2">Customer</th>
+                    <th className="p-2">Contact</th>
+                    <th className="p-2">Status</th>
+                    <th className="p-2">Timestamp</th>
+                    <th className="p-2">Payment</th>
+                    <th className="p-2">Total</th>
+                    <th className="p-2">Items</th>
+                    <th className="p-2">Actions</th>
                   </tr>
-                ))}
-                {orders.length === 0 && (
-                  <tr>
-                    <td colSpan={7} className="p-4 text-center text-muted-foreground">No orders</td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </CardContent>
-      </Card>
+                </thead>
+                <tbody>
+                  {orders.map((o) => (
+                    <tr key={o.id} className="border-t">
+                      <td className="p-2 font-mono">{o.id}</td>
+                      <td className="p-2">{o.customerName || '-'}</td>
+                      <td className="p-2">{o.customerPhone || '-'}</td>
+                      <td className="p-2">
+                        <span className={`font-medium ${getStatusColor(o.status)}`}>
+                          {o.status || 'pending'}
+                        </span>
+                      </td>
+                      <td className="p-2">{new Date(o.timestamp).toLocaleString()}</td>
+                      <td className="p-2">{o.paymentMethod}</td>
+                      <td className="p-2">{o.total} EGP</td>
+                      <td className="p-2">
+                        {o.items.length ? o.items.map(it => `${it.gameId} x${it.quantity}`).join(', ') : '-'}
+                      </td>
+                      <td className="p-2">
+                        {o.status !== 'confirmed' && (
+                          <Button
+                            size="sm"
+                            onClick={() => handleRespondToOrder(o)}
+                            className="bg-green-600 hover:bg-green-700 text-white"
+                          >
+                            Confirm & Notify
+                          </Button>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                  {orders.length === 0 && (
+                    <tr>
+                      <td colSpan={9} className="p-4 text-center text-muted-foreground">No orders</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Response Modal */}
+        <Dialog open={showResponseModal} onOpenChange={setShowResponseModal}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Confirm Order & Send Message</DialogTitle>
+              <DialogDescription>
+                Confirm order {selectedOrder?.id} and send a message to the customer.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="response-message">Message to Customer</Label>
+                <Textarea
+                  id="response-message"
+                  value={responseMessage}
+                  onChange={(e) => setResponseMessage(e.target.value)}
+                  placeholder="Enter your message to the customer..."
+                  rows={4}
+                />
+              </div>
+              {selectedOrder && (
+                <div className="bg-muted/50 p-3 rounded-lg">
+                  <p className="text-sm font-medium">Order Details:</p>
+                  <p className="text-sm">Customer: {selectedOrder.customerName}</p>
+                  <p className="text-sm">Phone: {selectedOrder.customerPhone}</p>
+                  <p className="text-sm">Total: {selectedOrder.total} EGP</p>
+                  <p className="text-sm">Items: {selectedOrder.items.map((it: any) => `${it.gameId} x${it.quantity}`).join(', ')}</p>
+                </div>
+              )}
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowResponseModal(false)}>
+                Cancel
+              </Button>
+              <Button
+                onClick={() => respondToOrderMutation.mutate({
+                  orderId: selectedOrder?.id,
+                  message: responseMessage
+                })}
+                disabled={respondToOrderMutation.isPending || !responseMessage.trim()}
+                className="bg-green-600 hover:bg-green-700"
+              >
+                {respondToOrderMutation.isPending ? 'Sending...' : 'Confirm & Send'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </>
     );
   }
 
