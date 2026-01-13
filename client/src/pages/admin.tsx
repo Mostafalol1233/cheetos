@@ -63,12 +63,12 @@ interface Alert {
 
 const apiPath = (path: string) => (path.startsWith('http') ? path : `${API_BASE_URL}${path}`);
 
-const parseNumberSafe = (v: string | number | null | undefined) => {
-  const s = normalizeNumericString(v);
-  if (!s) return 0;
-  const n = Number(s);
-  return Number.isFinite(n) ? n : 0;
-};
+// const parseNumberSafe = (v: string | number | null | undefined) => {
+//   const s = normalizeNumericString(v);
+//   if (!s) return 0;
+//   const n = Number(s);
+//   return Number.isFinite(n) ? n : 0;
+// };
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('games');
@@ -1863,7 +1863,7 @@ export default function AdminDashboard() {
                                 onChange={(e) => {
                                   const v = e.target.value;
                                   const next = [...packagesDraft];
-                                  next[idx] = { ...next[idx], price: v === '' ? 0 : parseNumberSafe(v) };
+                                  next[idx] = { ...next[idx], price: v === '' ? 0 : (Number(normalizeNumericString(v)) || 0) };
                                   setPackagesDraft(next);
                                 }}
                               />
@@ -1879,7 +1879,7 @@ export default function AdminDashboard() {
                                 onChange={(e) => {
                                   const v = e.target.value;
                                   const next = [...packagesDraft];
-                                  next[idx] = { ...next[idx], discountPrice: v === '' ? null : parseNumberSafe(v) };
+                                  next[idx] = { ...next[idx], discountPrice: v === '' ? null : Number(normalizeNumericString(v)) };
                                   setPackagesDraft(next);
                                 }}
                               />
