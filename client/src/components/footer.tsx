@@ -1,6 +1,7 @@
 import { Link } from "wouter";
 import { Facebook, Youtube, Mail, Phone, MapPin } from "lucide-react";
-import { SiTelegram, SiTiktok, SiWhatsapp } from "react-icons/si";
+import { SiTelegram, SiTiktok, SiWhatsapp, SiVodafone } from "react-icons/si";
+import { FaPaypal, FaCcVisa, FaCcMastercard } from "react-icons/fa";
 
 const logo = "https://files.catbox.moe/brmkrj.png";
 
@@ -132,34 +133,15 @@ export function Footer() {
 
         <div className="border-t border-border mt-12 pt-8 flex flex-col md:flex-row justify-between items-center text-sm text-muted-foreground">
           <p>© 2015–{new Date().getFullYear()} Diaa Eldeen. All rights reserved.</p>
-          <div className="flex space-x-6 mt-4 md:mt-0">
-            {/* PayPal */}
-            <img 
-              src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 32'%3E%3Cpath fill='%23003087' d='M11.6 11.6h-3.4l-.8 5.2h3.4c2.8 0 4.2-1.4 4.2-3.8 0-2.4-1.6-1.4-3.4-1.4z'/%3E%3Cpath fill='%23003087' d='M4.4 25.8h4.6l.6-3.8h2.6c3.8 0 6.6-1.8 6.6-6.4 0-4.4-3-6.4-7.4-6.4H4.4l-3.2 20.6h3.2z'/%3E%3Cpath fill='%23009cde' d='M43.2 11.6h-3.4l-.8 5.2h3.4c2.8 0 4.2-1.4 4.2-3.8 0-2.4-1.6-1.4-3.4-1.4z'/%3E%3Cpath fill='%23009cde' d='M36 25.8h4.6l.6-3.8h2.6c3.8 0 6.6-1.8 6.6-6.4 0-4.4-3-6.4-7.4-6.4H36l-3.2 20.6h3.2z'/%3E%3Cpath fill='%23003087' d='M22.8 11.6h-3.4l-.8 5.2h3.4c2.8 0 4.2-1.4 4.2-3.8 0-2.4-1.6-1.4-3.4-1.4z'/%3E%3Cpath fill='%23003087' d='M15.6 25.8h4.6l.6-3.8h2.6c3.8 0 6.6-1.8 6.6-6.4 0-4.4-3-6.4-7.4-6.4h-6.8l-3.2 20.6h3.2z'/%3E%3C/svg%3E"
-              alt="PayPal" 
-              className="h-8 w-auto hover:scale-110 transition-all bg-white rounded px-1" 
-            />
-            {/* Mastercard */}
-            <img 
-              src="https://upload.wikimedia.org/wikipedia/commons/2/2a/Mastercard-logo.svg" 
-              alt="Mastercard" 
-              className="h-8 w-auto hover:scale-110 transition-all shadow-sm rounded" 
-            />
-            {/* Visa */}
-            <img 
-              src="https://upload.wikimedia.org/wikipedia/commons/5/5e/Visa_Inc._logo.svg" 
-              alt="Visa" 
-              className="h-8 w-auto hover:scale-110 transition-all shadow-sm rounded" 
-            />
-            {/* Vodafone */}
-            <img 
-              src="https://upload.wikimedia.org/wikipedia/commons/1/1f/Vodafone_icon.svg" 
-              alt="Vodafone Cash" 
-              className="h-8 w-auto hover:scale-110 transition-all shadow-sm rounded" 
-            />
+          <div className="flex items-center space-x-4 mt-4 md:mt-0 text-2xl">
+            <FaCcVisa className="hover:text-white transition-colors" />
+            <FaCcMastercard className="hover:text-white transition-colors" />
+            <FaPaypal className="hover:text-white transition-colors" />
+            <SiVodafone className="hover:text-white transition-colors" />
           </div>
         </div>
       </div>
     </footer>
   );
 }
+

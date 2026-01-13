@@ -473,14 +473,9 @@ export function TranslationProvider({ children }: { children: ReactNode }) {
       document.documentElement.lang = language;
       document.documentElement.dataset.lang = language;
 
-      // Set RTL for Arabic
-      if (language === 'ar') {
-        document.documentElement.dir = 'rtl';
-        document.body.classList.add('rtl');
-      } else {
-        document.documentElement.dir = 'ltr';
-        document.body.classList.remove('rtl');
-      }
+      // Always keep LTR layout
+      document.documentElement.dir = 'ltr';
+      document.body.classList.remove('rtl');
     }
   }, [language]);
 

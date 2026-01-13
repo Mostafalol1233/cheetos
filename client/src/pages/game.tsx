@@ -124,29 +124,69 @@ export default function GamePage() {
       };
     }
 
-    // Fallback to original pricing logic
-    const base = Number(packagePrices[index] ?? game.price ?? 0);
-    const packageDiscount = coerceNumberOrNull(packageDiscountPrices[index]);
-    const gameDiscount = gameLevelDiscount;
-    const computed = computeAutoDiscount(base, index);
+    // --- Fallback and Currency Conversion Logic ---
+    const baseEgp = Number(packagePrices[index] ?? game.price ?? 0);
+    const packageDiscountEgp = coerceNumberOrNull(packageDiscountPrices[index]);
+    const gameDiscountEgp = gameLevelDiscount;
+    const computedDiscountEgp = computeAutoDiscount(baseEgp, index);
 
     // Priority: package discount > game discount > auto discount > base price
-    let final = base;
-    if (packageDiscount != null && packageDiscount > 0 && packageDiscount < base) {
-      final = packageDiscount;
-    } else if (gameDiscount != null && gameDiscount > 0 && gameDiscount < base) {
-      final = gameDiscount;
-    } else if (computed != null && computed > 0 && computed < base) {
-      final = computed;
+    let finalEgp = baseEgp;
+    if (packageDiscountEgp != null && packageDiscountEgp > 0 && packageDiscountEgp < baseEgp) {
+      finalEgp = packageDiscountEgp;
+    } else if (gameDiscountEgp != null && gameDiscountEgp > 0 && gameDiscountEgp < baseEgp) {
+      finalEgp = gameDiscountEgp;
+    } else if (computedDiscountEgp != null && computedDiscountEgp > 0 && computedDiscountEgp < baseEgp) {
+      finalEgp = computedDiscountEgp;
     }
 
-    const hasDiscount = final !== base;
+    const hasDiscount = finalEgp !== baseEgp;
+
+    // If current currency is EGP, return original values
+    if (currency === 'EGP') {
+      return {
+        base: baseEgp,
+        final: finalEgp,
+        original: hasDiscount ? baseEgp : null,
+        currency: 'EGP',
+        isEstimated: false
+      };
+    }
+
+    // --- Automatic Conversion for other currencies ---
+    const EGP_TO_USD_RATE = 1 / 50;
+    const EGP_TO_TRY_RATE = 1 / 1.5; // Placeholder rate
+
+    let finalConverted = 0;
+    let baseConverted = 0;
+    
+    if (currency === 'USD') {
+      finalConverted = finalEgp * EGP_TO_USD_RATE;
+      baseConverted = baseEgp * EGP_TO_USD_RATE;
+    } else if (currency === 'TRY') {
+      finalConverted = finalEgp * EGP_TO_TRY_RATE;
+      baseConverted = baseEgp * EGP_TO_TRY_RATE;
+    } else {
+      // If currency is unknown, default to EGP
+       return {
+        base: baseEgp,
+        final: finalEgp,
+        original: hasDiscount ? baseEgp : null,
+        currency: 'EGP',
+        isEstimated: false
+      };
+    }
+    
+    // Round to 2 decimal places
+    finalConverted = Math.round(finalConverted * 100) / 100;
+    baseConverted = Math.round(baseConverted * 100) / 100;
+
     return {
-      base,
-      final,
-      original: hasDiscount ? base : null,
-      currency: 'EGP', // Default fallback
-      isEstimated: false
+      base: baseConverted,
+      final: finalConverted,
+      original: hasDiscount ? baseConverted : null,
+      currency: currency,
+      isEstimated: true // Mark this price as an estimate
     };
   };
 
@@ -431,12 +471,12 @@ export default function GamePage() {
                           {pricing.base} {game.currency}
                         </span>
                         <span className="bg-gradient-to-r from-gold-primary to-neon-pink bg-clip-text text-3xl font-black text-transparent sm:text-5xl">
-                          {pricing.final} {game.currency}
+    {pricing.final} {pricing.currency}
                         </span>
                       </>
                     ) : (
                       <span className="bg-gradient-to-r from-gold-primary to-neon-pink bg-clip-text text-3xl font-black text-transparent sm:text-5xl">
-                        {pricing.final} {game.currency}
+  {pricing.final} {pricing.currency}
                       </span>
                     );
                   })()}
