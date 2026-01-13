@@ -72,6 +72,18 @@ const parseNumberSafe = (v: string | number | null | undefined) => {
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('games');
+  const [searchGameTerm, setSearchGameTerm] = useState('');
+  const [editingGame, setEditingGame] = useState<Game | null>(null);
+  const [packagesGameId, setPackagesGameId] = useState<string | null>(null);
+  const [packagesDraft, setPackagesDraft] = useState<Array<{ amount: string; price: number; discountPrice: number | null; image?: string | null }>>([]);
+  const { toast } = useToast();
+  const [originalPackages, setOriginalPackages] = useState<Array<{ amount: string; price: number; discountPrice: number | null; image?: string | null }>>([]);
+  const [addedIndices, setAddedIndices] = useState<Set<number>>(new Set());
+  const [selectedUser, setSelectedUser] = useState<string | null>(null);
+  const [replyMessage, setReplyMessage] = useState('');
+  const [cardsPage, setCardsPage] = useState(1);
+  const [cardsLimit, setCardsLimit] = useState(20);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
   const [newCardGameId, setNewCardGameId] = useState<string>('');
   const [newCardCode, setNewCardCode] = useState('');
   const [alertStatus, setAlertStatus] = useState<string>('all');
