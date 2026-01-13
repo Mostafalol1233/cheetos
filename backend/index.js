@@ -1329,7 +1329,14 @@ async function initializeDatabase() {
     await pool.query(`ALTER TABLE games ADD COLUMN IF NOT EXISTS show_on_main_page BOOLEAN DEFAULT false`);
     await pool.query(`ALTER TABLE games ADD COLUMN IF NOT EXISTS display_order INTEGER DEFAULT 999`);
     await pool.query(`ALTER TABLE games ADD COLUMN IF NOT EXISTS deleted BOOLEAN DEFAULT false`);
-    await pool.query(`ALTER TABLE games ADD CONSTRAINT display_order_positive CHECK (display_order >= 0)`);
+    // Add constraint only if it doesn't exist
+    try {
+      await pool.query(`ALTER TABLE games ADD CONSTRAINT display_order_positive CHECK (display_order >= 0)`);
+    } catch (err) {
+      if (!err.message.includes('already exists')) {
+        throw err;
+      }
+    }
     // Prevent duplicate names (case-insensitive)
     await pool.query(`CREATE UNIQUE INDEX IF NOT EXISTS uniq_games_lower_name ON games ((lower(name)))`);
 
@@ -1727,49 +1734,49 @@ function getPaymentDetails(paymentMethod) {
   if (method === 'Orange Cash') return {
     title: 'Orange Cash Number',
     value: orDefault(process.env.ORANGE_CASH_NUMBER, '01001387284'),
-    image: orDefault(process.env.ORANGE_CASH_IMAGE, '/images/payments/orange-cash.png'),
+    image: '/images/payments/orange-logo-new.png',
     instructions: orDefault(process.env.ORANGE_CASH_INSTRUCTIONS, 'Send money to this Orange Cash number')
   };
 
   if (method === 'Vodafone Cash') return {
     title: 'Vodafone Cash Number',
     value: orDefault(process.env.VODAFONE_CASH_NUMBER, '01001387284'),
-    image: orDefault(process.env.VODAFONE_CASH_IMAGE, '/images/payments/vodafone-cash.png'),
+    image: '/images/payments/vodafone-logo.png',
     instructions: orDefault(process.env.VODAFONE_CASH_INSTRUCTIONS, 'Send money to this Vodafone Cash number')
   };
 
   if (method === 'Etisalat Cash') return {
     title: 'Etisalat Cash Number',
     value: orDefault(process.env.ETISALAT_CASH_NUMBER, '01001387284'),
-    image: orDefault(process.env.ETISALAT_CASH_IMAGE, '/images/payments/etisalat-cash.png'),
+    image: '/images/payments/etisalat-logo.png',
     instructions: orDefault(process.env.ETISALAT_CASH_INSTRUCTIONS, 'Send money to this Etisalat Cash number')
   };
 
   if (method === 'WE Pay') return {
     title: 'WE Pay Numbers',
     value: orDefault(process.env.WE_PAY_NUMBERS, '01001387284 or 01029070780'),
-    image: orDefault(process.env.WE_PAY_IMAGE, '/images/payments/we-pay.png'),
+    image: '/images/payments/we-pay-logo.png',
     instructions: orDefault(process.env.WE_PAY_INSTRUCTIONS, 'Send money to any of these WE Pay numbers')
   };
 
   if (method === 'InstaPay') return {
     title: 'InstaPay Account',
     value: orDefault(process.env.INSTAPAY_ACCOUNT, 'DiaaEldeenn'),
-    image: orDefault(process.env.INSTAPAY_IMAGE, '/images/payments/instapay.png'),
+    image: '/images/payments/instapay-logo.png',
     instructions: orDefault(process.env.INSTAPAY_INSTRUCTIONS, 'Send money to this InstaPay account')
   };
 
   if (method === 'PayPal') return {
     title: 'PayPal Account',
     value: orDefault(process.env.PAYPAL_EMAIL, 'matrixdiaa2016@gmail.com'),
-    image: orDefault(process.env.PAYPAL_IMAGE, '/images/payments/paypal.png'),
+    image: '/images/payments/paypal-logo.png',
     instructions: orDefault(process.env.PAYPAL_INSTRUCTIONS, 'Send money to this PayPal account')
   };
 
   if (method === 'WhatsApp') return {
     title: 'WhatsApp Payment',
     value: orDefault(process.env.WHATSAPP_NUMBER, '+201029870810'),
-    image: orDefault(process.env.WHATSAPP_IMAGE, '/images/payments/whatsapp.png'),
+    image: '/images/payments/whatsapp.svg',
     instructions: orDefault(process.env.WHATSAPP_INSTRUCTIONS, 'Send payment confirmation via WhatsApp to this number')
   };
 
