@@ -2397,7 +2397,7 @@ export default function AdminDashboard() {
                     toast({ title: 'Countdown updated', description: 'Main page countdown content updated.' });
                     queryClient.invalidateQueries({ queryKey: ['/api/countdown/current'] });
                   } catch (err) {
-                    toast({ title: 'Update failed', description: String(err.message || err) });
+                    toast({ title: 'Update failed', description: String((err as Error)?.message || err) });
                   }
                 }}>
                   Update Countdown Content

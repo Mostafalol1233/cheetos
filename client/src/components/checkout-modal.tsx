@@ -33,6 +33,9 @@ export function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
   const { toast } = useToast();
   const { t } = useTranslation();
 
+  const [currentStep, setCurrentStep] = useState(1);
+  const totalSteps = 4;
+
   const [payInfo, setPayInfo] = useState<{ title: string; value: string } | null>(null);
 
   const SELLER_WHATSAPP = import.meta.env.VITE_SELLER_WHATSAPP || "+201011696196";
@@ -50,6 +53,34 @@ export function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
     };
     load();
   }, [paymentMethod]);
+
+  const validateStep = (step: number) => {
+    switch (step) {
+      case 1:
+        return deliveryChannel !== undefined;
+      case 2:
+        return customerName.trim() && customerPhone.trim() && 
+               (deliveryChannel !== 'email' || customerEmail.trim());
+      case 3:
+        return paymentMethod !== undefined;
+      case 4:
+        return confirmMethod !== undefined;
+      default:
+        return false;
+    }
+  };
+
+  const nextStep = () => {
+    if (validateStep(currentStep) && currentStep < totalSteps) {
+      setCurrentStep(currentStep + 1);
+    }
+  };
+
+  const prevStep = () => {
+    if (currentStep > 1) {
+      setCurrentStep(currentStep - 1);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -130,9 +161,163 @@ ${orderSummary}
     setCustomerEmail("");
     setCountryCode("+20");
     setPaymentMethod("Orange Cash");
+    setConfirmMethod('whatsapp');
+    setDeliveryChannel('whatsapp');
+    setCurrentStep(1);
+    setCurrentStep(1);
   };
 
   if (!isOpen) return null;
+
+  const renderStepContent = () => {
+    switch (currentStep) {
+      case 1:
+        return (
+          <div className="space-y-4">
+            <div>
+              <Label className="text-lg font-medium">How would you like to receive your order?</Label>
+              <RadioGroup value={deliveryChannel} onValueChange={(val) => setDeliveryChannel(val as 'whatsapp' | 'email')} className="mt-4">
+                <div className="flex items-center gap-3 p-4 border rounded-lg hover:bg-muted/50">
+                  <RadioGroupItem id="deliver-whatsapp" value="whatsapp" />
+                  <div className="flex items-center gap-2">
+                    <SiWhatsapp className="text-green-500" />
+                    <Label htmlFor="deliver-whatsapp" className="font-medium">WhatsApp</Label>
+                  </div>
+                  <p className="text-sm text-muted-foreground ml-auto">Receive digital codes instantly</p>
+                </div>
+                <div className="flex items-center gap-3 p-4 border rounded-lg hover:bg-muted/50 mt-2">
+                  <RadioGroupItem id="deliver-email" value="email" />
+                  <div className="flex items-center gap-2">
+                    <Label htmlFor="deliver-email" className="font-medium">Email</Label>
+                  </div>
+                  <p className="text-sm text-muted-foreground ml-auto">Get codes via email</p>
+                </div>
+              </RadioGroup>
+            </div>
+          </div>
+        );
+      case 2:
+        return (
+          <div className="space-y-4">
+            <div>
+              <Label className="text-lg font-medium">Customer Information</Label>
+              <div className="mt-4 space-y-4">
+                <div>
+                  <Label htmlFor="name">{t('full_name')} *</Label>
+                  <Input
+                    id="name"
+                    value={customerName}
+                    onChange={(e) => setCustomerName(e.target.value)}
+                    placeholder={t('enter_full_name')}
+                    required
+                  />
+                </div>
+
+                <div className="flex gap-2">
+                  <div className="w-24">
+                    <Label>{t('country')}</Label>
+                    <Select value={countryCode} onValueChange={setCountryCode}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="+20">🇪🇬 +20</SelectItem>
+                        <SelectItem value="+966">🇸🇦 +966</SelectItem>
+                        <SelectItem value="+971">🇦🇪 +971</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex-1">
+                    <Label htmlFor="phone">{t('phone_number')} *</Label>
+                    <Input
+                      id="phone"
+                      value={customerPhone}
+                      onChange={(e) => setCustomerPhone(e.target.value)}
+                      placeholder="1234567890"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="email">Email {deliveryChannel === 'email' ? '*' : ''}</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={customerEmail}
+                    onChange={(e) => setCustomerEmail(e.target.value)}
+                    placeholder="you@email.com"
+                    required={deliveryChannel === 'email'}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      case 3:
+        return (
+          <div className="space-y-4">
+            <div>
+              <Label className="text-lg font-medium">Payment Method</Label>
+              <div className="mt-4">
+                <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Orange Cash">Orange Cash</SelectItem>
+                    <SelectItem value="Vodafone Cash">Vodafone Cash</SelectItem>
+                    <SelectItem value="Etisalat Cash">Etisalat Cash</SelectItem>
+                    <SelectItem value="WE Pay">WE Pay</SelectItem>
+                    <SelectItem value="InstaPay">InstaPay</SelectItem>
+                    <SelectItem value="PayPal">PayPal</SelectItem>
+                    <SelectItem value="Bank Transfer">Bank Transfer</SelectItem>
+                  </SelectContent>
+                </Select>
+                {payInfo?.value ? (
+                  <div className="mt-3 text-sm bg-muted/30 rounded-lg p-3">
+                    <div>
+                      <p className="font-medium">{payInfo.title || t('transfer_number')}:</p>
+                      <p className="text-foreground">{payInfo.value}</p>
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+            </div>
+          </div>
+        );
+      case 4:
+        return (
+          <div className="space-y-4">
+            <div>
+              <Label className="text-lg font-medium">Confirmation Method</Label>
+              <RadioGroup value={confirmMethod} onValueChange={(val) => setConfirmMethod(val as 'whatsapp' | 'live')} className="mt-4">
+                <div className="flex items-center gap-3 p-4 border rounded-lg hover:bg-muted/50">
+                  <RadioGroupItem id="method-whatsapp" value="whatsapp" />
+                  <div className="flex items-center gap-2">
+                    <SiWhatsapp className="text-green-500" />
+                    <Label htmlFor="method-whatsapp" className="font-medium">{t('whatsapp')}</Label>
+                  </div>
+                  <p className="text-sm text-muted-foreground ml-auto">Send payment details via WhatsApp</p>
+                </div>
+                <div className="flex items-center gap-3 p-4 border rounded-lg hover:bg-muted/50 mt-2">
+                  <RadioGroupItem id="method-live" value="live" />
+                  <div className="flex items-center gap-2">
+                    <Label htmlFor="method-live" className="font-medium">{t('live_message_secure')}</Label>
+                  </div>
+                  <p className="text-sm text-muted-foreground ml-auto">Upload receipt securely</p>
+                </div>
+              </RadioGroup>
+              {confirmMethod === 'live' && (
+                <p className="text-xs text-muted-foreground mt-2">{t('live_redirect_hint')}</p>
+              )}
+            </div>
+          </div>
+        );
+      default:
+        return null;
+    }
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -140,149 +325,91 @@ ${orderSummary}
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <SiWhatsapp className="text-green-500" />
-            {t('complete_order')}
+            {t('complete_order')} ({currentStep}/{totalSteps})
           </DialogTitle>
           <DialogDescription>
             {t('checkout_desc')}
           </DialogDescription>
         </DialogHeader>
 
+        {/* Progress Indicator */}
+        <div className="flex items-center justify-center space-x-2 mb-6">
+          {[1, 2, 3, 4].map((step) => (
+            <div key={step} className="flex items-center">
+              <div
+                className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+                  step <= currentStep
+                    ? 'bg-green-500 text-white'
+                    : 'bg-gray-200 text-gray-600'
+                }`}
+              >
+                {step}
+              </div>
+              {step < 4 && (
+                <div
+                  className={`w-8 h-0.5 ${
+                    step < currentStep ? 'bg-green-500' : 'bg-gray-200'
+                  }`}
+                />
+              )}
+            </div>
+          ))}
+        </div>
+
+        {/* Order Summary - Always visible */}
+        <div className="bg-muted/50 rounded-lg p-4 mb-4">
+          <h4 className="font-medium mb-2">{t('order_summary')}:</h4>
+          {cart.map(item => (
+            <div key={item.id} className="flex justify-between text-sm">
+              <span>{item.name} x{item.quantity}</span>
+              <span>{(item.price * item.quantity).toFixed(2)} {t('egp')}</span>
+            </div>
+          ))}
+          <div className="border-t mt-2 pt-2 font-bold">
+            {t('total')}: {getTotalPrice()} {t('egp')}
+          </div>
+        </div>
+
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Order Summary */}
-          <div className="bg-muted/50 rounded-lg p-4">
-            <h4 className="font-medium mb-2">{t('order_summary')}:</h4>
-            {cart.map(item => (
-              <div key={item.id} className="flex justify-between text-sm">
-                <span>{item.name} x{item.quantity}</span>
-                <span>{(item.price * item.quantity).toFixed(2)} {t('egp')}</span>
-              </div>
-            ))}
-            <div className="border-t mt-2 pt-2 font-bold">
-              {t('total')}: {getTotalPrice()} {t('egp')}
-            </div>
-          </div>
+          {renderStepContent()}
 
-          <div>
-            <Label>Receive your order via</Label>
-            <RadioGroup value={deliveryChannel} onValueChange={(val) => setDeliveryChannel(val as 'whatsapp' | 'email')} className="mt-2">
-              <div className="flex items-center gap-2">
-                <RadioGroupItem id="deliver-whatsapp" value="whatsapp" />
-                <Label htmlFor="deliver-whatsapp">WhatsApp</Label>
-              </div>
-              <div className="flex items-center gap-2 mt-2">
-                <RadioGroupItem id="deliver-email" value="email" />
-                <Label htmlFor="deliver-email">Email</Label>
-              </div>
-            </RadioGroup>
-          </div>
-
-          {/* Confirmation Method */}
-          <div>
-            <Label>{t('confirmation_method')} *</Label>
-            <RadioGroup value={confirmMethod} onValueChange={(val) => setConfirmMethod(val as 'whatsapp' | 'live')} className="mt-2">
-              <div className="flex items-center gap-2">
-                <RadioGroupItem id="method-whatsapp" value="whatsapp" />
-                <Label htmlFor="method-whatsapp">{t('whatsapp')}</Label>
-              </div>
-              <div className="flex items-center gap-2 mt-2">
-                <RadioGroupItem id="method-live" value="live" />
-                <Label htmlFor="method-live">{t('live_message_secure')}</Label>
-              </div>
-            </RadioGroup>
-            {confirmMethod === 'live' && (
-              <p className="text-xs text-muted-foreground mt-2">{t('live_redirect_hint')}</p>
+          {/* Navigation Buttons */}
+          <div className="flex gap-2 pt-4">
+            {currentStep > 1 && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={prevStep}
+                className="flex-1"
+              >
+                Previous
+              </Button>
             )}
-          </div>
-
-          {/* Customer Information */}
-          <div>
-            <Label htmlFor="name">{t('full_name')} *</Label>
-            <Input
-              id="name"
-              value={customerName}
-              onChange={(e) => setCustomerName(e.target.value)}
-              placeholder={t('enter_full_name')}
-              required
-            />
-          </div>
-
-          <div className="flex gap-2">
-            <div className="w-24">
-              <Label>{t('country')}</Label>
-              <Select value={countryCode} onValueChange={setCountryCode}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="+20">🇪🇬 +20</SelectItem>
-                  <SelectItem value="+966">🇸🇦 +966</SelectItem>
-                  <SelectItem value="+971">🇦🇪 +971</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex-1">
-              <Label htmlFor="phone">{t('phone_number')} *</Label>
-              <Input
-                id="phone"
-                value={customerPhone}
-                onChange={(e) => setCustomerPhone(e.target.value)}
-                placeholder="1234567890"
-                required
-              />
-            </div>
-          </div>
-
-          <div>
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              type="email"
-              value={customerEmail}
-              onChange={(e) => setCustomerEmail(e.target.value)}
-              placeholder="you@email.com"
-              required={deliveryChannel === 'email'}
-            />
-          </div>
-
-          <div>
-            <Label>{t('payment_method')}</Label>
-            <Select value={paymentMethod} onValueChange={setPaymentMethod}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Orange Cash">Orange Cash</SelectItem>
-                <SelectItem value="Vodafone Cash">Vodafone Cash</SelectItem>
-                <SelectItem value="Etisalat Cash">Etisalat Cash</SelectItem>
-                <SelectItem value="WE Pay">WE Pay</SelectItem>
-                <SelectItem value="InstaPay">InstaPay</SelectItem>
-                <SelectItem value="PayPal">PayPal</SelectItem>
-                <SelectItem value="Bank Transfer">Bank Transfer</SelectItem>
-              </SelectContent>
-            </Select>
-            {payInfo?.value ? (
-              <div className="mt-3 text-sm bg-muted/30 rounded-lg p-3">
-                <div>
-                  <p className="font-medium">{payInfo.title || t('transfer_number')}:</p>
-                  <p className="text-foreground">{payInfo.value}</p>
-                </div>
-              </div>
-            ) : null}
-          </div>
-
-          <Button 
-            type="submit" 
-            className="w-full bg-green-600 hover:bg-green-700 text-white"
-          >
-            {confirmMethod === 'whatsapp' ? (
-              <>
-                <SiWhatsapp className="mr-2" />
-                {t('send_order_whatsapp')}
-              </>
+            {currentStep < totalSteps ? (
+              <Button
+                type="button"
+                onClick={nextStep}
+                disabled={!validateStep(currentStep)}
+                className="flex-1 bg-green-600 hover:bg-green-700 text-white"
+              >
+                Next
+              </Button>
             ) : (
-              <>{t('proceed_secure_confirmation')}</>
+              <Button
+                type="submit"
+                className="flex-1 bg-green-600 hover:bg-green-700 text-white"
+              >
+                {confirmMethod === 'whatsapp' ? (
+                  <>
+                    <SiWhatsapp className="mr-2" />
+                    {t('send_order_whatsapp')}
+                  </>
+                ) : (
+                  <>{t('proceed_secure_confirmation')}</>
+                )}
+              </Button>
             )}
-          </Button>
+          </div>
         </form>
       </DialogContent>
     </Dialog>

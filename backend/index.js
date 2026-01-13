@@ -2810,7 +2810,20 @@ app.get('/api/transactions/:id', async (req, res) => {
       return res.status(404).json({ message: 'Not found' });
     }
     const items = await pool.query('SELECT * FROM transaction_items WHERE transaction_id = $1', [id]);
-    res.json({ transaction: tx.rows[0], items: items.rows });
+    
+    // Get customer info from users table
+    let customerInfo = null;
+    if (tx.rows[0].user_id) {
+      const userResult = await pool.query('SELECT name, email, phone FROM users WHERE id = $1', [tx.rows[0].user_id]);
+      if (userResult.rows.length > 0) {
+        customerInfo = userResult.rows[0];
+      }
+    }
+    
+    res.json({ 
+      transaction: { ...tx.rows[0], ...customerInfo }, 
+      items: items.rows 
+    });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

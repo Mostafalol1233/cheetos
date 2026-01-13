@@ -49,9 +49,9 @@ export function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
 
   const loadChatHistory = async () => {
     try {
-      const response = await fetch('/api/chat/history', {
+      const response = await fetch('/api/user/chat/history', {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${localStorage.getItem('userToken')}`
         }
       });
 
@@ -85,11 +85,11 @@ export function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
     setIsLoading(true);
 
     try {
-      const response = await fetch('/api/chat/send', {
+      const response = await fetch('/api/user/chat/send', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${localStorage.getItem('userToken')}`
         },
         body: JSON.stringify({ message: newMessage })
       });

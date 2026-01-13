@@ -11,7 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Copy, Shield, CheckCircle, Clock, AlertTriangle, FileText, Upload } from "lucide-react";
 
 type TxItem = { id: string; game_id: string; quantity: number; price: number };
-type Tx = { id: string; payment_method: string; total: number; status: string; created_at: string };
+type Tx = { id: string; payment_method: string; total: number; status: string; created_at: string; name?: string; email?: string; phone?: string };
 
 export default function CheckoutSecurityPage() {
   const [match, params] = useRoute("/checkout/security/:id");
@@ -56,47 +56,6 @@ export default function CheckoutSecurityPage() {
     };
     load();
   }, [transactionId]);
-
-  async function onSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!transactionId) return;
-    if (!confirmed) {
-      toast({ title: "Confirmation required", description: "Please confirm you sent the payment." });
-      return;
-    }
-    if (!receipt) {
-      toast({ title: "Receipt required", description: "Please upload a payment receipt." });
-      return;
-    }
-    if (receipt.size > 5 * 1024 * 1024) {
-      toast({ title: "File too large", description: "Max 5MB allowed.", variant: "destructive" });
-      return;
-    }
-
-    setSubmitting(true);
-    try {
-      const form = new FormData();
-      form.append("transactionId", transactionId);
-      form.append("message", message);
-      form.append("receipt", receipt);
-      const res = await fetch(`${API_BASE_URL}/api/transactions/confirm`, { method: "POST", body: form });
-      if (res.status === 401) {
-        toast({ title: "Session expired", description: "Please restart checkout.", variant: "destructive" });
-        return;
-      }
-      if (!res.ok) throw new Error(await res.text());
-      const j = await res.json();
-      if (j?.id) setTrackingCode(String(j.id));
-      toast({ title: "Confirmation submitted", description: "We will notify you when the seller responds." });
-      setMessage("");
-      setReceipt(null);
-      setConfirmed(false);
-    } catch (err) {
-      toast({ title: "Submission failed", description: String(err), variant: "destructive" });
-    } finally {
-      setSubmitting(false);
-    }
-  }
 
   useEffect(() => {
     const load = async () => {
@@ -345,6 +304,63 @@ export default function CheckoutSecurityPage() {
                               <Copy className="w-4 h-4" />
                             </Button>
                           </div>
+                        </div>
+
+                        {/* Login Credentials */}
+                        <div className="space-y-3 mt-4 pt-4 border-t border-gray-600">
+                          <div className="text-sm text-gray-400">Your Account Credentials</div>
+                          <div className="space-y-2">
+                            <div className="text-xs text-gray-400">Email</div>
+                            <div className="flex items-center gap-2 p-2 bg-black/30 rounded border">
+                              <div className="font-mono text-white text-xs break-all flex-1">
+                                {transaction?.email || 'customer@example.com'}
+                              </div>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={async () => {
+                                  try {
+                                    await navigator.clipboard.writeText(transaction?.email || 'customer@example.com');
+                                    toast({ title: "Copied", description: "Email copied" });
+                                  } catch {
+                                    toast({ title: "Copy failed", description: "Please copy it manually" });
+                                  }
+                                }}
+                                className="border-blue-500/30 hover:bg-blue-500/20"
+                              >
+                                <Copy className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </div>
+                          <div className="space-y-2">
+                            <div className="text-xs text-gray-400">Password</div>
+                            <div className="flex items-center gap-2 p-2 bg-black/30 rounded border">
+                              <div className="font-mono text-white text-xs break-all flex-1">
+                                {transaction?.phone ? transaction.phone.replace(/[^0-9]/g, '').slice(-6) + 'Abc!' : '123456Abc!'}
+                              </div>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={async () => {
+                                  const password = transaction?.phone ? transaction.phone.replace(/[^0-9]/g, '').slice(-6) + 'Abc!' : '123456Abc!';
+                                  try {
+                                    await navigator.clipboard.writeText(password);
+                                    toast({ title: "Copied", description: "Password copied" });
+                                  } catch {
+                                    toast({ title: "Copy failed", description: "Please copy it manually" });
+                                  }
+                                }}
+                                className="border-blue-500/30 hover:bg-blue-500/20"
+                              >
+                                <Copy className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </div>
+                          <p className="text-xs text-gray-400 mt-2">
+                            Use these credentials to log in to your account and track your orders.
+                          </p>
                         </div>
 
                         <div className="flex gap-2 flex-wrap mt-4">
