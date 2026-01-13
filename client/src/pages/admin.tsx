@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link } from 'wouter';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
-import { Trash2, Edit, Plus, MessageSquare, Bell, Check, AlertCircle, Info, Search, Package, Shield, ShoppingCart } from 'lucide-react';
+import { Trash2, Edit, Plus, MessageSquare, Bell, Check, AlertCircle, Info, Search, Package, Shield, ShoppingCart, User, Bot } from 'lucide-react';
 import { API_BASE_URL, queryClient } from '@/lib/queryClient';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Label } from '@/components/ui/label';
@@ -77,6 +77,7 @@ export default function AdminDashboard() {
   const [replyMessage, setReplyMessage] = useState('');
   const [cardsPage, setCardsPage] = useState(1);
   const [cardsLimit, setCardsLimit] = useState(20);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
   const normalizeNumericString = (v: string | number | null | undefined) => {
     let s = String(v ?? '').trim();
     if (!s) return '';
@@ -313,18 +314,35 @@ export default function AdminDashboard() {
   const gameCards = cardsResponse?.items || [];
   const gameCardsTotal = cardsResponse?.total || 0;
 
-  // Fetch all user messages
-  const { data: allUserMessages = [], refetch: refetchMessages } = useQuery<UserMessage[]>({
-    queryKey: ['/api/user/admin/messages'],
+  // Fetch all live chat sessions
+  const { data: chatSessions = [] } = useQuery<Array<{ id: string; startedAt: number; lastActivity: number; unreadCount: number }>>({
+    queryKey: ['/api/admin/chat/sessions'],
     enabled: true,
+    refetchInterval: 10000, // Refresh every 10 seconds
     queryFn: async () => {
       const token = localStorage.getItem('adminToken');
-      const res = await fetch(`${API_BASE_URL}/api/user/admin/messages`, {
+      const res = await fetch(`${API_BASE_URL}/api/admin/chat/sessions`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {}
       });
-      const data = await res.json().catch(() => ({ messages: [] }));
-      if (!res.ok) throw new Error((data as any)?.message || 'Failed to fetch messages');
-      return Array.isArray(data.messages) ? data.messages : [];
+      const data = await res.json().catch(() => ({ sessions: [] }));
+      if (!res.ok) throw new Error((data as any)?.message || 'Failed to fetch chat sessions');
+      return Array.isArray(data) ? data : [];
+    }
+  });
+
+  // Fetch messages for selected session
+  const { data: sessionMessages = [] } = useQuery<Array<{ id: string; sender: string; message: string; timestamp: number; read: boolean }>>({
+    queryKey: [`/api/admin/chat/${selectedUser}`],
+    enabled: !!selectedUser,
+    refetchInterval: 3000, // Refresh every 3 seconds
+    queryFn: async () => {
+      const token = localStorage.getItem('adminToken');
+      const res = await fetch(`${API_BASE_URL}/api/admin/chat/${selectedUser}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+      });
+      const data = await res.json().catch(() => ([]));
+      if (!res.ok) throw new Error((data as any)?.message || 'Failed to fetch session messages');
+      return Array.isArray(data) ? data : [];
     }
   });
 
@@ -826,20 +844,22 @@ export default function AdminDashboard() {
     }
   });
 
-  // Send reply mutation
+  // Send reply mutation for live chat
   const replyMutation = useMutation({
     mutationFn: async () => {
-      if (!selectedUser) throw new Error('No user selected');
+      if (!selectedUser || !replyMessage.trim()) throw new Error('No session selected or message empty');
 
       const token = localStorage.getItem('adminToken');
-      const res = await fetch(`${API_BASE_URL}/api/user/admin/reply/${selectedUser}`, {
+      const res = await fetch(`${API_BASE_URL}/api/chat/message`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           ...(token ? { Authorization: `Bearer ${token}` } : {})
         },
         body: JSON.stringify({
-          message: replyMessage
+          sender: 'support',
+          message: replyMessage.trim(),
+          sessionId: selectedUser
         })
       });
       const data = await res.json().catch(() => ({}));
@@ -848,9 +868,9 @@ export default function AdminDashboard() {
     },
     onSuccess: () => {
       setReplyMessage('');
-      refetchMessages();
-      queryClient.invalidateQueries({ queryKey: ['/api/user/admin/messages'] });
-      toast({ title: 'Reply sent', description: 'Your message has been sent to the user.' });
+      queryClient.invalidateQueries({ queryKey: [`/api/admin/chat/${selectedUser}`] });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/chat/sessions'] });
+      toast({ title: 'Reply sent', description: 'Your message has been sent to the visitor.' });
     },
     onError: (error) => {
       toast({
@@ -2126,45 +2146,48 @@ export default function AdminDashboard() {
 
           {/* Chat Tab */}
           <TabsContent value="chats" className="space-y-6">
-            <h2 className="text-2xl font-bold text-foreground">Customer Support Chat</h2>
+            <h2 className="text-2xl font-bold text-foreground">Live Chat Support</h2>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* User Messages List */}
+              {/* Chat Sessions List */}
               <div className="lg:col-span-1">
                 <Card className="bg-card/50 border-gold-primary/30">
                   <CardHeader>
-                    <CardTitle className="text-lg">User Conversations</CardTitle>
+                    <CardTitle className="text-lg">Active Conversations</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <ScrollArea className="h-96">
                       <div className="space-y-2">
-                        {Array.from(new Set(allUserMessages.map((msg: UserMessage) => msg.userId))).length === 0 ? (
+                        {chatSessions.length === 0 ? (
                           <div className="text-sm text-muted-foreground p-3 border rounded">
-                            No user messages yet. New conversations will appear here.
+                            No active conversations. Live chat messages will appear here.
                           </div>
                         ) : (
-                          Array.from(new Set(allUserMessages.map((msg: UserMessage) => msg.userId))).map((userId) => {
-                            const userMessages = allUserMessages.filter((msg: UserMessage) => msg.userId === userId);
-                            const lastMessage = userMessages[userMessages.length - 1];
-                            const userInfo = userMessages.find(msg => msg.userName)?.userName || 'Unknown User';
-
+                          chatSessions.map((session) => {
+                            const lastMessage = sessionMessages.find(msg => msg.timestamp === Math.max(...sessionMessages.map(m => m.timestamp)));
+                            
                             return (
                               <Button
-                                key={userId}
-                                variant={selectedUser === userId ? 'default' : 'outline'}
-                                onClick={() => setSelectedUser(userId as string)}
+                                key={session.id}
+                                variant={selectedUser === session.id ? 'default' : 'outline'}
+                                onClick={() => setSelectedUser(session.id)}
                                 className="w-full justify-start text-xs p-3 h-auto"
                               >
                                 <div className="flex flex-col items-start w-full">
                                   <div className="flex items-center gap-2 w-full">
                                     <MessageSquare className="w-4 h-4 flex-shrink-0" />
-                                    <span className="font-medium truncate">{userInfo}</span>
+                                    <span className="font-medium truncate">Session {session.id.slice(-8)}</span>
+                                    {session.unreadCount > 0 && (
+                                      <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">
+                                        {session.unreadCount}
+                                      </span>
+                                    )}
                                   </div>
                                   <p className="text-xs text-muted-foreground mt-1 truncate w-full">
-                                    {lastMessage?.text || 'No messages'}
+                                    {lastMessage?.message || 'No messages'}
                                   </p>
                                   <p className="text-xs text-muted-foreground mt-1">
-                                    {lastMessage ? new Date(lastMessage.timestamp).toLocaleDateString() : ''}
+                                    {new Date(session.lastActivity).toLocaleDateString()}
                                   </p>
                                 </div>
                               </Button>
@@ -2177,68 +2200,84 @@ export default function AdminDashboard() {
                 </Card>
               </div>
 
-              {/* User Messages */}
+              {/* Chat Messages */}
               <div className="lg:col-span-2">
                 {selectedUser ? (
                   <Card className="bg-card/50 border-gold-primary/30 h-full flex flex-col">
                     <CardHeader>
                       <CardTitle className="text-lg">
-                        Chat with {allUserMessages.find(msg => msg.userId === selectedUser)?.userName || 'User'}
+                        Chat Session {selectedUser.slice(-8)}
                       </CardTitle>
                       <p className="text-sm text-muted-foreground">
-                        {allUserMessages.find(msg => msg.userId === selectedUser)?.userEmail || ''}
+                        Live chat conversation
                       </p>
                     </CardHeader>
                     <CardContent className="flex-1 flex flex-col">
                       <ScrollArea className="flex-1 mb-4 p-4 border rounded-lg border-gold-primary/20">
                         <div className="space-y-3">
-                          {allUserMessages
-                            .filter((msg: UserMessage) => msg.userId === selectedUser)
-                            .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
-                            .map((msg: UserMessage) => (
+                          {sessionMessages
+                            .sort((a, b) => a.timestamp - b.timestamp)
+                            .map((msg) => (
                             <div
                               key={msg.id}
-                              className={`p-3 rounded-lg ${
-                                msg.sender === 'user'
-                                  ? 'bg-blue-900/30 text-blue-100 ml-8'
-                                  : 'bg-green-900/30 text-green-100 mr-8'
-                              }`}
+                              className={`flex ${msg.sender === 'user' ? 'justify-start' : 'justify-end'}`}
                             >
-                              <p className="text-sm font-bold">{msg.sender === 'user' ? 'Customer' : 'You'}</p>
-                              <p className="text-sm">{msg.text}</p>
-                              <p className="text-xs opacity-60 mt-1">
-                                {new Date(msg.timestamp).toLocaleString('en-US')}
-                              </p>
+                              <div
+                                className={`max-w-[80%] rounded-lg px-3 py-2 text-sm ${
+                                  msg.sender === 'user'
+                                    ? 'bg-gray-700 text-white'
+                                    : 'bg-gradient-to-r from-gold-primary to-neon-pink text-black'
+                                }`}
+                              >
+                                <div className="flex items-center gap-2 mb-1">
+                                  {msg.sender === 'user' ? (
+                                    <User className="w-3 h-3" />
+                                  ) : (
+                                    <Bot className="w-3 h-3" />
+                                  )}
+                                  <span className="text-xs opacity-70">
+                                    {msg.sender === 'user' ? 'Visitor' : 'Support'}
+                                  </span>
+                                </div>
+                                <p>{msg.message}</p>
+                                <p className="text-xs opacity-50 mt-1">
+                                  {new Date(msg.timestamp).toLocaleTimeString([], {
+                                    hour: '2-digit',
+                                    minute: '2-digit'
+                                  })}
+                                </p>
+                              </div>
                             </div>
                           ))}
+                          <div ref={messagesEndRef} />
                         </div>
                       </ScrollArea>
 
-                      {/* Reply Form */}
+                      {/* Reply Input */}
                       <div className="flex gap-2">
                         <Input
                           value={replyMessage}
                           onChange={(e) => setReplyMessage(e.target.value)}
+                          onKeyPress={(e) => e.key === 'Enter' && replyMutation.mutate()}
                           placeholder="Type your reply..."
-                          onKeyPress={(e) => {
-                            if (e.key === 'Enter' && replyMessage.trim()) {
-                              replyMutation.mutate();
-                            }
-                          }}
+                          className="flex-1"
                         />
                         <Button
                           onClick={() => replyMutation.mutate()}
                           disabled={!replyMessage.trim() || replyMutation.isPending}
-                          className="bg-gold-primary"
+                          className="bg-gradient-to-r from-gold-primary to-neon-pink hover:from-gold-secondary hover:to-neon-pink text-black"
                         >
-                          Send
+                          {replyMutation.isPending ? 'Sending...' : 'Send'}
                         </Button>
                       </div>
                     </CardContent>
                   </Card>
                 ) : (
-                  <Card className="bg-card/50 border-gold-primary/30 h-96 flex items-center justify-center">
-                    <p className="text-muted-foreground">Select a chat session to view messages</p>
+                  <Card className="bg-card/50 border-gold-primary/30 h-full flex items-center justify-center">
+                    <div className="text-center text-muted-foreground">
+                      <MessageSquare className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                      <p>Select a conversation to view messages</p>
+                    </div>
                   </Card>
                 )}
               </div>
