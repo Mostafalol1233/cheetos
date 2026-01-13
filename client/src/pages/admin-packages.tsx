@@ -27,11 +27,21 @@ interface Package {
   image: string | null;
 }
 
+interface MultiCurrencyPrices {
+  EGP: number;
+  USD: number;
+  TRY: number;
+}
+
+interface PackageWithMultiCurrency extends Package {
+  multiCurrencyPrices?: MultiCurrencyPrices;
+}
+
 export default function AdminPackagesPage() {
   const [, params] = useRoute('/admin/packages/:gameId');
   const gameId = params?.gameId || '';
   
-  const [packages, setPackages] = useState<Package[]>([]);
+  const [packages, setPackages] = useState<PackageWithMultiCurrency[]>([]);
   const [isEditing, setIsEditing] = useState(false);
 
   const { toast } = useToast();
@@ -63,10 +73,38 @@ export default function AdminPackagesPage() {
     }
   });
 
+  // Fetch multi-currency prices
+  const { data: multiCurrencyPrices = {}, refetch: refetchMultiCurrencyPrices } = useQuery<Record<string, Record<number, Record<string, number>>>>({
+    queryKey: [`/api/admin/games/${gameId}/multi-currency-prices`],
+    enabled: !!gameId,
+    queryFn: async () => {
+      const token = localStorage.getItem('adminToken');
+      const res = await fetch(apiPath(`/api/admin/games/${gameId}/multi-currency-prices`), {
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error((data as any)?.message || 'Failed to fetch multi-currency prices');
+      return data;
+    }
+  });
+
   // Update packages when data loads
   useEffect(() => {
     if (gamePackages && gamePackages.length > 0) {
-      setPackages(gamePackages);
+      const packagesWithMultiCurrency = gamePackages.map((pkg, index) => {
+        const gameMultiPrices = multiCurrencyPrices[gameId] || {};
+        const packageMultiPrices = gameMultiPrices[index] || {};
+        
+        return {
+          ...pkg,
+          multiCurrencyPrices: {
+            EGP: packageMultiPrices.EGP || pkg.price || 0,
+            USD: packageMultiPrices.USD || Math.round((pkg.price || 0) / 50 * 100) / 100 || 0,
+            TRY: packageMultiPrices.TRY || Math.round((pkg.price || 0) / 35 * 100) / 100 || 0
+          }
+        };
+      });
+      setPackages(packagesWithMultiCurrency);
     } else if (game && gamePackages.length === 0) {
       // Try to get packages from game data if API returns empty
       const gamePackagesArray = Array.isArray(game.packages) ? game.packages : [];
@@ -81,24 +119,35 @@ export default function AdminPackagesPage() {
         : (Array.isArray((game as any).package_thumbnails) ? (game as any).package_thumbnails : []);
       
       if (gamePackagesArray.length > 0) {
-        const initialPackages = gamePackagesArray.map((pkg: any, index: number) => ({
-          amount: typeof pkg === 'string' ? pkg : (pkg?.amount || ''),
-          price: Number(gamePrices[index] || 0),
-          discountPrice: (gameDiscountPrices[index] !== undefined && gameDiscountPrices[index] !== null && gameDiscountPrices[index] !== '')
-            ? Number(gameDiscountPrices[index])
-            : null,
-          image: gameThumbnails[index] ? String(gameThumbnails[index]) : null
-        }));
+        const initialPackages = gamePackagesArray.map((pkg: any, index: number) => {
+          const basePrice = Number(gamePrices[index] || 0);
+          const gameMultiPrices = multiCurrencyPrices[gameId] || {};
+          const packageMultiPrices = gameMultiPrices[index] || {};
+          
+          return {
+            amount: typeof pkg === 'string' ? pkg : (pkg?.amount || ''),
+            price: basePrice,
+            discountPrice: (gameDiscountPrices[index] !== undefined && gameDiscountPrices[index] !== null && gameDiscountPrices[index] !== '')
+              ? Number(gameDiscountPrices[index])
+              : null,
+            image: gameThumbnails[index] ? String(gameThumbnails[index]) : null,
+            multiCurrencyPrices: {
+              EGP: packageMultiPrices.EGP || basePrice || 0,
+              USD: packageMultiPrices.USD || Math.round((basePrice || 0) / 50 * 100) / 100 || 0,
+              TRY: packageMultiPrices.TRY || Math.round((basePrice || 0) / 35 * 100) / 100 || 0
+            }
+          };
+        });
         setPackages(initialPackages);
       } else if (packages.length === 0) {
         setPackages([]);
       }
     }
-  }, [gamePackages, game, packages.length]);
+  }, [gamePackages, game, packages.length, multiCurrencyPrices, gameId]);
 
   // Update packages mutation
   const updatePackagesMutation = useMutation({
-    mutationFn: async (packages: Package[]) => {
+    mutationFn: async (packages: PackageWithMultiCurrency[]) => {
       const token = localStorage.getItem('adminToken');
       const res = await fetch(apiPath(`/api/games/${gameId}/packages`), {
         method: 'PUT',
@@ -140,8 +189,45 @@ export default function AdminPackagesPage() {
     }
   });
 
+  // Update multi-currency prices mutation
+  const updateMultiCurrencyPricesMutation = useMutation({
+    mutationFn: async (multiCurrencyData: Record<string, Record<number, Record<string, number>>>) => {
+      const token = localStorage.getItem('adminToken');
+      const res = await fetch(apiPath(`/api/admin/games/${gameId}/multi-currency-prices`), {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify(multiCurrencyData)
+      });
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData?.message || 'Failed to update multi-currency prices');
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/admin/games/${gameId}/multi-currency-prices`] });
+      toast({ title: 'Success', description: 'Multi-currency prices saved successfully!' });
+    },
+    onError: (error: any) => {
+      toast({ 
+        title: 'Error', 
+        description: `Failed to save multi-currency prices: ${error?.message || 'Unknown error'}`,
+        variant: 'destructive'
+      });
+    }
+  });
+
   const handleAddPackage = () => {
-    setPackages([...packages, { amount: '', price: 0, discountPrice: null, image: null }]);
+    setPackages([...packages, { 
+      amount: '', 
+      price: 0, 
+      discountPrice: null, 
+      image: null,
+      multiCurrencyPrices: { EGP: 0, USD: 0, TRY: 0 }
+    }]);
     setIsEditing(true);
   };
 
@@ -157,8 +243,43 @@ export default function AdminPackagesPage() {
     setIsEditing(true);
   };
 
-  const handleSave = () => {
-    updatePackagesMutation.mutate(packages);
+  const handleUpdateMultiCurrencyPrice = (index: number, currency: string, value: number) => {
+    const updated = [...packages];
+    if (!updated[index].multiCurrencyPrices) {
+      updated[index].multiCurrencyPrices = { EGP: 0, USD: 0, TRY: 0 };
+    }
+    updated[index].multiCurrencyPrices![currency as keyof MultiCurrencyPrices] = value;
+    setPackages(updated);
+    setIsEditing(true);
+  };
+
+  const handleSave = async () => {
+    try {
+      // Save regular packages first
+      const regularPackages = packages.map(pkg => ({
+        amount: pkg.amount,
+        price: pkg.price,
+        discountPrice: pkg.discountPrice,
+        image: pkg.image
+      }));
+      
+      await updatePackagesMutation.mutateAsync(regularPackages);
+      
+      // Then save multi-currency prices
+      const multiCurrencyData: Record<string, Record<number, Record<string, number>>> = {
+        [gameId]: {}
+      };
+      
+      packages.forEach((pkg, index) => {
+        if (pkg.multiCurrencyPrices) {
+          multiCurrencyData[gameId][index] = pkg.multiCurrencyPrices;
+        }
+      });
+      
+      await updateMultiCurrencyPricesMutation.mutateAsync(multiCurrencyData);
+    } catch (error) {
+      // Error handling is done in the mutations
+    }
   };
 
   if (!game) {
@@ -205,14 +326,34 @@ export default function AdminPackagesPage() {
                       />
                     </div>
                     <div>
-                      <Label>Price</Label>
+                      <Label>Price (EGP)</Label>
                       <Input
                         type="number"
-                        value={pkg.price}
-                        onChange={(e) => handleUpdatePackage(index, 'price', parseFloat(e.target.value) || 0)}
+                        value={pkg.multiCurrencyPrices?.EGP || 0}
+                        onChange={(e) => handleUpdateMultiCurrencyPrice(index, 'EGP', parseFloat(e.target.value) || 0)}
                         placeholder="200"
                       />
-                      <p className="text-xs text-muted-foreground mt-1">Original price (shown as strikethrough if final price is set)</p>
+                      <p className="text-xs text-muted-foreground mt-1">Price in Egyptian Pounds</p>
+                    </div>
+                    <div>
+                      <Label>Price (USD)</Label>
+                      <Input
+                        type="number"
+                        value={pkg.multiCurrencyPrices?.USD || 0}
+                        onChange={(e) => handleUpdateMultiCurrencyPrice(index, 'USD', parseFloat(e.target.value) || 0)}
+                        placeholder="10.50"
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">Price in US Dollars</p>
+                    </div>
+                    <div>
+                      <Label>Price (TRY)</Label>
+                      <Input
+                        type="number"
+                        value={pkg.multiCurrencyPrices?.TRY || 0}
+                        onChange={(e) => handleUpdateMultiCurrencyPrice(index, 'TRY', parseFloat(e.target.value) || 0)}
+                        placeholder="350"
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">Price in Turkish Lira</p>
                     </div>
                     <div>
                       <Label>Final Price (optional)</Label>
@@ -252,9 +393,11 @@ export default function AdminPackagesPage() {
               Add Package
             </Button>
             {isEditing && (
-              <Button onClick={handleSave} disabled={updatePackagesMutation.isPending}>
-                <Save className="w-4 h-4 mr-2" />
-                Save Changes
+              <Button 
+                onClick={handleSave} 
+                disabled={updatePackagesMutation.isPending || updateMultiCurrencyPricesMutation.isPending}
+              >
+                {(updatePackagesMutation.isPending || updateMultiCurrencyPricesMutation.isPending) ? 'Saving...' : 'Save Changes'}
               </Button>
             )}
           </div>

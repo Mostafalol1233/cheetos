@@ -6,6 +6,7 @@ interface TranslationContextType {
   language: Language;
   setLanguage: (lang: Language) => void;
   t: (key: string) => string;
+  detectBrowserLanguage: () => Language;
 }
 
 const translations: Record<Language, Record<string, string>> = {
@@ -218,6 +219,8 @@ const translations: Record<Language, Record<string, string>> = {
     "in_stock_prefix": "In Stock",
     "view_details": "View Details",
     "preview": "Preview",
+    "language": "Language",
+    "currency": "Currency",
   },
   ar: {
     // Common
@@ -378,6 +381,8 @@ const translations: Record<Language, Record<string, string>> = {
     "in_stock_prefix": "المتوفر",
     "view_details": "عرض التفاصيل",
     "preview": "معاينة",
+    "language": "اللغة",
+    "currency": "العملة",
     
     // Terms
     "terms_title": "شروط الخدمة",
@@ -433,21 +438,49 @@ const translations: Record<Language, Record<string, string>> = {
 const TranslationContext = createContext<TranslationContextType | undefined>(undefined);
 
 export function TranslationProvider({ children }: { children: ReactNode }) {
-  const [language, setLanguage] = useState<Language>(() => {
+  const [language, setLanguageState] = useState<Language>(() => {
+    // Check localStorage first, then browser language, then default
     if (typeof window !== "undefined") {
-      const saved = localStorage.getItem("language") as Language | null;
-      return saved || "en";
+      const saved = localStorage.getItem("user-language") as Language | null;
+      if (saved && (saved === 'en' || saved === 'ar')) {
+        return saved;
+      }
+      return detectBrowserLanguage();
     }
     return "en";
   });
 
+  const detectBrowserLanguage = (): Language => {
+    if (typeof navigator === 'undefined') return 'en';
+
+    const browserLang = navigator.language || (navigator as any).userLanguage;
+    if (!browserLang) return 'en';
+
+    // Check if browser language starts with 'ar'
+    return browserLang.toLowerCase().startsWith('ar') ? 'ar' : 'en';
+  };
+
+  const setLanguage = (lang: Language) => {
+    setLanguageState(lang);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("user-language", lang);
+    }
+  };
+
   useEffect(() => {
     if (typeof window !== "undefined") {
-      localStorage.setItem("language", language);
-      // Keep layout direction LTR for all languages to avoid reversing the UI.
-      document.documentElement.dir = "ltr";
+      // Set document language attributes
       document.documentElement.lang = language;
       document.documentElement.dataset.lang = language;
+
+      // Set RTL for Arabic
+      if (language === 'ar') {
+        document.documentElement.dir = 'rtl';
+        document.body.classList.add('rtl');
+      } else {
+        document.documentElement.dir = 'ltr';
+        document.body.classList.remove('rtl');
+      }
     }
   }, [language]);
 
@@ -456,7 +489,7 @@ export function TranslationProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <TranslationContext.Provider value={{ language, setLanguage, t }}>
+    <TranslationContext.Provider value={{ language, setLanguage, t, detectBrowserLanguage }}>
       {children}
     </TranslationContext.Provider>
   );

@@ -11,6 +11,8 @@ import type { Category } from "@shared/schema";
 import { Link } from "wouter";
 import ImageWithFallback from "@/components/image-with-fallback";
 import { useTranslation } from "@/lib/translation";
+import { useLocalizedPrices } from "@/hooks/use-localized-prices";
+import { useLocalization } from "@/lib/localization";
 import { ProductPackGrid } from "@/components/product-pack-card";
 import { SEO } from "@/components/SEO";
 
@@ -26,6 +28,9 @@ export default function GamePage() {
   const { data: game, isLoading } = useQuery<Game>({
     queryKey: [`/api/games/${slug}`],
   });
+
+  const { currency } = useLocalization();
+  const { prices: localizedPrices, isLoading: pricesLoading } = useLocalizedPrices(game?.id || game?.slug || '');
 
   const { data: categories = [] } = useQuery<Category[]>({
     queryKey: ["/api/categories"],
@@ -107,11 +112,24 @@ export default function GamePage() {
   };
 
   const getPackagePricing = (index: number) => {
+    // Use localized prices if available
+    if (localizedPrices && localizedPrices[index]) {
+      const localized = localizedPrices[index];
+      return {
+        base: localized.price,
+        final: localized.price,
+        original: null, // Localized prices don't have discounts for now
+        currency: currency,
+        isEstimated: localized.isEstimated
+      };
+    }
+
+    // Fallback to original pricing logic
     const base = Number(packagePrices[index] ?? game.price ?? 0);
     const packageDiscount = coerceNumberOrNull(packageDiscountPrices[index]);
     const gameDiscount = gameLevelDiscount;
     const computed = computeAutoDiscount(base, index);
-    
+
     // Priority: package discount > game discount > auto discount > base price
     let final = base;
     if (packageDiscount != null && packageDiscount > 0 && packageDiscount < base) {
@@ -121,12 +139,14 @@ export default function GamePage() {
     } else if (computed != null && computed > 0 && computed < base) {
       final = computed;
     }
-    
+
     const hasDiscount = final !== base;
     return {
       base,
       final,
       original: hasDiscount ? base : null,
+      currency: 'EGP', // Default fallback
+      isEstimated: false
     };
   };
 
@@ -381,7 +401,7 @@ export default function GamePage() {
                   name: String(pkg),
                   originalPrice: pricing.original,
                   finalPrice: pricing.final,
-                  currency: game.currency,
+                  currency: pricing.currency || currency,
                   image:
                     (Array.isArray((game as any).packageThumbnails) &&
                       (game as any).packageThumbnails[index]) ||

@@ -35,7 +35,7 @@ export function Footer() {
               <a href="https://t.me/diaaeldeen1" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-gold-primary transition-colors hover:scale-110 transform duration-200">
                 <SiTelegram className="w-5 h-5" />
               </a>
-              <a href="https://wa.me/201029870810" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-green-500 transition-colors hover:scale-110 transform duration-200">
+              <a href="https://wa.me/201011696196" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-green-500 transition-colors hover:scale-110 transform duration-200">
                 <SiWhatsapp className="w-5 h-5" />
               </a>
               <a href="https://tiktok.com/@diaa_eldeen" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-gold-primary transition-colors hover:scale-110 transform duration-200">
@@ -120,11 +120,11 @@ export function Footer() {
               </li>
               <li className="flex items-center text-muted-foreground">
                 <Phone className="w-5 h-5 mr-3 text-gold-primary shrink-0" />
-                <span>+20 102 987 0810</span>
+                <span>+20 106 858 6636</span>
               </li>
               <li className="flex items-center text-muted-foreground">
                 <Mail className="w-5 h-5 mr-3 text-gold-primary shrink-0" />
-                <span>diaaeldeen@gmail.com</span>
+                <span>support@diaaeldeen.com</span>
               </li>
             </ul>
           </div>

@@ -7,6 +7,7 @@ import { CartProvider } from "./lib/cart-context";
 import { AccessibilityProvider } from "./components/accessibility-mode";
 import { ThemeProvider } from "./components/theme-provider";
 import { TranslationProvider } from "./lib/translation";
+import { LocalizationProvider } from "./lib/localization";
 import { AuthProvider, useAuth } from "./lib/auth-context";
 import { UserAuthProvider } from "./lib/user-auth-context";
 import { useState, useEffect } from "react";
@@ -186,18 +187,20 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
         <TranslationProvider>
-          <AuthProvider>
-            <UserAuthProvider>
-              <AccessibilityProvider>
-                <TooltipProvider>
-                  <CartProvider>
-                    <Toaster />
-                    <AppShell />
-                  </CartProvider>
-                </TooltipProvider>
-              </AccessibilityProvider>
-            </UserAuthProvider>
-          </AuthProvider>
+          <LocalizationProvider>
+            <AuthProvider>
+              <UserAuthProvider>
+                <AccessibilityProvider>
+                  <TooltipProvider>
+                    <CartProvider>
+                      <Toaster />
+                      <AppShell />
+                    </CartProvider>
+                  </TooltipProvider>
+                </AccessibilityProvider>
+              </UserAuthProvider>
+            </AuthProvider>
+          </LocalizationProvider>
         </TranslationProvider>
       </ThemeProvider>
     </QueryClientProvider>

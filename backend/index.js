@@ -28,6 +28,18 @@ import { authenticateToken, ensureAdmin } from './middleware/auth.js';
 import { sendEmail, sendRawEmail } from './utils/email.js';
 import { generateSitemap } from './utils/sitemap.js';
 import localDb from './utils/localDb.js';
+import {
+  detectCountryFromIP,
+  getCurrencyForCountry,
+  detectLanguageFromHeader,
+  getLocalizedPrice,
+  getLocalizedPricesForGame,
+  formatPrice,
+  SUPPORTED_LANGUAGES,
+  SUPPORTED_CURRENCIES,
+  DEFAULT_LANGUAGE,
+  DEFAULT_CURRENCY
+} from './utils/localization.js';
 // Optional image processor (module may not exist in some deployments)
 let initImageProcessor = null;
 try {
@@ -4575,6 +4587,82 @@ const startServer = async () => {
     } catch (err) {
       console.error("❌ Uploads directory error:", err.message);
     }
+
+    // Localization API endpoints
+    app.get('/api/localization/detect', async (req, res) => {
+      try {
+        const clientIP = req.ip || req.connection.remoteAddress ||
+          (req.socket && req.socket.remoteAddress) ||
+          (req.connection.socket && req.connection.socket.remoteAddress) || '127.0.0.1';
+
+        // Detect country from IP
+        const countryCode = await detectCountryFromIP(clientIP);
+        const currency = getCurrencyForCountry(countryCode);
+
+        // Detect language from Accept-Language header
+        const acceptLanguage = req.headers['accept-language'];
+        const language = detectLanguageFromHeader(acceptLanguage);
+
+        res.json({
+          country: countryCode,
+          currency,
+          language,
+          supportedLanguages: SUPPORTED_LANGUAGES,
+          supportedCurrencies: SUPPORTED_CURRENCIES
+        });
+      } catch (error) {
+        console.error('Localization detection error:', error);
+        res.status(500).json({
+          error: 'Failed to detect localization',
+          country: null,
+          currency: DEFAULT_CURRENCY,
+          language: DEFAULT_LANGUAGE,
+          supportedLanguages: SUPPORTED_LANGUAGES,
+          supportedCurrencies: SUPPORTED_CURRENCIES
+        });
+      }
+    });
+
+    app.get('/api/localization/prices/:gameId', async (req, res) => {
+      try {
+        const { gameId } = req.params;
+        const { currency = DEFAULT_CURRENCY } = req.query;
+
+        if (!SUPPORTED_CURRENCIES.includes(currency)) {
+          return res.status(400).json({ error: 'Unsupported currency' });
+        }
+
+        // Get game data from database
+        const gameResult = await pool.query(
+          'SELECT package_prices FROM games WHERE id = $1 OR slug = $1',
+          [gameId]
+        );
+
+        if (gameResult.rows.length === 0) {
+          return res.status(404).json({ error: 'Game not found' });
+        }
+
+        const game = gameResult.rows[0];
+        const packagePrices = Array.isArray(game.package_prices) ? game.package_prices : [];
+
+        // Get localized prices
+        const localizedPrices = await getLocalizedPricesForGame(gameId, packagePrices, currency);
+
+        res.json({
+          gameId,
+          currency,
+          prices: localizedPrices.map((item, index) => ({
+            packageIndex: index,
+            price: item.price,
+            isEstimated: item.isEstimated,
+            formatted: formatPrice(item.price, currency)
+          }))
+        });
+      } catch (error) {
+        console.error('Price localization error:', error);
+        res.status(500).json({ error: 'Failed to get localized prices' });
+      }
+    });
 
     // Sitemap
     app.get('/sitemap.xml', async (req, res) => {

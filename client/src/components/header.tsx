@@ -2,7 +2,7 @@ import { Link } from "wouter";
 import { ShoppingCart, Sun, Moon, Menu, X, Gamepad2, Sparkles, Zap, User, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AccessibilityToolbar } from "@/components/accessibility-mode";
-import { LanguageSwitcher } from "@/components/language-switcher";
+import { LanguageCurrencySwitcher } from "@/components/language-currency-switcher";
 import { useCart } from "@/lib/cart-context";
 import { useTheme } from "@/components/theme-provider";
 import { useUserAuth } from "@/lib/user-auth-context";
@@ -126,7 +126,7 @@ export function Header({ onCartClick }: HeaderProps) {
 
             <div className="flex items-center space-x-4">
               <AccessibilityToolbar />
-              <LanguageSwitcher />
+              <LanguageCurrencySwitcher />
               
               <Button
                 variant="ghost"

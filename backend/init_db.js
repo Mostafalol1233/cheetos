@@ -59,7 +59,10 @@ const createTables = async () => {
         packages JSONB,
         package_prices JSONB,
         package_discount_prices JSONB,
-        created_at TIMESTAMP DEFAULT NOW()
+        package_thumbnails JSONB,
+        multi_currency_prices JSONB,
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW()
       );
 
       CREATE TABLE IF NOT EXISTS categories (
@@ -84,6 +87,15 @@ const createTables = async () => {
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `);
+    
+    // Add missing columns to existing tables
+    await pool.query(`
+      ALTER TABLE games 
+      ADD COLUMN IF NOT EXISTS package_thumbnails JSONB,
+      ADD COLUMN IF NOT EXISTS multi_currency_prices JSONB,
+      ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT NOW()
+    `);
+    
     console.log('Tables created successfully');
   } catch (err) {
     console.error('Error creating tables:', err);

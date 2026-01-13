@@ -57,12 +57,13 @@ export function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
         console.error('Failed to fetch payment methods:', error);
         // Fallback to hardcoded methods if API fails
         setAvailablePaymentMethods([
-          { value: "Orange Cash", label: "Orange Cash", image: "/images/payments/orange-cash.png" },
-          { value: "Vodafone Cash", label: "Vodafone Cash", image: "/images/payments/vodafone-cash.png" },
-          { value: "Etisalat Cash", label: "Etisalat Cash", image: "/images/payments/etisalat-cash.png" },
-          { value: "WE Pay", label: "WE Pay", image: "/images/payments/we-pay.png" },
-          { value: "InstaPay", label: "InstaPay", image: "/images/payments/instapay.png" },
-          { value: "PayPal", label: "PayPal", image: "/images/payments/paypal.png" }
+          { value: "Orange Cash", label: "Orange Cash", image: "/images/payments/orange-logo-new.png" },
+          { value: "Vodafone Cash", label: "Vodafone Cash", image: "/images/payments/vodafone-logo.png" },
+          { value: "Etisalat Cash", label: "Etisalat Cash", image: "/images/payments/etisalat-logo.png" },
+          { value: "WE Pay", label: "WE Pay", image: "/images/payments/we-pay-logo.png" },
+          { value: "InstaPay", label: "InstaPay", image: "/images/payments/instapay-logo.png" },
+          { value: "PayPal", label: "PayPal", image: "/images/payments/paypal-logo.png" },
+          { value: "WhatsApp", label: "WhatsApp", image: "/images/payments/whatsapp.svg" }
         ]);
       }
     };

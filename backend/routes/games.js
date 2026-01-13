@@ -1048,6 +1048,81 @@ router.put('/admin/arrangement/bulk', authenticateToken, ensureAdmin, async (req
   }
 });
 
+// GET /api/admin/games/:id/multi-currency-prices
+router.get('/:id/multi-currency-prices', authenticateToken, ensureAdmin, async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    // Try to get from database first
+    try {
+      const result = await pool.query(
+        'SELECT multi_currency_prices FROM games WHERE id = $1',
+        [id]
+      );
+
+      if (result.rows.length > 0 && result.rows[0].multi_currency_prices) {
+        return res.json(result.rows[0].multi_currency_prices);
+      }
+    } catch (dbError) {
+      console.error('DB query failed for multi-currency prices:', dbError.message);
+    }
+
+    // Fallback to local JSON
+    try {
+      const game = localDb.getGame(id);
+      if (game && game.multiCurrencyPrices) {
+        return res.json(game.multiCurrencyPrices);
+      }
+    } catch (localError) {
+      console.error('Local DB fallback failed for multi-currency prices:', localError.message);
+    }
+
+    // Return empty object if no data found
+    res.json({});
+  } catch (error) {
+    console.error('Error fetching multi-currency prices:', error);
+    res.status(500).json({ message: 'Failed to fetch multi-currency prices' });
+  }
+});
+
+// PUT /api/admin/games/:id/multi-currency-prices
+router.put('/:id/multi-currency-prices', authenticateToken, ensureAdmin, async (req, res) => {
+  const { id } = req.params;
+  const multiCurrencyData = req.body;
+
+  try {
+    // Validate the data structure
+    if (typeof multiCurrencyData !== 'object' || !multiCurrencyData[id]) {
+      return res.status(400).json({ message: 'Invalid multi-currency data format' });
+    }
+
+    const gameData = multiCurrencyData[id];
+
+    // Try database first
+    try {
+      await pool.query(
+        'UPDATE games SET multi_currency_prices = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
+        [JSON.stringify(gameData), id]
+      );
+    } catch (dbError) {
+      console.error('DB update failed for multi-currency prices:', dbError.message);
+    }
+
+    // Also update local JSON
+    try {
+      localDb.updateGame(id, { multiCurrencyPrices: gameData });
+    } catch (localError) {
+      console.error('Local DB update failed for multi-currency prices:', localError.message);
+    }
+
+    await logAudit('update_multi_currency_prices', `Updated multi-currency prices for game: ${id}`, req.user);
+    res.json({ message: 'Multi-currency prices updated successfully' });
+  } catch (error) {
+    console.error('Error updating multi-currency prices:', error);
+    res.status(500).json({ message: 'Failed to update multi-currency prices' });
+  }
+});
+
 export default router;
 
 // Additional route: allow updating packages using an admin API key (ADMIN_API_KEY)
