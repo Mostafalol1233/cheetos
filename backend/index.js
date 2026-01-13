@@ -1773,6 +1773,13 @@ function getPaymentDetails(paymentMethod) {
     instructions: orDefault(process.env.BANK_TRANSFER_INSTRUCTIONS, 'Transfer money to this bank account')
   };
 
+  if (method === 'WhatsApp') return {
+    title: 'WhatsApp Payment',
+    value: orDefault(process.env.WHATSAPP_NUMBER, '+201029870810'),
+    image: orDefault(process.env.WHATSAPP_IMAGE, '/images/payments/whatsapp.png'),
+    instructions: orDefault(process.env.WHATSAPP_INSTRUCTIONS, 'Send payment confirmation via WhatsApp to this number')
+  };
+
   return { title: '', value: '', image: '', instructions: '' };
 }
 
@@ -1798,7 +1805,8 @@ app.get('/api/public/payment-methods', async (req, res) => {
       { name: 'WE Pay', env: 'WE_PAY_NUMBERS' },
       { name: 'InstaPay', env: 'INSTAPAY_ACCOUNT' },
       { name: 'PayPal', env: 'PAYPAL_EMAIL' },
-      { name: 'Bank Transfer', env: 'BANK_DETAILS' }
+      { name: 'Bank Transfer', env: 'BANK_DETAILS' },
+      { name: 'WhatsApp', env: 'WHATSAPP_NUMBER' }
     ];
 
     for (const config of paymentConfigs) {

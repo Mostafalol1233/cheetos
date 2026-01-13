@@ -80,6 +80,8 @@ export function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
       case "WE Pay": return "💳";
       case "InstaPay": return "🏦";
       case "PayPal": return "💰";
+      case "WhatsApp": return "💬";
+      case "Bank Transfer": return "🏦";
       default: return "💳";
     }
   };
@@ -189,7 +191,7 @@ ${orderSummary}
       });
       const { id: transactionId } = await res.json();
 
-      if (confirmMethod === 'whatsapp') {
+      if (paymentMethod === 'WhatsApp') {
         const whatsappUrl = `https://wa.me/${SELLER_WHATSAPP.replace('+', '')}?text=${encodeURIComponent(message)}`;
         window.open(whatsappUrl, '_blank');
       } else {
@@ -475,13 +477,13 @@ ${orderSummary}
               >
                 {isSubmitting ? (
                   <>Processing...</>
-                ) : confirmMethod === 'whatsapp' ? (
+                ) : paymentMethod === 'WhatsApp' ? (
                   <>
                     <SiWhatsapp className="mr-2" />
-                    Complete Order
+                    Complete Order via WhatsApp
                   </>
                 ) : (
-                  <>Submit Payment Confirmation</>
+                  <>Complete Order</>
                 )}
               </Button>
             )}
