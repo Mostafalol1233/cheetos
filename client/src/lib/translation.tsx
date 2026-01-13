@@ -437,6 +437,16 @@ const translations: Record<Language, Record<string, string>> = {
 
 const TranslationContext = createContext<TranslationContextType | undefined>(undefined);
 
+const detectBrowserLanguage = (): Language => {
+  if (typeof navigator === 'undefined') return 'en';
+
+  const browserLang = navigator.language || (navigator as any).userLanguage;
+  if (!browserLang) return 'en';
+
+  // Check if browser language starts with 'ar'
+  return browserLang.toLowerCase().startsWith('ar') ? 'ar' : 'en';
+};
+
 export function TranslationProvider({ children }: { children: ReactNode }) {
   const [language, setLanguageState] = useState<Language>(() => {
     // Check localStorage first, then browser language, then default
@@ -449,16 +459,6 @@ export function TranslationProvider({ children }: { children: ReactNode }) {
     }
     return "en";
   });
-
-  const detectBrowserLanguage = (): Language => {
-    if (typeof navigator === 'undefined') return 'en';
-
-    const browserLang = navigator.language || (navigator as any).userLanguage;
-    if (!browserLang) return 'en';
-
-    // Check if browser language starts with 'ar'
-    return browserLang.toLowerCase().startsWith('ar') ? 'ar' : 'en';
-  };
 
   const setLanguage = (lang: Language) => {
     setLanguageState(lang);
