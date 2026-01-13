@@ -63,26 +63,15 @@ interface Alert {
 
 const apiPath = (path: string) => (path.startsWith('http') ? path : `${API_BASE_URL}${path}`);
 
+const parseNumberSafe = (v: string | number | null | undefined) => {
+  const s = normalizeNumericString(v);
+  if (!s) return 0;
+  const n = Number(s);
+  return Number.isFinite(n) ? n : 0;
+};
+
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('games');
-  const [searchGameTerm, setSearchGameTerm] = useState('');
-  const [editingGame, setEditingGame] = useState<Game | null>(null);
-  const [packagesGameId, setPackagesGameId] = useState<string | null>(null);
-  const [packagesDraft, setPackagesDraft] = useState<Array<{ amount: string; price: number; discountPrice: number | null; image?: string | null }>>([]);
-  const { toast } = useToast();
-  const [originalPackages, setOriginalPackages] = useState<Array<{ amount: string; price: number; discountPrice: number | null; image?: string | null }>>([]);
-  const [addedIndices, setAddedIndices] = useState<Set<number>>(new Set());
-  const [selectedUser, setSelectedUser] = useState<string | null>(null);
-  const [replyMessage, setReplyMessage] = useState('');
-  const [cardsPage, setCardsPage] = useState(1);
-  const [cardsLimit, setCardsLimit] = useState(20);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const parseNumberSafe = (v: string | number | null | undefined) => {
-    const s = normalizeNumericString(v);
-    if (!s) return 0;
-    const n = Number(s);
-    return Number.isFinite(n) ? n : 0;
-  };
   const [newCardGameId, setNewCardGameId] = useState<string>('');
   const [newCardCode, setNewCardCode] = useState('');
   const [alertStatus, setAlertStatus] = useState<string>('all');
