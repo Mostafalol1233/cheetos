@@ -40,6 +40,13 @@ export function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
     if (isOpen && isAuthenticated) {
       // Load chat history
       loadChatHistory();
+      
+      // Start polling for new messages
+      const pollInterval = setInterval(() => {
+        loadChatHistory();
+      }, 5000); // Poll every 5 seconds
+      
+      return () => clearInterval(pollInterval);
     }
   }, [isOpen, isAuthenticated]);
 

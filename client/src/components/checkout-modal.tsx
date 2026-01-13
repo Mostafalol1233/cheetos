@@ -259,30 +259,38 @@ ${orderSummary}
           <div className="space-y-4">
             <div>
               <Label className="text-lg font-medium">Payment Method</Label>
-              <div className="mt-4">
-                <Select value={paymentMethod} onValueChange={setPaymentMethod}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Orange Cash">Orange Cash</SelectItem>
-                    <SelectItem value="Vodafone Cash">Vodafone Cash</SelectItem>
-                    <SelectItem value="Etisalat Cash">Etisalat Cash</SelectItem>
-                    <SelectItem value="WE Pay">WE Pay</SelectItem>
-                    <SelectItem value="InstaPay">InstaPay</SelectItem>
-                    <SelectItem value="PayPal">PayPal</SelectItem>
-                    <SelectItem value="Bank Transfer">Bank Transfer</SelectItem>
-                  </SelectContent>
-                </Select>
-                {payInfo?.value ? (
-                  <div className="mt-3 text-sm bg-muted/30 rounded-lg p-3">
-                    <div>
-                      <p className="font-medium">{payInfo.title || t('transfer_number')}:</p>
-                      <p className="text-foreground">{payInfo.value}</p>
-                    </div>
-                  </div>
-                ) : null}
+              <div className="mt-4 grid grid-cols-2 gap-3">
+                {[
+                  { value: "Orange Cash", label: "Orange Cash", icon: "📱" },
+                  { value: "Vodafone Cash", label: "Vodafone Cash", icon: "📞" },
+                  { value: "Etisalat Cash", label: "Etisalat Cash", icon: "📶" },
+                  { value: "WE Pay", label: "WE Pay", icon: "💳" },
+                  { value: "InstaPay", label: "InstaPay", icon: "🏦" },
+                  { value: "PayPal", label: "PayPal", icon: "💰" }
+                ].map((method) => (
+                  <button
+                    key={method.value}
+                    type="button"
+                    onClick={() => setPaymentMethod(method.value)}
+                    className={`p-4 border-2 rounded-lg text-center transition-all hover:border-gold-primary ${
+                      paymentMethod === method.value
+                        ? 'border-gold-primary bg-gold-primary/10'
+                        : 'border-gray-300 hover:border-gray-400'
+                    }`}
+                  >
+                    <div className="text-2xl mb-2">{method.icon}</div>
+                    <div className="text-sm font-medium">{method.label}</div>
+                  </button>
+                ))}
               </div>
+              {payInfo?.value ? (
+                <div className="mt-3 text-sm bg-muted/30 rounded-lg p-3">
+                  <div>
+                    <p className="font-medium">{payInfo.title || t('transfer_number')}:</p>
+                    <p className="text-foreground">{payInfo.value}</p>
+                  </div>
+                </div>
+              ) : null}
             </div>
           </div>
         );
@@ -397,15 +405,15 @@ ${orderSummary}
             ) : (
               <Button
                 type="submit"
-                className="flex-1 bg-green-600 hover:bg-green-700 text-white"
+                className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold text-lg py-3"
               >
                 {confirmMethod === 'whatsapp' ? (
                   <>
                     <SiWhatsapp className="mr-2" />
-                    {t('send_order_whatsapp')}
+                    Complete Order
                   </>
                 ) : (
-                  <>{t('proceed_secure_confirmation')}</>
+                  <>Submit Payment Confirmation</>
                 )}
               </Button>
             )}
