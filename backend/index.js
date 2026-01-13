@@ -1766,13 +1766,6 @@ function getPaymentDetails(paymentMethod) {
     instructions: orDefault(process.env.PAYPAL_INSTRUCTIONS, 'Send money to this PayPal account')
   };
 
-  if (method === 'Bank Transfer') return {
-    title: 'Bank Details',
-    value: orDefault(process.env.BANK_DETAILS, 'CIB Bank - Account: 0123456789 - Name: Diaa Eldeen'),
-    image: orDefault(process.env.BANK_TRANSFER_IMAGE, '/images/payments/bank-transfer.png'),
-    instructions: orDefault(process.env.BANK_TRANSFER_INSTRUCTIONS, 'Transfer money to this bank account')
-  };
-
   if (method === 'WhatsApp') return {
     title: 'WhatsApp Payment',
     value: orDefault(process.env.WHATSAPP_NUMBER, '+201029870810'),
@@ -1805,7 +1798,6 @@ app.get('/api/public/payment-methods', async (req, res) => {
       { name: 'WE Pay', env: 'WE_PAY_NUMBERS' },
       { name: 'InstaPay', env: 'INSTAPAY_ACCOUNT' },
       { name: 'PayPal', env: 'PAYPAL_EMAIL' },
-      { name: 'Bank Transfer', env: 'BANK_DETAILS' },
       { name: 'WhatsApp', env: 'WHATSAPP_NUMBER' }
     ];
 

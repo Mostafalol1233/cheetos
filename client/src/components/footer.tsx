@@ -35,7 +35,7 @@ export function Footer() {
               <a href="https://t.me/diaaeldeen1" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-gold-primary transition-colors hover:scale-110 transform duration-200">
                 <SiTelegram className="w-5 h-5" />
               </a>
-              <a href="https://wa.me/201011696196" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-green-500 transition-colors hover:scale-110 transform duration-200">
+              <a href="https://wa.me/201029870810" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-green-500 transition-colors hover:scale-110 transform duration-200">
                 <SiWhatsapp className="w-5 h-5" />
               </a>
               <a href="https://tiktok.com/@diaa_eldeen" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-gold-primary transition-colors hover:scale-110 transform duration-200">
@@ -116,15 +116,15 @@ export function Footer() {
             <ul className="space-y-4">
               <li className="flex items-start text-muted-foreground">
                 <MapPin className="w-5 h-5 mr-3 text-gold-primary shrink-0" />
-                <span>123 Gaming Street, Digital City, EG</span>
+                <span>Cairo, Egypt</span>
               </li>
               <li className="flex items-center text-muted-foreground">
                 <Phone className="w-5 h-5 mr-3 text-gold-primary shrink-0" />
-                <span>+20 123 456 7890</span>
+                <span>+20 102 987 0810</span>
               </li>
               <li className="flex items-center text-muted-foreground">
                 <Mail className="w-5 h-5 mr-3 text-gold-primary shrink-0" />
-                <span>support@diaaeldeen.com</span>
+                <span>diaaeldeen@gmail.com</span>
               </li>
             </ul>
           </div>
