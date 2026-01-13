@@ -27,7 +27,7 @@ export function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
   const [customerEmail, setCustomerEmail] = useState("");
   const [countryCode, setCountryCode] = useState("+20");
   const [paymentMethod, setPaymentMethod] = useState("");
-  const [confirmMethod, setConfirmMethod] = useState<'whatsapp' | 'live'>('whatsapp');
+  const [confirmMethod, setConfirmMethod] = useState<'whatsapp' | 'live'>('live');
   const [deliveryChannel, setDeliveryChannel] = useState<'whatsapp' | 'email'>('whatsapp');
   const [paymentMessage, setPaymentMessage] = useState("");
   const { toast } = useToast();
@@ -215,7 +215,7 @@ ${orderSummary}
     setCustomerEmail("");
     setCountryCode("+20");
     setPaymentMethod(availablePaymentMethods.length > 0 ? availablePaymentMethods[0].value : "Orange Cash");
-    setConfirmMethod('whatsapp');
+    setConfirmMethod('live');
     setDeliveryChannel('whatsapp');
     setCurrentStep(1);
     setIsSubmitting(false);
