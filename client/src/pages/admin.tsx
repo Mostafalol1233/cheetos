@@ -17,7 +17,6 @@ import { useToast } from '@/hooks/use-toast';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import QRCode from 'qrcode';
 import { normalizeNumericString } from '@/lib/quantity';
-import RichTextEditor from '@/components/rich-text-editor';
 
 interface Game {
   id: string;
@@ -78,14 +77,6 @@ export default function AdminDashboard() {
   const [cardsPage, setCardsPage] = useState(1);
   const [cardsLimit, setCardsLimit] = useState(20);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const normalizeNumericString = (v: string | number | null | undefined) => {
-    let s = String(v ?? '').trim();
-    if (!s) return '';
-    s = s.replace(/[,\s]+/g, '');
-    s = s.replace(/[\u0660-\u0669]/g, (c) => String(c.charCodeAt(0) - 0x0660));
-    s = s.replace(/[\u06F0-\u06F9]/g, (c) => String(c.charCodeAt(0) - 0x06F0));
-    return s;
-  };
   const parseNumberSafe = (v: string | number | null | undefined) => {
     const s = normalizeNumericString(v);
     if (!s) return 0;
