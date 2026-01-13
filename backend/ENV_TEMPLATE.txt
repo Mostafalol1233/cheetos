@@ -31,8 +31,8 @@ WHATSAPP_TOKEN=your_whatsapp_token
 WHATSAPP_PHONE_NUMBER_ID=your_phone_number_id
 WHATSAPP_VERIFY_TOKEN=your_verify_token
 # Primary admin/notification WhatsApp number (change as needed)
-ADMIN_PHONE=+201500302461
-# Optional connected number to receive seller alerts in addition to ADMIN_PHONE
+ADMIN_PHONE=+201500302461,+201011696196
+# Multiple admin phone numbers separated by commas (all will receive notifications)
 CONNECTED_PHONE=+201500302461
 
 # Email Configuration (Brevo/Sendinblue)

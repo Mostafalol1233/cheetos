@@ -29,6 +29,20 @@ if (!fs.existsSync(AUTH_FOLDER)) {
   fs.mkdirSync(AUTH_FOLDER, { recursive: true });
 }
 
+// Helper function to get all admin phone numbers
+export function getAdminPhones() {
+  const adminPhoneStr = process.env.ADMIN_PHONE || '';
+  if (!adminPhoneStr.trim()) return [];
+
+  return adminPhoneStr.split(',')
+    .map(phone => phone.trim())
+    .filter(phone => phone.length > 0)
+    .map(phone => {
+      // Ensure phone starts with +
+      return phone.startsWith('+') ? phone : `+${phone}`;
+    });
+}
+
 export const getQRCode = () => qrCode;
 export const getConnectionStatus = () => ({ connected: isConnected, status: connectionStatus });
 
@@ -126,7 +140,10 @@ export async function sendWithRetry(fn, maxRetries = 3) {
   }
 }
 
-export async function startWhatsApp() {
+export async function startWhatsApp(retryCount = 0) {
+  const maxRetries = 3;
+  
+  try {
   if (process.env.RESET_WHATSAPP === 'true') {
     console.log('🔄 RESET_WHATSAPP is set. Clearing session...');
     try {
@@ -149,14 +166,33 @@ export async function startWhatsApp() {
     auth: state,
     generateHighQualityLinkPreview: true,
     connectTimeoutMs: 60000,
+    // Add longer timeouts to prevent timeout errors
+    qrTimeout: 60000,
+    defaultQueryTimeoutMs: 60000,
+    // Add retry configuration
+    maxRetries: 3,
+    retryRequestDelayMs: 1000,
+    // Add keep-alive settings
+    keepAliveIntervalMs: 30000,
+    // Add browser settings to avoid detection
+    browser: ['GameCart Bot', 'Chrome', '1.0.0'],
   });
 
   // Add error event listener to catch socket errors
   sock.ev.on('error', (err) => {
     console.error('WhatsApp socket error:', err?.message || err);
+    // If it's a decryption error, don't crash - just log and continue
+    if (err?.message?.includes('Bad MAC') || err?.message?.includes('decrypt')) {
+      console.warn('⚠️ WhatsApp decryption error detected - session may need reset');
+    }
+    // Handle timeout errors specifically
+    if (err?.message?.includes('Timed Out') || err?.output?.statusCode === 408) {
+      console.warn('⚠️ WhatsApp timeout error - this is usually temporary');
+    }
   });
 
-  sock.ev.on("connection.update", async (update) => {
+  // Add connection event listener to handle timeouts better
+  sock.ev.on('connection.update', async (update) => {
     const { connection, lastDisconnect, qr } = update;
 
     if (qr) {
@@ -177,8 +213,19 @@ export async function startWhatsApp() {
       connectionStatus = "disconnected";
       qrCode = null;
 
+      // Log the disconnect reason
+      if (statusCode === 408) {
+        console.log('📡 WhatsApp disconnected due to timeout - will reconnect automatically');
+      } else if (statusCode === 515) {
+        console.log('🔄 WhatsApp disconnected due to restart - quick reconnect');
+      } else if (!shouldReconnect) {
+        console.log('🚫 WhatsApp logged out - manual reconnection required');
+      }
+
       if (shouldReconnect) {
-        setTimeout(() => startWhatsApp(), statusCode === 515 ? 1000 : 5000);
+        const delay = statusCode === 515 ? 1000 : statusCode === 408 ? 5000 : 5000;
+        console.log(`⏰ Reconnecting in ${delay/1000} seconds...`);
+        setTimeout(() => startWhatsApp(), delay);
       }
     } else if (connection === "open") {
       isConnected = true;
@@ -192,17 +239,19 @@ export async function startWhatsApp() {
       try {
         const now = Date.now();
         if (now - lastAdminNotifyAt >= 60 * 60 * 1000) {
-          const adminPhone = process.env.ADMIN_PHONE || '';
-          if (adminPhone) {
-            try {
-              const cleanPhone = adminPhone.replace(/[^\d]/g, '');
-              const jid = cleanPhone.includes('@s.whatsapp.net') ? cleanPhone : `${cleanPhone}@s.whatsapp.net`;
-              const msg = `🤖 GameCart Bot Connected\n✅ Status: Online\n📱 Number: ${botNumber}\n📅 ${new Date(now).toLocaleString()}`;
-              await sock.sendMessage(jid, { text: msg });
-              lastAdminNotifyAt = now;
-            } catch (e) {
-              // Silent fail
+          const adminPhones = getAdminPhones();
+          if (adminPhones.length > 0) {
+            const msg = `🤖 GameCart Bot Connected\n✅ Status: Online\n📱 Number: ${botNumber}\n📅 ${new Date(now).toLocaleString()}`;
+            for (const adminPhone of adminPhones) {
+              try {
+                const cleanPhone = adminPhone.replace(/[^\d]/g, '');
+                const jid = cleanPhone.includes('@s.whatsapp.net') ? cleanPhone : `${cleanPhone}@s.whatsapp.net`;
+                await sock.sendMessage(jid, { text: msg });
+              } catch (e) {
+                console.error(`Failed to send welcome message to ${adminPhone}:`, e?.message || e);
+              }
             }
+            lastAdminNotifyAt = now;
           }
         }
       } catch (err) {
@@ -217,10 +266,11 @@ export async function startWhatsApp() {
   sock.ev.on("creds.update", saveCreds);
 
   sock.ev.on("messages.upsert", async ({ messages, type }) => {
-    if (type === "notify") {
-      for (const msg of messages) {
-        if (!msg.key.fromMe) {
-          try {
+    try {
+      if (type === "notify") {
+        for (const msg of messages) {
+          if (!msg.key.fromMe) {
+            try {
             const from = msg.key.remoteJid;
             const text = msg.message?.conversation || msg.message?.extendedTextMessage?.text;
             const hasImage = !!(msg.message && (msg.message.imageMessage || msg.message.documentMessage && (msg.message.documentMessage.mimetype || '').startsWith('image')));
@@ -263,7 +313,6 @@ export async function startWhatsApp() {
                 const id = `wa_${Date.now()}_${Math.random().toString(36).slice(2,9)}`;
 
                 let mediaUrl = null;
-                let imagePath = null;
                 if (hasImage) {
                   try {
                     const stream = await downloadContentFromMessage(msg.message.imageMessage || msg.message.documentMessage, 'image');
@@ -278,7 +327,6 @@ export async function startWhatsApp() {
                     console.log(`📸 Inbound media saved to: ${dest}`);
                     const front = (process.env.FRONTEND_URL || `http://localhost:${process.env.PORT || 20291}`).replace(/\/$/, '');
                     mediaUrl = `${front}/uploads/${filename}`;
-                    imagePath = dest; // Local path for sending
                   } catch (mediaErr) {
                     console.error('Failed to save inbound media:', mediaErr?.message || mediaErr);
                   }
@@ -338,27 +386,33 @@ export async function startWhatsApp() {
                   }
                 }
 
-                // Send payment confirmation to admin if it's an image (likely payment proof)
-                if (hasImage && !hasRecentConfirmation) {
-                  try {
-                    const adminPhone = process.env.ADMIN_PHONE || '';
-                    if (adminPhone) {
-                      const cleanAdminPhone = adminPhone.replace(/[^\d]/g, '');
-                      const adminJid = cleanAdminPhone.includes('@s.whatsapp.net') ? cleanAdminPhone : `${cleanAdminPhone}@s.whatsapp.net`;
-                      const caption = `💳 Payment Confirmation Received\n👤 From: ${userDisplay}\n📱 Phone: ${displayPhone}\n🔗 Image Link: ${mediaUrl}\n📅 ${new Date().toLocaleString()}`;
-                      await sock.sendMessage(adminJid, { image: { url: imagePath }, caption });
-                      console.log(`📤 Payment confirmation sent to admin: ${cleanAdminPhone}`);
-                    }
-                  } catch (adminErr) {
-                    console.error('Failed to send payment confirmation to admin:', adminErr?.message || adminErr);
-                  }
-                }
-
                 // Always log inbound messages to console - NO rate limiting for console logs
                 const userDisplay = userInfo ? `${userInfo.full_name || 'Unknown User'} (${userInfo.email || 'no email'})` : (isGroup ? groupName : displayPhone);
                 const messageType = hasImage ? '📷 IMAGE' : '💬 TEXT';
                 const messageContent = text || (mediaUrl ? `[Image: ${mediaUrl.split('/').pop()}]` : '[Empty message]');
                 const confirmationStatus = hasRecentConfirmation ? '⚠️ RECENT CONFIRMATION EXISTS' : '✅ NO RECENT CONFIRMATION';
+
+                // Send payment confirmation to admin if it's an image (likely payment proof)
+                if (hasImage && !hasRecentConfirmation) {
+                  try {
+                    const adminPhones = getAdminPhones();
+                    if (adminPhones.length > 0) {
+                      const caption = `💳 Payment Confirmation Received\n👤 From: ${userDisplay}\n📱 Phone: ${displayPhone}\n🔗 Image Link: ${mediaUrl}\n📅 ${new Date().toLocaleString()}`;
+                      for (const adminPhone of adminPhones) {
+                        try {
+                          const cleanAdminPhone = adminPhone.replace(/[^\d]/g, '');
+                          const adminJid = cleanAdminPhone.includes('@s.whatsapp.net') ? cleanAdminPhone : `${cleanAdminPhone}@s.whatsapp.net`;
+                          await sock.sendMessage(adminJid, { image: { url: mediaUrl }, caption });
+                          console.log(`📤 Payment confirmation sent to admin: ${cleanAdminPhone}`);
+                        } catch (adminErr) {
+                          console.error(`Failed to send payment confirmation to ${adminPhone}:`, adminErr?.message || adminErr);
+                        }
+                      }
+                    }
+                  } catch (adminErr) {
+                    console.error('Failed to send payment confirmation to admin:', adminErr?.message || adminErr);
+                  }
+                }
 
                 console.log(`📨 [${isGroup ? 'GROUP' : 'PRIVATE'}] ${displayPhone}: ${messageContent.substring(0, 100)}${messageContent.length > 100 ? '...' : ''}`);
               } catch (err) {
@@ -366,16 +420,40 @@ export async function startWhatsApp() {
               }
             }
           } catch (decryptErr) {
-            // Handle decryption errors gracefully
+            // Handle decryption errors gracefully - only log once per minute to avoid spam
             if (decryptErr.message?.includes('Bad MAC') || decryptErr.message?.includes('decrypt message')) {
               decryptionErrorCount++;
-              console.warn(`⚠️ WhatsApp decryption error #${decryptionErrorCount} (session may need reset):`, decryptErr.message);
+              
+              // Only log every 10th error or if it's the first few to avoid log spam
+              if (decryptionErrorCount <= 3 || decryptionErrorCount % 10 === 0) {
+                console.warn(`⚠️ WhatsApp decryption error #${decryptionErrorCount} (session may need reset):`, decryptErr.message);
+              }
 
-              // If we get too many decryption errors, suggest resetting the session
-              if (decryptionErrorCount >= 5) {
-                console.error('🚨 Too many decryption errors! Consider resetting WhatsApp session by setting RESET_WHATSAPP=true');
-                console.error('This usually happens when the WhatsApp session becomes corrupted.');
-                decryptionErrorCount = 0; // Reset counter to avoid spam
+              // If we get too many decryption errors, automatically reset the session
+              if (decryptionErrorCount >= 3) {
+                console.error('🚨 Too many decryption errors! Automatically resetting WhatsApp session...');
+                try {
+                  // Clear the auth folder to reset session
+                  if (fs.existsSync(AUTH_FOLDER)) {
+                    fs.rmSync(AUTH_FOLDER, { recursive: true, force: true });
+                    console.log('✅ WhatsApp session cleared successfully');
+                  }
+                  // Reset connection state
+                  isConnected = false;
+                  connectionStatus = "disconnected";
+                  qrCode = null;
+                  sock = null;
+                  decryptionErrorCount = 0;
+
+                  // Restart WhatsApp after a short delay
+                  setTimeout(() => {
+                    console.log('🔄 Restarting WhatsApp connection...');
+                    startWhatsApp().catch(err => console.error('Failed to restart WhatsApp:', err));
+                  }, 2000);
+                } catch (resetErr) {
+                  console.error('❌ Failed to reset WhatsApp session:', resetErr.message);
+                  decryptionErrorCount = 0; // Reset counter even if reset failed
+                }
               }
             } else {
               console.error('Failed to process WhatsApp message:', decryptErr?.message || decryptErr);
@@ -384,17 +462,42 @@ export async function startWhatsApp() {
         }
       }
     }
+    } catch (outerErr) {
+      console.error('🚨 Critical error in WhatsApp message handler:', outerErr?.message || outerErr);
+      // Don't let message processing errors crash the entire handler
+    }
   });
+  } catch (error) {
+    console.error(`❌ WhatsApp connection failed (attempt ${retryCount + 1}/${maxRetries}):`, error?.message || error);
+    
+    if (retryCount < maxRetries - 1) {
+      const delay = Math.min(30000, 5000 * Math.pow(2, retryCount)); // Exponential backoff: 5s, 10s, 20s
+      console.log(`⏰ Retrying WhatsApp connection in ${delay/1000} seconds...`);
+      setTimeout(() => startWhatsApp(retryCount + 1), delay);
+    } else {
+      console.error('🚨 Max WhatsApp connection retries reached. Will retry automatically later.');
+      // Reset connection state
+      isConnected = false;
+      connectionStatus = "disconnected";
+      qrCode = null;
+      sock = null;
+      
+      // Try again in 5 minutes
+      setTimeout(() => startWhatsApp(0), 5 * 60 * 1000);
+    }
+  }
 }
 
 function startConnectionMonitor() {
   setInterval(() => {
-    if (sock) {
-      // If we think we are connected but the socket is closed, trigger reconnect
-      if (isConnected && sock.ws?.readyState !== 1) { // 1 = OPEN
-         startWhatsApp();
+    if (sock && isConnected) {
+      // Only check if we're supposed to be connected but socket is actually closed
+      // This prevents unnecessary reconnections during temporary network issues
+      if (sock.ws?.readyState !== 1) { // 1 = OPEN
+        console.log('🔄 Connection monitor detected closed socket, attempting reconnect...');
+        startWhatsApp().catch(err => console.error('Failed to reconnect:', err));
       }
     }
-  }, 10 * 60 * 1000); // Check every 10 minutes
+  }, 30 * 60 * 1000); // Check every 30 minutes instead of 10
 }
 

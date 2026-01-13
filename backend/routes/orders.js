@@ -86,12 +86,15 @@ router.post('/', async (req, res) => {
     }
 
     // Notify admin and connected numbers with full details
-    const adminPhone = (process.env.ADMIN_PHONE || '').trim();
+    const adminPhones = (process.env.ADMIN_PHONE || '').split(',').map(p => p.trim()).filter(Boolean);
     const connectedPhone = (process.env.CONNECTED_PHONE || '').trim();
-    if (adminPhone) {
-      try { await sendWhatsAppMessage(adminPhone, waText); } catch (e) { console.error('Admin WhatsApp failed:', e?.message || e); }
+
+    // Send to all admin phones
+    for (const adminPhone of adminPhones) {
+      try { await sendWhatsAppMessage(adminPhone, waText); } catch (e) { console.error(`Admin WhatsApp failed for ${adminPhone}:`, e?.message || e); }
     }
-    if (connectedPhone && connectedPhone !== adminPhone) {
+
+    if (connectedPhone && !adminPhones.includes(connectedPhone)) {
       try { await sendWhatsAppMessage(connectedPhone, waText); } catch (e) { console.error('Connected WhatsApp failed:', e?.message || e); }
     }
   } catch (waErr) {

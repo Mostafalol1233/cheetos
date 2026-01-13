@@ -45,16 +45,78 @@ process.on('uncaughtException', (error) => {
 });
 
 process.on('unhandledRejection', (reason, promise) => {
+  // Handle WhatsApp timeout errors gracefully - don't treat as critical errors
+  if (reason?.message?.includes('Timed Out') ||
+      reason?.output?.statusCode === 408 ||
+      reason?.data?.stack?.includes('baileys')) {
+    console.warn('⚠️ WhatsApp timeout/network error (handled):', reason?.message || reason);
+    return; // Don't log as critical error
+  }
+
   console.error('🚨 Unhandled Rejection (server will continue):', reason);
   // Don't exit the process - let the server continue running
 });
 
 // Disable core dumps to prevent large files from crashing
 try {
+  // Try ulimit for Unix-like systems
   execSync('ulimit -c 0', { stdio: 'ignore' });
-  console.log('✅ Core dumps disabled');
+  console.log('✅ Core dumps disabled (Unix)');
 } catch (e) {
-  console.warn('⚠️ Could not disable core dumps:', e.message);
+  // On Windows, try to disable core dumps via environment variable
+  try {
+    process.env.COMPLUS_DumpType = '0'; // Disable .NET core dumps
+    process.env.CORECLR_ENABLE_MINIDUMP = '0'; // Disable .NET Core dumps
+    console.log('✅ Core dumps disabled (Windows)');
+  } catch (winErr) {
+    console.warn('⚠️ Could not disable core dumps:', e.message);
+  }
+}
+
+// Core file cleanup function to prevent disk space issues
+function startCoreFileCleanup() {
+  const cleanupInterval = 5 * 60 * 1000; // 5 minutes
+  
+  setInterval(async () => {
+    try {
+      const currentDir = process.cwd();
+      const backendDir = __dirname;
+      
+      // Check both current directory and backend directory
+      const dirsToCheck = [currentDir, backendDir];
+      
+      for (const dir of dirsToCheck) {
+        try {
+          const files = await fs.promises.readdir(dir);
+          
+          for (const file of files) {
+            // Check for core files (core, core.<pid>, or any file starting with core)
+            if (file === 'core' || file.startsWith('core.')) {
+              const filePath = path.join(dir, file);
+              
+              try {
+                // Get file stats to check size
+                const stats = await fs.promises.stat(filePath);
+                const fileSizeMB = stats.size / (1024 * 1024);
+                
+                // Delete the core file
+                await fs.promises.unlink(filePath);
+                console.log(`🗑️ Deleted core file: ${filePath} (${fileSizeMB.toFixed(2)} MB)`);
+              } catch (deleteErr) {
+                console.warn(`⚠️ Failed to delete core file ${filePath}:`, deleteErr.message);
+              }
+            }
+          }
+        } catch (dirErr) {
+          // Silently ignore directory read errors (directory might not exist)
+        }
+      }
+    } catch (err) {
+      console.warn('⚠️ Error during core file cleanup:', err.message);
+    }
+  }, cleanupInterval);
+  
+  console.log('🧹 Core file cleanup monitor started (checks every 5 minutes)');
 }
 
 const __filename = fileURLToPath(import.meta.url);
@@ -2470,8 +2532,10 @@ app.post('/api/admin/upload', authenticateToken, ensureAdmin, upload.single('fil
             pool.query('INSERT INTO seller_alerts (id, type, summary) VALUES ($1, $2, $3)', [alertId, 'upload_error', summary]).catch(()=>{});
             const auditId = `aa_${Date.now()}`;
             pool.query('INSERT INTO admin_audit_logs (id, action, summary) VALUES ($1, $2, $3)', [auditId, 'upload_error', summary]).catch(()=>{});
-            if (process.env.ADMIN_PHONE) {
-              sendWhatsAppMessage(process.env.ADMIN_PHONE, `⚠️ Upload failed: ${summary}`).catch(()=>{});
+            // Notify all admin phones about upload failure
+            const adminPhones = (process.env.ADMIN_PHONE || '').split(',').map(p => p.trim()).filter(Boolean);
+            for (const adminPhone of adminPhones) {
+              sendWhatsAppMessage(adminPhone, `⚠️ Upload failed: ${summary}`).catch(()=>{});
             }
           } catch {}
           res.json({
@@ -2646,19 +2710,22 @@ app.post('/api/transactions/checkout', async (req, res) => {
     }
 
     for (const it of items) {
+      // Extract base game ID from package ID (format: game_id-package_index)
+      const baseGameId = it.id.includes('-') ? it.id.split('-')[0] : it.id;
+      
       // Validate game exists before inserting transaction item
-      const gameCheck = await pool.query('SELECT id FROM games WHERE id = $1', [it.id]);
+      const gameCheck = await pool.query('SELECT id FROM games WHERE id = $1', [baseGameId]);
       if (gameCheck.rows.length === 0) {
-        console.warn(`Game ${it.id} not found, skipping transaction item`);
+        console.warn(`Game ${baseGameId} not found, skipping transaction item (original ID: ${it.id})`);
         continue;
       }
       
       const itemId = `txi_${Date.now()}_${Math.random().toString(36).slice(2,9)}`;
       await pool.query(
         'INSERT INTO transaction_items (id, transaction_id, game_id, quantity, price) VALUES ($1, $2, $3, $4, $5)',
-        [itemId, transactionId, it.id, Number(it.quantity), Number(it.price)]
+        [itemId, transactionId, baseGameId, Number(it.quantity), Number(it.price)]
       );
-      await pool.query('UPDATE games SET stock = GREATEST(stock - $1, 0) WHERE id = $2', [Number(it.quantity), it.id]);
+      await pool.query('UPDATE games SET stock = GREATEST(stock - $1, 0) WHERE id = $2', [Number(it.quantity), baseGameId]);
     }
     
     // Send WhatsApp Confirmation
@@ -2666,9 +2733,14 @@ app.post('/api/transactions/checkout', async (req, res) => {
       const waMessage = `New Order #${transactionId}\nTotal: ${total} EGP\nCustomer: ${customerName} (${customerPhone})\nItems:\n${items.map(i => `- ${i.title || i.name} (x${i.quantity})`).join('\n')}`;
       const customerMsg = `Thank you for your order #${transactionId}! We are processing it.\n\nشكراً لطلبك رقم #${transactionId}! نحن نقوم بمعالجته الآن.`;
       await sendWhatsAppMessage(customerPhone, customerMsg);
-      // Optionally notify admin
-      if (process.env.ADMIN_PHONE) {
-         await sendWhatsAppMessage(process.env.ADMIN_PHONE, waMessage);
+      // Notify all admin phones
+      const adminPhones = (process.env.ADMIN_PHONE || '').split(',').map(p => p.trim()).filter(Boolean);
+      for (const adminPhone of adminPhones) {
+        try {
+          await sendWhatsAppMessage(adminPhone, waMessage);
+        } catch (adminErr) {
+          console.error(`Failed to send order notification to admin ${adminPhone}:`, adminErr?.message || adminErr);
+        }
       }
     } catch (waErr) {
       console.error('Failed to send WhatsApp confirmation:', waErr.message);
@@ -2926,12 +2998,15 @@ app.post('/api/transactions/confirm', receiptUpload.single('receipt'), async (re
         const uq = await pool.query('SELECT name AS full_name, email, phone FROM users WHERE id = $1', [tx.user_id]);
         user = uq.rows[0] || null;
       }
-      const adminPhone = (process.env.ADMIN_PHONE || '').trim();
+      const adminPhoneStr = (process.env.ADMIN_PHONE || '').trim();
+      const adminPhones = adminPhoneStr ? adminPhoneStr.split(',').map(p => p.trim()).filter(p => p) : [];
       const connectedPhone = (process.env.CONNECTED_PHONE || '').trim();
       const userDisplay = user ? `${user.full_name || ''} <${user.email || ''}>` : (tx ? tx.customerName || tx.customer_name || '' : 'Unknown');
       const phone = user ? (user.phone || '') : (tx ? tx.customerPhone || tx.customer_phone || '' : '');
       const confirmMsg = `📌 Payment confirmation submitted\nConfirmation ID: ${id}\nTransaction: ${transactionId}\nUser: ${userDisplay}\nPhone: ${phone}`;
-      if (adminPhone) {
+
+      // Send to all admin phones
+      for (const adminPhone of adminPhones) {
         try {
           if (url) {
             console.log(`📸 Sending payment confirmation image to admin ${adminPhone}: ${url}`);
@@ -2942,7 +3017,8 @@ app.post('/api/transactions/confirm', receiptUpload.single('receipt'), async (re
           }
         } catch (e) { console.error(`❌ Admin WA notify failed for ${adminPhone}:`, e?.message || e); }
       }
-      if (connectedPhone && connectedPhone !== adminPhone) {
+
+      if (connectedPhone && !adminPhones.includes(connectedPhone)) {
         try {
           if (url) {
             console.log(`📸 Sending payment confirmation image to connected ${connectedPhone}: ${url}`);
@@ -3471,9 +3547,9 @@ app.post('/api/admin/transactions/:id/respond', authenticateToken, async (req, r
       } catch (e) { console.error('Customer email failed:', e?.message || e); }
     }
     
-    const adminPhone = (process.env.ADMIN_PHONE || '').trim();
+    const adminPhones = (process.env.ADMIN_PHONE || '').split(',').map(p => p.trim()).filter(Boolean);
     const sellerPhones = (process.env.SELLER_PHONES || '').split(',').map(p => p.trim()).filter(Boolean);
-    const phonesToNotify = adminPhone ? [adminPhone, ...sellerPhones] : sellerPhones;
+    const phonesToNotify = [...adminPhones, ...sellerPhones];
     for (const p of phonesToNotify) {
       try { await sendWhatsAppMessage(p, `✅ ${notify}`); } catch {}
     }
@@ -3656,10 +3732,10 @@ app.post('/api/whatsapp/webhook', async (req, res) => {
         const summary = `New WhatsApp message from ${from}: ${text.substring(0, 120)}`;
         await pool.query('INSERT INTO seller_alerts (id, type, summary) VALUES ($1, $2, $3)', [alertId, 'whatsapp_message', summary]);
         // Forward to admin and seller phones
-        const adminPhone = process.env.ADMIN_PHONE;
-        const sellerPhones = (process.env.SELLER_PHONES || '').split(',').map(p => p.trim()).filter(p => p);
-        const phonesToNotify = adminPhone ? [adminPhone, ...sellerPhones] : sellerPhones;
-        
+        const adminPhones = (process.env.ADMIN_PHONE || '').split(',').map(p => p.trim()).filter(Boolean);
+        const sellerPhones = (process.env.SELLER_PHONES || '').split(',').map(p => p.trim()).filter(Boolean);
+        const phonesToNotify = [...adminPhones, ...sellerPhones];
+
         for (const phone of phonesToNotify) {
           try {
             await sendWhatsAppMessage(phone, `📱 New WhatsApp message from ${from}:\n${text.substring(0, 200)}`);
@@ -4427,6 +4503,10 @@ const startServer = async () => {
       console.log(`║     Environment: ${process.env.NODE_ENV || "development"}         ║`);
       console.log(`║     Database: ${isConnected ? "Connected ✅" : "Disconnected ❌"}       ║`);
       console.log(`╚════════════════════════════════════════╝`);
+      
+      // Start core file cleanup monitor
+      startCoreFileCleanup();
+      
       try {
         startWhatsApp().catch((err) => {
           console.error('❌ WhatsApp initialization failed:', err?.message || err);
