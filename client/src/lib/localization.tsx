@@ -55,13 +55,30 @@ export function LocalizationProvider({ children }: LocalizationProviderProps) {
   };
 
   const detectUserLocation = async () => {
+    // If currency is already set manually by user, don't overwrite it with auto-detection
+    if (localStorage.getItem("user-currency")) {
+      // We still might want to detect country if not set
+      if (localStorage.getItem("user-country")) {
+        return; 
+      }
+    }
+
     setIsLoading(true);
     try {
       const response = await fetch("/api/localization/detect");
       if (response.ok) {
         const data = await response.json();
-        setCountry(data.country);
-        setCurrency(data.currency);
+        
+        // Only update country if not manually set
+        if (!localStorage.getItem("user-country")) {
+          setCountry(data.country);
+        }
+        
+        // Only set currency if it hasn't been manually set by the user
+        // This is the critical fix for the revert issue
+        if (!localStorage.getItem("user-currency")) {
+          setCurrency(data.currency);
+        }
       }
     } catch (error) {
       console.warn("Failed to detect user location:", error);

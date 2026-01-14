@@ -123,7 +123,8 @@ export default function CheckoutSecurityPage() {
       // Auto-login the user
       if (transaction?.email && transaction?.phone) {
         try {
-          const password = transaction.phone.replace(/[^0-9]/g, '').slice(-6) + 'Abc!';
+          // Use phone number as password (backend sets this during checkout)
+          const password = transaction.phone;
           await login(transaction.email, password);
           toast({ 
             title: "Confirmation submitted & logged in", 

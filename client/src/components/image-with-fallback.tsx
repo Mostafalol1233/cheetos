@@ -22,6 +22,11 @@ export default function ImageWithFallback({ src, alt, className, width, height, 
       return imgSrc;
     }
     
+    // If it's a data URI, return as is
+    if (/^data:image\//i.test(imgSrc) || imgSrc.startsWith('data:')) {
+      return imgSrc;
+    }
+    
     // If it starts with /attached_assets/, serve it directly from the public folder
     if (imgSrc.startsWith('/attached_assets/')) {
       return imgSrc;

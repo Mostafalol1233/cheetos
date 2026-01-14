@@ -239,6 +239,22 @@ export default function AdminPackagesPage() {
   const handleUpdatePackage = (index: number, field: keyof Package, value: any) => {
     const updated = [...packages];
     updated[index] = { ...updated[index], [field]: value };
+    
+    // If price is updated, also update the multi-currency prices with default rates
+    if (field === 'price') {
+      const price = Number(value) || 0;
+      if (!updated[index].multiCurrencyPrices) {
+        updated[index].multiCurrencyPrices = { EGP: 0, USD: 0, TRY: 0 };
+      }
+      // Assuming USD is the base price
+      updated[index].multiCurrencyPrices = {
+        ...updated[index].multiCurrencyPrices!,
+        USD: price,
+        EGP: Math.round(price * 50 * 100) / 100, // Default EGP rate
+        TRY: Math.round(price * 35 * 100) / 100  // Default TRY rate
+      };
+    }
+    
     setPackages(updated);
     setIsEditing(true);
   };
@@ -249,6 +265,12 @@ export default function AdminPackagesPage() {
       updated[index].multiCurrencyPrices = { EGP: 0, USD: 0, TRY: 0 };
     }
     updated[index].multiCurrencyPrices![currency as keyof MultiCurrencyPrices] = value;
+    
+    // If USD is updated, also update the base price
+    if (currency === 'USD') {
+      updated[index].price = value;
+    }
+    
     setPackages(updated);
     setIsEditing(true);
   };

@@ -2661,12 +2661,14 @@ export default function AdminDashboard() {
               <div className="grid grid-cols-4 items-start gap-4">
                 <Label htmlFor="description" className="text-right pt-2">Description</Label>
                 <div className="col-span-3">
-                  <RichTextEditor
-                    value={(editingGame as any).description || ''}
-                    onChange={(value) => setEditingGame({ ...editingGame, description: value } as any)}
-                    onImageUpload={handleRichTextImageUpload}
-                    placeholder="Enter game description..."
-                  />
+                  <Suspense fallback={<div className="p-4 text-center border rounded">Loading editor...</div>}>
+                    <RichTextEditor
+                      value={(editingGame as any).description || ''}
+                      onChange={(value) => setEditingGame({ ...editingGame, description: value } as any)}
+                      onImageUpload={handleRichTextImageUpload}
+                      placeholder="Enter game description..."
+                    />
+                  </Suspense>
                 </div>
               </div>
               <div className="grid grid-cols-4 items-center gap-4">

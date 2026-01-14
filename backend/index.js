@@ -1746,49 +1746,49 @@ function getPaymentDetails(paymentMethod) {
   if (method === 'Orange Cash') return {
     title: 'Orange Cash Number',
     value: orDefault(process.env.ORANGE_CASH_NUMBER, '01001387284'),
-    image: '/images/payments/orange-logo-new.png',
+    image: '/images/orange-logo-new.png',
     instructions: orDefault(process.env.ORANGE_CASH_INSTRUCTIONS, 'Send money to this Orange Cash number')
   };
 
   if (method === 'Vodafone Cash') return {
     title: 'Vodafone Cash Number',
     value: orDefault(process.env.VODAFONE_CASH_NUMBER, '01001387284'),
-    image: '/images/payments/vodafone-logo.png',
+    image: '/images/vodafone.png',
     instructions: orDefault(process.env.VODAFONE_CASH_INSTRUCTIONS, 'Send money to this Vodafone Cash number')
   };
 
   if (method === 'Etisalat Cash') return {
     title: 'Etisalat Cash Number',
     value: orDefault(process.env.ETISALAT_CASH_NUMBER, '01001387284'),
-    image: '/images/payments/etisalat-logo.png',
+    image: '/images/etisalat-logo.png',
     instructions: orDefault(process.env.ETISALAT_CASH_INSTRUCTIONS, 'Send money to this Etisalat Cash number')
   };
 
   if (method === 'WE Pay') return {
     title: 'WE Pay Numbers',
     value: orDefault(process.env.WE_PAY_NUMBERS, '01001387284 or 01029070780'),
-    image: '/images/payments/we-pay-logo.png',
+    image: '/images/we-pay-logo.png',
     instructions: orDefault(process.env.WE_PAY_INSTRUCTIONS, 'Send money to any of these WE Pay numbers')
   };
 
   if (method === 'InstaPay') return {
     title: 'InstaPay Account',
     value: orDefault(process.env.INSTAPAY_ACCOUNT, 'DiaaEldeenn'),
-    image: '/images/payments/instapay-logo.png',
+    image: '/images/instapay-logo.png',
     instructions: orDefault(process.env.INSTAPAY_INSTRUCTIONS, 'Send money to this InstaPay account')
   };
 
   if (method === 'PayPal') return {
     title: 'PayPal Account',
     value: orDefault(process.env.PAYPAL_EMAIL, 'matrixdiaa2016@gmail.com'),
-    image: '/images/payments/paypal-logo.png',
+    image: '/images/paypal.png',
     instructions: orDefault(process.env.PAYPAL_INSTRUCTIONS, 'Send money to this PayPal account')
   };
 
   if (method === 'WhatsApp') return {
     title: 'WhatsApp Payment',
     value: orDefault(process.env.WHATSAPP_NUMBER, '+201029870810'),
-    image: '/images/payments/whatsapp.svg',
+    image: '/images/whatsapp.svg',
     instructions: orDefault(process.env.WHATSAPP_INSTRUCTIONS, 'Send payment confirmation via WhatsApp to this number')
   };
 
@@ -3096,47 +3096,49 @@ app.post('/api/transactions/confirm', receiptUpload.single('receipt'), async (re
       'INSERT INTO payment_audit_logs (id, transaction_id, action, summary) VALUES ($1, $2, $3, $4)',
       [auditId, transactionId, 'confirm', 'Buyer submitted payment confirmation']
     );
-    // Notify admin/connected numbers about the confirmation
-    try {
-      const txq = await pool.query('SELECT * FROM transactions WHERE id = $1', [transactionId]);
-      const tx = txq.rows[0] || null;
-      let user = null;
-      if (tx && tx.user_id) {
-        const uq = await pool.query('SELECT name AS full_name, email, phone FROM users WHERE id = $1', [tx.user_id]);
-        user = uq.rows[0] || null;
-      }
-      const adminPhoneStr = (process.env.ADMIN_PHONE || '').trim();
-      const adminPhones = adminPhoneStr ? adminPhoneStr.split(',').map(p => p.trim()).filter(p => p) : [];
-      const connectedPhone = (process.env.CONNECTED_PHONE || '').trim();
-      const userDisplay = user ? `${user.full_name || ''} <${user.email || ''}>` : (tx ? tx.customerName || tx.customer_name || '' : 'Unknown');
-      const phone = user ? (user.phone || '') : (tx ? tx.customerPhone || tx.customer_phone || '' : '');
-      const confirmMsg = `📌 Payment confirmation submitted\nConfirmation ID: ${id}\nTransaction: ${transactionId}\nUser: ${userDisplay}\nPhone: ${phone}`;
+    // Notify admin/connected numbers about the confirmation (Async, non-blocking)
+    (async () => {
+      try {
+        const txq = await pool.query('SELECT * FROM transactions WHERE id = $1', [transactionId]);
+        const tx = txq.rows[0] || null;
+        let user = null;
+        if (tx && tx.user_id) {
+          const uq = await pool.query('SELECT name AS full_name, email, phone FROM users WHERE id = $1', [tx.user_id]);
+          user = uq.rows[0] || null;
+        }
+        const adminPhoneStr = (process.env.ADMIN_PHONE || '').trim();
+        const adminPhones = adminPhoneStr ? adminPhoneStr.split(',').map(p => p.trim()).filter(p => p) : [];
+        const connectedPhone = (process.env.CONNECTED_PHONE || '').trim();
+        const userDisplay = user ? `${user.full_name || ''} <${user.email || ''}>` : (tx ? tx.customerName || tx.customer_name || '' : 'Unknown');
+        const phone = user ? (user.phone || '') : (tx ? tx.customerPhone || tx.customer_phone || '' : '');
+        const confirmMsg = `📌 Payment confirmation submitted\nConfirmation ID: ${id}\nTransaction: ${transactionId}\nUser: ${userDisplay}\nPhone: ${phone}`;
 
-      // Send to all admin phones
-      for (const adminPhone of adminPhones) {
-        try {
-          if (url) {
-            console.log(`📸 Sending payment confirmation image to admin ${adminPhone}: ${url}`);
-            await sendWhatsAppMedia(adminPhone, url, confirmMsg);
-          } else {
-            console.log(`📱 Sending payment confirmation text to admin ${adminPhone}`);
-            await sendWhatsAppMessage(adminPhone, confirmMsg + '\nReceipt: N/A');
-          }
-        } catch (e) { console.error(`❌ Admin WA notify failed for ${adminPhone}:`, e?.message || e); }
-      }
+        // Send to all admin phones
+        for (const adminPhone of adminPhones) {
+          try {
+            if (url) {
+              console.log(`📸 Sending payment confirmation image to admin ${adminPhone}: ${url}`);
+              await sendWhatsAppMedia(adminPhone, url, confirmMsg);
+            } else {
+              console.log(`📱 Sending payment confirmation text to admin ${adminPhone}`);
+              await sendWhatsAppMessage(adminPhone, confirmMsg + '\nReceipt: N/A');
+            }
+          } catch (e) { console.error(`❌ Admin WA notify failed for ${adminPhone}:`, e?.message || e); }
+        }
 
-      if (connectedPhone && !adminPhones.includes(connectedPhone)) {
-        try {
-          if (url) {
-            console.log(`📸 Sending payment confirmation image to connected ${connectedPhone}: ${url}`);
-            await sendWhatsAppMedia(connectedPhone, url, confirmMsg);
-          } else {
-            console.log(`📱 Sending payment confirmation text to connected ${connectedPhone}`);
-            await sendWhatsAppMessage(connectedPhone, confirmMsg + '\nReceipt: N/A');
-          }
-        } catch (e) { console.error(`❌ Connected WA notify failed for ${connectedPhone}:`, e?.message || e); }
-      }
-    } catch (notifyErr) { console.error('Failed to notify about payment confirmation:', notifyErr?.message || notifyErr); }
+        if (connectedPhone && !adminPhones.includes(connectedPhone)) {
+          try {
+            if (url) {
+              console.log(`📸 Sending payment confirmation image to connected ${connectedPhone}: ${url}`);
+              await sendWhatsAppMedia(connectedPhone, url, confirmMsg);
+            } else {
+              console.log(`📱 Sending payment confirmation text to connected ${connectedPhone}`);
+              await sendWhatsAppMessage(connectedPhone, confirmMsg + '\nReceipt: N/A');
+            }
+          } catch (e) { console.error(`❌ Connected WA notify failed for ${connectedPhone}:`, e?.message || e); }
+        }
+      } catch (notifyErr) { console.error('Failed to notify about payment confirmation:', notifyErr?.message || notifyErr); }
+    })();
     res.status(201).json({ id, receiptUrl: url });
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -3860,6 +3862,34 @@ app.post('/api/whatsapp/webhook', async (req, res) => {
 });
 
 // ===================== CHAT ENDPOINTS =====================
+
+app.post('/api/chat/message', async (req, res) => {
+  try {
+    const { sender, message, sessionId } = req.body;
+    if (!message || !sessionId) return res.status(400).json({ message: 'Message and sessionId are required' });
+
+    const id = `cm_${Date.now()}_${Math.random().toString(36).slice(2,9)}`;
+    // Encrypt message before storing
+    const encrypted = encryptMessage(message);
+    
+    await pool.query(
+      'INSERT INTO chat_messages (id, sender, message_encrypted, session_id, timestamp, read) VALUES ($1, $2, $3, $4, $5, $6)',
+      [id, sender || 'user', encrypted, sessionId, Date.now(), false]
+    );
+
+    // If message is from user, notify admins
+    if (sender === 'user') {
+      const alertId = `al_${Date.now()}_${Math.random().toString(36).slice(2,9)}`;
+      const summary = `New chat message: ${message.substring(0, 100)}`;
+      await pool.query('INSERT INTO seller_alerts (id, type, summary) VALUES ($1, $2, $3)', [alertId, 'chat_message', summary]);
+    }
+
+    res.status(201).json({ id, status: 'sent' });
+  } catch (err) {
+    console.error('Error sending chat message:', err);
+    res.status(500).json({ message: err.message });
+  }
+});
 
 app.get('/api/chat/:sessionId', async (req, res) => {
   try {

@@ -60,19 +60,24 @@ export function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
 
   const SELLER_WHATSAPP = import.meta.env.VITE_SELLER_WHATSAPP || "+201011696196";
 
+  const { data: paymentDetails, isLoading: isLoadingDetails } = useQuery({
+    queryKey: [`/api/public/payment-details`, paymentMethod],
+    queryFn: async () => {
+      if (!paymentMethod) return null;
+      const res = await fetch(`/api/public/payment-details?method=${encodeURIComponent(paymentMethod)}`);
+      if (!res.ok) throw new Error('Failed to fetch payment details');
+      return res.json();
+    },
+    enabled: !!paymentMethod && isOpen
+  });
+
   useEffect(() => {
-    const load = async () => {
-      try {
-        const res = await fetch(`/api/public/payment-details?method=${encodeURIComponent(paymentMethod)}`);
-        if (!res.ok) return setPayInfo(null);
-        const data = await res.json();
-        setPayInfo(data && typeof data === 'object' ? data : null);
-      } catch {
-        setPayInfo(null);
-      }
-    };
-    load();
-  }, [paymentMethod]);
+    if (paymentDetails) {
+      setPayInfo(paymentDetails);
+    } else {
+      setPayInfo(null);
+    }
+  }, [paymentDetails]);
 
   const validateStep = (step: number) => {
     switch (step) {
