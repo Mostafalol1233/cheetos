@@ -2,6 +2,11 @@ import { createContext, useContext, useState, useEffect, ReactNode } from "react
 
 export type Currency = "EGP" | "USD" | "TRY";
 export type Country = string | null;
+export function shouldUpdateCurrency(saved: Currency | null, detected: Currency | null) {
+  if (saved && (saved === 'EGP' || saved === 'USD' || saved === 'TRY')) return null;
+  if (detected && (detected === 'EGP' || detected === 'USD' || detected === 'TRY')) return detected;
+  return null;
+}
 
 interface LocalizationContextType {
   country: Country;
@@ -76,9 +81,8 @@ export function LocalizationProvider({ children }: LocalizationProviderProps) {
         
         // Only set currency if it hasn't been manually set by the user
         // This is the critical fix for the revert issue
-        if (!localStorage.getItem("user-currency")) {
-          setCurrency(data.currency);
-        }
+        const next = shouldUpdateCurrency(localStorage.getItem("user-currency") as Currency, data.currency as Currency);
+        if (next) setCurrency(next);
       }
     } catch (error) {
       console.warn("Failed to detect user location:", error);

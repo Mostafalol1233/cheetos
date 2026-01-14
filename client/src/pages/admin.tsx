@@ -19,6 +19,23 @@ import QRCode from 'qrcode';
 import { normalizeNumericString } from '@/lib/quantity';
 const RichTextEditor = React.lazy(() => import('@/components/rich-text-editor'));
 
+class ErrorBoundary extends React.Component<{ fallback?: React.ReactNode; children?: React.ReactNode }, { hasError: boolean }> {
+  constructor(props: any) {
+    super(props);
+    this.state = { hasError: false };
+  }
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+  componentDidCatch() {}
+  render() {
+    if (this.state.hasError) {
+      return this.props.fallback || <div className="p-4 text-center border rounded">Editor failed to load</div>;
+    }
+    return this.props.children as any;
+  }
+}
+
 interface Game {
   id: string;
   name: string;
@@ -1254,13 +1271,17 @@ export default function AdminDashboard() {
               <div dangerouslySetInnerHTML={{ __html: description || '<p class="text-muted-foreground italic">No description yet...</p>' }} />
             </div>
           ) : (
-            <RichTextEditor
-              value={description}
-              onChange={setDescription}
-              onImageUpload={handleRichTextImageUpload}
-              placeholder="Write a detailed description for this game..."
-              className="min-h-[400px]"
-            />
+            <ErrorBoundary>
+              <Suspense fallback={<div className="p-4 text-center border rounded">Loading editor...</div>}>
+                <RichTextEditor
+                  value={description}
+                  onChange={setDescription}
+                  onImageUpload={handleRichTextImageUpload}
+                  placeholder="Write a detailed description for this game..."
+                  className="min-h-[400px]"
+                />
+              </Suspense>
+            </ErrorBoundary>
           )}
         </CardContent>
       </Card>
@@ -2661,14 +2682,16 @@ export default function AdminDashboard() {
               <div className="grid grid-cols-4 items-start gap-4">
                 <Label htmlFor="description" className="text-right pt-2">Description</Label>
                 <div className="col-span-3">
-                  <Suspense fallback={<div className="p-4 text-center border rounded">Loading editor...</div>}>
-                    <RichTextEditor
-                      value={(editingGame as any).description || ''}
-                      onChange={(value) => setEditingGame({ ...editingGame, description: value } as any)}
-                      onImageUpload={handleRichTextImageUpload}
-                      placeholder="Enter game description..."
-                    />
-                  </Suspense>
+                  <ErrorBoundary>
+                    <Suspense fallback={<div className="p-4 text-center border rounded">Loading editor...</div>}>
+                      <RichTextEditor
+                        value={(editingGame as any).description || ''}
+                        onChange={(value) => setEditingGame({ ...editingGame, description: value } as any)}
+                        onImageUpload={handleRichTextImageUpload}
+                        placeholder="Enter game description..."
+                      />
+                    </Suspense>
+                  </ErrorBoundary>
                 </div>
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
@@ -3139,6 +3162,25 @@ function CatboxUploadPanel({ allGames, categories }: { allGames: Game[]; categor
   const [iconUrl, setIconUrl] = useState('/images/message-icon.svg');
   const [welcomeMessage, setWelcomeMessage] = useState('Hello! How can we help you?');
   const [position, setPosition] = useState('bottom-right');
+  const { data: health } = useQuery<{ status?: string }>({
+    queryKey: ['/api/health'],
+    queryFn: async () => {
+      const res = await fetch(apiPath('/api/health'));
+      return await res.json().catch(() => ({}));
+    },
+    refetchInterval: 5000
+  });
+  const { data: selftest } = useQuery<{ ok?: boolean; checks?: any[] }>({
+    queryKey: ['/api/admin/selftest'],
+    queryFn: async () => {
+      const token = localStorage.getItem('adminToken');
+      const res = await fetch(apiPath('/api/admin/selftest'), {
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+      });
+      return await res.json().catch(() => ({}));
+    },
+    refetchInterval: 5000
+  });
 
   // Fetch config
   const { data: config } = useQuery({
@@ -3202,6 +3244,20 @@ function CatboxUploadPanel({ allGames, categories }: { allGames: Game[]; categor
         <CardTitle>Widget Settings</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className={`rounded border p-3 ${health && (health as any).status === 'OK' ? 'border-green-500/30' : 'border-red-500/30'}`}>
+            <div className="text-sm">Backend Health</div>
+            <div className="text-xs text-muted-foreground">{(health as any)?.status || 'Unknown'}</div>
+          </div>
+          <div className={`rounded border p-3 ${selftest && (selftest as any).ok ? 'border-green-500/30' : 'border-yellow-500/30'}`}>
+            <div className="text-sm">Admin Selftest</div>
+            <div className="text-xs text-muted-foreground">{(selftest as any)?.ok ? 'OK' : 'Degraded'}</div>
+          </div>
+          <div className={`rounded border p-3 ${enabled ? 'border-blue-500/30' : 'border-gray-500/30'}`}>
+            <div className="text-sm">Widget Status</div>
+            <div className="text-xs text-muted-foreground">{enabled ? 'Enabled' : 'Disabled'}</div>
+          </div>
+        </div>
         <div className="flex items-center justify-between">
           <Label>Enable Widget</Label>
           <input

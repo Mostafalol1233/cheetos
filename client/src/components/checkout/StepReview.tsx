@@ -38,14 +38,8 @@ export function StepReview() {
         deliver_via: deliverVia,
       };
 
-      const response = await apiRequest('/api/orders', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Idempotency-Key': key,
-        },
-        body: JSON.stringify(orderData),
-      });
+      const res = await apiRequest('POST', '/api/orders', { ...orderData, idempotency_key: key });
+      const response = await res.json();
 
       setOrderMeta(response.id, 'processing');
       setStep('processing');

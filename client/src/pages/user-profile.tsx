@@ -29,10 +29,12 @@ interface Order {
   id: string;
   status: string;
   total: number;
+  total_amount?: number;
   created_at: string;
   items: Array<{
     id: string;
-    name: string;
+    name?: string;
+    title?: string;
     quantity: number;
     price: number;
   }>;
@@ -57,7 +59,7 @@ export default function UserProfilePage() {
 
   const fetchOrders = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/user/orders`, {
+      const response = await fetch(`${API_BASE_URL}/api/orders/my-orders`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('userToken')}`
         }
@@ -65,7 +67,7 @@ export default function UserProfilePage() {
 
       if (response.ok) {
         const data = await response.json();
-        setOrders(data.orders || []);
+        setOrders(Array.isArray(data) ? data : (data.orders || []));
       }
     } catch (error) {
       console.error('Failed to fetch orders:', error);
@@ -73,6 +75,10 @@ export default function UserProfilePage() {
       setLoading(false);
     }
   };
+  useEffect(() => {
+    const id = setInterval(() => { fetchOrders(); }, 5000);
+    return () => clearInterval(id);
+  }, []);
 
   const handleLogout = () => {
     logout();
@@ -235,7 +241,7 @@ export default function UserProfilePage() {
                               <Badge className={`mb-2 ${getStatusColor(order.status)}`}>
                                 {order.status}
                               </Badge>
-                              <p className="text-xl font-bold text-gold-primary">${order.total.toFixed(2)}</p>
+                              <p className="text-xl font-bold text-gold-primary">{(order.total_amount ?? order.total ?? 0).toFixed(2)} EGP</p>
                             </div>
                           </div>
                         </CardHeader>
@@ -248,11 +254,11 @@ export default function UserProfilePage() {
                                     <Package className="w-5 h-5 text-gray-400" />
                                   </div>
                                   <div>
-                                    <p className="text-white font-medium">{item.name}</p>
+                                    <p className="text-white font-medium">{item.title || item.name || item.id}</p>
                                     <p className="text-gray-400 text-sm">Qty: {item.quantity}</p>
                                   </div>
                                 </div>
-                                <p className="text-gold-primary font-semibold">${(item.price * item.quantity).toFixed(2)}</p>
+                                <p className="text-gold-primary font-semibold">{(item.price * item.quantity).toFixed(2)} EGP</p>
                               </div>
                             ))}
                           </div>

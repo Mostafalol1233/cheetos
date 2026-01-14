@@ -783,7 +783,11 @@ router.put('/:id/packages', authenticateToken, ensureAdmin, async (req, res) => 
         description: p.description || null
         }));
         
-        await logAudit('update_packages', `Updated packages for game: ${id}`, req.user);
+        const count = items.length;
+        const prices = items.map(p => Number(p.price || 0)).filter(n => Number.isFinite(n));
+        const min = prices.length ? Math.min(...prices) : 0;
+        const max = prices.length ? Math.max(...prices) : 0;
+        await logAudit('update_packages', `Updated packages for game: ${id} (${count} packages, price range ${min}-${max})`, req.user);
         // Sync packages to local JSON so static readers see the update
         try {
           const lp = (Array.isArray(legacyPackages) && legacyPackages.length) ? legacyPackages : items.map(p => String(p.amount || p.name || ''));
