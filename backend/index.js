@@ -1035,30 +1035,6 @@ app.get('/api/categories', async (req, res) => {
   }
 });
 
-// Current or next countdown (prevents 500 on /api/countdown/current)
-app.get('/api/countdown/current', async (req, res) => {
-  try {
-    // Prefer the nearest future countdown first
-    const future = await pool.query(
-      "SELECT * FROM countdowns WHERE target_at >= NOW() ORDER BY target_at ASC LIMIT 1"
-    );
-    if (future.rows.length > 0) return res.json(future.rows[0]);
-
-    // Otherwise return the most recent past countdown
-    const past = await pool.query(
-      "SELECT * FROM countdowns WHERE target_at < NOW() ORDER BY target_at DESC LIMIT 1"
-    );
-    if (past.rows.length > 0) return res.json(past.rows[0]);
-
-    return res.json(null);
-  } catch (err) {
-    console.error('Countdown fetch error:', err?.message || err);
-    res.status(500).json({ message: 'Failed to fetch countdown' });
-  }
-});
-
-
-
 // Global Error Handler
 app.use(errorHandler);
 
@@ -2442,60 +2418,6 @@ app.get('/api/logo/config', async (req, res) => {
       smallLogoUrl: normalizeImageUrl(row.small_logo_url || '/attached_assets/small-image-logo.png'),
       largeLogoUrl: normalizeImageUrl(row.large_logo_url || '/attached_assets/large-image-logo.png'),
       faviconUrl: normalizeImageUrl(row.favicon_url || '/images/cropped-favicon1-32x32.png')
-    });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-});
-
-// Countdown endpoints
-app.get('/api/countdown/current', async (req, res) => {
-  try {
-    const result = await pool.query('SELECT id, title, target_at, text, share_text FROM countdowns ORDER BY updated_at DESC LIMIT 1');
-    if (result.rows.length === 0) {
-      return res.json({ 
-        id: 'newyear_2026', 
-        title: 'days left until 2026', 
-        targetAt: '2026-01-01T00:00:00Z', 
-        text: 'Stay tuned for New Year offers and friend collaborations.',
-        shareText: 'Join me on Diaa Sadek'
-      });
-    }
-    const row = result.rows[0];
-    res.json({ 
-      id: row.id, 
-      title: row.title, 
-      targetAt: new Date(row.target_at).toISOString(), 
-      text: row.text || '',
-      shareText: row.share_text || ''
-    });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-});
-
-app.put('/api/admin/countdown', authenticateToken, ensureAdmin, async (req, res) => {
-  try {
-    const { id, title, targetAt, text, shareText } = req.body || {};
-    if (!targetAt || isNaN(Date.parse(String(targetAt)))) {
-      return res.status(400).json({ message: 'Invalid targetAt ISO date' });
-    }
-    const countdownId = id || 'newyear_2026';
-    const result = await pool.query(
-      `INSERT INTO countdowns (id, title, target_at, text, share_text, updated_at)
-       VALUES ($1, $2, $3, $4, $5, CURRENT_TIMESTAMP)
-       ON CONFLICT (id) DO UPDATE SET title = EXCLUDED.title, target_at = EXCLUDED.target_at, text = EXCLUDED.text, share_text = EXCLUDED.share_text, updated_at = CURRENT_TIMESTAMP
-       RETURNING id, title, target_at, text, share_text`,
-      [countdownId, String(title || 'Countdown'), new Date(targetAt), String(text || ''), String(shareText || '')]
-    );
-    try { await pool.query('INSERT INTO admin_audit_logs (id, action, summary) VALUES ($1, $2, $3)', [`al_${Date.now()}_${Math.random().toString(36).slice(2,9)}`, 'countdown_update', `Updated countdown ${countdownId} to ${targetAt}`]); } catch {}
-    const row = result.rows[0];
-    res.json({ 
-      id: row.id, 
-      title: row.title, 
-      targetAt: new Date(row.target_at).toISOString(), 
-      text: row.text || '',
-      shareText: row.share_text || ''
     });
   } catch (err) {
     res.status(500).json({ message: err.message });

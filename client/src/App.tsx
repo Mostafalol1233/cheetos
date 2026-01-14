@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { CartProvider } from "./lib/cart-context";
 import { AccessibilityProvider } from "./components/accessibility-mode";
 import { ThemeProvider } from "./components/theme-provider";
+import { SettingsProvider } from "./lib/settings-context";
 import { TranslationProvider } from "./lib/translation";
 import { LocalizationProvider } from "./lib/localization";
 import { AuthProvider, useAuth } from "./lib/auth-context";
@@ -34,6 +35,7 @@ import RefundsPage from "./pages/refunds";
 import TrackOrderPage from "./pages/track-order";
 import Checkout from "./pages/Checkout";
 import { LiveChatWidget } from "@/components/live-chat-widget";
+import { FloatingWhatsAppButton } from "@/components/floating-whatsapp-button";
 import { Header } from "@/components/header";
 import { CartSidebar } from "@/components/cart-sidebar";
 import { CheckoutModal } from "@/components/checkout-modal";
@@ -177,6 +179,7 @@ function AppShell() {
       ) : null}
 
       <LiveChatWidget />
+      {!isAdminRoute && <FloatingWhatsAppButton />}
       <ChristmasSnow />
     </>
   );
@@ -186,22 +189,24 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
-        <TranslationProvider>
-          <LocalizationProvider>
-            <AuthProvider>
-              <UserAuthProvider>
-                <AccessibilityProvider>
-                  <TooltipProvider>
-                    <CartProvider>
-                      <Toaster />
-                      <AppShell />
-                    </CartProvider>
-                  </TooltipProvider>
-                </AccessibilityProvider>
-              </UserAuthProvider>
-            </AuthProvider>
-          </LocalizationProvider>
-        </TranslationProvider>
+        <SettingsProvider>
+          <TranslationProvider>
+            <LocalizationProvider>
+              <AuthProvider>
+                <UserAuthProvider>
+                  <AccessibilityProvider>
+                    <TooltipProvider>
+                      <CartProvider>
+                        <Toaster />
+                        <AppShell />
+                      </CartProvider>
+                    </TooltipProvider>
+                  </AccessibilityProvider>
+                </UserAuthProvider>
+              </AuthProvider>
+            </LocalizationProvider>
+          </TranslationProvider>
+        </SettingsProvider>
       </ThemeProvider>
     </QueryClientProvider>
   );

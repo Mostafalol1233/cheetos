@@ -1,12 +1,12 @@
-import { useState, useEffect } from "react";
-import { Gamepad2, Zap, Headphones, Shield, Tag, Flame } from "lucide-react";
-import { SiTelegram, SiTiktok, SiYoutube, SiFacebook, SiWhatsapp } from "react-icons/si";
-import { useQuery } from '@tanstack/react-query';
+1→1→import { useState } from "react";
+2→import { Gamepad2, Zap, Headphones, Shield, Tag } from "lucide-react";
+3→import { SiTelegram, SiTiktok, SiYoutube, SiFacebook, SiWhatsapp } from "react-icons/si";
 
 import { ShoppingCategories } from "@/components/shopping-categories";
 import { PopularGames } from "@/components/popular-games";
 
 import PaymentMethods from "@/components/payment-methods";
+import { HeroCarousel } from "@/components/hero-carousel";
 
 import { Footer } from "@/components/footer";
 import { useTranslation } from "@/lib/translation";
@@ -15,48 +15,6 @@ import { SEO } from "@/components/SEO";
 export default function Home() {
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const { t } = useTranslation();
-  const [daysLeft, setDaysLeft] = useState<number>(() => {
-    const target = new Date('2026-01-01T00:00:00Z').getTime();
-    const now = Date.now();
-    return Math.max(0, Math.ceil((target - now) / (1000 * 60 * 60 * 24)));
-  });
-  const [pulseKey, setPulseKey] = useState(0);
-  
-  // Fetch countdown data
-  const { data: countdownData } = useQuery({
-    queryKey: ['/api/countdown/current'],
-    queryFn: async () => {
-      const res = await fetch('/api/countdown/current');
-      if (!res.ok) throw new Error('Failed to fetch countdown');
-      return res.json();
-    },
-    staleTime: 5 * 60 * 1000, // 5 minutes
-  });
-  
-  const shareCountdown = async () => {
-    const shareText = countdownData?.shareText || 'Join me on Diaa Sadek';
-    const text = `${daysLeft} days left until 2026! ${shareText} 🎮`;
-    const url = window.location.origin;
-    if ((navigator as any).share) {
-      try { await (navigator as any).share({ title: 'Countdown to 2026', text, url }); } catch {}
-      return;
-    }
-    const twitter = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`;
-    window.open(twitter, '_blank');
-  };
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      const target = new Date('2026-01-01T00:00:00Z').getTime();
-      const now = Date.now();
-      const newDays = Math.max(0, Math.ceil((target - now) / (1000 * 60 * 60 * 24)));
-      if (newDays !== daysLeft) {
-        setDaysLeft(newDays);
-        setPulseKey((k) => k + 1);
-      }
-    }, 60 * 1000);
-    return () => clearInterval(interval);
-  }, [daysLeft]);
 
 
   return (
@@ -107,66 +65,8 @@ export default function Home() {
       <div className="min-h-screen text-foreground font-gaming overflow-x-hidden custom-cursor bg-gradient-to-b from-darker-bg dark:from-gray-900 dark:via-gray-800 dark:to-black via-white to-gray-50 animate-fade-in">
 
       {/* Hero Section */}
-      <section className="relative w-full h-[500px] flex items-center justify-center overflow-hidden">
-        {/* Background Image/Gradient */}
-        <div className="absolute inset-0 bg-gradient-to-r from-darker-bg dark:via-blue-900/30 dark:to-darker-bg via-blue-100 to-indigo-100 z-0"></div>
-        <div className="absolute inset-0 bg-gradient-to-r from-gold-primary/10 via-transparent to-neon-pink/10 opacity-20 dark:opacity-20 mix-blend-overlay animate-pulse"></div>
-        
-        {/* Content */}
-        <div className="relative z-10 text-center px-4 max-w-4xl mx-auto">
-          <h1 className="text-4xl md:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-gold-primary via-blue-600 dark:via-cyan-400 to-neon-pink mb-6 drop-shadow-[0_0_20px_rgba(52,152,219,0.4)] animate-fade-in">
-            {t('hero_title')}
-          </h1>
-          <p className="text-lg md:text-xl text-gray-600 dark:text-gray-200 mb-8 font-light tracking-wide animate-fade-in animation-delay-500 max-w-2xl mx-auto">
-            {t('hero_subtitle')}
-          </p>
-          <div className="flex justify-center gap-4 animate-fade-in animation-delay-1000">
-            <button 
-              onClick={() => document.getElementById('categories')?.scrollIntoView({ behavior: 'smooth' })}
-              className="px-8 py-3 bg-gradient-to-r from-gold-primary to-gold-secondary text-white font-bold rounded-full hover:scale-110 transition-all shadow-[0_0_25px_rgba(52,152,219,0.5)] hover:shadow-[0_0_35px_rgba(52,152,219,0.7)]"
-            >
-              {t('shop_now')}
-            </button>
-            <button 
-              onClick={() => window.location.href='/games'}
-              className="px-8 py-3 border-2 border-neon-pink text-neon-pink font-bold rounded-full hover:bg-neon-pink hover:text-white transition-all backdrop-blur-sm shadow-[0_0_15px_rgba(185,255,255,0.3)]"
-            >
-              {t('view_all_games')}
-            </button>
-          </div>
-        </div>
-
-        {/* Decorative Particles */}
-        <div className="absolute top-1/4 left-1/4 w-2 h-2 bg-gold-primary rounded-full animate-float"></div>
-        <div className="absolute bottom-1/3 right-1/3 w-3 h-3 bg-neon-pink rounded-full animate-float animation-delay-1000"></div>
-      </section>
-
-      {/* Countdown to 2026 */}
-      <section className="container mx-auto px-4 py-10">
-        <div className="flex flex-col md:flex-row items-center justify-between gap-6 bg-gradient-to-r from-card/70 to-card/50 dark:from-card/80 dark:to-card/60 border border-gold-primary/25 rounded-2xl p-8 backdrop-blur-sm shadow-lg">
-          <div className="flex items-center gap-4">
-            <Flame className="w-10 h-10 text-neon-pink animate-twinkle" />
-            <div>
-              <div className="text-2xl md:text-3xl font-bold">
-                <span key={pulseKey} className="inline-block animate-fade-in">{daysLeft}</span> {countdownData?.title || 'days left until 2026'}
-              </div>
-              <p className="text-muted-foreground text-sm">{countdownData?.text || 'Stay tuned for New Year offers and friend collaborations.'}</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            <button
-              onClick={shareCountdown}
-              className="px-4 py-2 rounded-full bg-gradient-to-r from-gold-primary to-neon-pink text-black font-semibold hover:scale-105 transition-transform"
-            >
-              Share with a friend
-            </button>
-            <a
-              href="#"
-              onClick={(e) => { e.preventDefault(); shareCountdown(); }}
-              className="text-neon-pink underline-offset-4 hover:underline"
-            >Invite now</a>
-          </div>
-        </div>
+      <section className="container mx-auto px-4 pt-6">
+        <HeroCarousel />
       </section>
 
       {/* Shopping Categories */}

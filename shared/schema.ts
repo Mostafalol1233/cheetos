@@ -75,6 +75,7 @@ export interface ChatMessage {
   message: string;
   timestamp: number;
   sessionId: string;
+  userId?: string;
 }
 
 export const chatMessageSchema = z.object({
@@ -82,7 +83,8 @@ export const chatMessageSchema = z.object({
   sender: z.enum(["user", "support"]),
   message: z.string().min(1),
   timestamp: z.number(),
-  sessionId: z.string()
+  sessionId: z.string(),
+  userId: z.string().optional()
 });
 
 export const insertChatMessageSchema = chatMessageSchema.omit({ id: true, timestamp: true });
@@ -162,4 +164,15 @@ export const sellerAlerts = pgTable("seller_alerts", {
   read: boolean("read").default(false),
   flagged: boolean("flagged").default(false),
   createdAt: integer("created_at").notNull().default(Date.now()),
+});
+
+export const orders = pgTable("orders", {
+  id: varchar("id", { length: 50 }).primaryKey(),
+  createdAt: integer("created_at").notNull().default(Date.now()),
+  userId: varchar("user_id", { length: 50 }),
+  items: text("items").notNull(),
+  paymentMethod: text("payment_method").notNull(),
+  status: text("status").notNull().default("pending"),
+  playerId: text("player_id"),
+  serverId: text("server_id")
 });

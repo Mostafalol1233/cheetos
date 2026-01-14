@@ -1,17 +1,28 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertChatMessageSchema } from "../shared/schema";
+import { insertChatMessageSchema, orders as ordersTable } from "../shared/schema";
+import { heroSlides, type InsertHeroSlide } from "@shared/hero-slides-schema";
 import crypto from "crypto";
 import { getQRCode, getConnectionStatus, sendWhatsAppMessage } from "./whatsapp";
 import { setupAuth, hashPassword } from "./auth";
 import fs from "fs";
 import path from "path";
 import passport from "passport";
+import { getSingleSettings, updateSettings } from "./settings";
+import multer from "multer";
 
 export function registerRoutes(app: Express): Server {
   // Setup Auth
   setupAuth(app);
+
+  const receiptsDir = path.join(process.cwd(), "attached_assets", "receipts");
+  try {
+    if (!fs.existsSync(receiptsDir)) {
+      fs.mkdirSync(receiptsDir, { recursive: true });
+    }
+  } catch {}
+  const upload = multer({ dest: receiptsDir });
 
   // Middleware to protect routes
   const requireAuth = (req: any, res: any, next: any) => {
@@ -82,6 +93,80 @@ export function registerRoutes(app: Express): Server {
       const { to, text } = req.body;
       await sendWhatsAppMessage(to, text);
       res.json({ ok: true });
+    } catch (err: any) {
+      res.status(500).json({ message: err.message });
+    }
+  });
+
+  const PAYMENT_DETAILS: Record<string, { title: string; value: string; instructions?: string }> = {
+    "Vodafone Cash": {
+      title: "Vodafone Cash Number",
+      value: "+201000000000",
+      instructions: "Send the exact total amount, then upload the payment receipt."
+    },
+    "Orange Cash": {
+      title: "Orange Cash Number",
+      value: "+201100000000",
+      instructions: "Send the payment and keep a screenshot of the transfer."
+    },
+    "Etisalat Cash": {
+      title: "Etisalat Cash Number",
+      value: "+201200000000",
+      instructions: "Transfers usually appear within a few minutes."
+    },
+    "WE Pay": {
+      title: "WE Pay Number",
+      value: "+201300000000",
+      instructions: "Use your WE Pay app to complete the transfer."
+    },
+    "InstaPay": {
+      title: "InstaPay Address",
+      value: "diaa@example.com",
+      instructions: "Use InstaPay to send to this address, then confirm payment."
+    },
+    "PayPal": {
+      title: "PayPal Email",
+      value: "payments@example.com",
+      instructions: "Send as friends and family where possible."
+    },
+    "WhatsApp": {
+      title: "WhatsApp Number",
+      value: "+201011696196",
+      instructions: "You will complete the order directly via WhatsApp chat."
+    }
+  };
+
+  app.get("/api/public/payment-details", (req, res) => {
+    try {
+      const raw = req.query.method;
+      const method = typeof raw === "string" ? raw : Array.isArray(raw) ? raw[0] : "";
+      if (!method) {
+        return res.status(400).json({ message: "method is required" });
+      }
+      const info = PAYMENT_DETAILS[method] || null;
+      if (!info) {
+        return res.json(null);
+      }
+      res.json(info);
+    } catch (err: any) {
+      res.status(500).json({ message: err.message || "Failed to load payment details" });
+    }
+  });
+
+  app.get("/api/settings", async (_req, res) => {
+    try {
+      const s = await getSingleSettings();
+      res.json(s);
+    } catch (err: any) {
+      res.status(500).json({ message: err.message });
+    }
+  });
+
+  app.put("/api/settings", requireAdmin, async (req, res) => {
+    try {
+      const payload = req.body || {};
+      const s = await updateSettings(payload);
+      res.json(s);
     } catch (err: any) {
       res.status(500).json({ message: err.message });
     }
@@ -246,12 +331,13 @@ export function registerRoutes(app: Express): Server {
       const { sender, message, sessionId } = req.body;
       const userId = (req.user as any)?.id; // If authenticated
       
-      const validated = insertChatMessageSchema.parse({ sender, message, sessionId });
+      const validated = insertChatMessageSchema.parse({ sender, message, sessionId, userId });
       
       await storage.createChatMessage({
         sender,
         message,
-        sessionId
+        sessionId,
+        userId
       });
 
       // Create Alert if from user
@@ -330,6 +416,97 @@ export function registerRoutes(app: Express): Server {
       res.status(500).json({ message: "Checkout failed" });
     }
   });
+
+  app.post("/api/orders", async (req, res) => {
+    try {
+      const { items, payment_method, player_id, server_id } = req.body || {};
+      const userId = (req.user as any)?.id || null;
+      if (!Array.isArray(items) || !items.length) {
+        return res.status(400).json({ message: "No items in order" });
+      }
+      if (!payment_method) {
+        return res.status(400).json({ message: "Payment method required" });
+      }
+      const id = `order_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+      await storage.createSellerAlert({
+        id: `alert_${Date.now()}`,
+        type: "new_order",
+        summary: `Order ${id}`,
+        read: false,
+        flagged: false,
+        createdAt: Date.now()
+      });
+      await storage.createWhatsAppMessage({
+        id: `wa_${Date.now()}`,
+        waMessageId: null,
+        direction: "outbound",
+        fromPhone: null,
+        toPhone: null,
+        message: null,
+        timestamp: Date.now(),
+        status: "queued"
+      });
+      const { db } = await import("./db");
+      await db.insert(ordersTable).values({
+        id,
+        userId,
+        items: JSON.stringify(items),
+        paymentMethod: payment_method,
+        status: "pending",
+        playerId: player_id || null,
+        serverId: server_id || null
+      } as any);
+      res.status(201).json({ id, status: "pending" });
+    } catch (err: any) {
+      res.status(500).json({ message: err.message || "Failed to create order" });
+    }
+  });
+
+  app.get("/api/hero-slides", async (_req, res) => {
+    try {
+      const { db } = await import("./db");
+      const rows = await db.select().from(heroSlides).where(heroSlides.isActive.eq(true)).orderBy(heroSlides.displayOrder);
+      res.json(rows);
+    } catch (err: any) {
+      res.status(500).json({ message: err.message || "Failed to load slides" });
+    }
+  });
+
+  app.post("/api/admin/hero-slides", requireAdmin, async (req, res) => {
+    try {
+      const { db } = await import("./db");
+      const payload = req.body as InsertHeroSlide;
+      const nextOrder = typeof payload.displayOrder === "number" ? payload.displayOrder : 0;
+      const rows = await db.insert(heroSlides).values({ ...payload, displayOrder: nextOrder } as any).returning();
+      res.json(rows[0]);
+    } catch (err: any) {
+      res.status(500).json({ message: err.message || "Failed to create slide" });
+    }
+  });
+
+  app.put("/api/admin/hero-slides/:id", requireAdmin, async (req, res) => {
+    try {
+      const { db } = await import("./db");
+      const id = Number(req.params.id);
+      const payload = req.body as Partial<InsertHeroSlide>;
+      const rows = await db.update(heroSlides).set(payload as any).where(heroSlides.id.eq(id)).returning();
+      res.json(rows[0]);
+    } catch (err: any) {
+      res.status(500).json({ message: err.message || "Failed to update slide" });
+    }
+  });
+
+  app.delete("/api/admin/hero-slides/:id", requireAdmin, async (req, res) => {
+    try {
+      const { db } = await import("./db");
+      const id = Number(req.params.id);
+      await db.delete(heroSlides).where(heroSlides.id.eq(id));
+      res.json({ ok: true });
+    } catch (err: any) {
+      res.status(500).json({ message: err.message || "Failed to delete slide" });
+    }
+  });
+
 
   return createServer(app);
 }

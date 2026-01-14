@@ -17,6 +17,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import QRCode from 'qrcode';
 import { normalizeNumericString } from '@/lib/quantity';
+import { AdminThemePanel } from '@/components/admin-theme-panel';
 const RichTextEditor = React.lazy(() => import('@/components/rich-text-editor'));
 
 class ErrorBoundary extends React.Component<{ fallback?: React.ReactNode; children?: React.ReactNode }, { hasError: boolean }> {
@@ -108,24 +109,10 @@ export default function AdminDashboard() {
   const [alertType, setAlertType] = useState<string>('all');
   const [alertSearch, setAlertSearch] = useState('');
   const [selectedGames, setSelectedGames] = useState<string[]>([]);
-  const [countdownTitle, setCountdownTitle] = useState('days left until 2026');
-  const [countdownSubtitle, setCountdownSubtitle] = useState('Stay tuned for New Year offers and friend collaborations.');
-  const [countdownShareText, setCountdownShareText] = useState('Join me on Diaa Sadek');
 
   // Fetch games
   const { data: allGames = [] } = useQuery<Game[]>({
     queryKey: ['/api/games'],
-  });
-
-  // Fetch countdown data
-  const { data: countdownData } = useQuery({
-    queryKey: ['/api/countdown/current'],
-    queryFn: async () => {
-      const res = await fetch('/api/countdown/current');
-      if (!res.ok) throw new Error('Failed to fetch countdown');
-      return res.json();
-    },
-    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
   const { data: adminPackagesData = [], isFetching: isFetchingAdminPackages } = useQuery<Array<{ amount: string; price: number; discountPrice: number | null; image?: string | null }>>({
@@ -153,15 +140,6 @@ export default function AdminDashboard() {
     setOriginalPackages(normalized);
     setAddedIndices(new Set());
   }, [packagesGameId, adminPackagesData]);
-
-  // Populate countdown fields when data loads
-  useEffect(() => {
-    if (countdownData) {
-      setCountdownTitle(countdownData.title || 'days left until 2026');
-      setCountdownSubtitle(countdownData.text || 'Stay tuned for New Year offers and friend collaborations.');
-      setCountdownShareText(countdownData.shareText || 'Join me on Diaa Sadek');
-    }
-  }, [countdownData]);
 
   const savePackagesMutation = useMutation({
     mutationFn: async (payload: { gameId: string; packages: Array<{ amount: string; price: number; discountPrice: number | null; image?: string | null }> }) => {
@@ -1429,6 +1407,7 @@ export default function AdminDashboard() {
           <TabsTrigger value="image-manager" data-testid="tab-image-manager" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Image Manager</TabsTrigger>
           <TabsTrigger value="advanced-editor" data-testid="tab-advanced-editor" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Advanced Editor</TabsTrigger>
           <TabsTrigger value="content" data-testid="tab-content" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Content</TabsTrigger>
+          <TabsTrigger value="theme" data-testid="tab-theme" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Theme</TabsTrigger>
         </TabsList>
             <ScrollBar orientation="horizontal" />
           </ScrollArea>
@@ -1637,6 +1616,10 @@ export default function AdminDashboard() {
                 <ContentEditorPanel />
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="theme" className="space-y-6">
+            <AdminThemePanel />
           </TabsContent>
 
           {/* Games Tab */}
@@ -2519,65 +2502,6 @@ export default function AdminDashboard() {
                 </div>
                 <Button className="bg-gold-primary hover:bg-gold-secondary">
                   Update Reviews Content
-                </Button>
-              </CardContent>
-            </Card>
-
-            {/* Countdown Section */}
-            <Card className="bg-card/50 border-gold-primary/30">
-              <CardHeader>
-                <CardTitle>Countdown Section</CardTitle>
-                <CardDescription>Edit the New Year countdown text and messaging</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <Label htmlFor="countdown-title">Countdown Title</Label>
-                  <Input
-                      id="countdown-title"
-                      placeholder="Enter countdown title"
-                      value={countdownTitle}
-                      onChange={(e) => setCountdownTitle(e.target.value)}
-                    />
-                </div>
-                <div>
-                  <Label htmlFor="countdown-subtitle">Countdown Subtitle</Label>
-                  <Textarea
-                    id="countdown-subtitle"
-                    placeholder="Enter countdown subtitle"
-                    value={countdownSubtitle}
-                    onChange={(e) => setCountdownSubtitle(e.target.value)}
-                    rows={3}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="countdown-share-text">Share Text</Label>
-                  <Input
-                    id="countdown-share-text"
-                    placeholder="Enter share text"
-                    value={countdownShareText}
-                    onChange={(e) => setCountdownShareText(e.target.value)}
-                  />
-                </div>
-                <Button className="bg-gold-primary hover:bg-gold-secondary" onClick={async () => {
-                  try {
-                    const token = localStorage.getItem('adminToken');
-                    const res = await fetch(apiPath('/api/admin/countdown'), {
-                      method: 'PUT',
-                      headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-                      body: JSON.stringify({ title: countdownTitle, text: countdownSubtitle, shareText: countdownShareText, targetAt: '2026-01-01T00:00:00Z' })
-                    });
-                    if (!res.ok) throw new Error('Failed to update countdown');
-                    const data = await res.json();
-                    setCountdownTitle(data.title || countdownTitle);
-                    setCountdownSubtitle(data.text || countdownSubtitle);
-                    setCountdownShareText(data.shareText || countdownShareText);
-                    toast({ title: 'Countdown updated', description: 'Main page countdown content updated.' });
-                    queryClient.invalidateQueries({ queryKey: ['/api/countdown/current'] });
-                  } catch (err) {
-                    toast({ title: 'Update failed', description: String((err as Error)?.message || err) });
-                  }
-                }}>
-                  Update Countdown Content
                 </Button>
               </CardContent>
             </Card>

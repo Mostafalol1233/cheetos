@@ -1,5 +1,6 @@
 import "dotenv/config";
 import { pool } from "./db";
+import { settings } from "@shared/settings-schema";
 
 async function main() {
   console.log("Migrating database...");
@@ -75,6 +76,52 @@ async function main() {
       );
     `);
     console.log("Created seller_alerts table");
+
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS orders (
+        id VARCHAR(50) PRIMARY KEY,
+        created_at INTEGER DEFAULT (EXTRACT(EPOCH FROM NOW()) * 1000),
+        user_id VARCHAR(50),
+        items TEXT NOT NULL,
+        payment_method TEXT NOT NULL,
+        status TEXT DEFAULT 'pending',
+        player_id TEXT,
+        server_id TEXT
+      );
+    `);
+    console.log("Created orders table");
+
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS hero_slides (
+        id SERIAL PRIMARY KEY,
+        created_at INTEGER DEFAULT (EXTRACT(EPOCH FROM NOW()) * 1000),
+        background_image_url TEXT,
+        title_ar TEXT,
+        title_en TEXT,
+        promo_text_ar TEXT,
+        promo_text_en TEXT,
+        button_text TEXT,
+        button_link TEXT,
+        is_active BOOLEAN DEFAULT true,
+        display_order INTEGER DEFAULT 0
+      );
+    `);
+    console.log("Created hero_slides table");
+
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS settings (
+        id VARCHAR(50) PRIMARY KEY,
+        primary_color VARCHAR(20) NOT NULL DEFAULT '#0066FF',
+        accent_color VARCHAR(20) NOT NULL DEFAULT '#FFCC00',
+        logo_url TEXT,
+        header_image_url TEXT,
+        whatsapp_number VARCHAR(32),
+        trust_badges JSONB,
+        footer_text TEXT,
+        updated_at INTEGER DEFAULT (EXTRACT(EPOCH FROM NOW()) * 1000)
+      );
+    `);
+    console.log("Created settings table");
 
     console.log("Migration complete!");
     process.exit(0);

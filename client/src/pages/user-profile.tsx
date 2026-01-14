@@ -8,7 +8,6 @@ import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { ChatWidget } from "@/components/chat-widget";
 import {
   User,
   Package,
@@ -46,7 +45,6 @@ export default function UserProfilePage() {
   const [, setLocation] = useLocation();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isChatOpen, setIsChatOpen] = useState(false);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -284,7 +282,7 @@ export default function UserProfilePage() {
                 <div className="flex items-center justify-between">
                   <h2 className="text-2xl font-bold text-white">Messages & Support</h2>
                   <Button
-                    onClick={() => setIsChatOpen(true)}
+                    onClick={() => window.dispatchEvent(new Event('open-live-chat'))}
                     className="bg-gradient-to-r from-gold-primary to-neon-pink hover:from-gold-secondary hover:to-neon-pink text-black"
                   >
                     <MessageSquare className="w-4 h-4 mr-2" />
@@ -300,7 +298,7 @@ export default function UserProfilePage() {
                       Need help with an order? Have questions about our games? Chat with our support team.
                     </p>
                     <Button
-                      onClick={() => setIsChatOpen(true)}
+                      onClick={() => window.dispatchEvent(new Event('open-live-chat'))}
                       className="bg-gradient-to-r from-gold-primary to-neon-pink hover:from-gold-secondary hover:to-neon-pink text-black"
                     >
                       Start Chat
@@ -369,8 +367,6 @@ export default function UserProfilePage() {
         </div>
       </div>
 
-      {/* Chat Widget */}
-      <ChatWidget isOpen={isChatOpen} onClose={() => setIsChatOpen(!isChatOpen)} />
     </div>
   );
 }

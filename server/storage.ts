@@ -71,6 +71,8 @@ export interface IStorage {
 
   // Transactions
   createTransaction(tx: InsertTransaction & { id: string }): Promise<Transaction>;
+  getTransaction(id: string): Promise<Transaction | undefined>;
+  updateTransaction(id: string, updates: Partial<Transaction>): Promise<Transaction | undefined>;
   
   // WhatsApp
   createWhatsAppMessage(msg: WhatsAppMessage): Promise<WhatsAppMessage>;
@@ -240,6 +242,18 @@ export class MemStorage implements IStorage {
     };
     this.transactions.set(newTx.id, newTx);
     return newTx;
+  }
+
+  async getTransaction(id: string): Promise<Transaction | undefined> {
+    return this.transactions.get(id);
+  }
+
+  async updateTransaction(id: string, updates: Partial<Transaction>): Promise<Transaction | undefined> {
+    const existing = this.transactions.get(id);
+    if (!existing) return undefined;
+    const updated: Transaction = { ...existing, ...updates };
+    this.transactions.set(id, updated);
+    return updated;
   }
 
   // --- WhatsApp ---

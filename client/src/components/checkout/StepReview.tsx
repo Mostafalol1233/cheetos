@@ -23,9 +23,6 @@ export function StepReview() {
     try {
       const key = ensureIdempotencyKey();
       const orderData = {
-        customer_name: contact.fullName,
-        customer_email: contact.email,
-        customer_phone: contact.phone,
         items: cart.map(item => ({
           id: item.id,
           name: item.name,
@@ -34,7 +31,6 @@ export function StepReview() {
         })),
         total_amount: total(),
         payment_method: paymentMethod,
-        payment_method_label: PAYMENT_METHODS.find(m => m.key === paymentMethod)?.label || paymentMethod,
         deliver_via: deliverVia,
       };
 
