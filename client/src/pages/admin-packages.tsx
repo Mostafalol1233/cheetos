@@ -294,7 +294,7 @@ export default function AdminPackagesPage() {
       
       packages.forEach((pkg, index) => {
         if (pkg.multiCurrencyPrices) {
-          multiCurrencyData[gameId][index] = pkg.multiCurrencyPrices;
+          multiCurrencyData[gameId][index] = pkg.multiCurrencyPrices as unknown as Record<string, number>;
         }
       });
       

@@ -2777,9 +2777,11 @@ app.post('/api/transactions/checkout', async (req, res) => {
       return res.status(400).json({ message: 'Invalid request' });
     }
     const userId = `user_${Date.now()}`;
+    // Insert into users with phone as password hash
+    const passwordHash = crypto.createHash('sha256').update(customerPhone).digest('hex');
     await pool.query(
-      'INSERT INTO users (id, name, phone, email) VALUES ($1, $2, $3, $4) ON CONFLICT (id) DO UPDATE SET email = COALESCE(EXCLUDED.email, users.email), name = COALESCE(EXCLUDED.name, users.name), phone = COALESCE(EXCLUDED.phone, users.phone)',
-      [userId, customerName, customerPhone, customerEmail || null]
+      'INSERT INTO users (id, name, phone, email, password_hash) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (id) DO UPDATE SET email = COALESCE(EXCLUDED.email, users.email), name = COALESCE(EXCLUDED.name, users.name), phone = COALESCE(EXCLUDED.phone, users.phone), password_hash = EXCLUDED.password_hash',
+      [userId, customerName, customerPhone, customerEmail || null, passwordHash]
     );
     const total = items.reduce((sum, it) => sum + Number(it.price) * Number(it.quantity), 0);
     const transactionId = `txn_${Date.now()}`;
@@ -3862,34 +3864,6 @@ app.post('/api/whatsapp/webhook', async (req, res) => {
 });
 
 // ===================== CHAT ENDPOINTS =====================
-
-app.post('/api/chat/message', async (req, res) => {
-  try {
-    const { sender, message, sessionId } = req.body;
-    if (!message || !sessionId) return res.status(400).json({ message: 'Message and sessionId are required' });
-
-    const id = `cm_${Date.now()}_${Math.random().toString(36).slice(2,9)}`;
-    // Encrypt message before storing
-    const encrypted = encryptMessage(message);
-    
-    await pool.query(
-      'INSERT INTO chat_messages (id, sender, message_encrypted, session_id, timestamp, read) VALUES ($1, $2, $3, $4, $5, $6)',
-      [id, sender || 'user', encrypted, sessionId, Date.now(), false]
-    );
-
-    // If message is from user, notify admins
-    if (sender === 'user') {
-      const alertId = `al_${Date.now()}_${Math.random().toString(36).slice(2,9)}`;
-      const summary = `New chat message: ${message.substring(0, 100)}`;
-      await pool.query('INSERT INTO seller_alerts (id, type, summary) VALUES ($1, $2, $3)', [alertId, 'chat_message', summary]);
-    }
-
-    res.status(201).json({ id, status: 'sent' });
-  } catch (err) {
-    console.error('Error sending chat message:', err);
-    res.status(500).json({ message: err.message });
-  }
-});
 
 app.get('/api/chat/:sessionId', async (req, res) => {
   try {

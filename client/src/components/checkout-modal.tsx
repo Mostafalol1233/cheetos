@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
+import { useQuery } from '@tanstack/react-query';
 import { useCart } from "@/lib/cart-context";
 import { apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
