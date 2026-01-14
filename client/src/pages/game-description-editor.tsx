@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { Suspense, useState, useEffect } from 'react';
 import { useRoute, useLocation } from 'wouter';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowLeft, Save, Eye } from 'lucide-react';
 import { API_BASE_URL, queryClient } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
-import RichTextEditor from '@/components/rich-text-editor';
+const RichTextEditor = React.lazy(() => import('@/components/rich-text-editor'));
 import { Link } from 'wouter';
 
 interface Game {
@@ -239,13 +239,15 @@ export default function GameDescriptionEditor() {
               </div>
             ) : (
               <div className="space-y-4">
-                <RichTextEditor
-                  value={description}
-                  onChange={setDescription}
-                  onImageUpload={handleImageUpload}
-                  placeholder="Write a detailed description for this game. You can include formatting, images, and support for multiple languages..."
-                  className="min-h-[400px]"
-                />
+                <Suspense fallback={<div className="text-center p-8">Loading Editor...</div>}>
+                  <RichTextEditor
+                    value={description}
+                    onChange={setDescription}
+                    onImageUpload={handleImageUpload}
+                    placeholder="Write a detailed description for this game. You can include formatting, images, and support for multiple languages..."
+                    className="min-h-[400px]"
+                  />
+                </Suspense>
                 <div className="text-sm text-muted-foreground">
                   💡 Tip: Use the image button to upload and insert images. The editor supports both English (LTR) and Arabic (RTL) text.
                 </div>

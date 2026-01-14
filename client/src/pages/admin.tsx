@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'wouter';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
@@ -17,6 +17,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import QRCode from 'qrcode';
 import { normalizeNumericString } from '@/lib/quantity';
+const RichTextEditor = React.lazy(() => import('@/components/rich-text-editor'));
 
 interface Game {
   id: string;

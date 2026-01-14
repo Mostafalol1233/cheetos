@@ -70,12 +70,14 @@ export function LocalizationProvider({ children }: LocalizationProviderProps) {
     }
   };
 
-  // Auto-detect location on first load if not already set
+  // Auto-detect location on first load if not already set in storage
   useEffect(() => {
-    if (!country && !isLoading) {
+    const hasSetCurrency = localStorage.getItem("user-currency");
+    const hasSetCountry = localStorage.getItem("user-country");
+    if ((!hasSetCurrency || !hasSetCountry) && !isLoading) {
       detectUserLocation();
     }
-  }, [country, isLoading]);
+  }, [isLoading]);
 
   const value: LocalizationContextType = {
     country,

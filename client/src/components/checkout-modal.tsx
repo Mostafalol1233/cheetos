@@ -9,8 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { X } from "lucide-react";
-import { SiWhatsapp } from "react-icons/si";
+import { SiWhatsapp, SiVodafone } from "react-icons/si";
+import { FaPaypal, FaMobileAlt, FaCreditCard, FaUniversity } from "react-icons/fa";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "@/lib/translation";
 
@@ -19,6 +19,17 @@ interface CheckoutModalProps {
   onClose: () => void;
 }
 
+const ALL_PAYMENT_METHODS = [
+  { value: "Vodafone Cash", label: "Vodafone Cash", Icon: SiVodafone, color: "text-red-600" },
+  { value: "Orange Cash", label: "Orange Cash", Icon: FaMobileAlt, color: "text-orange-500" },
+  { value: "Etisalat Cash", label: "Etisalat Cash", Icon: FaMobileAlt, color: "text-green-500" },
+  { value: "WE Pay", label: "WE Pay", Icon: FaCreditCard, color: "text-teal-500" },
+  { value: "InstaPay", label: "InstaPay", Icon: FaUniversity, color: "text-purple-600" },
+  { value: "PayPal", label: "PayPal", Icon: FaPaypal, color: "text-blue-600" },
+  { value: "WhatsApp", label: "WhatsApp", Icon: SiWhatsapp, color: "text-green-500" }
+];
+
+
 export function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
   const { cart, getTotalPrice, clearCart } = useCart();
   const [, setLocation] = useLocation();
@@ -26,7 +37,7 @@ export function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
   const [customerPhone, setCustomerPhone] = useState("");
   const [customerEmail, setCustomerEmail] = useState("");
   const [countryCode, setCountryCode] = useState("+20");
-  const [paymentMethod, setPaymentMethod] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState(ALL_PAYMENT_METHODS[0].value);
   const [confirmMethod, setConfirmMethod] = useState<'whatsapp' | 'live'>('live');
   const [deliveryChannel, setDeliveryChannel] = useState<'whatsapp' | 'email'>('whatsapp');
   const [paymentMessage, setPaymentMessage] = useState("");
@@ -38,54 +49,14 @@ export function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [payInfo, setPayInfo] = useState<{ title: string; value: string; image?: string; instructions?: string } | null>(null);
-  const [availablePaymentMethods, setAvailablePaymentMethods] = useState<Array<{ value: string; label: string; image: string }>>([]);
+  const [availablePaymentMethods, setAvailablePaymentMethods] = useState(ALL_PAYMENT_METHODS);
 
-  // Fetch available payment methods on mount
+  // Reset payment method on open
   useEffect(() => {
-    const fetchPaymentMethods = async () => {
-      try {
-        const response = await fetch('/api/public/payment-methods');
-        if (response.ok) {
-          const methods = await response.json();
-          setAvailablePaymentMethods(methods);
-          // Set default payment method to first available
-          if (methods.length > 0 && !paymentMethod) {
-            setPaymentMethod(methods[0].value);
-          }
-        }
-      } catch (error) {
-        console.error('Failed to fetch payment methods:', error);
-        // Fallback to hardcoded methods if API fails
-        setAvailablePaymentMethods([
-          { value: "Orange Cash", label: "Orange Cash", image: "/images/payments/orange-logo-new.png" },
-          { value: "Vodafone Cash", label: "Vodafone Cash", image: "/images/payments/vodafone-logo.png" },
-          { value: "Etisalat Cash", label: "Etisalat Cash", image: "/images/payments/etisalat-logo.png" },
-          { value: "WE Pay", label: "WE Pay", image: "/images/payments/we-pay-logo.png" },
-          { value: "InstaPay", label: "InstaPay", image: "/images/payments/instapay-logo.png" },
-          { value: "PayPal", label: "PayPal", image: "/images/payments/paypal-logo.png" },
-          { value: "WhatsApp", label: "WhatsApp", image: "/images/payments/whatsapp.svg" }
-        ]);
-      }
-    };
-
     if (isOpen) {
-      fetchPaymentMethods();
+      setPaymentMethod(ALL_PAYMENT_METHODS[0].value);
     }
   }, [isOpen]);
-
-  const getPaymentEmoji = (method: string) => {
-    switch (method) {
-      case "Orange Cash": return "📱";
-      case "Vodafone Cash": return "📞";
-      case "Etisalat Cash": return "📶";
-      case "WE Pay": return "💳";
-      case "InstaPay": return "🏦";
-      case "PayPal": return "💰";
-      case "WhatsApp": return "💬";
-      case "Bank Transfer": return "🏦";
-      default: return "💳";
-    }
-  };
 
   const SELLER_WHATSAPP = import.meta.env.VITE_SELLER_WHATSAPP || "+201011696196";
 
@@ -328,21 +299,8 @@ ${orderSummary}
                         : 'border-gray-300 hover:border-gray-400'
                     }`}
                   >
-                    <div className="w-12 h-12 mx-auto mb-2">
-                      <img
-                        src={method.image}
-                        alt={method.label}
-                        className="w-full h-full object-contain"
-                        onError={(e) => {
-                          // Fallback to emoji if image fails to load
-                          const target = e.target as HTMLImageElement;
-                          target.style.display = 'none';
-                          const parent = target.parentElement;
-                          if (parent) {
-                            parent.innerHTML = getPaymentEmoji(method.value);
-                          }
-                        }}
-                      />
+                    <div className="w-12 h-12 mx-auto mb-2 flex items-center justify-center">
+                      <method.Icon className={`w-10 h-10 ${method.color}`} />
                     </div>
                     <div className="text-sm font-medium">{method.label}</div>
                   </button>

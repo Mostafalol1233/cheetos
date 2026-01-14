@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useRoute, Link } from "wouter";
+import { useRoute, Link, useLocation } from "wouter";
 import { API_BASE_URL } from "@/lib/queryClient";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
+import { useUserAuth } from "@/lib/user-auth-context";
 import { Copy, Shield, CheckCircle, Clock, AlertTriangle, FileText, Upload } from "lucide-react";
 
 type TxItem = { id: string; game_id: string; quantity: number; price: number };
@@ -16,6 +17,8 @@ type Tx = { id: string; payment_method: string; total: number; status: string; c
 export default function CheckoutSecurityPage() {
   const [match, params] = useRoute("/checkout/security/:id");
   const { toast } = useToast();
+  const { login } = useUserAuth();
+  const [, setLocation] = useLocation();
   const [transaction, setTransaction] = useState<Tx | null>(null);
   const [items, setItems] = useState<TxItem[]>([]);
   const [message, setMessage] = useState("");
@@ -116,7 +119,25 @@ export default function CheckoutSecurityPage() {
       if (!res.ok) throw new Error(await res.text());
       const j = await res.json();
       if (j?.id) setTrackingCode(String(j.id));
-      toast({ title: "Confirmation submitted", description: "We will notify you when the seller responds." });
+      
+      // Auto-login the user
+      if (transaction?.email && transaction?.phone) {
+        try {
+          const password = transaction.phone.replace(/[^0-9]/g, '').slice(-6) + 'Abc!';
+          await login(transaction.email, password);
+          toast({ 
+            title: "Confirmation submitted & logged in", 
+            description: `Your login credentials: Email: ${transaction.email}, Password: ${password}. Check your orders page for status updates.` 
+          });
+          // Redirect to orders page after a short delay
+          setTimeout(() => setLocation('/profile'), 2000);
+        } catch (loginError) {
+          toast({ title: "Confirmation submitted", description: "We will notify you when the seller responds. You can check your order status in the orders page." });
+        }
+      } else {
+        toast({ title: "Confirmation submitted", description: "We will notify you when the seller responds." });
+      }
+      
       setMessage("");
       setReceipt(null);
       setConfirmed(false);
