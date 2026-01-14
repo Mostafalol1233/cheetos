@@ -68,6 +68,15 @@ router.get('/admin/verify', authenticateToken, async (req, res) => {
   }
 });
 
+// User Verify
+router.get('/verify', authenticateToken, async (req, res) => {
+  try {
+    res.json({ ok: true, user: req.user });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 router.post('/admin/logout', authenticateToken, async (req, res) => {
   try {
     res.json({ message: 'Logged out successfully' });
