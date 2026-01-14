@@ -374,7 +374,7 @@ export default function AdminDashboard() {
     const [responseMessage, setResponseMessage] = useState('');
     const [showResponseModal, setShowResponseModal] = useState(false);
 
-    const { data: orders = [] } = useQuery<Array<{ id: string; paymentMethod: string; total: number; status: string; timestamp: number; customerName: string; customerPhone: string; items: Array<{ gameId: string; quantity: number; price: number }> }>>({
+    const { data: orders = [] } = useQuery<Array<{ id: string; paymentMethod: string; total: number; status: string; timestamp: number; customerName: string; customerPhone: string; items: Array<{ gameId: string; gameName?: string; quantity: number; price: number }> }>>({
       queryKey: ['/api/admin/transactions'],
       enabled: true,
       refetchInterval: 3000,
@@ -465,7 +465,11 @@ export default function AdminDashboard() {
                       <td className="p-2">{o.paymentMethod}</td>
                       <td className="p-2">{o.total} EGP</td>
                       <td className="p-2">
-                        {o.items.length ? o.items.map(it => `${it.gameId} x${it.quantity}`).join(', ') : '-'}
+                        {o.items.length
+                          ? o.items
+                              .map(it => `${it.gameName || it.gameId} x${it.quantity}`)
+                              .join(', ')
+                          : '-'}
                       </td>
                       <td className="p-2">
                         {o.status !== 'confirmed' && (
@@ -517,7 +521,12 @@ export default function AdminDashboard() {
                   <p className="text-sm">Customer: {selectedOrder.customerName}</p>
                   <p className="text-sm">Phone: {selectedOrder.customerPhone}</p>
                   <p className="text-sm">Total: {selectedOrder.total} EGP</p>
-                  <p className="text-sm">Items: {selectedOrder.items.map((it: any) => `${it.gameId} x${it.quantity}`).join(', ')}</p>
+                  <p className="text-sm">
+                    Items:{' '}
+                    {selectedOrder.items
+                      .map((it: any) => `${it.gameName || it.gameId} x${it.quantity}`)
+                      .join(', ')}
+                  </p>
                 </div>
               )}
             </div>

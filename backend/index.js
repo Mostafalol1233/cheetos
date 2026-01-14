@@ -3081,9 +3081,12 @@ app.post('/api/transactions/confirm', receiptUpload.single('receipt'), async (re
       return res.status(404).json({ message: 'Transaction not found' });
     }
     const tx = txRes.rows[0];
-    const createdAt = new Date(tx.created_at);
-    if (Date.now() - createdAt.getTime() > 30 * 60 * 1000) {
-      return res.status(401).json({ message: 'Session expired' });
+    const createdAt = tx.created_at ? new Date(tx.created_at) : null;
+    const maxAgeMs = 24 * 60 * 60 * 1000;
+    if (createdAt && !Number.isNaN(createdAt.getTime())) {
+      if (Date.now() - createdAt.getTime() > maxAgeMs) {
+        return res.status(401).json({ message: 'Session expired' });
+      }
     }
     const encMsg = message ? encryptMessage(String(message)) : null;
     const relativePath = req.file ? `/uploads/${req.file.filename}` : null;
@@ -3832,13 +3835,16 @@ app.post('/api/whatsapp/webhook', async (req, res) => {
         const waId = m?.id || null;
         const sessionId = `wa_${from}`;
         const id = `wam_${Date.now()}_${Math.random().toString(36).slice(2,9)}`;
-        await pool.query('INSERT INTO whatsapp_messages (id, wa_message_id, direction, from_phone, to_phone, message_encrypted, session_id, status) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)', [
-          id, waId, 'inbound', from, to, encryptMessage(text), sessionId, 'received'
-        ]);
+        await pool.query(
+          'INSERT INTO whatsapp_messages (id, wa_message_id, direction, from_phone, to_phone, message_encrypted, session_id, status) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)',
+          [id, waId, 'inbound', from, to, encryptMessage(text), sessionId, 'received']
+        );
         const cmId = `cm_${Date.now()}_${Math.random().toString(36).slice(2,9)}`;
-        await pool.query('INSERT INTO chat_messages (id, sender, message_encrypted, session_id) VALUES ($1, $2, $3, $4)', [
-          cmId, 'user', encryptMessage(text), sessionId
-        ]);
+        const cmTimestamp = new Date().toISOString();
+        await pool.query(
+          'INSERT INTO chat_messages (id, sender, message_encrypted, message, session_id, timestamp) VALUES ($1, $2, $3, $4, $5, $6)',
+          [cmId, 'user', encryptMessage(text), text, sessionId, cmTimestamp]
+        );
         const alertId = `al_${Date.now()}_${Math.random().toString(36).slice(2,9)}`;
         const summary = `New WhatsApp message from ${from}: ${text.substring(0, 120)}`;
         await pool.query('INSERT INTO seller_alerts (id, type, summary) VALUES ($1, $2, $3)', [alertId, 'whatsapp_message', summary]);
@@ -4122,9 +4128,11 @@ app.post('/api/chat/message', async (req, res) => {
     }
 
     const id = `cm_${Date.now()}_${Math.random().toString(36).slice(2,9)}`;
-    await pool.query('INSERT INTO chat_messages (id, sender, message_encrypted, message, session_id) VALUES ($1, $2, $3, $4, $5)', [
-      id, sender, encryptMessage(String(message)), String(message), sessionId
-    ]);
+    const timestamp = new Date().toISOString();
+    await pool.query(
+      'INSERT INTO chat_messages (id, sender, message_encrypted, message, session_id, timestamp) VALUES ($1, $2, $3, $4, $5, $6)',
+      [id, sender, encryptMessage(String(message)), String(message), sessionId, timestamp]
+    );
     
     // When admin replies, mark all unread messages in this session as read
     if (sender === 'support') {
@@ -4139,9 +4147,11 @@ app.post('/api/chat/message', async (req, res) => {
         if (Number(c) === 1) {
           const waitMsg = 'Please wait a moment — Diaa or the seller will reply as soon as possible.\nيرجى الانتظار قليلاً، دِيعاء أو البائع سيرد عليك في أسرع وقت ممكن.';
           const sysId = `cm_${Date.now()}_${Math.random().toString(36).slice(2,9)}`;
-          await pool.query('INSERT INTO chat_messages (id, sender, message_encrypted, session_id) VALUES ($1, $2, $3, $4)', [
-            sysId, 'support', encryptMessage(waitMsg), sessionId
-          ]);
+          const sysTimestamp = new Date().toISOString();
+          await pool.query(
+            'INSERT INTO chat_messages (id, sender, message_encrypted, message, session_id, timestamp) VALUES ($1, $2, $3, $4, $5, $6)',
+            [sysId, 'support', encryptMessage(waitMsg), waitMsg, sessionId, sysTimestamp]
+          );
         }
       } catch {}
 
@@ -4535,11 +4545,33 @@ app.get('/api/admin/transactions', authenticateToken, async (req, res) => {
     }
     const ids = Array.from(map.keys());
     if (ids.length) {
-      const items = await pool.query('SELECT transaction_id, game_id, quantity, price FROM transaction_items WHERE transaction_id = ANY($1)', [ids]);
+      const items = await pool.query(
+        `
+        SELECT ti.transaction_id,
+               ti.game_id,
+               ti.quantity,
+               ti.price,
+               g.name AS game_name,
+               gp.name AS package_name
+        FROM transaction_items ti
+        LEFT JOIN games g ON ti.game_id = g.id
+        LEFT JOIN game_packages gp
+          ON gp.game_id = ti.game_id
+         AND (gp.price = ti.price OR gp.discount_price = ti.price)
+        WHERE ti.transaction_id = ANY($1)
+        `,
+        [ids]
+      );
       for (const it of items.rows) {
         const entry = map.get(it.transaction_id);
         if (entry) {
-          entry.items.push({ gameId: it.game_id, quantity: Number(it.quantity), price: Number(it.price) });
+          const gameName = it.package_name || it.game_name || it.game_id;
+          entry.items.push({
+            gameId: it.game_id,
+            gameName,
+            quantity: Number(it.quantity),
+            price: Number(it.price)
+          });
         }
       }
     }
