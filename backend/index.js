@@ -19,6 +19,7 @@ import requestLogger from './middleware/logger.js';
 import errorHandler from './middleware/error.js';
 import pool, { checkConnection, preferIPv4 } from './db.js';
 import gamesRouter from './routes/games.js';
+import heroSlidesRouter from './routes/hero-slides.js';
 import ordersRouter from './routes/orders.js';
 import authRouter from './routes/auth.js';
 import userRouter from './routes/user.js';
@@ -949,6 +950,7 @@ const imageUpload = multer({
 
 // Mount Games Router
 app.use('/api/games', gamesRouter);
+app.use('/api/hero-slides', heroSlidesRouter);
 app.use('/api/orders', ordersRouter);
 app.use('/api/admin/ai', adminAiRouter);
 app.use('/api/auth', authRouter);
