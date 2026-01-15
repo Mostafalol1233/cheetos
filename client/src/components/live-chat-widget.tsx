@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { MessageCircle, Send, X, Minimize2, Maximize2 } from 'lucide-react';
+import { MessageCircle, Send, X, Minimize2, Maximize2, Phone, Facebook } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -160,37 +160,97 @@ export function LiveChatWidget() {
     );
   }
 
-  return (
-    <div className="fixed bottom-6 right-6 w-96 bg-card border border-gold-primary/30 rounded-2xl shadow-2xl z-50 flex flex-col h-[600px] overflow-hidden">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-gold-primary/20 to-neon-pink/20 border-b border-gold-primary/30 p-4 flex items-center justify-between">
-        <div>
-          <h3 className="font-bold text-foreground">Diaa Eldeen Support</h3>
-          <p className="text-xs text-muted-foreground">{widgetConfig.welcomeMessage || 'We typically reply in minutes'}</p>
-        </div>
-        <div className="flex gap-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setIsMinimized(!isMinimized)}
-            className="hover:bg-gold-primary/10"
-          >
-            {isMinimized ? <Maximize2 className="w-4 h-4" /> : <Minimize2 className="w-4 h-4" />}
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setIsOpen(false)}
-            className="hover:bg-red-500/10"
-          >
-            <X className="w-4 h-4" />
-          </Button>
-        </div>
-      </div>
+  if (isOpen) {
+    // Check if we have social links
+    const hasSocialLinks = siteSettings?.whatsapp_number || siteSettings?.facebook_url;
+    
+    if (showOptions && hasSocialLinks) {
+      return (
+        <div className="fixed bottom-24 right-6 z-50 flex flex-col gap-4 animate-in slide-in-from-bottom-5 duration-300">
+          {siteSettings?.whatsapp_number && (
+            <a
+              href={`https://wa.me/${siteSettings.whatsapp_number.replace(/[^0-9]/g, '')}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-3 px-6 py-4 bg-[#25D366] hover:bg-[#128C7E] text-white rounded-full shadow-lg transition-transform hover:scale-105"
+            >
+              <Phone className="w-6 h-6" />
+              <span className="font-bold">WhatsApp</span>
+            </a>
+          )}
+          
+          {siteSettings?.facebook_url && (
+            <a
+              href={siteSettings.facebook_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-3 px-6 py-4 bg-[#0084FF] hover:bg-[#0063CC] text-white rounded-full shadow-lg transition-transform hover:scale-105"
+            >
+              <Facebook className="w-6 h-6" />
+              <span className="font-bold">Messenger</span>
+            </a>
+          )}
 
-      {!isMinimized && (
-        <>
-          {/* Messages Area */}
+          <button
+            onClick={() => setShowOptions(false)}
+            className="flex items-center gap-3 px-6 py-4 bg-gradient-to-r from-gold-primary to-neon-pink text-white rounded-full shadow-lg transition-transform hover:scale-105"
+          >
+            <MessageCircle className="w-6 h-6" />
+            <span className="font-bold">Live Chat</span>
+          </button>
+
+          <button
+            onClick={() => setIsOpen(false)}
+            className="self-end p-2 bg-background/80 backdrop-blur rounded-full shadow-md hover:bg-background transition-colors"
+          >
+            <X className="w-5 h-5 text-muted-foreground" />
+          </button>
+        </div>
+      );
+    }
+
+    return (
+      <div className="fixed bottom-6 right-6 w-96 bg-card border border-gold-primary/30 rounded-2xl shadow-2xl z-50 flex flex-col h-[600px] overflow-hidden animate-in slide-in-from-bottom-5 duration-300">
+        {/* Header */}
+        <div className="bg-gradient-to-r from-gold-primary/20 to-neon-pink/20 border-b border-gold-primary/30 p-4 flex items-center justify-between">
+          <div>
+            <h3 className="font-bold text-foreground">Diaa Eldeen Support</h3>
+            <p className="text-xs text-muted-foreground">{widgetConfig.welcomeMessage || 'We typically reply in minutes'}</p>
+          </div>
+          <div className="flex gap-2">
+            {hasSocialLinks && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowOptions(true)}
+                className="hover:bg-gold-primary/10"
+                title="Back to options"
+              >
+                <X className="w-4 h-4 rotate-45" /> {/* Using X rotated as a 'back' or 'close' to options */}
+              </Button>
+            )}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsMinimized(!isMinimized)}
+              className="hover:bg-gold-primary/10"
+            >
+              {isMinimized ? <Maximize2 className="w-4 h-4" /> : <Minimize2 className="w-4 h-4" />}
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsOpen(false)}
+              className="hover:bg-red-500/10"
+            >
+              <X className="w-4 h-4" />
+            </Button>
+          </div>
+        </div>
+
+        {!isMinimized && (
+          <>
+            {/* Messages Area */}
           <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
             <div className="space-y-4">
               {(messages.filter(m => !search || m.message.toLowerCase().includes(search.toLowerCase()))).length === 0 ? (

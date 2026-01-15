@@ -39,6 +39,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         logoUrl: data.logoUrl ?? null,
         headerImageUrl: data.headerImageUrl ?? null,
         whatsappNumber: data.whatsappNumber ?? null,
+        facebookUrl: data.facebookUrl ?? null,
         trustBadges: Array.isArray(data.trustBadges) ? data.trustBadges : null,
         footerText: data.footerText ?? null
       };

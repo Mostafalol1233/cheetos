@@ -1,5 +1,5 @@
 import { Link } from "wouter";
-import { ShoppingCart, Sun, Moon, Menu, X, Gamepad2, Sparkles, Zap, User, LogOut } from "lucide-react";
+import { ShoppingCart, Sun, Moon, Menu, X, Gamepad2, Sparkles, Zap, User, LogOut, Home, FolderOpen, MessageCircleQuestion } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AccessibilityToolbar } from "@/components/accessibility-mode";
 import { LanguageCurrencySwitcher } from "@/components/language-currency-switcher";
@@ -8,7 +8,7 @@ import { useTheme } from "@/components/theme-provider";
 import { useUserAuth } from "@/lib/user-auth-context";
 import { useState, useEffect } from "react";
 import { useTranslation } from "@/lib/translation";
-const logo = "https://files.catbox.moe/brmkrj.png";
+import { useQuery } from "@tanstack/react-query";
 
 interface HeaderProps {
   onCartClick: () => void;
@@ -23,6 +23,17 @@ export function Header({ onCartClick }: HeaderProps) {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isHovered, setIsHovered] = useState<string | null>(null);
+
+  const { data: siteSettings } = useQuery({
+    queryKey: ['/api/public/settings/site'],
+    queryFn: async () => {
+      const res = await fetch('/api/public/settings/site');
+      return res.json();
+    },
+  });
+
+  const logoUrl = siteSettings?.logo_url || "https://files.catbox.moe/brmkrj.png";
+  const headerBgUrl = siteSettings?.header_bg_url;
 
   // Handle scroll effect
   useEffect(() => {
@@ -40,10 +51,10 @@ export function Header({ onCartClick }: HeaderProps) {
   return (
     <header 
       dir="ltr"
-      className={`fixed w-full top-0 z-50 transition-all duration-500 ${
+      className={`fixed w-full top-0 z-50 transition-all duration-500 flex flex-col items-center ${
         isScrolled 
-          ? "bg-card/95 backdrop-blur-2xl border-b border-gold-primary/20 shadow-2xl py-3 shadow-gold-primary/10" 
-          : "bg-transparent py-6"
+          ? "bg-card/95 backdrop-blur-2xl border-b border-gold-primary/20 shadow-2xl shadow-gold-primary/10" 
+          : "bg-transparent"
       }`}
       style={{
         background: isScrolled 
@@ -51,14 +62,25 @@ export function Header({ onCartClick }: HeaderProps) {
           : 'linear-gradient(135deg, rgba(0,0,0,0.1) 0%, rgba(52,152,219,0.05) 50%, rgba(0,0,0,0.1) 100%)'
       }}
     >
-      <div className="container mx-auto px-4">
+      {/* Header Image Section */}
+      {headerBgUrl && (
+        <div className={`w-full transition-all duration-500 overflow-hidden ${isScrolled ? 'h-0 opacity-0' : 'h-32 md:h-48 xl:h-64 opacity-100'}`}>
+           <img 
+             src={headerBgUrl} 
+             alt="Header Banner" 
+             className="w-full h-full object-cover object-center transform hover:scale-105 transition-transform duration-700"
+           />
+        </div>
+      )}
+
+      <div className={`container mx-auto px-4 w-full transition-all duration-500 ${isScrolled || !headerBgUrl ? 'py-3' : 'py-6'}`}>
         <div className="flex items-center justify-between">
           {/* Enhanced Logo */}
           <Link href="/">
             <div className="flex items-center space-x-3 cursor-pointer group text-nowrap relative">
               <div className="relative">
-                <div className="w-16 h-16 md:w-24 md:h-24 rounded-xl flex items-center justify-center overflow-hidden bg-gradient-to-br from-black via-gray-900 to-black transition-all duration-500 border border-gold-primary/50 shadow-[0_0_30px_rgba(52,152,219,0.4)] group-hover:shadow-[0_0_50px_rgba(52,152,219,0.8)] group-hover:scale-110 group-hover:rotate-3">
-                  <img src={logo} alt="Logo" className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-110" />
+                <div className="w-16 h-16 md:w-20 md:h-20 rounded-xl flex items-center justify-center overflow-hidden bg-gradient-to-br from-black via-gray-900 to-black transition-all duration-500 border border-gold-primary/50 shadow-[0_0_30px_rgba(52,152,219,0.4)] group-hover:shadow-[0_0_50px_rgba(52,152,219,0.8)] group-hover:scale-110 group-hover:rotate-3">
+                  <img src={logoUrl} alt="Logo" className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-110" />
                   <div className="absolute inset-0 bg-gradient-to-r from-gold-primary/20 to-neon-blue/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-xl"></div>
                 </div>
                 {/* Animated sparkles around logo */}
@@ -66,10 +88,10 @@ export function Header({ onCartClick }: HeaderProps) {
                 <Zap className="absolute -bottom-2 -left-2 w-3 h-3 text-neon-pink opacity-0 group-hover:opacity-100 transition-all duration-500 animate-bounce" />
               </div>
               <div className="hidden sm:block">
-                <h1 className="text-xl md:text-3xl font-black tracking-tight bg-gradient-to-r from-gold-primary via-neon-pink to-neon-blue bg-clip-text text-transparent group-hover:from-gold-secondary group-hover:via-neon-blue group-hover:to-gold-primary transition-all duration-500 animate-pulse">
+                <h1 className="text-xl md:text-2xl font-black tracking-tight bg-gradient-to-r from-gold-primary via-neon-pink to-neon-blue bg-clip-text text-transparent group-hover:from-gold-secondary group-hover:via-neon-blue group-hover:to-gold-primary transition-all duration-500 animate-pulse">
                   Diaa Sadek
                 </h1>
-                <p className="text-xs font-bold text-muted-foreground group-hover:text-gold-primary transition-all duration-300 uppercase tracking-widest flex items-center gap-1">
+                <p className="text-[10px] md:text-xs font-bold text-muted-foreground group-hover:text-gold-primary transition-all duration-300 uppercase tracking-widest flex items-center gap-1">
                   <Sparkles className="w-3 h-3" />
                   {t("premium_store")}
                   <Sparkles className="w-3 h-3" />
@@ -79,13 +101,13 @@ export function Header({ onCartClick }: HeaderProps) {
           </Link>
 
           {/* Enhanced Desktop Navigation */}
-          <div className="hidden lg:flex items-center space-x-8">
-            <nav className="flex items-center space-x-6">
+          <div className="hidden lg:flex items-center space-x-6 xl:space-x-8">
+            <nav className="flex items-center space-x-4 xl:space-x-6">
               {[
-                { name: t('home'), href: '/', icon: '🏠' },
-                { name: t('categories'), href: '/#categories', icon: '📂' },
-                { name: t('games'), href: '/games', icon: '🎮' },
-                { name: t('support'), href: '/support', icon: '💬' },
+                { name: t('home'), href: '/', icon: <Home className="w-4 h-4" /> },
+                { name: t('categories'), href: '/#categories', icon: <FolderOpen className="w-4 h-4" /> },
+                { name: t('games'), href: '/games', icon: <Gamepad2 className="w-4 h-4" /> },
+                { name: t('support'), href: '/support', icon: <MessageCircleQuestion className="w-4 h-4" /> },
               ].map((item) => (
                 <Link key={item.name} href={item.href}>
                   <span 
@@ -93,12 +115,13 @@ export function Header({ onCartClick }: HeaderProps) {
                     onMouseEnter={() => setIsHovered(item.name)}
                     onMouseLeave={() => setIsHovered(null)}
                   >
-                    <span className="text-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 transform group-hover:scale-125">
+                    <span className="text-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 transform group-hover:scale-125 absolute -left-6">
                       {item.icon}
                     </span>
-                    {item.name}
+                    <span className="group-hover:translate-x-1 transition-transform duration-300">
+                      {item.name}
+                    </span>
                     <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-gold-primary to-neon-pink transition-all duration-300 group-hover:w-full shadow-[0_0_10px_rgba(255,204,51,0.5)]"></span>
-                    <span className="absolute -top-1 -right-1 w-2 h-2 bg-neon-pink rounded-full opacity-0 group-hover:opacity-100 transition-all duration-300 animate-ping"></span>
                   </span>
                 </Link>
               ))}
@@ -108,17 +131,14 @@ export function Header({ onCartClick }: HeaderProps) {
                 onMouseEnter={() => setIsHovered('live_chat')}
                 onMouseLeave={() => setIsHovered(null)}
               >
-                <span className="text-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 transform group-hover:scale-125">
-                  💫
+                <span className="text-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 transform group-hover:scale-125 absolute -left-6">
+                  <Sparkles className="w-4 h-4" />
                 </span>
-                {t('live_chat')}
+                <span className="group-hover:translate-x-1 transition-transform duration-300">
+                  {t('live_chat')}
+                </span>
                 <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-neon-blue to-neon-pink transition-all duration-300 group-hover:w-full shadow-[0_0_10px_rgba(0,255,255,0.5)]"></span>
                 <span className="absolute -top-1 -right-1 w-2 h-2 bg-neon-blue rounded-full opacity-0 group-hover:opacity-100 transition-all duration-300 animate-pulse"></span>
-                {isHovered === 'live_chat' && (
-                  <div className="absolute top-full mt-2 left-1/2 transform -translate-x-1/2 bg-card border border-gold-primary/20 rounded-lg px-3 py-1 text-xs text-gold-primary shadow-xl animate-fade-in">
-                    Chat with us now! ✨
-                  </div>
-                )}
               </button>
             </nav>
 
@@ -232,25 +252,33 @@ export function Header({ onCartClick }: HeaderProps) {
               <div className="space-y-4">
                 <Link href="/" onClick={() => setIsMobileMenuOpen(false)}>
                   <div className="flex items-center space-x-4 text-lg font-medium py-3 border-b border-border/30 hover:border-gold-primary/50 transition-all duration-300 group cursor-pointer">
-                    <span className="text-2xl group-hover:scale-125 transition-transform duration-300">🏠</span>
+                    <span className="group-hover:scale-125 transition-transform duration-300 text-gold-primary">
+                      <Home className="w-6 h-6" />
+                    </span>
                     <span className="group-hover:text-gold-primary transition-colors duration-300">{t('home')}</span>
                   </div>
                 </Link>
                 <Link href="/#categories" onClick={() => setIsMobileMenuOpen(false)}>
                   <div className="flex items-center space-x-4 text-lg font-medium py-3 border-b border-border/30 hover:border-gold-primary/50 transition-all duration-300 group cursor-pointer">
-                    <span className="text-2xl group-hover:scale-125 transition-transform duration-300">📂</span>
+                    <span className="group-hover:scale-125 transition-transform duration-300 text-gold-primary">
+                      <FolderOpen className="w-6 h-6" />
+                    </span>
                     <span className="group-hover:text-gold-primary transition-colors duration-300">{t('categories')}</span>
                   </div>
                 </Link>
                 <Link href="/games" onClick={() => setIsMobileMenuOpen(false)}>
                   <div className="flex items-center space-x-4 text-lg font-medium py-3 border-b border-border/30 hover:border-gold-primary/50 transition-all duration-300 group cursor-pointer">
-                    <span className="text-2xl group-hover:scale-125 transition-transform duration-300">🎮</span>
+                    <span className="group-hover:scale-125 transition-transform duration-300 text-gold-primary">
+                      <Gamepad2 className="w-6 h-6" />
+                    </span>
                     <span className="group-hover:text-gold-primary transition-colors duration-300">{t('games')}</span>
                   </div>
                 </Link>
                 <Link href="/support" onClick={() => setIsMobileMenuOpen(false)}>
                   <div className="flex items-center space-x-4 text-lg font-medium py-3 border-b border-border/30 hover:border-gold-primary/50 transition-all duration-300 group cursor-pointer">
-                    <span className="text-2xl group-hover:scale-125 transition-transform duration-300">💬</span>
+                    <span className="group-hover:scale-125 transition-transform duration-300 text-gold-primary">
+                      <MessageCircleQuestion className="w-6 h-6" />
+                    </span>
                     <span className="group-hover:text-gold-primary transition-colors duration-300">{t('support')}</span>
                   </div>
                 </Link>
@@ -261,7 +289,9 @@ export function Header({ onCartClick }: HeaderProps) {
                   }}
                   className="w-full flex items-center space-x-4 text-lg font-medium py-3 border-b border-border/30 hover:border-neon-blue/50 transition-all duration-300 group"
                 >
-                  <span className="text-2xl group-hover:scale-125 transition-transform duration-300">💫</span>
+                  <span className="group-hover:scale-125 transition-transform duration-300 text-neon-blue">
+                    <Sparkles className="w-6 h-6" />
+                  </span>
                   <span className="group-hover:text-neon-blue transition-colors duration-300">{t('live_chat')}</span>
                 </button>
               </div>
@@ -272,7 +302,9 @@ export function Header({ onCartClick }: HeaderProps) {
                   <div className="space-y-4">
                     <Link href="/profile" onClick={() => setIsMobileMenuOpen(false)}>
                       <div className="flex items-center space-x-4 text-lg font-medium py-3 border-b border-border/30 hover:border-gold-primary/50 transition-all duration-300 group cursor-pointer">
-                        <span className="text-2xl group-hover:scale-125 transition-transform duration-300">👤</span>
+                        <span className="group-hover:scale-125 transition-transform duration-300 text-gold-primary">
+                          <User className="w-6 h-6" />
+                        </span>
                         <span className="group-hover:text-gold-primary transition-colors duration-300">{user?.name || 'Profile'}</span>
                       </div>
                     </Link>
@@ -283,14 +315,18 @@ export function Header({ onCartClick }: HeaderProps) {
                       }}
                       className="w-full flex items-center space-x-4 text-lg font-medium py-3 border-b border-border/30 hover:border-red-500/50 transition-all duration-300 group"
                     >
-                      <span className="text-2xl group-hover:scale-125 transition-transform duration-300">🚪</span>
+                      <span className="group-hover:scale-125 transition-transform duration-300 text-red-400">
+                        <LogOut className="w-6 h-6" />
+                      </span>
                       <span className="group-hover:text-red-400 transition-colors duration-300">Sign Out</span>
                     </button>
                   </div>
                 ) : (
                   <Link href="/login" onClick={() => setIsMobileMenuOpen(false)}>
                     <div className="flex items-center space-x-4 text-lg font-medium py-3 border-b border-border/30 hover:border-gold-primary/50 transition-all duration-300 group cursor-pointer">
-                      <span className="text-2xl group-hover:scale-125 transition-transform duration-300">🔐</span>
+                      <span className="group-hover:scale-125 transition-transform duration-300 text-gold-primary">
+                        <User className="w-6 h-6" />
+                      </span>
                       <span className="group-hover:text-gold-primary transition-colors duration-300">Sign In</span>
                     </div>
                   </Link>

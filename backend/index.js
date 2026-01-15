@@ -1292,6 +1292,14 @@ async function initializeDatabase() {
       );
     `);
     await pool.query(`INSERT INTO site_settings (id) VALUES ('site') ON CONFLICT (id) DO NOTHING`);
+    
+    // Add missing columns to site_settings
+    await pool.query(`ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS whatsapp_number TEXT`);
+    await pool.query(`ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS facebook_url TEXT`);
+    await pool.query(`ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS footer_text TEXT`);
+    await pool.query(`ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS primary_color VARCHAR(20)`);
+    await pool.query(`ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS accent_color VARCHAR(20)`);
+    await pool.query(`ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS trust_badges JSONB DEFAULT '[]'`);
 
     // Translations
     await pool.query(`

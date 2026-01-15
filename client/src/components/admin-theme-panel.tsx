@@ -13,6 +13,7 @@ export function AdminThemePanel() {
   const [logoUrl, setLogoUrl] = useState("");
   const [headerImageUrl, setHeaderImageUrl] = useState("");
   const [whatsappNumber, setWhatsappNumber] = useState("");
+  const [facebookUrl, setFacebookUrl] = useState("");
   const [footerText, setFooterText] = useState("");
   const [saving, setSaving] = useState(false);
 
@@ -112,6 +113,15 @@ export function AdminThemePanel() {
             value={whatsappNumber}
             onChange={(e) => setWhatsappNumber(e.target.value)}
             placeholder="+20100..."
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="facebookUrl">Facebook Messenger URL</Label>
+          <Input
+            id="facebookUrl"
+            value={facebookUrl}
+            onChange={(e) => setFacebookUrl(e.target.value)}
+            placeholder="https://m.me/..."
           />
         </div>
         <div className="space-y-2">
