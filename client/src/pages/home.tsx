@@ -1,6 +1,7 @@
-1→1→import { useState } from "react";
-2→import { Gamepad2, Zap, Headphones, Shield, Tag } from "lucide-react";
-3→import { SiTelegram, SiTiktok, SiYoutube, SiFacebook, SiWhatsapp } from "react-icons/si";
+import { useState } from "react";
+import { Gamepad2, Zap, Headphones, Shield, Tag } from "lucide-react";
+import { SiTelegram, SiTiktok, SiYoutube, SiFacebook, SiWhatsapp } from "react-icons/si";
+
 
 import { ShoppingCategories } from "@/components/shopping-categories";
 import { PopularGames } from "@/components/popular-games";
