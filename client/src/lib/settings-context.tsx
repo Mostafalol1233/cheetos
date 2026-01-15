@@ -8,6 +8,7 @@ export interface Settings {
   logoUrl: string | null;
   headerImageUrl: string | null;
   whatsappNumber: string | null;
+  facebookUrl: string | null;
   trustBadges: string[] | null;
   footerText: string | null;
 }

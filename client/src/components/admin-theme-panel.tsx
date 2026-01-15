@@ -24,6 +24,7 @@ export function AdminThemePanel() {
     setLogoUrl(settings.logoUrl || "");
     setHeaderImageUrl(settings.headerImageUrl || "");
     setWhatsappNumber(settings.whatsappNumber || "");
+    setFacebookUrl(settings.facebookUrl || "");
     setFooterText(settings.footerText || "");
   }, [settings]);
 
@@ -36,6 +37,7 @@ export function AdminThemePanel() {
         logoUrl: logoUrl || null,
         headerImageUrl: headerImageUrl || null,
         whatsappNumber: whatsappNumber || null,
+        facebookUrl: facebookUrl || null,
         footerText: footerText || null
       });
       await refresh();

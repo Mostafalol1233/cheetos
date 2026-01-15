@@ -8,7 +8,7 @@ import { useTheme } from "@/components/theme-provider";
 import { useUserAuth } from "@/lib/user-auth-context";
 import { useState, useEffect } from "react";
 import { useTranslation } from "@/lib/translation";
-import { useQuery } from "@tanstack/react-query";
+import { useSettings } from "@/lib/settings-context";
 
 interface HeaderProps {
   onCartClick: () => void;
@@ -24,16 +24,9 @@ export function Header({ onCartClick }: HeaderProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isHovered, setIsHovered] = useState<string | null>(null);
 
-  const { data: siteSettings } = useQuery({
-    queryKey: ['/api/public/settings/site'],
-    queryFn: async () => {
-      const res = await fetch('/api/public/settings/site');
-      return res.json();
-    },
-  });
-
-  const logoUrl = siteSettings?.logo_url || "https://files.catbox.moe/brmkrj.png";
-  const headerBgUrl = siteSettings?.header_bg_url;
+  const { settings } = useSettings();
+  const logoUrl = settings?.logoUrl || "https://files.catbox.moe/brmkrj.png";
+  const headerBgUrl = settings?.headerImageUrl;
 
   // Handle scroll effect
   useEffect(() => {
@@ -64,11 +57,11 @@ export function Header({ onCartClick }: HeaderProps) {
     >
       {/* Header Image Section */}
       {headerBgUrl && (
-        <div className={`w-full transition-all duration-500 overflow-hidden ${isScrolled ? 'h-0 opacity-0' : 'h-32 md:h-48 xl:h-64 opacity-100'}`}>
+        <div className={`w-full transition-all duration-500 ease-in-out overflow-hidden ${isScrolled ? 'max-h-0 opacity-0' : 'max-h-[50vh] opacity-100'}`}>
            <img 
              src={headerBgUrl} 
              alt="Header Banner" 
-             className="w-full h-full object-cover object-center transform hover:scale-105 transition-transform duration-700"
+             className="w-full h-auto min-h-[150px] max-h-[50vh] object-cover object-center transform hover:scale-105 transition-transform duration-700"
            />
         </div>
       )}
@@ -301,75 +294,31 @@ export function Header({ onCartClick }: HeaderProps) {
                 {isAuthenticated ? (
                   <div className="space-y-4">
                     <Link href="/profile" onClick={() => setIsMobileMenuOpen(false)}>
-                      <div className="flex items-center space-x-4 text-lg font-medium py-3 border-b border-border/30 hover:border-gold-primary/50 transition-all duration-300 group cursor-pointer">
-                        <span className="group-hover:scale-125 transition-transform duration-300 text-gold-primary">
-                          <User className="w-6 h-6" />
-                        </span>
-                        <span className="group-hover:text-gold-primary transition-colors duration-300">{user?.name || 'Profile'}</span>
-                      </div>
+                      <Button variant="ghost" className="w-full justify-start text-foreground hover:text-gold-primary">
+                        <User className="mr-2 h-4 w-4" />
+                        {user?.name || 'Profile'}
+                      </Button>
                     </Link>
-                    <button
+                    <Button 
                       onClick={() => {
                         logout();
                         setIsMobileMenuOpen(false);
                       }}
-                      className="w-full flex items-center space-x-4 text-lg font-medium py-3 border-b border-border/30 hover:border-red-500/50 transition-all duration-300 group"
+                      variant="ghost" 
+                      className="w-full justify-start text-foreground hover:text-red-400"
                     >
-                      <span className="group-hover:scale-125 transition-transform duration-300 text-red-400">
-                        <LogOut className="w-6 h-6" />
-                      </span>
-                      <span className="group-hover:text-red-400 transition-colors duration-300">Sign Out</span>
-                    </button>
+                      <LogOut className="mr-2 h-4 w-4" />
+                      Logout
+                    </Button>
                   </div>
                 ) : (
                   <Link href="/login" onClick={() => setIsMobileMenuOpen(false)}>
-                    <div className="flex items-center space-x-4 text-lg font-medium py-3 border-b border-border/30 hover:border-gold-primary/50 transition-all duration-300 group cursor-pointer">
-                      <span className="group-hover:scale-125 transition-transform duration-300 text-gold-primary">
-                        <User className="w-6 h-6" />
-                      </span>
-                      <span className="group-hover:text-gold-primary transition-colors duration-300">Sign In</span>
-                    </div>
+                    <Button className="w-full bg-gradient-to-r from-gold-primary to-neon-pink text-black font-semibold">
+                      <User className="mr-2 h-4 w-4" />
+                      Sign In
+                    </Button>
                   </Link>
                 )}
-              </div>
-              
-              {/* Enhanced Theme Toggle */}
-              <div className="flex items-center justify-between pt-6 border-t border-border/30">
-                <span className="font-bold text-gold-primary flex items-center gap-2">
-                  <Sparkles className="w-4 h-4" />
-                  Theme
-                </span>
-                <div className="flex items-center space-x-2 bg-gradient-to-r from-muted to-muted/50 p-1 rounded-full border border-gold-primary/20">
-                  <button 
-                    onClick={() => setTheme("light")}
-                    className={`p-3 rounded-full transition-all duration-300 hover:scale-110 ${
-                      theme === "light" 
-                        ? "bg-gradient-to-r from-gold-primary to-gold-secondary shadow-lg shadow-gold-primary/30 text-background" 
-                        : "text-muted-foreground hover:text-gold-primary"
-                    }`}
-                  >
-                    <Sun className="h-5 w-5" />
-                  </button>
-                  <button 
-                    onClick={() => setTheme("dark")}
-                    className={`p-3 rounded-full transition-all duration-300 hover:scale-110 ${
-                      theme === "dark" 
-                        ? "bg-gradient-to-r from-neon-blue to-neon-pink shadow-lg shadow-neon-blue/30 text-background" 
-                        : "text-muted-foreground hover:text-neon-blue"
-                    }`}
-                  >
-                    <Moon className="h-5 w-5" />
-                  </button>
-                </div>
-              </div>
-
-              {/* Fun Footer */}
-              <div className="text-center pt-4 border-t border-border/30">
-                <p className="text-sm text-muted-foreground flex items-center justify-center gap-2">
-                  <Sparkles className="w-4 h-4 text-gold-primary animate-pulse" />
-                  Made with ❤️ by Diaa Sadek
-                  <Sparkles className="w-4 h-4 text-neon-pink animate-pulse" />
-                </p>
               </div>
             </div>
           </div>

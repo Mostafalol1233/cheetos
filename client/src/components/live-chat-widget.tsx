@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { queryClient, apiRequest } from '@/lib/queryClient';
+import { useSettings } from '@/lib/settings-context';
 
 interface ChatMessage {
   id: string;
@@ -24,6 +25,9 @@ export function LiveChatWidget() {
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
   const [inputMessage, setInputMessage] = useState('');
+  const [showOptions, setShowOptions] = useState(true);
+  const { settings: siteSettings } = useSettings();
+  
   const [sessionId] = useState(() => {
     try {
       const existing = localStorage.getItem('chat_session_id');
@@ -151,7 +155,10 @@ export function LiveChatWidget() {
     return (
       <div className={`fixed ${widgetConfig.position === 'bottom-right' ? 'bottom-6 right-6' : 'bottom-6 left-6'} z-40`}>
         <button
-          onClick={() => setIsOpen(true)}
+          onClick={() => {
+            setIsOpen(true);
+            setShowOptions(true);
+          }}
           className="w-16 h-16 rounded-full bg-gradient-to-r from-gold-primary to-neon-pink hover:scale-110 transition-transform duration-300 shadow-lg flex items-center justify-center relative overflow-hidden"
         >
           <MessageCircle className="w-6 h-6 text-white" />
@@ -160,170 +167,163 @@ export function LiveChatWidget() {
     );
   }
 
-  if (isOpen) {
-    // Check if we have social links
-    const hasSocialLinks = siteSettings?.whatsapp_number || siteSettings?.facebook_url;
-    
-    if (showOptions && hasSocialLinks) {
-      return (
-        <div className="fixed bottom-24 right-6 z-50 flex flex-col gap-4 animate-in slide-in-from-bottom-5 duration-300">
-          {siteSettings?.whatsapp_number && (
-            <a
-              href={`https://wa.me/${siteSettings.whatsapp_number.replace(/[^0-9]/g, '')}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-3 px-6 py-4 bg-[#25D366] hover:bg-[#128C7E] text-white rounded-full shadow-lg transition-transform hover:scale-105"
-            >
-              <Phone className="w-6 h-6" />
-              <span className="font-bold">WhatsApp</span>
-            </a>
-          )}
-          
-          {siteSettings?.facebook_url && (
-            <a
-              href={siteSettings.facebook_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-3 px-6 py-4 bg-[#0084FF] hover:bg-[#0063CC] text-white rounded-full shadow-lg transition-transform hover:scale-105"
-            >
-              <Facebook className="w-6 h-6" />
-              <span className="font-bold">Messenger</span>
-            </a>
-          )}
-
-          <button
-            onClick={() => setShowOptions(false)}
-            className="flex items-center gap-3 px-6 py-4 bg-gradient-to-r from-gold-primary to-neon-pink text-white rounded-full shadow-lg transition-transform hover:scale-105"
-          >
-            <MessageCircle className="w-6 h-6" />
-            <span className="font-bold">Live Chat</span>
-          </button>
-
-          <button
-            onClick={() => setIsOpen(false)}
-            className="self-end p-2 bg-background/80 backdrop-blur rounded-full shadow-md hover:bg-background transition-colors"
-          >
-            <X className="w-5 h-5 text-muted-foreground" />
-          </button>
-        </div>
-      );
-    }
-
+  // Check if we have social links
+  const hasSocialLinks = !!(siteSettings?.whatsappNumber || siteSettings?.facebookUrl);
+  
+  if (showOptions && hasSocialLinks) {
     return (
-      <div className="fixed bottom-6 right-6 w-96 bg-card border border-gold-primary/30 rounded-2xl shadow-2xl z-50 flex flex-col h-[600px] overflow-hidden animate-in slide-in-from-bottom-5 duration-300">
-        {/* Header */}
-        <div className="bg-gradient-to-r from-gold-primary/20 to-neon-pink/20 border-b border-gold-primary/30 p-4 flex items-center justify-between">
-          <div>
-            <h3 className="font-bold text-foreground">Diaa Eldeen Support</h3>
-            <p className="text-xs text-muted-foreground">{widgetConfig.welcomeMessage || 'We typically reply in minutes'}</p>
-          </div>
-          <div className="flex gap-2">
-            {hasSocialLinks && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowOptions(true)}
-                className="hover:bg-gold-primary/10"
-                title="Back to options"
-              >
-                <X className="w-4 h-4 rotate-45" /> {/* Using X rotated as a 'back' or 'close' to options */}
-              </Button>
-            )}
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setIsMinimized(!isMinimized)}
-              className="hover:bg-gold-primary/10"
-            >
-              {isMinimized ? <Maximize2 className="w-4 h-4" /> : <Minimize2 className="w-4 h-4" />}
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setIsOpen(false)}
-              className="hover:bg-red-500/10"
-            >
-              <X className="w-4 h-4" />
-            </Button>
-          </div>
-        </div>
+      <div className="fixed bottom-24 right-6 z-50 flex flex-col gap-4 animate-in slide-in-from-bottom-5 duration-300">
+        {siteSettings?.whatsappNumber && (
+          <a
+            href={`https://wa.me/${siteSettings.whatsappNumber.replace(/[^0-9]/g, '')}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-3 px-6 py-4 bg-[#25D366] hover:bg-[#128C7E] text-white rounded-full shadow-lg transition-transform hover:scale-105"
+          >
+            <Phone className="w-6 h-6" />
+            <span className="font-bold">WhatsApp</span>
+          </a>
+        )}
+        
+        {siteSettings?.facebookUrl && (
+          <a
+            href={siteSettings.facebookUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-3 px-6 py-4 bg-[#0084FF] hover:bg-[#0063CC] text-white rounded-full shadow-lg transition-transform hover:scale-105"
+          >
+            <Facebook className="w-6 h-6" />
+            <span className="font-bold">Messenger</span>
+          </a>
+        )}
 
-        {!isMinimized && (
-          <>
-            {/* Messages Area */}
-          <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
-            <div className="space-y-4">
-              {(messages.filter(m => !search || m.message.toLowerCase().includes(search.toLowerCase()))).length === 0 ? (
-                <div className="text-center text-muted-foreground py-8">
-                  <MessageCircle className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                  <p>Start a conversation with our support team!</p>
-                </div>
-              ) : (
-                messages.filter(m => !search || m.message.toLowerCase().includes(search.toLowerCase())).map((msg: ChatMessage) => (
+        <button
+          onClick={() => setShowOptions(false)}
+          className="flex items-center gap-3 px-6 py-4 bg-gradient-to-r from-gold-primary to-neon-pink text-white rounded-full shadow-lg transition-transform hover:scale-105"
+        >
+          <MessageCircle className="w-6 h-6" />
+          <span className="font-bold">Live Chat</span>
+        </button>
+
+        <button
+          onClick={() => setIsOpen(false)}
+          className="self-end p-2 bg-background/80 backdrop-blur rounded-full shadow-md hover:bg-background transition-colors"
+        >
+          <X className="w-5 h-5 text-muted-foreground" />
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="fixed bottom-6 right-6 w-96 bg-card border border-gold-primary/30 rounded-2xl shadow-2xl z-50 flex flex-col h-[600px] overflow-hidden animate-in slide-in-from-bottom-5 duration-300">
+      {/* Header */}
+      <div className="bg-gradient-to-r from-gold-primary/20 to-neon-pink/20 border-b border-gold-primary/30 p-4 flex items-center justify-between">
+        <div>
+          <h3 className="font-bold text-foreground">Diaa Eldeen Support</h3>
+          <p className="text-xs text-muted-foreground">{widgetConfig.welcomeMessage || 'We typically reply in minutes'}</p>
+        </div>
+        <div className="flex gap-2">
+          {hasSocialLinks && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowOptions(true)}
+              className="hover:bg-gold-primary/10"
+              title="Back to options"
+            >
+              <X className="w-4 h-4 rotate-45" /> {/* Using X rotated as a 'back' or 'close' to options */}
+            </Button>
+          )}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setIsMinimized(!isMinimized)}
+            className="hover:bg-gold-primary/10"
+          >
+            {isMinimized ? <Maximize2 className="w-4 h-4" /> : <Minimize2 className="w-4 h-4" />}
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setIsOpen(false)}
+            className="hover:bg-red-500/10"
+          >
+            <X className="w-4 h-4" />
+          </Button>
+        </div>
+      </div>
+
+      {!isMinimized && (
+        <>
+          {/* Messages Area */}
+        <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
+          <div className="space-y-4">
+            {(messages.filter(m => !search || m.message.toLowerCase().includes(search.toLowerCase()))).length === 0 ? (
+              <div className="text-center text-muted-foreground py-8">
+                <MessageCircle className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                <p>Start a conversation with our support team!</p>
+              </div>
+            ) : (
+              messages.filter(m => !search || m.message.toLowerCase().includes(search.toLowerCase())).map((msg: ChatMessage) => (
+                <div
+                  key={msg.id}
+                  className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+                >
                   <div
-                    key={msg.id}
-                    className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+                    className={`max-w-xs px-4 py-2 rounded-lg ${
+                      msg.sender === 'user'
+                        ? 'bg-gold-primary/30 text-foreground rounded-br-none'
+                        : 'bg-muted/50 text-muted-foreground rounded-bl-none'
+                    }`}
                   >
-                    <div
-                      className={`max-w-xs px-4 py-2 rounded-lg ${
-                        msg.sender === 'user'
-                          ? 'bg-gold-primary/30 text-foreground rounded-br-none'
-                          : 'bg-muted/50 text-muted-foreground rounded-bl-none'
-                      }`}
-                    >
-                      <p className="text-sm">{msg.message}</p>
-                      <span className="text-xs opacity-60 mt-1 block">
-                        {new Date(msg.timestamp).toLocaleTimeString([], {
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        })}
-                      </span>
-                    </div>
-                  </div>
-                ))
-              )}
-              {(isUserTyping || isSupportTyping) && (
-                <div className="flex justify-start">
-                  <div className="px-4 py-2 rounded-lg bg-muted/50 text-muted-foreground rounded-bl-none">
-                    <span className="inline-flex items-center gap-1">
-                      <span className="w-1.5 h-1.5 bg-current rounded-full animate-bounce" />
-                      <span className="w-1.5 h-1.5 bg-current rounded-full animate-bounce [animation-delay:0.15s]" />
-                      <span className="w-1.5 h-1.5 bg-current rounded-full animate-bounce [animation-delay:0.3s]" />
-                      <span className="text-xs ml-2">{isSupportTyping ? 'Support is typing...' : 'Typing...'}</span>
+                    <p className="text-sm">{msg.message}</p>
+                    <span className="text-xs opacity-60 mt-1 block">
+                      {new Date(msg.timestamp).toLocaleTimeString([], {
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
                     </span>
                   </div>
                 </div>
-              )}
-            </div>
-          </ScrollArea>
-
-          {/* Input Area */}
-          <div className="border-t border-gold-primary/30 p-4 bg-muted/20">
-            <form onSubmit={handleSendMessage} className="flex gap-2">
-              <Input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search messages..."
-                className="flex-1 border-gold-primary/30"
-              />
-              <Input
-                value={inputMessage}
-                onChange={(e) => setInputMessage(e.target.value)}
-                placeholder="Type your message..."
-                className="border-gold-primary/30 focus:border-gold-primary"
-                disabled={sendMutation.isPending}
-              />
-              <Button
-                type="submit"
-                disabled={sendMutation.isPending || !inputMessage.trim()}
-                className="bg-gradient-to-r from-gold-primary to-neon-pink hover:opacity-90"
-              >
-                <Send className="w-4 h-4" />
-              </Button>
-            </form>
+              ))
+            )}
+            {(isUserTyping || isSupportTyping) && (
+              <div className="flex justify-start">
+                <div className="px-4 py-2 rounded-lg bg-muted/50 text-muted-foreground rounded-bl-none">
+                  <span className="inline-flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 bg-current rounded-full animate-bounce" />
+                    <span className="w-1.5 h-1.5 bg-current rounded-full animate-bounce [animation-delay:0.15s]" />
+                    <span className="w-1.5 h-1.5 bg-current rounded-full animate-bounce [animation-delay:0.3s]" />
+                    <span className="text-xs ml-2">{isSupportTyping ? 'Support is typing...' : 'Typing...'}</span>
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
-        </>
-      )}
-    </div>
+        </ScrollArea>
+
+        {/* Input Area */}
+        <div className="border-t border-gold-primary/30 p-4 bg-muted/20">
+          <form onSubmit={handleSendMessage} className="flex gap-2">
+            <Input
+              value={inputMessage}
+              onChange={(e) => setInputMessage(e.target.value)}
+              placeholder="Type your message..."
+              className="border-gold-primary/30 focus:border-gold-primary"
+              disabled={sendMutation.isPending}
+            />
+            <Button
+              type="submit"
+              disabled={sendMutation.isPending || !inputMessage.trim()}
+              className="bg-gradient-to-r from-gold-primary to-neon-pink hover:opacity-90"
+            >
+              <Send className="w-4 h-4" />
+            </Button>
+          </form>
+        </div>
+      </>
+    )}
+  </div>
   );
 }

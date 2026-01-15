@@ -9,6 +9,7 @@ export const settings = pgTable("settings", {
   logoUrl: text("logo_url"),
   headerImageUrl: text("header_image_url"),
   whatsappNumber: varchar("whatsapp_number", { length: 32 }),
+  facebookUrl: text("facebook_url"),
   trustBadges: jsonb("trust_badges").$type<string[] | null>().default(null),
   footerText: text("footer_text"),
   updatedAt: integer("updated_at").default(Date.now())
