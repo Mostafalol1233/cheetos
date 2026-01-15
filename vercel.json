@@ -24,7 +24,7 @@
     },
     {
       "source": "/attached_assets/:path*",
-      "destination": "http://fi4.bot-hosting.net:22135/media/:path*"
+      "destination": "http://fi4.bot-hosting.net:22135/attached_assets/:path*"
     },
     {
       "source": "/:path*",

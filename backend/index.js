@@ -1197,6 +1197,31 @@ async function initializeDatabase() {
       )
     `);
     
+    // Hero slides configuration
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS hero_slides (
+        id VARCHAR(50) PRIMARY KEY DEFAULT gen_random_uuid()::text,
+        background_image_url TEXT NOT NULL,
+        title_ar TEXT,
+        title_en TEXT,
+        promo_text_ar TEXT,
+        promo_text_en TEXT,
+        button_text TEXT,
+        button_link TEXT,
+        display_order INTEGER DEFAULT 0,
+        is_active BOOLEAN DEFAULT true,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+    
+    // Insert default slide if empty
+    await pool.query(`
+      INSERT INTO hero_slides (id, background_image_url, title_en, promo_text_en, button_text, button_link, display_order, is_active)
+      SELECT 'slide_default', '/images/hero-bg.jpg', 'Welcome to GameCart', 'Best Prices for Games', 'Shop Now', '/games', 0, true
+      WHERE NOT EXISTS (SELECT 1 FROM hero_slides);
+    `);
+
     // Live chat widget configuration
     await pool.query(`
       CREATE TABLE IF NOT EXISTS chat_widget_config (
