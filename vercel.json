@@ -5,36 +5,35 @@
   "env": {
     "VITE_API_URL": "http://fi4.bot-hosting.net:22135"
   },
-  "public": true,
   "rewrites": [
     {
-      "source": "/api/(.*)",
-      "destination": "http://fi4.bot-hosting.net:22135/api/$1"
+      "source": "/api/:path*",
+      "destination": "http://fi4.bot-hosting.net:22135/api/:path*"
     },
     {
-      "source": "/uploads/(.*)",
-      "destination": "http://fi4.bot-hosting.net:22135/uploads/$1"
+      "source": "/uploads/:path*",
+      "destination": "http://fi4.bot-hosting.net:22135/uploads/:path*"
     },
     {
-      "source": "/images/(.*)",
-      "destination": "http://fi4.bot-hosting.net:22135/images/$1"
+      "source": "/images/:path*",
+      "destination": "http://fi4.bot-hosting.net:22135/images/:path*"
     },
     {
-      "source": "/media/(.*)",
-      "destination": "http://fi4.bot-hosting.net:22135/media/$1"
+      "source": "/media/:path*",
+      "destination": "http://fi4.bot-hosting.net:22135/media/:path*"
     },
     {
-      "source": "/attached_assets/(.*)",
-      "destination": "http://fi4.bot-hosting.net:22135/media/$1"
+      "source": "/attached_assets/:path*",
+      "destination": "http://fi4.bot-hosting.net:22135/media/:path*"
     },
     {
-      "source": "/((?!api).*)",
+      "source": "/:path*",
       "destination": "/index.html"
     }
   ],
   "headers": [
     {
-      "source": "/attached_assets/(.*)",
+      "source": "/attached_assets/:path*",
       "headers": [
         {
           "key": "Cache-Control",
@@ -43,7 +42,7 @@
       ]
     },
     {
-      "source": "/api/(.*)",
+      "source": "/api/:path*",
       "headers": [
         {
           "key": "Access-Control-Allow-Credentials",
