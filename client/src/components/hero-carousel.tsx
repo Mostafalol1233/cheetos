@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { apiRequest } from "@/lib/queryClient";
 import { useTranslation } from "@/lib/translation";
-import { useMobile } from "@/hooks/use-mobile";
 
 type HeroSlide = {
   id: number;
@@ -18,7 +17,6 @@ export function HeroCarousel() {
   const [slides, setSlides] = useState<HeroSlide[]>([]);
   const [active, setActive] = useState(0);
   const [isHovering, setIsHovering] = useState(false);
-  const { isMobile } = useMobile();
   const { lang } = useTranslation();
 
   useEffect(() => {
@@ -108,4 +106,3 @@ export function HeroCarousel() {
     </div>
   );
 }
-

@@ -1,6 +1,6 @@
 {
-  "buildCommand": "npm run build && cp -R attached_assets dist/public/attached_assets && cp attached_assets/* dist/public/ || true",
-  "outputDirectory": "dist/public",
+  "buildCommand": "npm run build && mkdir -p dist/attached_assets && cp -R attached_assets/* dist/attached_assets/ || true",
+  "outputDirectory": "dist",
   "installCommand": "npm install",
   "env": {
     "VITE_API_URL": "http://fi4.bot-hosting.net:22135"
