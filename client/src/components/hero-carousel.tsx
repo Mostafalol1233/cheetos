@@ -17,7 +17,7 @@ export function HeroCarousel() {
   const [slides, setSlides] = useState<HeroSlide[]>([]);
   const [active, setActive] = useState(0);
   const [isHovering, setIsHovering] = useState(false);
-  const { lang } = useTranslation();
+  const { language } = useTranslation();
 
   useEffect(() => {
     (async () => {
@@ -43,8 +43,8 @@ export function HeroCarousel() {
   if (!slides.length) return null;
 
   const current = slides[active];
-  const title = lang === "ar" ? current.titleAr || current.titleEn : current.titleEn || current.titleAr;
-  const promo = lang === "ar" ? current.promoTextAr || current.promoTextEn : current.promoTextEn || current.promoTextAr;
+  const title = language === "ar" ? current.titleAr || current.titleEn : current.titleEn || current.titleAr;
+  const promo = language === "ar" ? current.promoTextAr || current.promoTextEn : current.promoTextEn || current.promoTextAr;
 
   return (
     <div
