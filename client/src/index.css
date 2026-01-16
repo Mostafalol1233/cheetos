@@ -49,33 +49,33 @@
   --gold-primary: 45 90% 55%;
   --gold-secondary: 45 90% 45%;
   --neon-pink: 320 100% 60%;
-  --dark-bg: 240 10% 3.9%;
-  --darker-bg: 240 10% 2%;
-  --card-bg: 240 10% 6%;
-  --card-bg-alt: 240 10% 8%;
+  --dark-bg: 0 0% 7%; /* #121212 */
+  --darker-bg: 0 0% 5%;
+  --card-bg: 0 0% 9%;
+  --card-bg-alt: 0 0% 11%;
 }
 
 .dark {
-  /* Ensure dark mode matches root */
-  --background: 240 10% 3.9%;
+  /* Dark Theme Implementation #121212 */
+  --background: 0 0% 7%; /* #121212 */
   --foreground: 0 0% 98%;
-  --card: 240 10% 3.9%;
+  --card: 0 0% 9%;
   --card-foreground: 0 0% 98%;
-  --popover: 240 10% 3.9%;
+  --popover: 0 0% 9%;
   --popover-foreground: 0 0% 98%;
-  --primary: 0 0% 98%;
-  --primary-foreground: 240 5.9% 10%;
+  --primary: 45 90% 55%; /* Gold Primary in Dark Mode */
+  --primary-foreground: 0 0% 10%;
   --secondary: 240 3.7% 15.9%;
   --secondary-foreground: 0 0% 98%;
-  --muted: 240 3.7% 15.9%;
+  --muted: 0 0% 15%;
   --muted-foreground: 240 5% 64.9%;
-  --accent: 240 3.7% 15.9%;
+  --accent: 0 0% 15%;
   --accent-foreground: 0 0% 98%;
   --destructive: 0 62.8% 30.6%;
   --destructive-foreground: 0 0% 98%;
-  --border: 240 3.7% 15.9%;
-  --input: 240 3.7% 15.9%;
-  --ring: 240 4.9% 83.9%;
+  --border: 0 0% 15%;
+  --input: 0 0% 15%;
+  --ring: 45 90% 55%;
 }
 
 @layer base {

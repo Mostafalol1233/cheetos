@@ -302,15 +302,18 @@ export default function GameDetails() {
                 )}
               </div>
 
-              <Button
-                onClick={handleAddToCart}
-                disabled={!selectedPackage || addingToCart}
-                className="w-full bg-gradient-to-r from-gold-primary to-neon-pink hover:from-gold-secondary hover:to-neon-pink text-white font-semibold py-3 rounded-xl hover:scale-105 transition-all duration-200"
-                size="lg"
-              >
-                <ShoppingCart className="mr-2 h-5 w-5" />
-                {addingToCart ? "Added to Cart!" : `Add to Cart - $${selectedPrice || parseFloat(String(game.price))}`}
-              </Button>
+              {/* Add to Cart Button (Only for generic items now, since packages are linked) */}
+              {(!packageNames || packageNames.length === 0) && (
+                <Button
+                  onClick={handleAddToCart}
+                  disabled={!selectedPackage || addingToCart}
+                  className="w-full bg-gradient-to-r from-gold-primary to-neon-pink hover:from-gold-secondary hover:to-neon-pink text-white font-semibold py-3 rounded-xl hover:scale-105 transition-all duration-200"
+                  size="lg"
+                >
+                  <ShoppingCart className="mr-2 h-5 w-5" />
+                  {addingToCart ? "Added to Cart!" : `Add to Cart - $${selectedPrice || parseFloat(String(game.price))}`}
+                </Button>
+              )}
             </div>
 
             {/* Game Info */}

@@ -66,32 +66,34 @@ function ProtectedAdminRoute() {
 
   function Router() {
     return (
-      <Switch>
-        <Route path="/" component={Home} />
-        <Route path="/games" component={GamesPage} />
-        <Route path="/packs" component={PacksPage} />
-        <Route path="/support" component={SupportPage} />
-        <Route path="/checkout" component={Checkout} />
-        <Route path="/checkout/security/:id" component={CheckoutSecurityPage} />
-        <Route path="/login" component={UserLoginPage} />
-        <Route path="/profile" component={UserProfilePage} />
-        <Route path="/admin/login" component={AdminLoginPage} />
-        <Route path="/admin/packages/:gameId" component={AdminPackagesPage} />
-        <Route path="/admin/games/:id/description" component={GameDescriptionEditor} />
-        {/* QR login removed */}
-        <Route path="/admin" component={ProtectedAdminRoute} />
-        <Route path="/admin/confirmation/:id" component={AdminConfirmationPage} />
-        <Route path="/category/:slug" component={CategoryPage} />
-        <Route path="/game/:slug" component={GamePage} />
-        <Route path="/packages/:slug" component={PackageDetailsPage} />
-        <Route path="/faq" component={FAQPage} />
-        <Route path="/terms" component={TermsPage} />
-        <Route path="/privacy" component={PrivacyPage} />
-        <Route path="/refunds" component={RefundsPage} />
-        <Route path="/track-order" component={TrackOrderPage} />
+      <div className="pt-[100px] lg:pt-[120px]">
+        <Switch>
+          <Route path="/" component={Home} />
+          <Route path="/games" component={GamesPage} />
+          <Route path="/packs" component={PacksPage} />
+          <Route path="/support" component={SupportPage} />
+          <Route path="/checkout" component={Checkout} />
+          <Route path="/checkout/security/:id" component={CheckoutSecurityPage} />
+          <Route path="/login" component={UserLoginPage} />
+          <Route path="/profile" component={UserProfilePage} />
+          <Route path="/admin/login" component={AdminLoginPage} />
+          <Route path="/admin/packages/:gameId" component={AdminPackagesPage} />
+          <Route path="/admin/games/:id/description" component={GameDescriptionEditor} />
+          {/* QR login removed */}
+          <Route path="/admin" component={ProtectedAdminRoute} />
+          <Route path="/admin/confirmation/:id" component={AdminConfirmationPage} />
+          <Route path="/category/:slug" component={CategoryPage} />
+          <Route path="/game/:slug" component={GamePage} />
+          <Route path="/packages/:slug" component={PackageDetailsPage} />
+          <Route path="/faq" component={FAQPage} />
+          <Route path="/terms" component={TermsPage} />
+          <Route path="/privacy" component={PrivacyPage} />
+          <Route path="/refunds" component={RefundsPage} />
+          <Route path="/track-order" component={TrackOrderPage} />
 
-        <Route component={NotFound} />
-      </Switch>
+          <Route component={NotFound} />
+        </Switch>
+      </div>
     );
   }
 

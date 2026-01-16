@@ -2,6 +2,8 @@ import React from "react";
 import { cn } from "@/lib/utils";
 import ImageWithFallback from "@/components/image-with-fallback";
 import { Link } from "wouter";
+import { Button } from "@/components/ui/button";
+import { ShoppingCart } from "lucide-react";
 
 export interface ProductPackCardProps {
   name: string;
@@ -31,32 +33,34 @@ export function ProductPackCard({
   const Content = (
     <div
       className={cn(
-        "group relative flex flex-col rounded-2xl border bg-card/80 p-6 text-left shadow-sm outline-none transition-all duration-200",
-        "hover:-translate-y-1 hover:shadow-xl hover:border-primary/60",
+        "group relative flex flex-col rounded-3xl border bg-card/90 p-6 text-left shadow-lg outline-none transition-all duration-300",
+        "hover:-translate-y-2 hover:shadow-2xl hover:border-primary/50",
         "focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background",
         highlight &&
-          "border-primary bg-gradient-to-br from-primary/5 via-background to-secondary/5 shadow-lg",
-        "min-h-[240px] cursor-pointer w-full"
+          "border-primary bg-gradient-to-br from-primary/10 via-card to-secondary/10 shadow-xl",
+        "min-h-[320px] cursor-pointer w-full overflow-hidden"
       )}
     >
+      {/* Dynamic Background Effect */}
+      <div className="absolute inset-0 bg-gradient-to-b from-transparent to-background/50 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+
       {/* Badge */}
       {badgeLabel && (
-        <div className="pointer-events-none absolute left-3 top-3 z-10 inline-flex items-center rounded-full bg-destructive px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-destructive-foreground shadow-sm">
+        <div className="absolute left-4 top-4 z-10 inline-flex items-center rounded-full bg-gradient-to-r from-red-600 to-red-500 px-3 py-1 text-xs font-bold uppercase tracking-wider text-white shadow-lg animate-pulse">
           {badgeLabel}
         </div>
       )}
 
       {/* Product image */}
       {image && (
-        <div className="mb-4 flex w-full items-center justify-center">
-          <div className="relative flex h-32 w-32 items-center justify-center overflow-hidden rounded-xl bg-muted/40 ring-2 ring-border/70">
+        <div className="mb-6 flex w-full items-center justify-center">
+          <div className="relative flex h-40 w-40 items-center justify-center overflow-hidden rounded-2xl bg-muted/20 ring-4 ring-background shadow-inner">
             <ImageWithFallback
               src={image}
               alt={name}
-              className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-105"
-              width={128}
-              height={128}
-              sizes="(max-width: 640px) 64px, 128px"
+              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+              width={160}
+              height={160}
             />
           </div>
         </div>
@@ -82,8 +86,8 @@ export function ProductPackCard({
             </span>
           </div>
 
-          <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-1 text-[11px] font-medium uppercase tracking-wide text-primary group-hover:bg-primary/20">
-            Buy
+          <span className="inline-flex items-center justify-center rounded-lg bg-gradient-to-r from-gold-primary to-neon-pink px-4 py-2 text-sm font-bold uppercase tracking-wide text-white shadow-md hover:scale-105 transition-transform min-w-[100px]">
+            Buy Now
           </span>
         </div>
       </div>

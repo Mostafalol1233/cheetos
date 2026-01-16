@@ -21,7 +21,9 @@ const steps = [
   { key: 'result', label: 'Result', component: StepResult },
 ];
 
-export default function Checkout() {
+import { Link } from "wouter";
+
+export function CheckoutContent({ isEmbedded = false }: { isEmbedded?: boolean }) {
   const { step, setStep, cart, setCart, contact, paymentMethod, error } = useCheckout();
   const { cart: globalCart } = useCart();
   const { isAuthenticated, user } = useUserAuth();
