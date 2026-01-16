@@ -856,6 +856,9 @@ router.put('/:id/packages', authenticateToken, ensureAdmin, async (req, res) => 
         if (duration && duration.length > 50) {
           return res.status(400).json({ message: 'Duration too long' });
         }
+        if (description && description.length < 200) {
+          return res.status(400).json({ message: 'Package description must be at least 200 characters' });
+        }
 
         normalized.push({
           id: `pkg_${id}_${i}`,

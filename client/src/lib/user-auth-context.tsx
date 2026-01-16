@@ -83,7 +83,7 @@ export const UserAuthProvider: FC<{ children: ReactNode }> = ({ children }: { ch
       }
 
       const data = await response.json();
-      localStorage.setItem('userToken', data.token);
+      localStorage.removeItem('userToken'); // Clear any old tokens
       localStorage.setItem('userData', JSON.stringify(data.user));
       setIsAuthenticated(true);
       setUser(data.user);

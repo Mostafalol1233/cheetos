@@ -419,14 +419,50 @@ export function registerRoutes(app: Express): Server {
 
   app.post("/api/orders", async (req, res) => {
     try {
-      const { items, payment_method, player_id, server_id } = req.body || {};
-      const userId = (req.user as any)?.id || null;
+      const { items, payment_method, player_id, server_id, customer_email, customer_name, customer_phone } = req.body || {};
+      let userId = (req.user as any)?.id || null;
+      let newUserCreated = false;
+      let generatedPassword = "";
+
       if (!Array.isArray(items) || !items.length) {
         return res.status(400).json({ message: "No items in order" });
       }
       if (!payment_method) {
         return res.status(400).json({ message: "Payment method required" });
       }
+
+      // Automatic account creation
+      let user = null;
+      if (!userId && customer_email) {
+        user = await storage.getUserByEmail(customer_email);
+        
+        if (!user) {
+          generatedPassword = crypto.randomBytes(8).toString('hex');
+          const hashedPassword = hashPassword(generatedPassword);
+          const username = customer_email.split('@')[0] + Math.floor(Math.random() * 10000);
+          
+          user = await storage.createUser({
+            id: crypto.randomBytes(12).toString("hex"),
+            username,
+            password: hashedPassword,
+            email: customer_email,
+            role: "user"
+          });
+          newUserCreated = true;
+        }
+
+        if (user) {
+          userId = user.id;
+          // Log the user in to establish session
+          await new Promise<void>((resolve, reject) => {
+            req.login(user, (err) => {
+              if (err) reject(err);
+              else resolve();
+            });
+          });
+        }
+      }
+
       const id = `order_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
       await storage.createSellerAlert({
         id: `alert_${Date.now()}`,
@@ -456,7 +492,14 @@ export function registerRoutes(app: Express): Server {
         playerId: player_id || null,
         serverId: server_id || null
       } as any);
-      res.status(201).json({ id, status: "pending" });
+      
+      res.status(201).json({ 
+        id, 
+        status: "pending", 
+        user: user,
+        newAccount: newUserCreated,
+        generatedPassword: newUserCreated ? generatedPassword : undefined
+      });
     } catch (err: any) {
       res.status(500).json({ message: err.message || "Failed to create order" });
     }

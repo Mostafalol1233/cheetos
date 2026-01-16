@@ -94,8 +94,17 @@ export interface CheckoutState {
 
 const initialContact: ContactDetails = { fullName: '', email: '', phone: '', countryCode: '+20', notes: '' };
 
-function generateIdempotencyKey() {
+export function generateIdempotencyKey() {
   return 'idemp_' + Math.random().toString(36).substring(2, 15);
+}
+
+export function ensureIdempotencyKey() {
+  const state = useCheckout.getState();
+  if (state.idempotencyKey) return state.idempotencyKey;
+  
+  const newKey = generateIdempotencyKey();
+  state.setIdempotencyKey(newKey);
+  return newKey;
 }
 
 export const useCheckout = create<CheckoutState>()(

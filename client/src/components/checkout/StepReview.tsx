@@ -69,7 +69,7 @@ export function StepReview() {
           window.open(`https://wa.me/${waNumber}?text=${encodeURIComponent(message)}`, '_blank');
       }
 
-      if (response.token && response.user) {
+      if (response.user) {
         // Force reload to pick up auth state and redirect to orders
         window.location.href = '/account/orders';
         return;
