@@ -34,6 +34,7 @@ export default defineConfig({
       "/uploads": { target: "http://localhost:3001", changeOrigin: true },
       "/media": { target: "http://localhost:3001", changeOrigin: true },
       "/images": { target: "http://localhost:3001", changeOrigin: true },
+      "/payments-images": { target: "http://localhost:3001", changeOrigin: true },
       "/attached_assets": { target: "http://localhost:3001", changeOrigin: true }
     }
   },

@@ -18,6 +18,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import QRCode from 'qrcode';
 import { normalizeNumericString } from '@/lib/quantity';
 import { AdminThemePanel } from '@/components/admin-theme-panel';
+import { ResponseTemplatesPanel } from '@/components/response-templates-panel';
 const RichTextEditor = React.lazy(() => import('@/components/rich-text-editor'));
 
 class ErrorBoundary extends React.Component<{ fallback?: React.ReactNode; children?: React.ReactNode }, { hasError: boolean }> {
@@ -353,46 +354,73 @@ export default function AdminDashboard() {
     const [showResponseModal, setShowResponseModal] = useState(false);
 
     const { data: orders = [] } = useQuery<Array<{ id: string; paymentMethod: string; total: number; status: string; timestamp: number; customerName: string; customerPhone: string; items: Array<{ gameId: string; gameName?: string; quantity: number; price: number }> }>>({
-      queryKey: ['/api/admin/transactions'],
+      queryKey: ['/api/orders'],
       enabled: true,
       refetchInterval: 3000,
       queryFn: async () => {
         const token = typeof window !== 'undefined' ? localStorage.getItem('adminToken') : null;
-        const res = await fetch(`${API_BASE_URL}/api/admin/transactions`, { headers: token ? { Authorization: `Bearer ${token}` } : undefined });
+        const res = await fetch(`${API_BASE_URL}/api/orders`, { headers: token ? { Authorization: `Bearer ${token}` } : undefined });
         if (!res.ok) throw new Error('Failed to fetch transactions');
         return await res.json();
       }
     });
 
     const respondToOrderMutation = useMutation({
-      mutationFn: async ({ orderId, message }: { orderId: string; message: string }) => {
+      mutationFn: async ({ orderId, message, status }: { orderId: string; message: string; status: 'confirmed' | 'rejected' }) => {
         const token = localStorage.getItem('adminToken');
-        const res = await fetch(`${API_BASE_URL}/api/admin/transactions/${orderId}/respond`, {
+        const res = await fetch(`${API_BASE_URL}/api/orders/${orderId}/respond`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             ...(token ? { Authorization: `Bearer ${token}` } : {})
           },
-          body: JSON.stringify({ message })
+          body: JSON.stringify({ message, status })
         });
         if (!res.ok) throw new Error('Failed to respond to order');
         return res.json();
       },
       onSuccess: () => {
-        toast({ title: 'Response sent', description: 'Order confirmed and customer notified.' });
+        toast({ title: 'Response sent', description: 'Order status updated and customer notified.' });
         setShowResponseModal(false);
         setResponseMessage('');
         setSelectedOrder(null);
-        queryClient.invalidateQueries({ queryKey: ['/api/admin/transactions'] });
+        queryClient.invalidateQueries({ queryKey: ['/api/orders'] });
       },
       onError: (error: any) => {
         toast({ title: 'Failed to respond', description: error.message, variant: 'destructive' });
       }
     });
 
-    const handleRespondToOrder = (order: any) => {
+    const [actionType, setActionType] = useState<'confirmed' | 'rejected'>('confirmed');
+
+    const { data: responseTemplates = [] } = useQuery<Array<{ id: string; title: string; message: string; type: string }>>({
+      queryKey: ['/api/admin/response-templates'],
+      enabled: showResponseModal,
+      queryFn: async () => {
+        const token = typeof window !== 'undefined' ? localStorage.getItem('adminToken') : null;
+        const res = await fetch(`${API_BASE_URL}/api/admin/response-templates`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : undefined
+        });
+        if (!res.ok) throw new Error('Failed to fetch templates');
+        return await res.json();
+      }
+    });
+
+    const handleTemplateSelect = (templateId: string) => {
+      const template = responseTemplates.find(t => t.id === templateId);
+      if (template) {
+        setResponseMessage(template.message);
+      }
+    };
+
+    const handleRespondToOrder = (order: any, type: 'confirmed' | 'rejected') => {
       setSelectedOrder(order);
-      setResponseMessage(`Your order ${order.id} has been confirmed! Your digital codes will be delivered shortly.`);
+      setActionType(type);
+      if (type === 'confirmed') {
+        setResponseMessage(`Your order ${order.id} has been confirmed! Your digital codes will be delivered shortly.`);
+      } else {
+        setResponseMessage(`We regret to inform you that your order ${order.id} could not be processed at this time. Please contact support for assistance.`);
+      }
       setShowResponseModal(true);
     };
 
@@ -450,14 +478,23 @@ export default function AdminDashboard() {
                           : '-'}
                       </td>
                       <td className="p-2">
-                        {o.status !== 'confirmed' && (
-                          <Button
-                            size="sm"
-                            onClick={() => handleRespondToOrder(o)}
-                            className="bg-green-600 hover:bg-green-700 text-white"
-                          >
-                            Confirm & Notify
-                          </Button>
+                        {(!o.status || ['pending', 'pending_approval'].includes(o.status)) && (
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              onClick={() => handleRespondToOrder(o, 'confirmed')}
+                              className="bg-green-600 hover:bg-green-700 text-white"
+                            >
+                              Approve
+                            </Button>
+                            <Button
+                              size="sm"
+                              onClick={() => handleRespondToOrder(o, 'rejected')}
+                              variant="destructive"
+                            >
+                              Reject
+                            </Button>
+                          </div>
                         )}
                       </td>
                     </tr>
@@ -483,6 +520,23 @@ export default function AdminDashboard() {
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
+              <div>
+                <Label className="mb-2 block">Use Template</Label>
+                <Select onValueChange={handleTemplateSelect}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a response template..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {responseTemplates
+                      .filter(t => t.type === 'other' || (actionType === 'confirmed' && t.type === 'approve') || (actionType === 'rejected' && t.type === 'reject'))
+                      .map((t) => (
+                        <SelectItem key={t.id} value={t.id}>
+                          {t.title}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+              </div>
               <div>
                 <Label htmlFor="response-message">Message to Customer</Label>
                 <Textarea
@@ -1380,6 +1434,7 @@ export default function AdminDashboard() {
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <ScrollArea className="w-full whitespace-nowrap rounded-md border">
         <TabsList className="flex w-full justify-start p-0 h-auto bg-transparent overflow-x-auto whitespace-nowrap">
+          <TabsTrigger value="templates" data-testid="tab-templates" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Response Templates</TabsTrigger>
           <TabsTrigger value="games" data-testid="tab-games" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Games & Products</TabsTrigger>
           <TabsTrigger value="discounts" data-testid="tab-discounts" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Discounts</TabsTrigger>
           <TabsTrigger value="users" data-testid="tab-users" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Users</TabsTrigger>
@@ -1620,6 +1675,10 @@ export default function AdminDashboard() {
 
           <TabsContent value="theme" className="space-y-6">
             <AdminThemePanel />
+          </TabsContent>
+
+          <TabsContent value="templates" className="space-y-6">
+            <ResponseTemplatesPanel />
           </TabsContent>
 
           {/* Games Tab */}

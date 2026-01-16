@@ -5,6 +5,7 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { HeaderImageEditor } from "./header-image-editor";
 
 export function AdminThemePanel() {
   const { settings, refresh } = useSettings();
@@ -100,12 +101,10 @@ export function AdminThemePanel() {
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="headerImageUrl">Header Image URL</Label>
-          <Input
-            id="headerImageUrl"
-            value={headerImageUrl}
-            onChange={(e) => setHeaderImageUrl(e.target.value)}
-            placeholder="https://..."
+          <Label>Header Image</Label>
+          <HeaderImageEditor 
+            currentImageUrl={headerImageUrl} 
+            onSave={(newUrl) => setHeaderImageUrl(newUrl)} 
           />
         </div>
         <div className="space-y-2">

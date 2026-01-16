@@ -1,5 +1,5 @@
 import React from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useCheckout } from '@/state/checkout';
@@ -9,49 +9,57 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Link } from 'wouter';
 import { User, LogIn } from 'lucide-react';
 
 const detailsSchema = z.object({
   fullName: z.string().min(2, 'Name must be at least 2 characters'),
   email: z.string().email('Invalid email address'),
-  phone: z.string().min(10, 'Phone number must be at least 10 digits'),
+  countryCode: z.string().default('+20'),
+  phone: z.string().min(9, 'Phone number is too short'),
   notes: z.string().optional(),
 });
 
 type DetailsForm = z.infer<typeof detailsSchema>;
 
 export function StepDetails() {
-  const { contact, setContact } = useCheckout();
+  const { contact, setContact, setStep } = useCheckout();
   const { user, isAuthenticated } = useUserAuth();
+  const [isGuest, setIsGuest] = React.useState(false);
 
   const {
     register,
     handleSubmit,
+    control,
+    setValue,
     formState: { errors, isValid },
   } = useForm<DetailsForm>({
     resolver: zodResolver(detailsSchema),
-    defaultValues: contact,
+    defaultValues: {
+        ...contact,
+        countryCode: contact.countryCode || '+20'
+    },
     mode: 'onChange',
   });
 
   const onSubmit = (data: DetailsForm) => {
     setContact(data);
+    setStep('payment');
   };
 
   // If user is authenticated, pre-fill form with user data
   React.useEffect(() => {
     if (isAuthenticated && user) {
-      setContact({
-        fullName: user.name || contact.fullName || '',
-        email: user.email || contact.email || '',
-        phone: user.phone || contact.phone || '',
-        notes: contact.notes || '',
-      });
+      setValue('fullName', user.name || contact.fullName || '');
+      setValue('email', user.email || contact.email || '');
+      setValue('phone', user.phone || contact.phone || '');
+      setValue('notes', contact.notes || '');
+      // If user has saved country code, use it, else default
     }
-  }, [isAuthenticated, user, setContact, contact]);
+  }, [isAuthenticated, user, setValue, contact]);
 
-  if (!isAuthenticated) {
+  if (!isAuthenticated && !isGuest) {
     return (
       <div className="space-y-6">
         <h2 className="text-2xl font-bold">Contact Details</h2>
@@ -89,8 +97,7 @@ export function StepDetails() {
               variant="outline"
               className="w-full border-gray-600 text-gray-400 hover:bg-gray-800"
               onClick={() => {
-                // Continue as guest - form will show below
-                setContact({ fullName: '', email: '', phone: '', notes: '' });
+                setIsGuest(true);
               }}
             >
               Continue as Guest
@@ -139,11 +146,33 @@ export function StepDetails() {
             </div>
             <div>
               <Label htmlFor="phone">Phone Number</Label>
-              <Input
-                id="phone"
-                {...register('phone')}
-                placeholder="Enter your phone number"
-              />
+              <div className="flex gap-2">
+                <Controller
+                  name="countryCode"
+                  control={control}
+                  render={({ field }) => (
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <SelectTrigger className="w-[110px]">
+                        <SelectValue placeholder="+20" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="+20">🇪🇬 +20</SelectItem>
+                        <SelectItem value="+966">🇸🇦 +966</SelectItem>
+                        <SelectItem value="+971">🇦🇪 +971</SelectItem>
+                        <SelectItem value="+965">🇰🇼 +965</SelectItem>
+                        <SelectItem value="+974">🇶🇦 +974</SelectItem>
+                        <SelectItem value="+1">🇺🇸 +1</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+                <Input
+                  id="phone"
+                  className="flex-1"
+                  {...register('phone')}
+                  placeholder="1xxxxxxxxx"
+                />
+              </div>
               {errors.phone && (
                 <p className="text-sm text-destructive mt-1">
                   {errors.phone.message}

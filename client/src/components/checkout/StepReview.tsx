@@ -6,11 +6,13 @@ import { Separator } from '@/components/ui/separator';
 import { ensureIdempotencyKey } from '@/state/checkout';
 import { apiRequest } from '@/lib/queryClient';
 import { Loader2 } from 'lucide-react';
+import { useSettings } from '@/lib/settings-context';
 
 export function StepReview() {
-  const { cart, contact, paymentMethod, subtotal, total, setOrderMeta, setError, setStep } = useCheckout();
+  const { cart, contact, paymentMethod, paymentData, subtotal, total, setOrderMeta, setError, setStep } = useCheckout();
   const [deliverVia, setDeliverVia] = useState<'email'|'whatsapp'>('email');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { settings } = useSettings();
 
   const selectedPayment = PAYMENT_METHODS.find(m => m.key === paymentMethod);
 
@@ -32,12 +34,47 @@ export function StepReview() {
         total_amount: total(),
         payment_method: paymentMethod,
         deliver_via: deliverVia,
+        customer_name: contact.fullName,
+        customer_email: contact.email,
+        customer_phone: (contact.countryCode || '') + contact.phone,
+        notes: contact.notes,
+        player_id: paymentData?.playerId,
+        receipt_url: paymentData?.receiptUrl,
       };
 
       const res = await apiRequest('POST', '/api/orders', { ...orderData, idempotency_key: key });
       const response = await res.json();
 
-      setOrderMeta(response.id, 'processing');
+      // Handle Guest Checkout Auto-Login
+      if (response.token && response.user) {
+        localStorage.setItem('userToken', response.token);
+        localStorage.setItem('userData', JSON.stringify(response.user));
+      }
+
+      // Handle redirect to orders if account created or already logged in
+      if (response.status === 'pending_approval' || response.status === 'processing') {
+        // If we have a token (either new or existing), redirect to orders
+        if (localStorage.getItem('userToken')) {
+           window.location.href = '/account/orders';
+           return;
+        }
+      }
+
+      setOrderMeta(response.id, response.status || 'processing');
+      
+      if (paymentMethod === 'whatsapp') {
+          const waNumber = settings?.whatsapp_number?.replace(/\D/g, '') || '201000000000';
+          const message = `*New Order #${response.id}*\nName: ${contact.fullName}\nTotal: ${total()} EGP\nItems:\n${cart.map(i => `- ${i.name} x${i.quantity}`).join('\n')}\n\nPayment: WhatsApp Order`;
+          
+          window.open(`https://wa.me/${waNumber}?text=${encodeURIComponent(message)}`, '_blank');
+      }
+
+      if (response.token && response.user) {
+        // Force reload to pick up auth state and redirect to orders
+        window.location.href = '/account/orders';
+        return;
+      }
+
       setStep('processing');
     } catch (error) {
       console.error('Order submission failed:', error);

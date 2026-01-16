@@ -25,6 +25,10 @@ import authRouter from './routes/auth.js';
 import userRouter from './routes/user.js';
 import adminAiRouter from './routes/admin-ai.js';
 import paymentsRouter from './routes/payments.js';
+import headerImagesRouter from './routes/header-images.js';
+import packagesRouter from './routes/packages.js';
+import uploadsRouter from './routes/uploads.js';
+import responseTemplatesRouter from './routes/response-templates.js';
 import { authenticateToken, ensureAdmin } from './middleware/auth.js';
 import { sendEmail, sendRawEmail } from './utils/email.js';
 import { generateSitemap } from './utils/sitemap.js';
@@ -594,6 +598,8 @@ try { if (!fs.existsSync(mediaAssetsDir)) fs.mkdirSync(mediaAssetsDir, { recursi
 try { if (!fs.existsSync(generatedImagesDir)) fs.mkdirSync(generatedImagesDir, { recursive: true }); } catch {}
 app.use('/media/assets', express.static(mediaAssetsDir));
 app.use('/media/generated_images', express.static(generatedImagesDir));
+// Serve payment images
+app.use('/payments-images', express.static(path.join(__dirname, 'payments-images')));
 // Serve attached_assets from multiple possible locations
 const attachedAssetsDir = path.join(__dirname, 'public', 'attached_assets');
 const rootAttachedAssetsDir = path.join(__dirname, '..', 'attached_assets');
@@ -957,6 +963,10 @@ app.use('/api/auth', authRouter);
 app.use('/api', authRouter); // Expose auth routes at root api level as well (e.g. /api/admin/login)
 app.use('/api/user', userRouter);
 app.use('/api/payments', paymentsRouter);
+app.use('/api/header-images', headerImagesRouter);
+app.use('/api/packages', packagesRouter);
+app.use('/api/uploads', uploadsRouter);
+app.use('/api/admin/response-templates', responseTemplatesRouter);
 
 // Admin Image Upload Endpoint
 app.post('/api/admin/upload-image', authenticateToken, ensureAdmin, imageUpload.single('file'), async (req, res) => {
@@ -1427,6 +1437,24 @@ async function initializeDatabase() {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `);
+
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS admin_response_templates (
+        id VARCHAR(50) PRIMARY KEY,
+        title VARCHAR(100) NOT NULL,
+        message TEXT NOT NULL,
+        type VARCHAR(20) CHECK (type IN ('approve', 'reject', 'other')),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    // Ensure orders has receipt_url
+    await pool.query(`ALTER TABLE orders ADD COLUMN IF NOT EXISTS receipt_url TEXT`);
+
+    // Ensure game_packages has slug and bonus
+    await pool.query(`ALTER TABLE game_packages ADD COLUMN IF NOT EXISTS slug VARCHAR(255)`);
+    await pool.query(`ALTER TABLE game_packages ADD COLUMN IF NOT EXISTS bonus VARCHAR(255)`);
+
 
     await pool.query(`
       CREATE TABLE IF NOT EXISTS payment_audit_logs (
@@ -2908,7 +2936,7 @@ app.get('/api/track/:code', async (req, res) => {
 
       // Try transactions first
       const tx = await pool.query('SELECT * FROM transactions WHERE id = $1', [code]);
-      const items = await pool.query('SELECT * FROM transaction_items WHERE transaction_id = $1', [code]);
+const items = await pool.query('SELECT * FROM transaction_items WHERE transaction_id = $1', [code]);
       // Try orders table as well
       let order = null;
       try {
@@ -3583,38 +3611,59 @@ function sendSMS(phone, text) {
 app.post('/api/admin/transactions/:id/respond', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
-    const { message, link } = req.body || {};
-    const txRes = await pool.query('SELECT t.*, u.phone, u.name, u.email FROM transactions t LEFT JOIN users u ON t.user_id = u.id WHERE t.id = $1', [id]);
-    if (txRes.rows.length === 0) {
-      return res.status(404).json({ message: 'Transaction not found' });
+    const { message, link, status } = req.body || {};
+    const newStatus = status === 'rejected' ? 'rejected' : 'confirmed';
+
+    // Try to find in orders first (as this is what GET /transactions uses)
+    let orderRes = await pool.query('SELECT o.*, o.customer_phone as phone, o.customer_email as email FROM orders o WHERE o.id = $1', [id]);
+    
+    // Fallback to transactions table if not found in orders
+    if (orderRes.rows.length === 0) {
+       const txRes = await pool.query('SELECT t.*, u.phone, u.name, u.email FROM transactions t LEFT JOIN users u ON t.user_id = u.id WHERE t.id = $1', [id]);
+       if (txRes.rows.length > 0) {
+         orderRes = txRes;
+       } else {
+         return res.status(404).json({ message: 'Order/Transaction not found' });
+       }
     }
-    const tx = txRes.rows[0];
-    const phone = tx.phone;
+
+    const order = orderRes.rows[0];
+    const phone = order.phone || order.customer_phone;
+    const email = order.email || order.customer_email;
 
     // Audit
     const auditId = `pa_${Date.now()}`;
-    await pool.query('INSERT INTO payment_audit_logs (id, transaction_id, action, summary) VALUES ($1, $2, $3, $4)', [auditId, id, 'respond', 'Seller responded to payment confirmation']);
+    const auditAction = newStatus === 'rejected' ? 'reject' : 'confirm';
+    await pool.query('INSERT INTO payment_audit_logs (id, transaction_id, action, summary) VALUES ($1, $2, $3, $4)', [auditId, id, auditAction, `Seller ${newStatus} order`]);
 
-    // Mark order/transaction as confirmed
-    try { await pool.query("UPDATE transactions SET status = 'confirmed' WHERE id = $1", [id]); } catch {}
-    try { await pool.query("UPDATE orders SET status = 'confirmed', updated_at = NOW() WHERE id = $1", [id]); } catch {}
+    // Update status in both tables to be safe
+    try { await pool.query(`UPDATE transactions SET status = $1 WHERE id = $2`, [newStatus, id]); } catch {}
+    try { await pool.query(`UPDATE orders SET status = $1, updated_at = NOW() WHERE id = $2`, [newStatus, id]); } catch {}
 
     // Notify user via SMS placeholder and WhatsApp to admin/sellers
     const siteUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-    const notify = `Order ${id} has been confirmed. ${message ? 'Message: ' + String(message).slice(0,200) : ''}`;
-    try { sendSMS(phone, `Your order was confirmed. Check ${siteUrl}/track-order`); } catch {}
+    let notifyMsg = '';
+    
+    if (newStatus === 'rejected') {
+        notifyMsg = `Order ${id} has been rejected. ${message ? 'Reason: ' + String(message).slice(0,200) : 'Please contact support.'}`;
+    } else {
+        notifyMsg = `Order ${id} has been confirmed. ${message ? 'Message: ' + String(message).slice(0,200) : ''}`;
+    }
+
+    try { sendSMS(phone, `${newStatus === 'rejected' ? 'Order rejected' : 'Order confirmed'}. Check ${siteUrl}/track-order`); } catch {}
     
     // Send WhatsApp to customer
     if (phone) {
-      try { await sendWhatsAppMessage(phone, `✅ ${notify}`); } catch (e) { console.error('Customer WhatsApp failed:', e?.message || e); }
+      const emoji = newStatus === 'rejected' ? '❌' : '✅';
+      try { await sendWhatsAppMessage(phone, `${emoji} ${notifyMsg}`); } catch (e) { console.error('Customer WhatsApp failed:', e?.message || e); }
     }
     
     // Send email to customer
-    if (tx.email) {
+    if (email) {
       try {
-        const emailSubject = 'Order Confirmed - GameCart';
-        const emailText = `Your order ${id} has been confirmed.\n\n${message ? 'Message from seller: ' + message : ''}\n\nTrack your order: ${siteUrl}/track-order\n\nThank you for shopping with us!`;
-        await sendRawEmail(tx.email, emailSubject, emailText);
+        const emailSubject = `Order ${newStatus === 'rejected' ? 'Rejected' : 'Confirmed'} - GameCart`;
+        const emailText = `Your order ${id} has been ${newStatus}.\n\n${message ? 'Message from seller: ' + message : ''}\n\nTrack your order: ${siteUrl}/track-order\n\nThank you for shopping with us!`;
+        await sendRawEmail(email, emailSubject, emailText);
       } catch (e) { console.error('Customer email failed:', e?.message || e); }
     }
     
@@ -3622,7 +3671,7 @@ app.post('/api/admin/transactions/:id/respond', authenticateToken, async (req, r
     const sellerPhones = (process.env.SELLER_PHONES || '').split(',').map(p => p.trim()).filter(Boolean);
     const phonesToNotify = [...adminPhones, ...sellerPhones];
     for (const p of phonesToNotify) {
-      try { await sendWhatsAppMessage(p, `✅ ${notify}`); } catch {}
+      try { await sendWhatsAppMessage(p, `ℹ️ Admin Action: ${notifyMsg}`); } catch {}
     }
 
     res.json({ ok: true });
@@ -4481,62 +4530,60 @@ app.get('/api/admin/storage/health', authenticateToken, (req, res) => {
 app.get('/api/admin/transactions', authenticateToken, async (req, res) => {
   try {
     const tx = await pool.query(`
-      SELECT t.id, t.payment_method, t.total, t.status, t.created_at, u.name as customer_name, u.phone as customer_phone
-      FROM transactions t
-      LEFT JOIN users u ON t.user_id = u.id
-      ORDER BY t.created_at DESC
+      SELECT o.id, o.payment_method, o.total_amount as total, o.status, o.created_at, o.customer_name, o.customer_phone, o.items, o.receipt_url, o.player_id
+      FROM orders o
+      ORDER BY o.created_at DESC
       LIMIT 200
     `);
-    const map = new Map();
-    for (const row of tx.rows) {
-      map.set(row.id, { 
-        id: row.id, 
-        paymentMethod: row.payment_method, 
-        total: Number(row.total), 
-        status: row.status, 
-        timestamp: new Date(row.created_at).getTime(), 
-        customerName: row.customer_name, 
-        customerPhone: row.customer_phone, 
-        items: [] 
-      });
-    }
-    const ids = Array.from(map.keys());
-    if (ids.length) {
-      const items = await pool.query(
-        `
-        SELECT ti.transaction_id,
-               ti.game_id,
-               ti.quantity,
-               ti.price,
-               g.name AS game_name,
-               gp.name AS package_name
-        FROM transaction_items ti
-        LEFT JOIN games g ON ti.game_id = g.id
-        LEFT JOIN game_packages gp
-          ON gp.game_id = ti.game_id
-         AND (gp.price = ti.price OR gp.discount_price = ti.price)
-        WHERE ti.transaction_id = ANY($1)
-        `,
-        [ids]
-      );
-      for (const it of items.rows) {
-        const entry = map.get(it.transaction_id);
-        if (entry) {
-          const gameName = it.package_name || it.game_name || it.game_id;
-          entry.items.push({
-            gameId: it.game_id,
-            gameName,
-            quantity: Number(it.quantity),
-            price: Number(it.price)
-          });
-        }
-      }
-    }
-    res.json(Array.from(map.values()));
+    
+    const results = tx.rows.map(row => {
+      let items = [];
+      try {
+        items = typeof row.items === 'string' ? JSON.parse(row.items) : row.items;
+      } catch (e) { items = []; }
+
+      return {
+        id: row.id,
+        paymentMethod: row.payment_method,
+        total: Number(row.total),
+        status: row.status,
+        timestamp: new Date(row.created_at).getTime(),
+        customerName: row.customer_name,
+        customerPhone: row.customer_phone,
+        receiptUrl: row.receipt_url,
+        playerId: row.player_id,
+        items: Array.isArray(items) ? items.map(i => ({
+          gameId: i.id,
+          gameName: i.name || i.title || i.id,
+          quantity: Number(i.quantity),
+          price: Number(i.price)
+        })) : []
+      };
+    });
+
+    res.json(results);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 });
+
+app.put('/api/admin/transactions/:id/status', authenticateToken, async (req, res) => {
+  try {
+    const { status } = req.body;
+    const { id } = req.params;
+    
+    await pool.query('UPDATE orders SET status = $1, updated_at = NOW() WHERE id = $2', [status, id]);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+
+
+
+
+
 
 // API Info
 app.get('/', (req, res) => {

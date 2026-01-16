@@ -42,6 +42,8 @@ import { CheckoutModal } from "@/components/checkout-modal";
 import { ChristmasSnow } from "@/components/christmas-snow";
 import GameDescriptionEditor from "./pages/game-description-editor";
 
+import PackageDetailsPage from "./pages/package-details";
+
 // Protected admin route component
 function ProtectedAdminRoute() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -81,6 +83,7 @@ function ProtectedAdminRoute() {
         <Route path="/admin/confirmation/:id" component={AdminConfirmationPage} />
         <Route path="/category/:slug" component={CategoryPage} />
         <Route path="/game/:slug" component={GamePage} />
+        <Route path="/packages/:slug" component={PackageDetailsPage} />
         <Route path="/faq" component={FAQPage} />
         <Route path="/terms" component={TermsPage} />
         <Route path="/privacy" component={PrivacyPage} />

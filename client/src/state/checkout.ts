@@ -1,3 +1,4 @@
+
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
@@ -7,16 +8,18 @@ export type CartItem = {
   image?: string;
   price: number;
   quantity: number;
+  gameId?: string;
 };
 
 export type ContactDetails = {
   fullName: string;
   email: string;
   phone: string;
+  countryCode?: string;
   notes?: string;
 };
 
-export type PaymentMethod = 'orange_cash' | 'etisalat_cash' | 'vodafone_cash' | 'other';
+export type PaymentMethod = 'credit_card' | 'paypal' | 'whatsapp' | 'other';
 
 export type PaymentConfig = {
   key: PaymentMethod;
@@ -30,41 +33,42 @@ export type PaymentConfig = {
 
 export const PAYMENT_METHODS: PaymentConfig[] = [
   {
-    key: 'orange_cash',
-    label: 'Orange Cash',
-    logo: 'https://i.postimg.cc/wRzp9C8N/image-29-1754874736252.png',
-    info: { accountNumber: '+201234567890', instructions: 'Send the exact amount, then share the transaction ID.' }
+    key: 'credit_card',
+    label: 'Credit Card',
+    logo: '/payments-images/instapay-logo.png', // Placeholder for card/bank
+    info: { instructions: 'Pay securely using your Credit Card.' }
   },
   {
-    key: 'etisalat_cash',
-    label: 'Etisalat Cash',
-    logo: 'https://i.postimg.cc/tnbj9KQY/image-32-1754945434846.png',
-    info: { accountNumber: '+201109998877', instructions: 'Transfer via Etisalat Cash and keep your ref code.' }
+    key: 'paypal',
+    label: 'PayPal',
+    logo: '/payments-images/paypal-logo.png',
+    info: { instructions: 'Fast and secure payment via PayPal.' }
   },
   {
-    key: 'vodafone_cash',
-    label: 'Vodafone Cash',
-    logo: 'https://i.postimg.cc/RJmBvk57/image-33-1754945434846.png',
-    info: { accountNumber: '+201000112233', instructions: 'Use Vodafone Cash; fees are paid by sender.' }
+    key: 'whatsapp',
+    label: 'WhatsApp Order',
+    logo: '/payments-images/vodafone-logo.png', // Representative of mobile wallets
+    info: { instructions: 'Complete your order via WhatsApp chat.' }
   },
   {
     key: 'other',
-    label: 'Other Payment',
-    logo: 'https://i.postimg.cc/5QJVfhdk/image-34-1754945434846.png',
-    info: { instructions: 'Choose this if you want a different method; we will contact you.' }
+    label: 'Other Methods',
+    logo: '/payments-images/we-pay-logo.png', // Generic placeholder
+    info: { instructions: 'Upload receipt or pay via Player ID.' }
   }
 ];
 
 export type CheckoutStep = 'cart' | 'details' | 'payment' | 'review' | 'processing' | 'result';
 
-export type OrderStatus = 'idle' | 'processing' | 'paid' | 'failed';
+export type OrderStatus = 'idle' | 'processing' | 'paid' | 'failed' | 'pending_approval';
 
 export interface CheckoutState {
   step: CheckoutStep;
   cart: CartItem[];
   contact: ContactDetails;
   paymentMethod?: PaymentMethod;
-  idempotencyKey?: string; // prevents duplicate orders
+  paymentData?: any; // For extra fields like receipt, player ID
+  idempotencyKey?: string;
   orderId?: string;
   orderStatus: OrderStatus;
   error?: string;
@@ -81,17 +85,17 @@ export interface CheckoutState {
   clearCart: () => void;
   setContact: (c: Partial<ContactDetails>) => void;
   setPaymentMethod: (m?: PaymentMethod) => void;
+  setPaymentData: (d: any) => void;
   setIdempotencyKey: (k: string) => void;
   setOrderMeta: (id?: string, status?: OrderStatus) => void;
   setError: (e?: string) => void;
   reset: () => void;
 }
 
-const initialContact: ContactDetails = { fullName: '', email: '', phone: '', notes: '' };
+const initialContact: ContactDetails = { fullName: '', email: '', phone: '', countryCode: '+20', notes: '' };
 
 function generateIdempotencyKey() {
-  // RFC4122 v4-like simple generator
-  return 'idemp_' + crypto.getRandomValues(new Uint32Array(4)).join('-');
+  return 'idemp_' + Math.random().toString(36).substring(2, 15);
 }
 
 export const useCheckout = create<CheckoutState>()(
@@ -101,47 +105,52 @@ export const useCheckout = create<CheckoutState>()(
       cart: [],
       contact: initialContact,
       paymentMethod: undefined,
-      idempotencyKey: undefined,
+      paymentData: {},
+      idempotencyKey: generateIdempotencyKey(),
       orderId: undefined,
       orderStatus: 'idle',
       error: undefined,
 
-      subtotal: () => get().cart.reduce((s, it) => s + it.price * it.quantity, 0),
-      total: () => get().subtotal(),
+      subtotal: () => {
+        return get().cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+      },
+      total: () => {
+        return get().subtotal();
+      },
 
       setStep: (s) => set({ step: s }),
       setCart: (items) => set({ cart: items }),
-      updateItemQty: (id, qty) => set({ cart: get().cart.map(it => it.id === id ? { ...it, quantity: Math.max(1, qty) } : it) }),
-      removeItem: (id) => set({ cart: get().cart.filter(it => it.id !== id) }),
+      updateItemQty: (id, qty) => set((state) => ({
+        cart: state.cart.map((i) => (i.id === id ? { ...i, quantity: qty } : i))
+      })),
+      removeItem: (id) => set((state) => ({
+        cart: state.cart.filter((i) => i.id !== id)
+      })),
       clearCart: () => set({ cart: [] }),
-      setContact: (c) => set({ contact: { ...get().contact, ...c } }),
+      setContact: (c) => set((state) => ({ contact: { ...state.contact, ...c } })),
       setPaymentMethod: (m) => set({ paymentMethod: m }),
+      setPaymentData: (d) => set((state) => ({ paymentData: { ...state.paymentData, ...d } })),
       setIdempotencyKey: (k) => set({ idempotencyKey: k }),
-      setOrderMeta: (id, status) => set({ orderId: id, orderStatus: status ?? get().orderStatus }),
+      setOrderMeta: (id, status) => set((state) => ({ 
+        orderId: id !== undefined ? id : state.orderId,
+        orderStatus: status !== undefined ? status : state.orderStatus
+      })),
       setError: (e) => set({ error: e }),
-      reset: () => set({ step: 'cart', cart: [], contact: initialContact, paymentMethod: undefined, idempotencyKey: undefined, orderId: undefined, orderStatus: 'idle', error: undefined })
+      reset: () => set({
+        step: 'cart',
+        cart: [],
+        contact: initialContact,
+        paymentMethod: undefined,
+        paymentData: {},
+        idempotencyKey: generateIdempotencyKey(),
+        orderId: undefined,
+        orderStatus: 'idle',
+        error: undefined
+      })
     }),
     {
-      name: 'checkout-state-v1',
-      partialize: (state) => ({
-        step: state.step,
-        cart: state.cart,
-        contact: state.contact,
-        paymentMethod: state.paymentMethod,
-        idempotencyKey: state.idempotencyKey,
-        orderId: state.orderId,
-        orderStatus: state.orderStatus,
-      })
+      name: 'checkout-storage',
+      skipHydration: false,
     }
   )
 );
-
-export function ensureIdempotencyKey() {
-  const { idempotencyKey, setIdempotencyKey } = useCheckout.getState();
-  if (!idempotencyKey) {
-    const key = generateIdempotencyKey();
-    setIdempotencyKey(key);
-    return key;
-  }
-  return idempotencyKey;
-}

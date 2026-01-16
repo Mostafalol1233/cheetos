@@ -116,12 +116,58 @@ async function main() {
         logo_url TEXT,
         header_image_url TEXT,
         whatsapp_number VARCHAR(32),
+        facebook_url TEXT,
         trust_badges JSONB,
         footer_text TEXT,
         updated_at INTEGER DEFAULT (EXTRACT(EPOCH FROM NOW()) * 1000)
       );
     `);
     console.log("Created settings table");
+
+    // Header Image Edits
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS header_image_edits (
+        id SERIAL PRIMARY KEY,
+        image_url TEXT NOT NULL,
+        metadata TEXT,
+        created_at INTEGER DEFAULT (EXTRACT(EPOCH FROM NOW()) * 1000)
+      );
+    `);
+    console.log("Created header_image_edits table");
+
+    // Game Packages
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS game_packages (
+        id SERIAL PRIMARY KEY,
+        game_id VARCHAR(50), -- Removed constraint for safety in migration if games table missing context
+        name TEXT NOT NULL,
+        slug TEXT UNIQUE,
+        description TEXT,
+        price DECIMAL(10, 2) NOT NULL,
+        discount_price DECIMAL(10, 2),
+        bonus TEXT,
+        image TEXT,
+        created_at INTEGER DEFAULT (EXTRACT(EPOCH FROM NOW()) * 1000)
+      );
+    `);
+    console.log("Created game_packages table");
+
+    // Add columns to orders if they don't exist
+    await pool.query(`
+      ALTER TABLE orders 
+      ADD COLUMN IF NOT EXISTS guest_email TEXT,
+      ADD COLUMN IF NOT EXISTS guest_phone TEXT,
+      ADD COLUMN IF NOT EXISTS total_amount DECIMAL(10, 2),
+      ADD COLUMN IF NOT EXISTS payment_proof_url TEXT,
+      ADD COLUMN IF NOT EXISTS notes TEXT,
+      ADD COLUMN IF NOT EXISTS audit_log TEXT;
+    `);
+    console.log("Updated orders table columns");
+    
+    // Add facebook_url to settings if it was missing
+    await pool.query(`
+        ALTER TABLE settings ADD COLUMN IF NOT EXISTS facebook_url TEXT;
+    `);
 
     console.log("Migration complete!");
     process.exit(0);

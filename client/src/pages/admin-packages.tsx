@@ -25,6 +25,9 @@ interface Package {
   price: number;
   discountPrice: number | null;
   image: string | null;
+  slug?: string;
+  bonus?: string;
+  description?: string;
 }
 
 interface MultiCurrencyPrices {
@@ -226,6 +229,9 @@ export default function AdminPackagesPage() {
       price: 0, 
       discountPrice: null, 
       image: null,
+      slug: '',
+      bonus: '',
+      description: '',
       multiCurrencyPrices: { EGP: 0, USD: 0, TRY: 0 }
     }]);
     setIsEditing(true);
@@ -282,7 +288,10 @@ export default function AdminPackagesPage() {
         amount: pkg.amount,
         price: pkg.price,
         discountPrice: pkg.discountPrice,
-        image: pkg.image
+        image: pkg.image,
+        slug: pkg.slug,
+        bonus: pkg.bonus,
+        description: pkg.description
       }));
       
       await updatePackagesMutation.mutateAsync(regularPackages);
@@ -394,6 +403,39 @@ export default function AdminPackagesPage() {
                         onChange={(e) => handleUpdatePackage(index, 'image', e.target.value)}
                         placeholder="https://example.com/image.jpg or /images/image.jpg"
                       />
+                    </div>
+                    <div>
+                      <Label>Slug (for URL)</Label>
+                      <Input
+                        value={pkg.slug || ''}
+                        onChange={(e) => handleUpdatePackage(index, 'slug', e.target.value)}
+                        placeholder="package-name-1"
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">Unique URL identifier (e.g., standard-pack)</p>
+                    </div>
+                    <div>
+                      <Label>Bonus (optional)</Label>
+                      <Input
+                        value={pkg.bonus || ''}
+                        onChange={(e) => handleUpdatePackage(index, 'bonus', e.target.value)}
+                        placeholder="+ 500 ZP Bonus"
+                      />
+                    </div>
+                    <div className="md:col-span-2">
+                      <Label>Description (min 200 chars)</Label>
+                      <textarea
+                        className={`flex min-h-[100px] w-full rounded-md border bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${
+                          (pkg.description?.length || 0) < 200 ? 'border-red-500' : 'border-input'
+                        }`}
+                        value={pkg.description || ''}
+                        onChange={(e) => handleUpdatePackage(index, 'description', e.target.value)}
+                        placeholder="Detailed description of the package..."
+                      />
+                      <div className="flex justify-between mt-1">
+                        <p className={`text-xs ${(pkg.description?.length || 0) < 200 ? 'text-red-500' : 'text-muted-foreground'}`}>
+                          {pkg.description?.length || 0} / 200 characters required
+                        </p>
+                      </div>
                     </div>
                   </div>
                   <Button

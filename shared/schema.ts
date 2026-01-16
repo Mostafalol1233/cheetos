@@ -36,9 +36,19 @@ export const gamePackages = pgTable("game_packages", {
   id: serial("id").primaryKey(),
   gameId: varchar("game_id", { length: 50 }).references(() => games.id, { onDelete: 'cascade' }),
   name: text("name").notNull(),
+  slug: text("slug").unique(),
+  description: text("description"),
   price: decimal("price", { precision: 10, scale: 2 }).notNull(),
   discountPrice: decimal("discount_price", { precision: 10, scale: 2 }),
+  bonus: text("bonus"),
   image: text("image"),
+  createdAt: integer("created_at").default(Date.now()),
+});
+
+export const headerImageEdits = pgTable("header_image_edits", {
+  id: serial("id").primaryKey(),
+  imageUrl: text("image_url").notNull(),
+  metadata: text("metadata"), // JSON string for crop data, dimensions etc
   createdAt: integer("created_at").default(Date.now()),
 });
 
@@ -60,6 +70,8 @@ export const insertCategorySchema = createInsertSchema(categories);
 export const selectCategorySchema = createSelectSchema(categories);
 export const insertGamePackageSchema = createInsertSchema(gamePackages);
 export const selectGamePackageSchema = createSelectSchema(gamePackages);
+export const insertHeaderImageEditSchema = createInsertSchema(headerImageEdits);
+export const selectHeaderImageEditSchema = createSelectSchema(headerImageEdits);
 
 export type Game = z.infer<typeof selectGameSchema> & { packagesList?: GamePackage[] };
 export type InsertGame = z.infer<typeof insertGameSchema>;
@@ -67,6 +79,8 @@ export type Category = z.infer<typeof selectCategorySchema>;
 export type InsertCategory = z.infer<typeof insertCategorySchema>;
 export type GamePackage = z.infer<typeof selectGamePackageSchema>;
 export type InsertGamePackage = z.infer<typeof insertGamePackageSchema>;
+export type HeaderImageEdit = z.infer<typeof selectHeaderImageEditSchema>;
+export type InsertHeaderImageEdit = z.infer<typeof insertHeaderImageEditSchema>;
 
 // Chat Messages table
 export interface ChatMessage {

@@ -728,7 +728,9 @@ router.put('/:id/packages', authenticateToken, ensureAdmin, async (req, res) => 
             value = digits ? Number(digits) : null;
           }
           const duration = pkg.duration ? String(pkg.duration) : null;
-          const description = pkg.description ? String(pkg.description).slice(0, 500) : null;
+          const description = pkg.description ? String(pkg.description) : null;
+          const slug = pkg.slug ? String(pkg.slug) : (name ? name.toLowerCase().replace(/[^a-z0-9]+/g, '-') : null);
+          const bonus = pkg.bonus ? String(pkg.bonus) : null;
 
           // Server-side validation
           if (price < 0 || (value != null && (!Number.isFinite(value) || value <= 0))) {
@@ -739,6 +741,10 @@ router.put('/:id/packages', authenticateToken, ensureAdmin, async (req, res) => 
             await client.query('ROLLBACK');
             return res.status(400).json({ message: 'Duration too long' });
           }
+          if (description && description.length < 200) {
+            await client.query('ROLLBACK');
+            return res.status(400).json({ message: 'Package description must be at least 200 characters' });
+          }
 
           legacyPackages.push(String(name));
           legacyPrices.push(price);
@@ -746,15 +752,17 @@ router.put('/:id/packages', authenticateToken, ensureAdmin, async (req, res) => 
           legacyThumbnails.push(image);
 
           await client.query(`
-              INSERT INTO game_packages (game_id, name, price, discount_price, image, value, duration, description)
-              VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+              INSERT INTO game_packages (game_id, name, price, discount_price, image, value, duration, description, slug, bonus)
+              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
           `, [
               id, name, price,
               Number.isFinite(discount) ? discount : null,
               image,
               Number.isFinite(value) ? value : null,
               duration,
-              description
+              description,
+              slug,
+              bonus
           ]);
         }
 
