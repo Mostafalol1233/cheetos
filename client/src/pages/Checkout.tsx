@@ -1,7 +1,6 @@
 import React, { useEffect } from 'react';
 import { useCheckout } from '@/state/checkout';
 import { useCart } from '@/lib/cart-context';
-import { StepCart } from '@/components/checkout/StepCart';
 import { StepDetails } from '@/components/checkout/StepDetails';
 import { StepPayment } from '@/components/checkout/StepPayment';
 import { StepReview } from '@/components/checkout/StepReview';
@@ -11,9 +10,10 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Card, CardContent } from '@/components/ui/card';
 import { ChevronLeft, ChevronRight, Check } from 'lucide-react';
+import { useUserAuth } from "@/lib/user-auth-context";
+import { useLocation } from "wouter";
 
 const steps = [
-  { key: 'cart', label: 'Cart', component: StepCart },
   { key: 'details', label: 'Details', component: StepDetails },
   { key: 'payment', label: 'Payment', component: StepPayment },
   { key: 'review', label: 'Review', component: StepReview },
@@ -24,29 +24,45 @@ const steps = [
 export default function Checkout() {
   const { step, setStep, cart, setCart, contact, paymentMethod, error } = useCheckout();
   const { cart: globalCart } = useCart();
+  const { isAuthenticated, user } = useUserAuth();
+  const [, setLocation] = useLocation();
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setLocation('/user-login?redirect=/checkout');
+    }
+  }, [isAuthenticated, setLocation]);
 
   useEffect(() => {
     // Sync checkout cart with global cart on mount
-    if (globalCart.length > 0 && cart.length === 0) {
+    if (globalCart.length > 0) {
       setCart(globalCart);
     }
-  }, [globalCart, cart, setCart]);
+  }, [globalCart, setCart]);
 
   const currentStepIndex = steps.findIndex(s => s.key === step);
-  const currentStep = steps[currentStepIndex];
+  // Default to details if step is 'cart' (legacy) or invalid
+  const currentStep = steps[currentStepIndex] || steps[0]; 
   const progress = ((currentStepIndex + 1) / (steps.length - 2)) * 100; // Exclude processing and result
 
   useEffect(() => {
     // Redirect if cart is empty and not on result step
     if (cart.length === 0 && step !== 'result') {
-      setStep('cart');
+      // If global cart is also empty, maybe redirect to home? 
+      // But for now just stay or maybe redirect to home.
+      if (globalCart.length === 0) {
+          // Optional: setLocation('/'); 
+      }
     }
-  }, [cart, step, setStep]);
+    
+    // If step is 'cart' which we removed, go to 'details'
+    if (step === 'cart') {
+        setStep('details');
+    }
+  }, [cart, step, setStep, globalCart]);
 
   const canGoNext = () => {
     switch (step) {
-      case 'cart':
-        return cart.length > 0;
       case 'details':
         return contact.fullName && contact.email && contact.phone;
       case 'payment':
@@ -72,6 +88,10 @@ export default function Checkout() {
   };
 
   const StepComponent = currentStep.component;
+
+  if (!isAuthenticated) {
+      return null; // or a loading spinner while redirecting
+  }
 
   return (
     <div className="min-h-screen bg-background">

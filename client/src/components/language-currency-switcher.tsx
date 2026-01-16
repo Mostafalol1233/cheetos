@@ -18,7 +18,6 @@ export function LanguageCurrencySwitcher() {
   const currencies = [
     { code: "EGP" as const, name: "Egyptian Pound", symbol: "جنيه" },
     { code: "USD" as const, name: "US Dollar", symbol: "$" },
-    { code: "TRY" as const, name: "Turkish Lira", symbol: "₺" },
   ];
 
   return (

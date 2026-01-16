@@ -33,7 +33,6 @@ interface Package {
 interface MultiCurrencyPrices {
   EGP: number;
   USD: number;
-  TRY: number;
 }
 
 interface PackageWithMultiCurrency extends Package {
@@ -103,7 +102,6 @@ export default function AdminPackagesPage() {
           multiCurrencyPrices: {
             EGP: packageMultiPrices.EGP || pkg.price || 0,
             USD: packageMultiPrices.USD || Math.round((pkg.price || 0) / 50 * 100) / 100 || 0,
-            TRY: packageMultiPrices.TRY || Math.round((pkg.price || 0) / 35 * 100) / 100 || 0
           }
         };
       });
@@ -137,7 +135,6 @@ export default function AdminPackagesPage() {
             multiCurrencyPrices: {
               EGP: packageMultiPrices.EGP || basePrice || 0,
               USD: packageMultiPrices.USD || Math.round((basePrice || 0) / 50 * 100) / 100 || 0,
-              TRY: packageMultiPrices.TRY || Math.round((basePrice || 0) / 35 * 100) / 100 || 0
             }
           };
         });
@@ -232,7 +229,7 @@ export default function AdminPackagesPage() {
       slug: '',
       bonus: '',
       description: '',
-      multiCurrencyPrices: { EGP: 0, USD: 0, TRY: 0 }
+      multiCurrencyPrices: { EGP: 0, USD: 0 }
     }]);
     setIsEditing(true);
   };

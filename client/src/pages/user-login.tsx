@@ -12,7 +12,9 @@ import { LogIn, UserPlus, Mail, Lock, Phone, User, ArrowLeft } from "lucide-reac
 export default function UserLoginPage() {
   const { login, register, loginWithPhone } = useUserAuth();
   const { toast } = useToast();
-  const [, setLocation] = useLocation();
+  const [location, setLocation] = useLocation();
+  const searchParams = new URLSearchParams(window.location.search);
+  const redirectUrl = searchParams.get('redirect') || '/';
 
   // Email/Password login
   const [emailLogin, setEmailLogin] = useState({ email: '', password: '' });
@@ -37,7 +39,7 @@ export default function UserLoginPage() {
     try {
       await login(emailLogin.email, emailLogin.password);
       toast({ title: "Welcome back!", description: "Login successful" });
-      setLocation("/");
+      setLocation(redirectUrl);
     } catch (err) {
       toast({
         title: "Login failed",
@@ -55,7 +57,7 @@ export default function UserLoginPage() {
     try {
       await loginWithPhone(phoneLogin.name, phoneLogin.phone);
       toast({ title: "Welcome!", description: "Login successful" });
-      setLocation("/");
+      setLocation(redirectUrl);
     } catch (err) {
       toast({
         title: "Login failed",
@@ -73,7 +75,7 @@ export default function UserLoginPage() {
     try {
       await register(registerData);
       toast({ title: "Welcome!", description: "Account created successfully" });
-      setLocation("/");
+      setLocation(redirectUrl);
     } catch (err) {
       toast({
         title: "Registration failed",

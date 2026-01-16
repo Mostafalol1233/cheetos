@@ -68,15 +68,15 @@ export default function GamesPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black">
+      <div className="min-h-screen bg-background">
         <div className="container mx-auto px-4 py-8">
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
             {[...Array(12)].map((_, i) => (
               <div key={i} className="space-y-3">
-                <Skeleton className="h-[200px] w-full rounded-xl bg-gray-800" />
+                <Skeleton className="h-[200px] w-full rounded-xl bg-muted" />
                 <div className="space-y-2">
-                  <Skeleton className="h-4 w-[250px] bg-gray-800" />
-                  <Skeleton className="h-4 w-[200px] bg-gray-800" />
+                  <Skeleton className="h-4 w-[250px] bg-muted" />
+                  <Skeleton className="h-4 w-[200px] bg-muted" />
                 </div>
               </div>
             ))}
@@ -87,25 +87,25 @@ export default function GamesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black dark">
+    <div className="min-h-screen bg-background text-foreground">
       <div className="container mx-auto px-4 py-8">
         <div className="mb-8">
           <Link
             href="/"
-            className="inline-flex items-center text-gray-300 hover:text-white transition-colors mb-4"
+            className="inline-flex items-center text-muted-foreground hover:text-primary transition-colors mb-4"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
             {t('back_to_home')}
           </Link>
           
           <div className="mb-6">
-            <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">{t('games')}</h1>
-            <p className="text-gray-600 dark:text-gray-300 text-lg">{t('browse_games_desc')}</p>
+            <h1 className="text-4xl font-bold mb-2">{t('games')}</h1>
+            <p className="text-muted-foreground text-lg">{t('browse_games_desc')}</p>
           </div>
 
           <div className="flex flex-col sm:flex-row gap-4 mb-6">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
               <Input
                 placeholder={`${t('search')}...`}
                 value={searchTerm}
@@ -130,7 +130,7 @@ export default function GamesPage() {
           </div>
 
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+            <h2 className="text-2xl font-bold">
               {filteredGames.length} {t('games_found')}
             </h2>
           </div>
@@ -144,28 +144,28 @@ export default function GamesPage() {
               
               return (
                 <Link key={game.id} href={`/game/${game.slug}`} className="group block h-full">
-                  <div className="relative h-full flex flex-col rounded-xl overflow-hidden border border-gray-800 bg-gray-900/50 hover:bg-gray-800/80 hover:border-cyan-500/50 transition-all duration-300 shadow-lg hover:shadow-cyan-500/20">
-                    <div className="relative aspect-[4/3] overflow-hidden bg-black/20">
+                  <div className="relative h-full flex flex-col rounded-xl overflow-hidden border border-border bg-card hover:bg-accent/50 hover:border-primary/50 transition-all duration-300 shadow-sm hover:shadow-md">
+                    <div className="relative aspect-[4/3] overflow-hidden bg-muted/20">
                       <ImageWithFallback
                         src={game.image}
                         alt={game.name}
                         className="w-full h-full object-contain p-4 transition-transform duration-500 group-hover:scale-110"
                       />
                       {game.isPopular && (
-                        <div className="absolute top-2 right-2 bg-gradient-to-r from-cyan-400 to-blue-500 text-black px-2 py-1 rounded-full text-xs font-bold flex items-center shadow-lg z-10">
+                        <div className="absolute top-2 right-2 bg-gradient-to-r from-gold-primary to-neon-pink text-white px-2 py-1 rounded-full text-xs font-bold flex items-center shadow-lg z-10">
                           <Star className="w-3 h-3 mr-1" />
                           {t('hot')}
                         </div>
                       )}
                       {isOutOfStock && (
-                         <div className="absolute inset-0 bg-black/60 flex items-center justify-center z-20">
-                            <span className="text-white font-bold px-3 py-1 bg-red-600 rounded-full">{t('out_of_stock')}</span>
+                         <div className="absolute inset-0 bg-background/80 flex items-center justify-center z-20">
+                            <span className="text-destructive-foreground font-bold px-3 py-1 bg-destructive rounded-full">{t('out_of_stock')}</span>
                          </div>
                       )}
                     </div>
 
                     <div className="p-4 flex flex-col flex-1 gap-2">
-                      <h3 className="text-lg font-bold text-white group-hover:text-cyan-400 transition-colors line-clamp-1" title={game.name}>
+                      <h3 className="text-lg font-bold text-foreground group-hover:text-primary transition-colors line-clamp-1" title={game.name}>
                         {game.name}
                       </h3>
                       
@@ -176,7 +176,7 @@ export default function GamesPage() {
                           className={`
                             ${isAdding 
                               ? "bg-green-600 hover:bg-green-700 text-white" 
-                              : "bg-cyan-600 hover:bg-cyan-500 text-white"} 
+                              : ""} 
                             transition-colors z-30
                           `}
                           disabled={isOutOfStock || isAdding}

@@ -161,27 +161,12 @@ function AppShell() {
 
   return (
     <>
-      {!isAdminRoute ? <Header onCartClick={() => setIsCartOpen(true)} /> : null}
+      {!isAdminRoute ? <Header /> : null}
 
       <div className={!isAdminRoute && !isHomeRoute ? "pt-24" : ""}>
         <Router />
       </div>
 
-      {!isAdminRoute ? (
-        <>
-          <CartSidebar
-            isOpen={isCartOpen}
-            onClose={() => setIsCartOpen(false)}
-            onCheckout={() => {
-              setIsCartOpen(false);
-              setIsCheckoutOpen(true);
-            }}
-          />
-          <CheckoutModal isOpen={isCheckoutOpen} onClose={() => setIsCheckoutOpen(false)} />
-        </>
-      ) : null}
-
-      <LiveChatWidget />
       {!isAdminRoute && <FloatingWhatsAppButton />}
       <ChristmasSnow />
     </>

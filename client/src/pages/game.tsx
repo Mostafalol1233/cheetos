@@ -446,97 +446,14 @@ export default function GamePage() {
                     (Array.isArray((game as any).packageThumbnails) &&
                       (game as any).packageThumbnails[index]) ||
                     game.image,
-                  highlight: index === selectedPackage,
+                  highlight: false,
                 };
               })}
-              onSelectPack={(id) => setSelectedPackage(Number(id))}
+              onSelectPack={(id) => handleBuyNow(Number(id))}
             />
           </div>
         )}
-
-        {/* Purchase Section */}
-        <Card className="border-gold-primary/30 bg-gradient-to-br from-card to-card/50 shadow-xl">
-          <CardContent className="p-6 sm:p-8">
-            <div className="mb-6 sm:mb-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <h3 className="mb-2 text-xl font-bold text-foreground sm:text-2xl">
-                  {packages[selectedPackage] || t("default_package")}
-                </h3>
-                <div className="flex items-center gap-3">
-                  {(() => {
-                    const pricing = getPackagePricing(selectedPackage);
-                    return pricing.original != null ? (
-                      <>
-                        <span className="line-through text-red-600 text-xl sm:text-2xl">
-                          {pricing.base} {game.currency}
-                        </span>
-                        <span className="bg-gradient-to-r from-gold-primary to-neon-pink bg-clip-text text-3xl font-black text-transparent sm:text-5xl">
-    {pricing.final} {pricing.currency}
-                        </span>
-                      </>
-                    ) : (
-                      <span className="bg-gradient-to-r from-gold-primary to-neon-pink bg-clip-text text-3xl font-black text-transparent sm:text-5xl">
-  {pricing.final} {pricing.currency}
-                      </span>
-                    );
-                  })()}
-                </div>
-              </div>
-              <div className="rounded-xl bg-muted/40 px-4 py-3 text-xs text-muted-foreground">
-                <p className="font-semibold uppercase tracking-wide text-foreground/70">
-                  {t("includes_taxes")}
-                </p>
-                <p>{t("secure_checkout")}</p>
-              </div>
-            </div>
-
-            <Button
-              onClick={handleAddToCart}
-              disabled={isOutOfStock}
-              className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-destructive via-primary to-secondary py-4 text-lg font-bold text-white shadow-lg transition-transform duration-150 hover:scale-[1.02] hover:shadow-xl disabled:scale-100 disabled:bg-muted disabled:text-muted-foreground"
-            >
-              <ShoppingCart className="h-6 w-6" />
-              {isOutOfStock ? t("out_of_stock") : t("add_to_cart")}
-            </Button>
-          </CardContent>
-        </Card>
       </div>
-
-      {/* Mobile Sticky CTA */}
-      {ctaVisible && !isOutOfStock && (
-        <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-gold-primary/20 bg-background/95 p-4 backdrop-blur sm:hidden">
-          <div className="mx-auto flex max-w-4xl items-center justify-between gap-3">
-            <div className="min-w-0">
-              <div className="truncate text-sm font-semibold text-foreground">
-                {packages[selectedPackage] || t("default_package")} · 
-                {(() => {
-                    const pricing = getPackagePricing(selectedPackage);
-                    if (pricing.original != null) {
-                      return (
-                        <>
-                          <span className="ml-1 line-through text-xs text-red-500">{pricing.base} {game.currency}</span>
-                          <span className="ml-2 text-gold-primary">{pricing.final} {game.currency}</span>
-                        </>
-                      );
-                    }
-                    return (
-                      <span className="ml-1 text-gold-primary">{pricing.final} {game.currency}</span>
-                    );
-                })()}
-              </div>
-              <div className="text-xs text-muted-foreground truncate">{game.name}</div>
-            </div>
-            <Button
-              size="sm"
-              onClick={handleAddToCart}
-              className="flex items-center gap-1 rounded-xl bg-destructive px-4 py-2 text-xs font-bold text-destructive-foreground shadow-lg hover:bg-destructive/90"
-            >
-              <ShoppingCart className="h-4 w-4" />
-              {t("add_to_cart")}
-            </Button>
-          </div>
-        </div>
-      )}
     </div>
     </>
   );

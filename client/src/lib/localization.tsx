@@ -1,10 +1,10 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 
-export type Currency = "EGP" | "USD" | "TRY";
+export type Currency = "EGP" | "USD";
 export type Country = string | null;
 export function shouldUpdateCurrency(saved: Currency | null, detected: Currency | null) {
-  if (saved && (saved === 'EGP' || saved === 'USD' || saved === 'TRY')) return null;
-  if (detected && (detected === 'EGP' || detected === 'USD' || detected === 'TRY')) return detected;
+  if (saved && (saved === 'EGP' || saved === 'USD')) return null;
+  if (detected && (detected === 'EGP' || detected === 'USD')) return detected;
   return null;
 }
 
@@ -34,7 +34,7 @@ export function LocalizationProvider({ children }: LocalizationProviderProps) {
   const [currency, setCurrencyState] = useState<Currency>(() => {
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem("user-currency") as Currency;
-      return (saved === "EGP" || saved === "USD" || saved === "TRY") ? saved : "USD";
+      return (saved === "EGP" || saved === "USD") ? saved : "USD";
     }
     return "USD";
   });

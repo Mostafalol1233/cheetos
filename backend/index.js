@@ -2898,12 +2898,23 @@ app.post('/api/transactions/checkout', async (req, res) => {
 
     let token = null;
     if (isNewUser && userObj) {
-        token = jwt.sign({ id: userObj.id, email: userObj.email, role: userObj.role || 'user' }, JWT_SECRET, { expiresIn: '30d' });
+        token = jwt.sign({ 
+            id: userObj.id, 
+            email: userObj.email, 
+            role: userObj.role || 'user' 
+        }, JWT_SECRET, { expiresIn: '30d' });
     }
 
-    res.status(201).json({ id: transactionId, total, token, user: isNewUser ? userObj : undefined });
+    // Return the response with the token
+    return res.status(201).json({ 
+        id: transactionId, 
+        total, 
+        token, 
+        user: isNewUser ? userObj : undefined 
+    });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error('Checkout Error:', err);
+    return res.status(500).json({ message: err instanceof Error ? err.message : 'Unknown error' });
   }
 });
 
