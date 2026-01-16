@@ -36,28 +36,31 @@ export const UserAuthProvider: FC<{ children: ReactNode }> = ({ children }: { ch
         const token = localStorage.getItem('userToken');
         const userData = localStorage.getItem('userData');
 
-        if (token && userData) {
+        if (token) {
           // Verify token is still valid
           const response = await fetch(`${API_BASE_URL}/api/auth/verify`, {
             headers: {
               Authorization: `Bearer ${token}`
-            },
-            credentials: 'include'
+            }
           });
 
           if (response.ok) {
-            const user = JSON.parse(userData);
+            const data = await response.json();
             setIsAuthenticated(true);
-            setUser(user);
+            // If the verify endpoint returns the full user object, use it. 
+            // Otherwise fall back to local storage or the partial data from verify.
+            setUser(data.user || (userData ? JSON.parse(userData) : null));
           } else {
             // Token expired, clear storage
             localStorage.removeItem('userToken');
             localStorage.removeItem('userData');
             setIsAuthenticated(false);
+            setUser(null);
           }
         }
       } catch (err) {
         console.error('Auth check failed:', err);
+        setIsAuthenticated(false);
       } finally {
         setIsLoading(false);
       }
@@ -83,7 +86,7 @@ export const UserAuthProvider: FC<{ children: ReactNode }> = ({ children }: { ch
       }
 
       const data = await response.json();
-      localStorage.removeItem('userToken'); // Clear any old tokens
+      localStorage.setItem('userToken', data.token);
       localStorage.setItem('userData', JSON.stringify(data.user));
       setIsAuthenticated(true);
       setUser(data.user);

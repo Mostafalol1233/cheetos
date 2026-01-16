@@ -50,6 +50,8 @@ export function StepPayment() {
     }
   };
 
+  const isManualPayment = ['vodafone_cash', 'instapay', 'orange_cash', 'etisalat_cash', 'we_pay', 'other'].includes(paymentMethod || '');
+
   return (
     <div className="space-y-6">
       <h2 className="text-2xl font-bold">Select Payment Method</h2>
@@ -60,12 +62,12 @@ export function StepPayment() {
         <CardContent className="space-y-6">
           <PaymentMethods />
           
-          {paymentMethod === 'other' && (
+          {isManualPayment && (
             <div className="space-y-4 border-t pt-4 animate-in fade-in slide-in-from-top-2">
                 <h3 className="font-semibold">Payment Details</h3>
                 <div className="grid gap-4">
                     <div className="space-y-2">
-                        <Label>Player ID / Account ID</Label>
+                        <Label>Player ID / Account ID (if applicable)</Label>
                         <Input 
                             placeholder="Enter your Player ID" 
                             value={paymentData.playerId || ''}
@@ -73,7 +75,7 @@ export function StepPayment() {
                         />
                     </div>
                     <div className="space-y-2">
-                        <Label>Upload Receipt (Optional)</Label>
+                        <Label>Upload Receipt (Required for Wallet Payments)</Label>
                         <div className="flex items-center gap-4">
                             <Input 
                                 type="file" 
@@ -96,7 +98,7 @@ export function StepPayment() {
 
           <div className="mt-6">
             <Button
-              disabled={!paymentMethod || (paymentMethod === 'other' && !paymentData.playerId) || isUploading}
+              disabled={!paymentMethod || (isManualPayment && !paymentData.receiptUrl) || isUploading}
               className="w-full"
               onClick={() => {
                 setStep('review');

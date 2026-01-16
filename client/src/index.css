@@ -6,56 +6,7 @@
 @tailwind utilities;
 
 :root {
-  /* Light theme (morning/day) */
-  --background: hsl(0, 0%, 99%);
-  --foreground: hsl(210, 20%, 20%);
-  --card: hsl(0, 0%, 97%);
-  --card-foreground: hsl(210, 20%, 20%);
-  --popover: hsl(0, 0%, 97%);
-  --popover-foreground: hsl(210, 20%, 20%);
-  --primary: hsl(210, 90%, 52%);
-  --primary-foreground: hsl(0, 0%, 100%);
-  --secondary: hsl(185, 100%, 48%);
-  --secondary-foreground: hsl(0, 0%, 100%);
-  --muted: hsl(210, 15%, 85%);
-  --muted-foreground: hsl(210, 10%, 45%);
-  --accent: hsl(210, 20%, 90%);
-  --accent-foreground: hsl(210, 20%, 20%);
-  --destructive: hsl(0, 84%, 60%);
-  --destructive-foreground: hsl(0, 0%, 100%);
-  --border: hsl(210, 20%, 90%);
-  --input: hsl(210, 20%, 93%);
-  --ring: hsl(210, 90%, 52%);
-  --chart-1: hsl(210, 90%, 52%);
-  --chart-2: hsl(160, 70%, 50%);
-  --chart-3: hsl(40, 85%, 55%);
-  --chart-4: hsl(280, 70%, 60%);
-  --chart-5: hsl(340, 75%, 55%);
-  --sidebar: hsl(0, 0%, 97%);
-  --sidebar-foreground: hsl(210, 20%, 20%);
-  --sidebar-primary: hsl(210, 90%, 52%);
-  --sidebar-primary-foreground: hsl(0, 0%, 100%);
-  --sidebar-accent: hsl(210, 20%, 90%);
-  --sidebar-accent-foreground: hsl(210, 20%, 20%);
-  --sidebar-border: hsl(210, 20%, 90%);
-  --sidebar-ring: hsl(210, 90%, 52%);
-  --font-sans: 'Poppins', system-ui, sans-serif;
-  --font-serif: Georgia, serif;
-  --font-mono: Menlo, monospace;
-  --radius: 0.75rem;
-  
-  /* Gaming Theme Colors - Light */
-  --gold-primary: hsl(210, 90%, 52%);
-  --gold-secondary: hsl(210, 90%, 42%);
-  --neon-pink: hsl(185, 100%, 48%);
-  --dark-bg: hsl(0, 0%, 99%);
-  --darker-bg: hsl(0, 0%, 97%);
-  --card-bg: hsl(0, 0%, 95%);
-  --card-bg-alt: hsl(210, 20%, 92%);
-}
-
-.dark {
-  /* Dark theme (night) */
+  /* Default to Dark Theme (Gaming Aesthetic) */
   --background: hsl(220, 30%, 8%);
   --foreground: hsl(210, 20%, 92%);
   --card: hsl(220, 25%, 13%);
@@ -88,11 +39,60 @@
   --sidebar-accent-foreground: hsl(210, 20%, 92%);
   --sidebar-border: hsl(220, 20%, 22%);
   --sidebar-ring: hsl(210, 90%, 58%);
+  --font-sans: 'Poppins', system-ui, sans-serif;
+  --font-serif: Georgia, serif;
+  --font-mono: Menlo, monospace;
+  --radius: 0.75rem;
+  
+  /* Gaming Theme Colors */
+  --gold-primary: hsl(45, 90%, 55%); /* Brighter Gold */
+  --gold-secondary: hsl(45, 90%, 45%);
+  --neon-pink: hsl(320, 100%, 60%); /* Hot Pink */
+  --dark-bg: hsl(220, 30%, 8%);
+  --darker-bg: hsl(220, 35%, 6%);
+  --card-bg: hsl(220, 25%, 13%);
+  --card-bg-alt: hsl(220, 20%, 16%);
+}
+
+.dark {
+  /* Dark theme (night) - Gaming Aesthetic */
+  --background: hsl(220, 30%, 8%);
+  --foreground: hsl(210, 20%, 92%);
+  --card: hsl(220, 25%, 13%);
+  --card-foreground: hsl(210, 20%, 92%);
+  --popover: hsl(220, 25%, 13%);
+  --popover-foreground: hsl(210, 20%, 92%);
+  --primary: hsl(45, 90%, 55%);
+  --primary-foreground: hsl(220, 30%, 8%);
+  --secondary: hsl(320, 100%, 60%);
+  --secondary-foreground: hsl(220, 30%, 8%);
+  --muted: hsl(220, 20%, 25%);
+  --muted-foreground: hsl(210, 20%, 70%);
+  --accent: hsl(220, 20%, 25%);
+  --accent-foreground: hsl(210, 20%, 92%);
+  --destructive: hsl(0, 84%, 60%);
+  --destructive-foreground: hsl(210, 20%, 92%);
+  --border: hsl(220, 20%, 22%);
+  --input: hsl(220, 20%, 22%);
+  --ring: hsl(45, 90%, 55%);
+  --chart-1: hsl(45, 90%, 55%);
+  --chart-2: hsl(320, 100%, 60%);
+  --chart-3: hsl(210, 80%, 60%);
+  --chart-4: hsl(210, 70%, 65%);
+  --chart-5: hsl(185, 75%, 60%);
+  --sidebar: hsl(220, 25%, 13%);
+  --sidebar-foreground: hsl(210, 20%, 92%);
+  --sidebar-primary: hsl(45, 90%, 55%);
+  --sidebar-primary-foreground: hsl(220, 30%, 8%);
+  --sidebar-accent: hsl(220, 20%, 25%);
+  --sidebar-accent-foreground: hsl(210, 20%, 92%);
+  --sidebar-border: hsl(220, 20%, 22%);
+  --sidebar-ring: hsl(45, 90%, 55%);
   
   /* Gaming Theme Colors - Dark */
-  --gold-primary: hsl(210, 90%, 58%);
-  --gold-secondary: hsl(210, 90%, 52%);
-  --neon-pink: hsl(185, 100%, 55%);
+  --gold-primary: hsl(45, 90%, 55%);
+  --gold-secondary: hsl(45, 90%, 45%);
+  --neon-pink: hsl(320, 100%, 60%);
   --dark-bg: hsl(220, 30%, 8%);
   --darker-bg: hsl(220, 25%, 13%);
   --card-bg: hsl(220, 25%, 13%);

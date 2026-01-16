@@ -60,7 +60,7 @@ export function HeroCarousel() {
 
       <div className="relative z-10 h-full flex flex-col md:flex-row items-center md:items-center justify-between px-6 md:px-10 lg:px-16 gap-6">
         <div className="max-w-xl text-white">
-          <p className="text-xs uppercase tracking-[0.3em] text-emerald-300 mb-3">
+          <p className="text-xs uppercase tracking-[0.3em] text-gold-primary mb-3">
             Diaa Sadek Premium Game Store
           </p>
           <h1 className="text-2xl md:text-3xl lg:text-4xl font-black mb-3 leading-tight">
@@ -74,7 +74,7 @@ export function HeroCarousel() {
           {current.buttonLink && current.buttonText && (
             <a
               href={current.buttonLink}
-              className="inline-flex items-center px-5 py-2.5 rounded-full bg-gradient-to-r from-emerald-400 to-cyan-500 text-black font-semibold text-sm shadow-lg shadow-emerald-500/30 hover:from-emerald-300 hover:to-cyan-400 transition-transform duration-200 hover:-translate-y-0.5"
+              className="inline-flex items-center px-5 py-2.5 rounded-full bg-gradient-to-r from-gold-primary to-neon-pink text-black font-semibold text-sm shadow-lg shadow-gold-primary/30 hover:from-gold-secondary hover:to-neon-pink transition-transform duration-200 hover:-translate-y-0.5"
             >
               {current.buttonText}
             </a>
@@ -83,7 +83,7 @@ export function HeroCarousel() {
 
         <div className="hidden md:flex items-center justify-center flex-1">
           <div className="relative w-60 h-60 lg:w-72 lg:h-72">
-            <div className="absolute inset-0 rounded-3xl bg-gradient-to-tr from-emerald-500/30 via-cyan-400/20 to-transparent blur-2xl" />
+            <div className="absolute inset-0 rounded-3xl bg-gradient-to-tr from-gold-primary/30 via-neon-pink/20 to-transparent blur-2xl" />
             <div className="relative w-full h-full rounded-3xl border border-white/10 bg-black/40 backdrop-blur-xl flex items-center justify-center">
               <span className="text-xs uppercase tracking-[0.35em] text-gray-300/80">
                 Premium Digital Top-Ups

@@ -5,7 +5,7 @@ import { useCart } from "@/lib/cart-context";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, ShoppingCart, Check } from "lucide-react";
+import { ArrowLeft, ShoppingCart, Check, ExternalLink } from "lucide-react";
 import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 
@@ -219,35 +219,43 @@ export default function GameDetails() {
                     const pricing = getPackagePricing(index);
 
                     const isSelected = selectedPackage === pkg;
+                    const pkgObj = packagesList[index];
+                    const slug = pkgObj?.slug || pkg.toLowerCase().replace(/[^a-z0-9]+/g, '-');
                     
                     return (
-                      <button
-                        key={index}
-                        onClick={() => {
-                           setSelectedPackage(pkg);
-                           setSelectedPrice(pricing.final);
-                         }}
-                        className={`relative p-3 rounded-xl border-2 transition-all duration-200 flex flex-col items-center justify-center text-center h-28 group ${
-                          isSelected 
-                            ? 'border-gold-primary bg-gold-primary/10 shadow-lg scale-105 z-10' 
-                            : 'border-border hover:border-gold-primary/50 hover:bg-card/50'
-                        }`}
-                      >
-                        <h4 className="font-bold text-sm mb-1 line-clamp-2">{pkg}</h4>
-                        <div className="text-gold-primary font-bold mt-auto">
-                          {pricing.original != null && pricing.original !== pricing.final ? (
-                            <span className="inline-flex items-center gap-2">
-                              <span className="line-through opacity-70 text-muted-foreground">{pricing.base} {game.currency}</span>
+                      <div key={index} className="relative group">
+                        <button
+                          onClick={() => {
+                             setSelectedPackage(pkg);
+                             setSelectedPrice(pricing.final);
+                           }}
+                          className={`w-full relative p-3 rounded-xl border-2 transition-all duration-200 flex flex-col items-center justify-center text-center h-28 group ${
+                            isSelected 
+                              ? 'border-gold-primary bg-gold-primary/10 shadow-lg scale-105 z-10' 
+                              : 'border-border hover:border-gold-primary/50 hover:bg-card/50'
+                          }`}
+                        >
+                          <h4 className="font-bold text-sm mb-1 line-clamp-2">{pkg}</h4>
+                          <div className="text-gold-primary font-bold mt-auto">
+                            {pricing.original != null && pricing.original !== pricing.final ? (
+                              <span className="inline-flex items-center gap-2">
+                                <span className="line-through opacity-70 text-muted-foreground">{pricing.base} {game.currency}</span>
+                                <span>{pricing.final} {game.currency}</span>
+                              </span>
+                            ) : (
                               <span>{pricing.final} {game.currency}</span>
-                            </span>
-                          ) : (
-                            <span>{pricing.final} {game.currency}</span>
+                            )}
+                          </div>
+                          {isSelected && (
+                            <div className="absolute top-2 left-2 w-2 h-2 rounded-full bg-gold-primary shadow-[0_0_8px_rgba(255,215,0,0.8)] animate-pulse"></div>
                           )}
-                        </div>
-                        {isSelected && (
-                          <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-gold-primary shadow-[0_0_8px_rgba(255,215,0,0.8)] animate-pulse"></div>
-                        )}
-                      </button>
+                        </button>
+                        <Link href={`/packages/${slug}`}>
+                          <div className="absolute top-1 right-1 p-1.5 text-muted-foreground/50 hover:text-gold-primary z-20 cursor-pointer transition-colors bg-background/50 rounded-full hover:bg-background/80">
+                             <ExternalLink className="w-3 h-3" />
+                          </div>
+                        </Link>
+                      </div>
                     );
                   })
                 ) : (

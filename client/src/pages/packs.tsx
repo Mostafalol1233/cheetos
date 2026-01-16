@@ -50,6 +50,7 @@ export default function PacksPage() {
             finalPrice: final,
             currency: currency,
             image: pkg.image || g.image,
+            href: `/packages/${pkg.slug || (pkg.name || pkg).toLowerCase().replace(/[^a-z0-9]+/g, '-')}`
           });
         });
       }

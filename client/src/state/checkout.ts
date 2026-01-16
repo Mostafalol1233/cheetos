@@ -19,7 +19,7 @@ export type ContactDetails = {
   notes?: string;
 };
 
-export type PaymentMethod = 'credit_card' | 'paypal' | 'whatsapp' | 'other';
+export type PaymentMethod = 'vodafone_cash' | 'instapay' | 'orange_cash' | 'etisalat_cash' | 'we_pay' | 'credit_card' | 'other';
 
 export type PaymentConfig = {
   key: PaymentMethod;
@@ -33,28 +33,61 @@ export type PaymentConfig = {
 
 export const PAYMENT_METHODS: PaymentConfig[] = [
   {
+    key: 'vodafone_cash',
+    label: 'Vodafone Cash',
+    logo: 'https://raw.githubusercontent.com/game-cart/assets/main/payments/vodafone.png',
+    info: { 
+      accountNumber: '010XXXXXXXX',
+      instructions: 'Send the total amount to this wallet number and upload the receipt.'
+    }
+  },
+  {
+    key: 'instapay',
+    label: 'InstaPay',
+    logo: 'https://raw.githubusercontent.com/game-cart/assets/main/payments/instapay.png',
+    info: { 
+      accountNumber: 'username@instapay',
+      instructions: 'Send via InstaPay to this address and upload the receipt.'
+    }
+  },
+  {
+    key: 'orange_cash',
+    label: 'Orange Cash',
+    logo: 'https://raw.githubusercontent.com/game-cart/assets/main/payments/orange.png',
+    info: { 
+      accountNumber: '012XXXXXXXX',
+      instructions: 'Send the total amount to this wallet number and upload the receipt.'
+    }
+  },
+  {
+    key: 'etisalat_cash',
+    label: 'Etisalat Cash',
+    logo: 'https://raw.githubusercontent.com/game-cart/assets/main/payments/etisalat.png',
+    info: { 
+      accountNumber: '011XXXXXXXX',
+      instructions: 'Send the total amount to this wallet number and upload the receipt.'
+    }
+  },
+  {
+    key: 'we_pay',
+    label: 'WePay',
+    logo: 'https://raw.githubusercontent.com/game-cart/assets/main/payments/we.png',
+    info: { 
+      accountNumber: '015XXXXXXXX',
+      instructions: 'Send the total amount to this wallet number and upload the receipt.'
+    }
+  },
+  {
     key: 'credit_card',
     label: 'Credit Card',
-    logo: '/payments-images/instapay-logo.png', // Placeholder for card/bank
-    info: { instructions: 'Pay securely using your Credit Card.' }
-  },
-  {
-    key: 'paypal',
-    label: 'PayPal',
-    logo: '/payments-images/paypal-logo.png',
-    info: { instructions: 'Fast and secure payment via PayPal.' }
-  },
-  {
-    key: 'whatsapp',
-    label: 'WhatsApp Order',
-    logo: '/payments-images/vodafone-logo.png', // Representative of mobile wallets
-    info: { instructions: 'Complete your order via WhatsApp chat.' }
+    logo: 'https://raw.githubusercontent.com/game-cart/assets/main/payments/mastercard.png', 
+    info: { instructions: 'Secure payment via Credit/Debit Card.' }
   },
   {
     key: 'other',
     label: 'Other Methods',
-    logo: '/payments-images/we-pay-logo.png', // Generic placeholder
-    info: { instructions: 'Upload receipt or pay via Player ID.' }
+    logo: 'https://raw.githubusercontent.com/game-cart/assets/main/payments/generic.png', 
+    info: { instructions: 'Contact support for other payment options.' }
   }
 ];
 
@@ -145,17 +178,17 @@ export const useCheckout = create<CheckoutState>()(
         orderStatus: status !== undefined ? status : state.orderStatus
       })),
       setError: (e) => set({ error: e }),
-      reset: () => set({
+      reset: () => set((state) => ({
         step: 'cart',
         cart: [],
-        contact: initialContact,
+        contact: state.contact, // Preserve contact details for convenience
         paymentMethod: undefined,
         paymentData: {},
         idempotencyKey: generateIdempotencyKey(),
         orderId: undefined,
         orderStatus: 'idle',
         error: undefined
-      })
+      }))
     }),
     {
       name: 'checkout-storage',

@@ -2761,54 +2761,102 @@ app.post('/api/transactions/checkout', async (req, res) => {
     if (!customerName || !customerPhone || !Array.isArray(items) || items.length === 0) {
       return res.status(400).json({ message: 'Invalid request' });
     }
-    const userId = `user_${Date.now()}`;
-    // Insert into users with phone as password hash
-    const passwordHash = crypto.createHash('sha256').update(customerPhone).digest('hex');
-    await pool.query(
-      'INSERT INTO users (id, name, phone, email, password_hash) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (id) DO UPDATE SET email = COALESCE(EXCLUDED.email, users.email), name = COALESCE(EXCLUDED.name, users.name), phone = COALESCE(EXCLUDED.phone, users.phone), password_hash = EXCLUDED.password_hash',
-      [userId, customerName, customerPhone, customerEmail || null, passwordHash]
-    );
-    const total = items.reduce((sum, it) => sum + Number(it.price) * Number(it.quantity), 0);
-    const transactionId = `txn_${Date.now()}`;
     
-    // Insert into transactions (Legacy/Security)
-    await pool.query(
-      'INSERT INTO transactions (id, user_id, payment_method, total, status) VALUES ($1, $2, $3, $4, $5)',
-      [transactionId, userId, paymentMethod || 'Unknown', total, 'pending']
-    );
+    // Normalize phone (remove spaces, etc. if needed)
+    const normalizedPhone = customerPhone.replace(/\s+/g, '');
+    const passwordHash = crypto.createHash('sha256').update(normalizedPhone).digest('hex');
 
-    // Insert into orders (Tracking/Admin)
+    let userId;
+    let isNewUser = false;
+    let userObj = null;
+    
+    // Check if user exists by phone or email
     try {
-      await pool.query(
-        `INSERT INTO orders (id, user_id, customer_name, customer_email, customer_phone, items, total_amount, currency, status, payment_method, created_at, updated_at)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW(), NOW())
-         ON CONFLICT (id) DO NOTHING`,
-        [transactionId, userId, customerName, customerEmail || null, customerPhone, JSON.stringify(items), total, 'EGP', 'pending', paymentMethod || 'Unknown']
-      );
-    } catch (dbError) {
-      console.error('Failed to sync order to orders table:', dbError.message);
-      // Fallback to JSON if DB fails (using legacy write if needed, or just log error)
+        const userCheck = await pool.query(
+            'SELECT * FROM users WHERE phone = $1 OR (email IS NOT NULL AND email = $2)',
+            [normalizedPhone, customerEmail || '']
+        );
+        
+        if (userCheck.rows.length > 0) {
+            userObj = userCheck.rows[0];
+            userId = userObj.id;
+            // Update user info if provided
+            await pool.query(
+                'UPDATE users SET name = COALESCE($1, name), email = COALESCE($2, email), password_hash = COALESCE($3, password_hash) WHERE id = $4',
+                [customerName, customerEmail || null, passwordHash, userId]
+            );
+        } else {
+            isNewUser = true;
+            userId = `user_${Date.now()}`;
+            userObj = { id: userId, name: customerName, phone: normalizedPhone, email: customerEmail || null, role: 'user' };
+            await pool.query(
+                'INSERT INTO users (id, name, phone, email, password_hash) VALUES ($1, $2, $3, $4, $5)',
+                [userId, customerName, normalizedPhone, customerEmail || null, passwordHash]
+            );
+        }
+    } catch (userErr) {
+        console.error('Error handling user during checkout:', userErr.message);
+        // Fallback ID if DB fails (will likely fail later too, but keep flow)
+        userId = userId || `user_${Date.now()}`; 
     }
 
-    for (const it of items) {
-      // Extract base game ID from package ID (format: game_id-package_index)
-      const baseGameId = it.id.includes('-') ? it.id.split('-')[0] : it.id;
-      
-      // Validate game exists before inserting transaction item
-      const gameCheck = await pool.query('SELECT id FROM games WHERE id = $1', [baseGameId]);
-      if (gameCheck.rows.length === 0) {
-        console.warn(`Game ${baseGameId} not found, skipping transaction item (original ID: ${it.id})`);
-        continue;
-      }
-      
-      const itemId = `txi_${Date.now()}_${Math.random().toString(36).slice(2,9)}`;
-      await pool.query(
-        'INSERT INTO transaction_items (id, transaction_id, game_id, quantity, price) VALUES ($1, $2, $3, $4, $5)',
-        [itemId, transactionId, baseGameId, Number(it.quantity), Number(it.price)]
-      );
-      await pool.query('UPDATE games SET stock = GREATEST(stock - $1, 0) WHERE id = $2', [Number(it.quantity), baseGameId]);
+    const transactionId = `txn_${Date.now()}`;
+
+    // Try DB for Transaction & Orders
+    try {
+        await pool.query(
+          'INSERT INTO transactions (id, user_id, payment_method, total, status) VALUES ($1, $2, $3, $4, $5)',
+          [transactionId, userId, paymentMethod || 'Unknown', total, 'pending']
+        );
+
+        await pool.query(
+            `INSERT INTO orders (id, user_id, customer_name, customer_email, customer_phone, items, total_amount, currency, status, payment_method, created_at, updated_at)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW(), NOW())
+             ON CONFLICT (id) DO NOTHING`,
+            [transactionId, userId, customerName, customerEmail || null, customerPhone, JSON.stringify(items), total, 'EGP', 'pending', paymentMethod || 'Unknown']
+        );
+
+        for (const it of items) {
+          const baseGameId = it.id.includes('-') ? it.id.split('-')[0] : it.id;
+          const gameCheck = await pool.query('SELECT id FROM games WHERE id = $1', [baseGameId]);
+          if (gameCheck.rows.length > 0) {
+             const itemId = `txi_${Date.now()}_${Math.random().toString(36).slice(2,9)}`;
+             await pool.query(
+                'INSERT INTO transaction_items (id, transaction_id, game_id, quantity, price) VALUES ($1, $2, $3, $4, $5)',
+                [itemId, transactionId, baseGameId, Number(it.quantity), Number(it.price)]
+             );
+             await pool.query('UPDATE games SET stock = GREATEST(stock - $1, 0) WHERE id = $2', [Number(it.quantity), baseGameId]);
+          }
+        }
+    } catch (dbErr) {
+        console.error('DB Checkout Failed:', dbErr.message);
+        // Fallback to JSON
+        try {
+            const fallbackFile = path.join(__dirname, 'data', 'orders-fallback.json');
+            const orderData = {
+                id: transactionId,
+                userId,
+                customerName,
+                customerPhone,
+                customerEmail,
+                paymentMethod,
+                items,
+                total,
+                status: 'pending',
+                createdAt: new Date().toISOString()
+            };
+            let orders = [];
+            if (fs.existsSync(fallbackFile)) {
+                orders = JSON.parse(fs.readFileSync(fallbackFile, 'utf8'));
+            }
+            orders.push(orderData);
+            fs.writeFileSync(fallbackFile, JSON.stringify(orders, null, 2));
+            console.log('Saved order to fallback JSON');
+        } catch (fsErr) {
+            console.error('Fallback save failed:', fsErr.message);
+        }
     }
-    
+
     // Send WhatsApp Confirmation
     try {
       const waMessage = `New Order #${transactionId}\nTotal: ${total} EGP\nCustomer: ${customerName} (${customerPhone})\nItems:\n${items.map(i => `- ${i.title || i.name} (x${i.quantity})`).join('\n')}`;
@@ -2829,17 +2877,31 @@ app.post('/api/transactions/checkout', async (req, res) => {
 
     // Send Email Confirmation (Brevo)
     if (customerEmail) {
-      await sendEmail(customerEmail, 'orderConfirmation', {
-        id: transactionId,
-        customerName,
-        total,
-        currency: 'EGP',
-        paymentMethod: paymentMethod || 'Unknown',
-        status: 'pending'
-      });
+      try {
+          await sendEmail(customerEmail, 'orderConfirmation', {
+            id: transactionId,
+            customerName,
+            total,
+            currency: 'EGP',
+            paymentMethod: paymentMethod || 'Unknown',
+            status: 'pending'
+          });
+      } catch (emailErr) {
+          console.error('Failed to send email:', emailErr.message);
+          // Log to file if email fails
+          try {
+             const logFile = path.join(__dirname, 'data', 'emails.log');
+             fs.appendFileSync(logFile, `[${new Date().toISOString()}] Failed email to ${customerEmail}: ${emailErr.message}\n`);
+          } catch {}
+      }
     }
 
-    res.status(201).json({ id: transactionId, total });
+    let token = null;
+    if (isNewUser && userObj) {
+        token = jwt.sign({ id: userObj.id, email: userObj.email, role: userObj.role || 'user' }, JWT_SECRET, { expiresIn: '30d' });
+    }
+
+    res.status(201).json({ id: transactionId, total, token, user: isNewUser ? userObj : undefined });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

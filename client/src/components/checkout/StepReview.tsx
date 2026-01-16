@@ -45,19 +45,22 @@ export function StepReview() {
       const res = await apiRequest('POST', '/api/orders', { ...orderData, idempotency_key: key });
       const response = await res.json();
 
-      // Handle Guest Checkout Auto-Login
+      // Handle Auto-Login / User Session
       if (response.token && response.user) {
         localStorage.setItem('userToken', response.token);
         localStorage.setItem('userData', JSON.stringify(response.user));
+        // Force reload to pick up auth state and redirect to orders
+        window.location.href = '/account/orders';
+        return;
       }
 
-      // Handle redirect to orders if account created or already logged in
+      // Handle redirect to orders if account created or already logged in (fallback)
       if (response.status === 'pending_approval' || response.status === 'processing') {
-        // If we have a token (either new or existing), redirect to orders
-        if (localStorage.getItem('userToken')) {
-           window.location.href = '/account/orders';
-           return;
-        }
+         // If we have a token (either new or existing), redirect to orders
+         if (localStorage.getItem('userToken')) {
+            window.location.href = '/account/orders';
+            return;
+         }
       }
 
       setOrderMeta(response.id, response.status || 'processing');

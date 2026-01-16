@@ -1,6 +1,7 @@
 import React from "react";
 import { cn } from "@/lib/utils";
 import ImageWithFallback from "@/components/image-with-fallback";
+import { Link } from "wouter";
 
 export interface ProductPackCardProps {
   name: string;
@@ -11,6 +12,7 @@ export interface ProductPackCardProps {
   badgeLabel?: string;
   highlight?: boolean;
   onClick?: () => void;
+  href?: string;
 }
 
 export function ProductPackCard({
@@ -22,22 +24,20 @@ export function ProductPackCard({
   badgeLabel = "HOT",
   highlight,
   onClick,
+  href,
 }: ProductPackCardProps) {
   const showStrike = originalPrice != null && originalPrice !== "";
 
-  return (
-    <button
-      type="button"
-      onClick={onClick}
+  const Content = (
+    <div
       className={cn(
         "group relative flex flex-col rounded-2xl border bg-card/80 p-6 text-left shadow-sm outline-none transition-all duration-200",
         "hover:-translate-y-1 hover:shadow-xl hover:border-primary/60",
         "focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background",
         highlight &&
           "border-primary bg-gradient-to-br from-primary/5 via-background to-secondary/5 shadow-lg",
-        "min-h-[240px] cursor-pointer"
+        "min-h-[240px] cursor-pointer w-full"
       )}
-      aria-label={name}
     >
       {/* Badge */}
       {badgeLabel && (
@@ -87,6 +87,25 @@ export function ProductPackCard({
           </span>
         </div>
       </div>
+    </div>
+  );
+
+  if (href) {
+    return (
+        <Link href={href} className="block w-full">
+            {Content}
+        </Link>
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="block w-full text-left"
+      aria-label={name}
+    >
+      {Content}
     </button>
   );
 }

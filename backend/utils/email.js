@@ -86,8 +86,22 @@ export const sendEmail = async (to, templateName, data) => {
   }
   
   if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
-    console.warn('⚠️ SMTP credentials missing, skipping email.');
-    return false;
+    console.warn('⚠️ SMTP credentials missing, logging email to file.');
+    // Log to file
+    try {
+        const fs = await import('fs');
+        const path = await import('path');
+        const logDir = path.join(process.cwd(), 'backend', 'data');
+        if (!fs.existsSync(logDir)) fs.mkdirSync(logDir, { recursive: true });
+        const logFile = path.join(logDir, 'emails.log');
+        const logEntry = `[${new Date().toISOString()}] To: ${to} | Subject: ${subject}\n${text}\n-----------------------------------\n`;
+        fs.appendFileSync(logFile, logEntry);
+        console.log(`✅ Email logged to ${logFile}`);
+        return true;
+    } catch (e) {
+        console.error('Failed to log email:', e);
+        return false;
+    }
   }
 
   const templateFn = templates[templateName];

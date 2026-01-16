@@ -63,7 +63,7 @@ export default function Home() {
           }
         }}
       />
-      <div className="min-h-screen text-foreground font-gaming overflow-x-hidden custom-cursor bg-gradient-to-b from-darker-bg dark:from-gray-900 dark:via-gray-800 dark:to-black via-white to-gray-50 animate-fade-in">
+      <div className="min-h-screen text-foreground font-gaming overflow-x-hidden custom-cursor bg-background animate-fade-in">
 
       {/* Hero Section */}
       <section className="container mx-auto px-4 pt-6">
@@ -109,44 +109,44 @@ export default function Home() {
             <div className="bg-gradient-to-br from-gold-primary to-gold-secondary w-16 h-16 rounded-full flex items-center justify-center mb-4 animate-float animation-delay-1500">
               <Tag className="text-darker-bg text-2xl" />
             </div>
-            <h3 className="text-gray-900 dark:text-white font-semibold mb-2">Best Prices</h3>
-            <p className="text-gray-600 dark:text-gray-400 text-sm">{t('features_best_prices_desc')}</p>
+            <h3 className="text-foreground font-semibold mb-2">Best Prices</h3>
+            <p className="text-muted-foreground text-sm">{t('features_best_prices_desc')}</p>
           </div>
         </div>
       </section>
 
       {/* About Diaa Section */}
       <section className="container mx-auto px-4 py-16">
-        <div className="bg-gradient-to-r from-gray-100 dark:from-gray-900 to-white dark:to-black rounded-3xl p-6 md:p-10 border border-gold-primary/30">
+        <div className="bg-card/50 backdrop-blur-sm rounded-3xl p-6 md:p-10 border border-gold-primary/30 shadow-lg shadow-gold-primary/5">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
             {/* Text Content */}
             <div>
               <h2 className="text-3xl font-bold text-gold-primary mb-4">{t('about_title')}</h2>
-              <p className="text-gray-700 dark:text-gray-300 text-lg mb-4">
+              <p className="text-muted-foreground text-lg mb-4">
                 {t('about_p1')}
               </p>
-              <p className="text-gray-700 dark:text-gray-300 text-lg mb-6">
+              <p className="text-muted-foreground text-lg mb-6">
                 {t('about_p2')}
               </p>
               <div className="flex gap-4">
                 <div className="text-center">
                   <p className="text-3xl font-bold text-gold-primary">1K+</p>
-                  <p className="text-gray-600 dark:text-gray-400 text-sm">{t('happy_customers')}</p>
+                  <p className="text-muted-foreground text-sm">{t('happy_customers')}</p>
                 </div>
                 <div className="text-center">
                   <p className="text-3xl font-bold text-gold-primary">5K+</p>
-                  <p className="text-gray-600 dark:text-gray-400 text-sm">{t('orders_completed')}</p>
+                  <p className="text-muted-foreground text-sm">{t('orders_completed')}</p>
                 </div>
                 <div className="text-center">
                   <p className="text-3xl font-bold text-gold-primary">24/7</p>
-                  <p className="text-gray-600 dark:text-gray-400 text-sm">{t('customer_support')}</p>
+                  <p className="text-muted-foreground text-sm">{t('customer_support')}</p>
                 </div>
               </div>
             </div>
 
             {/* Image */}
             <div className="rounded-2xl overflow-hidden bg-gradient-to-br from-neon-pink/20 via-purple-900/20 to-gold-primary/20 border border-gold-primary/30">
-              <div className="relative w-full bg-gradient-to-br from-gray-200 dark:from-gray-800 to-white dark:to-black rounded-xl flex items-center justify-center overflow-hidden group">
+              <div className="relative w-full bg-card/80 rounded-xl flex items-center justify-center overflow-hidden group">
                 {/* Animated background */}
                 <div className="absolute inset-0 bg-gradient-to-r from-gold-primary/10 via-neon-pink/10 to-purple-600/10 animate-pulse"></div>
                 

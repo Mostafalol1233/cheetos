@@ -135,14 +135,14 @@ export default function Checkout() {
                       {cart.map((item) => (
                         <div key={item.id} className="flex justify-between text-sm">
                           <span>{item.name} × {item.quantity}</span>
-                          <span>${(item.price * item.quantity).toFixed(2)}</span>
+                          <span>EGP {(item.price * item.quantity).toFixed(2)}</span>
                         </div>
                       ))}
                     </div>
                     <div className="border-t pt-4">
                       <div className="flex justify-between font-semibold text-lg">
                         <span>Total:</span>
-                        <span>${cart.reduce((sum, item) => sum + item.price * item.quantity, 0).toFixed(2)}</span>
+                        <span>EGP {cart.reduce((sum, item) => sum + item.price * item.quantity, 0).toFixed(2)}</span>
                       </div>
                     </div>
                   </CardContent>

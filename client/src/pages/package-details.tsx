@@ -8,6 +8,15 @@ import { ArrowLeft, Check } from "lucide-react";
 import { useCart } from "@/lib/cart-context";
 import { useState } from "react";
 
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
+
 export default function PackageDetailsPage() {
   const [, params] = useRoute("/packages/:slug");
   const slug = params?.slug;
@@ -63,6 +72,24 @@ export default function PackageDetailsPage() {
 
   return (
     <div className="container mx-auto py-10 px-4 max-w-4xl">
+      <div className="mb-6">
+        <Breadcrumb>
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbLink href="/">Home</BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbLink href="/packs">Packages</BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbPage>{pkg.name}</BreadcrumbPage>
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>
+      </div>
+
       <Button variant="ghost" onClick={() => window.history.back()} className="mb-6">
         <ArrowLeft className="mr-2 h-4 w-4" /> Back
       </Button>
