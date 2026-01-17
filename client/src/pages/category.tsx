@@ -144,7 +144,7 @@ export default function CategoryPage() {
               <ImageWithFallback
                 src={category.image}
                 alt={`${category.name} category`}
-                className="absolute inset-0 w-full h-full object-cover opacity-60"
+                className="absolute inset-0 w-full h-full object-contain opacity-60"
               />
               <div className="relative z-10">
                 <h1 className="text-5xl font-black text-white mb-3 drop-shadow-lg">{category.name}</h1>

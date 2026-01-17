@@ -65,9 +65,12 @@ function ProtectedAdminRoute() {
   return <AdminDashboard />;
 }
 
+import { ScrollToTop } from "@/components/scroll-to-top";
+
 function Router() {
   return (
     <div className="pt-[100px] lg:pt-[120px]">
+      <ScrollToTop />
       <Switch>
         <Route path="/" component={Home} />
         <Route path="/games" component={GamesPage} />

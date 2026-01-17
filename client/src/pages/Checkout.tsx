@@ -103,9 +103,9 @@ export function CheckoutContent({ isEmbedded = false }: { isEmbedded?: boolean }
 
   const StepComponent = currentStep.component;
 
-  if (!isAuthenticated) {
-    return null; // or a loading spinner while redirecting
-  }
+  // if (!isAuthenticated) {
+  //   return null; // or a loading spinner while redirecting
+  // }
 
   return (
     <div className="min-h-screen bg-background">

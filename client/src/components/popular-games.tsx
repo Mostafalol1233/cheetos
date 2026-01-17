@@ -56,7 +56,7 @@ export function PopularGames() {
                     <ImageWithFallback
                       src={game.image || ''}
                       alt={game.name}
-                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                      className="w-full h-full object-contain bg-black/50 transition-transform duration-700 group-hover:scale-105"
                     />
                   </div>
 
@@ -71,13 +71,12 @@ export function PopularGames() {
                       </span>
                     </div>
                   </div>
-              </div>
                 </Link>
-      </div>
-      );
+              </div>
+            );
           })}
-    </div>
-      </div >
-    </section >
+        </div>
+      </div>
+    </section>
   );
 }

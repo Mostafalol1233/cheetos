@@ -31,13 +31,7 @@ export function LocalizationProvider({ children }: LocalizationProviderProps) {
     return null;
   });
 
-  const [currency, setCurrencyState] = useState<Currency>(() => {
-    if (typeof window !== "undefined") {
-      const saved = localStorage.getItem("user-currency") as Currency;
-      return (saved === "EGP" || saved === "USD") ? saved : "USD";
-    }
-    return "USD";
-  });
+  const [currency, setCurrencyState] = useState<Currency>("EGP");
 
   const [isLoading, setIsLoading] = useState(false);
 
@@ -64,7 +58,7 @@ export function LocalizationProvider({ children }: LocalizationProviderProps) {
     if (localStorage.getItem("user-currency")) {
       // We still might want to detect country if not set
       if (localStorage.getItem("user-country")) {
-        return; 
+        return;
       }
     }
 
@@ -73,16 +67,17 @@ export function LocalizationProvider({ children }: LocalizationProviderProps) {
       const response = await fetch("/api/localization/detect");
       if (response.ok) {
         const data = await response.json();
-        
+
         // Only update country if not manually set
         if (!localStorage.getItem("user-country")) {
           setCountry(data.country);
         }
-        
+
         // Only set currency if it hasn't been manually set by the user
-        // This is the critical fix for the revert issue
-        const next = shouldUpdateCurrency(localStorage.getItem("user-currency") as Currency, data.currency as Currency);
-        if (next) setCurrency(next);
+        // Force EGP, do not update currency from location
+        // const next = shouldUpdateCurrency(localStorage.getItem("user-currency") as Currency, data.currency as Currency);
+        // if (next) setCurrency(next);
+        setCurrency("EGP");
       }
     } catch (error) {
       console.warn("Failed to detect user location:", error);
