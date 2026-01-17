@@ -69,7 +69,7 @@ import { ScrollToTop } from "@/components/scroll-to-top";
 
 function Router() {
   return (
-    <div className="pt-[100px] lg:pt-[120px]">
+    <div className="">
       <ScrollToTop />
       <Switch>
         <Route path="/" component={Home} />

@@ -72,13 +72,9 @@ export function Header() {
                 whileTap={{ scale: 0.98 }}
               >
                 <img
-                  src="/images/logo.png"
+                  src="/favicon.png"
                   alt="GameCart Logo"
                   className="h-10 w-auto object-contain hover:scale-105 transition-transform"
-                  onError={(e) => {
-                    e.currentTarget.style.display = 'none';
-                    e.currentTarget.nextElementSibling?.classList.remove('hidden');
-                  }}
                 />
                 <div className="hidden flex items-center gap-3">
                   <div className="relative">

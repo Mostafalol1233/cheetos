@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
 
 const paymentMethods = [
-  { id: "pm1", name: "Payment 1", image: "https://i.postimg.cc/wRzp9C8N/image-29-1754874736252.png" },
-  { id: "pm2", name: "Payment 2", image: "https://i.postimg.cc/tnbj9KQY/image-32-1754945434846.png" },
-  { id: "pm3", name: "Payment 3", image: "https://i.postimg.cc/RJmBvk57/image-33-1754945434846.png" },
-  { id: "pm4", name: "Payment 4", image: "https://i.postimg.cc/5QJVfhdk/image-34-1754945434846.png" },
-  { id: "pm5", name: "Payment 5", image: "https://i.postimg.cc/JHQW0pM3/image-35-1754945434846.png" },
-  { id: "pm6", name: "Payment 6", image: "https://i.postimg.cc/XBg0qs4h/image-36-1754945434846.png" },
+  { id: "pm1", name: "Vodafone Cash", image: "/payments/vodafone-logo.png" },
+  { id: "pm2", name: "InstaPay", image: "/payments/instapay-logo.png" },
+  { id: "pm3", name: "Etisalat Cash", image: "/payments/etisalat-logo.png" },
+  { id: "pm4", name: "Orange Cash", image: "/payments/orange-logo-new.png" },
+  { id: "pm5", name: "We Pay", image: "/payments/we-pay-logo.png" },
+  { id: "pm6", name: "PayPal", image: "/payments/paypal-logo.png" },
 ];
 
 export default function PaymentMethods() {
@@ -18,7 +18,7 @@ export default function PaymentMethods() {
       handler();
       mq.addEventListener?.('change', handler);
       return () => mq.removeEventListener?.('change', handler);
-    } catch {}
+    } catch { }
   }, []);
   return (
     <div className="bg-dark-bg py-16 overflow-hidden">
@@ -29,32 +29,32 @@ export default function PaymentMethods() {
         <p className="text-gray-400 text-center mb-12">
           Secure payments through multiple trusted providers
         </p>
-        
+
         {/* Continuous scrolling container - Images Only */}
         <div className="relative overflow-hidden">
           <div className={`flex ${reduceMotion ? '' : 'animate-scroll-rtl'} gap-8`}>
             {/* First set of payment methods - Images Only */}
             {paymentMethods.map((method, index) => (
-              <div 
+              <div
                 key={`first-${method.name}`}
                 className="flex-shrink-0"
               >
-                <img 
-                  src={method.image} 
+                <img
+                  src={method.image}
                   alt={method.name}
                   className="w-20 h-20 object-contain opacity-70 hover:opacity-100 transition-opacity duration-300"
                 />
               </div>
             ))}
-            
+
             {/* Duplicate set for seamless loop - Images Only */}
             {paymentMethods.map((method, index) => (
-              <div 
+              <div
                 key={`second-${method.name}`}
                 className="flex-shrink-0"
               >
-                <img 
-                  src={method.image} 
+                <img
+                  src={method.image}
                   alt={method.name}
                   className="w-20 h-20 object-contain opacity-70 hover:opacity-100 transition-opacity duration-300"
                 />

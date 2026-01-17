@@ -249,7 +249,7 @@ export default function GamePage() {
               {packages.map((pkgItem: any, index: number) => {
                 const pkgData = getPackageData(index);
                 const name = pkgData.name || (typeof pkgItem === 'string' ? pkgItem : pkgItem.name);
-                const image = pkgData.image || null;
+                const image = pkgData.image || (game as any).image_url || game.image;
 
                 const pricing = getPackagePricing(index);
                 // Prefer bonus from rich object, then array

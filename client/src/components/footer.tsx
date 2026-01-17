@@ -63,11 +63,11 @@ export function Footer() {
             >
               <Link href="/">
                 <div className="flex items-center gap-3 cursor-pointer group">
-                  <div className="relative">
-                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-cyber-blue to-neon-purple flex items-center justify-center shadow-glow-blue transition-transform group-hover:scale-110">
-                      <span className="text-xl font-bold text-white font-gaming">D</span>
-                    </div>
-                  </div>
+                  <img
+                    src="/favicon.png"
+                    alt="GameCart Logo"
+                    className="h-12 w-auto object-contain hover:scale-105 transition-transform"
+                  />
                   <div>
                     <span className="text-xl font-bold font-gaming">
                       <span className="bg-gradient-to-r from-cyber-blue to-neon-purple bg-clip-text text-transparent">Diaa</span>

@@ -429,42 +429,36 @@
     border: 1px solid hsl(var(--glass-border));
   }
 
-  /* Neon Glow Effects */
+  /* Neon Glow Effects - REDUCED INTENSITY */
   .glow-cyber-blue {
-    box-shadow: 0 0 20px hsl(var(--cyber-blue) / 0.5),
-      0 0 40px hsl(var(--cyber-blue) / 0.3),
-      0 0 60px hsl(var(--cyber-blue) / 0.1);
+    box-shadow: 0 0 10px hsl(var(--cyber-blue) / 0.3),
+      0 0 20px hsl(var(--cyber-blue) / 0.1);
   }
 
   .glow-neon-purple {
-    box-shadow: 0 0 20px hsl(var(--neon-purple) / 0.5),
-      0 0 40px hsl(var(--neon-purple) / 0.3),
-      0 0 60px hsl(var(--neon-purple) / 0.1);
+    box-shadow: 0 0 10px hsl(var(--neon-purple) / 0.3),
+      0 0 20px hsl(var(--neon-purple) / 0.1);
   }
 
   .glow-cyber-gold {
-    box-shadow: 0 0 20px hsl(var(--cyber-gold) / 0.5),
-      0 0 40px hsl(var(--cyber-gold) / 0.3),
-      0 0 60px hsl(var(--cyber-gold) / 0.1);
+    box-shadow: 0 0 10px hsl(var(--cyber-gold) / 0.3),
+      0 0 20px hsl(var(--cyber-gold) / 0.1);
   }
 
   .glow-neon-pink {
-    box-shadow: 0 0 20px hsl(var(--neon-pink) / 0.5),
-      0 0 40px hsl(var(--neon-pink) / 0.3),
-      0 0 60px hsl(var(--neon-pink) / 0.1);
+    box-shadow: 0 0 10px hsl(var(--neon-pink) / 0.3),
+      0 0 20px hsl(var(--neon-pink) / 0.1);
   }
 
-  /* Text Glow */
+  /* Text Glow - REDUCED INTENSITY */
   .text-glow-cyber-blue {
-    text-shadow: 0 0 10px hsl(var(--cyber-blue) / 0.8),
-      0 0 20px hsl(var(--cyber-blue) / 0.5),
-      0 0 30px hsl(var(--cyber-blue) / 0.3);
+    text-shadow: 0 0 5px hsl(var(--cyber-blue) / 0.6),
+      0 0 10px hsl(var(--cyber-blue) / 0.3);
   }
 
   .text-glow-neon-purple {
-    text-shadow: 0 0 10px hsl(var(--neon-purple) / 0.8),
-      0 0 20px hsl(var(--neon-purple) / 0.5),
-      0 0 30px hsl(var(--neon-purple) / 0.3);
+    text-shadow: 0 0 5px hsl(var(--neon-purple) / 0.6),
+      0 0 10px hsl(var(--neon-purple) / 0.3);
   }
 
   /* Gradient Backgrounds */

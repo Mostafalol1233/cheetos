@@ -56,7 +56,7 @@ export function PopularGames() {
                     <ImageWithFallback
                       src={game.image || ''}
                       alt={game.name}
-                      className="w-full h-full object-contain bg-black/50 transition-transform duration-700 group-hover:scale-105"
+                      className="w-full h-full object-contain transition-transform duration-700 group-hover:scale-105"
                     />
                   </div>
 

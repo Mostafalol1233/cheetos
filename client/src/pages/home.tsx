@@ -99,7 +99,15 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Features Section */}
+        {/* Shopping Categories */}
+        <div id="categories">
+          <ShoppingCategories />
+        </div>
+
+        {/* Most Popular Games */}
+        <PopularGames />
+
+        {/* Features Section - Moved Here */}
         <section className="container mx-auto px-4 py-20">
           <motion.div
             className="text-center mb-12"
@@ -145,13 +153,7 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Shopping Categories */}
-        <div id="categories">
-          <ShoppingCategories />
-        </div>
 
-        {/* Most Popular Games */}
-        <PopularGames />
 
         {/* About Section with Stats */}
         <section className="container mx-auto px-4 py-20">

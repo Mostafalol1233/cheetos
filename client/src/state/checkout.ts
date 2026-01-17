@@ -89,7 +89,7 @@ export const PAYMENT_METHODS: PaymentConfig[] = [
   {
     key: 'other',
     label: 'Other Methods',
-    logo: '/payments/generic.png',
+    logo: '/favicon.png',
     info: { instructions: 'Contact support on WhatsApp for other payment options.' }
   }
 ];
