@@ -29,7 +29,7 @@ class ErrorBoundary extends React.Component<{ fallback?: React.ReactNode; childr
   static getDerivedStateFromError() {
     return { hasError: true };
   }
-  componentDidCatch() {}
+  componentDidCatch() { }
   render() {
     if (this.state.hasError) {
       return this.props.fallback || <div className="p-4 text-center border rounded">Editor failed to load</div>;
@@ -212,21 +212,21 @@ export default function AdminDashboard() {
     try {
       const formData = new FormData();
       formData.append('file', file);
-      
+
       const token = localStorage.getItem('adminToken');
       const res = await fetch(apiPath('/api/admin/upload-image'), {
         method: 'POST',
         headers: token ? { Authorization: `Bearer ${token}` } : {},
         body: formData
       });
-      
+
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || 'Upload failed');
-      
+
       const next = [...packagesDraft];
       next[index] = { ...next[index], image: data.url };
       setPackagesDraft(next);
-      
+
       toast({ title: 'Uploaded', description: 'Image attached to package', duration: 1500 });
     } catch (err: any) {
       toast({ title: 'Error', description: err.message || 'Upload failed', variant: 'destructive' });
@@ -236,8 +236,8 @@ export default function AdminDashboard() {
   const [packagesFilter, setPackagesFilter] = useState('');
 
   // Filter games based on search
-  const games = allGames.filter((game: Game) => 
-    !searchGameTerm || 
+  const games = allGames.filter((game: Game) =>
+    !searchGameTerm ||
     game.name.toLowerCase().includes(searchGameTerm.toLowerCase()) ||
     game.slug?.toLowerCase().includes(searchGameTerm.toLowerCase())
   );
@@ -258,7 +258,7 @@ export default function AdminDashboard() {
       if (alertStatus !== 'all') params.append('status', alertStatus);
       if (alertType !== 'all') params.append('type', alertType);
       if (alertSearch) params.append('q', alertSearch);
-      
+
       const res = await fetch(`${API_BASE_URL}/api/admin/alerts?${params.toString()}`, {
         headers: token ? { Authorization: `Bearer ${token}` } : undefined
       });
@@ -453,6 +453,8 @@ export default function AdminDashboard() {
                     <th className="p-2">Payment</th>
                     <th className="p-2">Total</th>
                     <th className="p-2">Items</th>
+                    <th className="p-2">Delivery</th>
+                    <th className="p-2">Receipt</th>
                     <th className="p-2">Actions</th>
                   </tr>
                 </thead>
@@ -473,9 +475,36 @@ export default function AdminDashboard() {
                       <td className="p-2">
                         {o.items.length
                           ? o.items
-                              .map(it => `${it.gameName || it.gameId} x${it.quantity}`)
-                              .join(', ')
+                            .map(it => `${it.gameName || it.gameId} x${it.quantity}`)
+                            .join(', ')
                           : '-'}
+                      </td>
+                      <td className="p-2 capitalize">{(o as any).deliveryMethod || 'whatsapp'}</td>
+                      <td className="p-2">
+                        {(o as any).receiptUrl ? (
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <Button variant="outline" size="sm" className="h-7 text-xs">
+                                View Receipt
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent className="max-w-3xl max-h-[90vh] overflow-auto">
+                              <DialogHeader>
+                                <DialogTitle>Payment Receipt</DialogTitle>
+                                <DialogDescription>Order #{o.id}</DialogDescription>
+                              </DialogHeader>
+                              <div className="flex justify-center">
+                                <img
+                                  src={(o as any).receiptUrl}
+                                  alt="Receipt"
+                                  className="max-w-full h-auto rounded-lg border"
+                                />
+                              </div>
+                            </DialogContent>
+                          </Dialog>
+                        ) : (
+                          <span className="text-muted-foreground text-xs">-</span>
+                        )}
                       </td>
                       <td className="p-2">
                         {(!o.status || ['pending', 'pending_approval'].includes(o.status)) && (
@@ -587,7 +616,7 @@ export default function AdminDashboard() {
   const deleteGameMutation = useMutation({
     mutationFn: async (gameId: string) => {
       const token = localStorage.getItem('adminToken');
-      const res = await fetch(apiPath(`/api/games/${gameId}`), { 
+      const res = await fetch(apiPath(`/api/games/${gameId}`), {
         method: 'DELETE',
         headers: token ? { Authorization: `Bearer ${token}` } : undefined,
       });
@@ -960,7 +989,7 @@ export default function AdminDashboard() {
       if (data.gradient) formData.append('gradient', data.gradient);
       if (data.icon) formData.append('icon', data.icon);
       if (data.image) formData.append('image', data.image);
-      
+
       const res = await fetch(apiPath(`/api/admin/categories/${data.id}`), {
         method: 'PUT',
         headers: token ? { Authorization: `Bearer ${token}` } : {},
@@ -994,7 +1023,7 @@ export default function AdminDashboard() {
   const handleBulkDeleteGames = async () => {
     if (!selectedGames.length) return;
     if (!confirm(`Are you sure you want to delete ${selectedGames.length} games?`)) return;
-    
+
     try {
       await Promise.all(selectedGames.map(id => deleteGameMutation.mutateAsync(id)));
       setSelectedGames([]);
@@ -1050,7 +1079,7 @@ export default function AdminDashboard() {
         });
         if (!fetchRes.ok) throw new Error('Failed to fetch packages');
         const packages = await fetchRes.json();
-        
+
         // Apply discount to each package (skip packages with manually set discount prices)
         const updatedPackages = packages.map((pkg: any) => {
           // If package already has a manually set discount price, preserve it
@@ -1060,12 +1089,12 @@ export default function AdminDashboard() {
           // Otherwise apply the bulk discount
           return {
             ...pkg,
-            discountPrice: mode === 'percentage' 
+            discountPrice: mode === 'percentage'
               ? Number(pkg.price) * (pct / 100)
               : Number(pkg.price) - amt
           };
         });
-        
+
         // Update packages
         const res = await fetch(apiPath(`/api/games/${gameId}/packages`), {
           method: 'PUT',
@@ -1433,37 +1462,37 @@ export default function AdminDashboard() {
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <ScrollArea className="w-full whitespace-nowrap rounded-md border">
-        <TabsList className="flex w-full justify-start p-0 h-auto bg-transparent overflow-x-auto whitespace-nowrap">
-          <TabsTrigger value="templates" data-testid="tab-templates" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Response Templates</TabsTrigger>
-          <TabsTrigger value="games" data-testid="tab-games" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Games & Products</TabsTrigger>
-          <TabsTrigger value="discounts" data-testid="tab-discounts" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Discounts</TabsTrigger>
-          <TabsTrigger value="users" data-testid="tab-users" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Users</TabsTrigger>
-          <TabsTrigger value="packages" data-testid="tab-packages" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Packages</TabsTrigger>
-          <TabsTrigger value="categories" data-testid="tab-categories" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Categories</TabsTrigger>
-          <TabsTrigger value="cards" data-testid="tab-cards" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Game Cards</TabsTrigger>
-          <TabsTrigger value="orders" data-testid="tab-orders" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Orders</TabsTrigger>
-          <TabsTrigger value="arrangement" data-testid="tab-arrangement" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Arrangement</TabsTrigger>
-          <TabsTrigger value="chats" data-testid="tab-chats" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Support Chat</TabsTrigger>
-          <TabsTrigger value="checkout-confirmations" data-testid="tab-checkout-confirmations" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Checkout Confirmations</TabsTrigger>
-          <TabsTrigger value="interactions" data-testid="tab-interactions" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Interactions</TabsTrigger>
-          <TabsTrigger value="chat-widget" data-testid="tab-chat-widget" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Chat Widget</TabsTrigger>
-          <TabsTrigger value="logo" data-testid="tab-logo" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Logo</TabsTrigger>
-          <TabsTrigger value="whatsapp" data-testid="tab-whatsapp" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">WhatsApp</TabsTrigger>
-          <TabsTrigger value="checkout-templates" data-testid="tab-checkout-templates" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Checkout Templates</TabsTrigger>
-          <TabsTrigger value="preview-home" data-testid="tab-preview-home" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Home Preview</TabsTrigger>
-          <TabsTrigger value="main-content" data-testid="tab-main-content" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Main Page Content</TabsTrigger>
-          <TabsTrigger value="alerts" data-testid="tab-alerts" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">
-            Alerts
-            {alerts.some(a => !a.read) && (
-              <span className="ml-2 w-2 h-2 bg-red-500 rounded-full animate-pulse" />
-            )}
-          </TabsTrigger>
-          <TabsTrigger value="catbox-upload" data-testid="tab-catbox-upload" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Catbox Image Upload</TabsTrigger>
-          <TabsTrigger value="image-manager" data-testid="tab-image-manager" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Image Manager</TabsTrigger>
-          <TabsTrigger value="advanced-editor" data-testid="tab-advanced-editor" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Advanced Editor</TabsTrigger>
-          <TabsTrigger value="content" data-testid="tab-content" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Content</TabsTrigger>
-          <TabsTrigger value="theme" data-testid="tab-theme" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Theme</TabsTrigger>
-        </TabsList>
+            <TabsList className="flex w-full justify-start p-0 h-auto bg-transparent overflow-x-auto whitespace-nowrap">
+              <TabsTrigger value="templates" data-testid="tab-templates" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Response Templates</TabsTrigger>
+              <TabsTrigger value="games" data-testid="tab-games" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Games & Products</TabsTrigger>
+              <TabsTrigger value="discounts" data-testid="tab-discounts" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Discounts</TabsTrigger>
+              <TabsTrigger value="users" data-testid="tab-users" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Users</TabsTrigger>
+              <TabsTrigger value="packages" data-testid="tab-packages" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Packages</TabsTrigger>
+              <TabsTrigger value="categories" data-testid="tab-categories" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Categories</TabsTrigger>
+              <TabsTrigger value="cards" data-testid="tab-cards" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Game Cards</TabsTrigger>
+              <TabsTrigger value="orders" data-testid="tab-orders" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Orders</TabsTrigger>
+              <TabsTrigger value="arrangement" data-testid="tab-arrangement" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Arrangement</TabsTrigger>
+              <TabsTrigger value="chats" data-testid="tab-chats" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Support Chat</TabsTrigger>
+              <TabsTrigger value="checkout-confirmations" data-testid="tab-checkout-confirmations" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Checkout Confirmations</TabsTrigger>
+              <TabsTrigger value="interactions" data-testid="tab-interactions" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Interactions</TabsTrigger>
+              <TabsTrigger value="chat-widget" data-testid="tab-chat-widget" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Chat Widget</TabsTrigger>
+              <TabsTrigger value="logo" data-testid="tab-logo" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Logo</TabsTrigger>
+              <TabsTrigger value="whatsapp" data-testid="tab-whatsapp" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">WhatsApp</TabsTrigger>
+              <TabsTrigger value="checkout-templates" data-testid="tab-checkout-templates" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Checkout Templates</TabsTrigger>
+              <TabsTrigger value="preview-home" data-testid="tab-preview-home" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Home Preview</TabsTrigger>
+              <TabsTrigger value="main-content" data-testid="tab-main-content" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Main Page Content</TabsTrigger>
+              <TabsTrigger value="alerts" data-testid="tab-alerts" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">
+                Alerts
+                {alerts.some(a => !a.read) && (
+                  <span className="ml-2 w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+                )}
+              </TabsTrigger>
+              <TabsTrigger value="catbox-upload" data-testid="tab-catbox-upload" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Catbox Image Upload</TabsTrigger>
+              <TabsTrigger value="image-manager" data-testid="tab-image-manager" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Image Manager</TabsTrigger>
+              <TabsTrigger value="advanced-editor" data-testid="tab-advanced-editor" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Advanced Editor</TabsTrigger>
+              <TabsTrigger value="content" data-testid="tab-content" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Content</TabsTrigger>
+              <TabsTrigger value="theme" data-testid="tab-theme" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Theme</TabsTrigger>
+            </TabsList>
             <ScrollBar orientation="horizontal" />
           </ScrollArea>
 
@@ -1517,15 +1546,14 @@ export default function AdminDashboard() {
                     <Card key={alert.id} className={`bg-card/50 border-gold-primary/30 ${!alert.read ? 'border-l-4 border-l-gold-primary' : ''}`}>
                       <CardContent className="p-6 flex items-start justify-between gap-4">
                         <div className="flex gap-4">
-                          <div className={`p-2 rounded-full ${
-                            alert.priority === 'high' ? 'bg-red-500/20 text-red-500' :
-                            alert.priority === 'medium' ? 'bg-yellow-500/20 text-yellow-500' :
-                            'bg-blue-500/20 text-blue-500'
-                          }`}>
+                          <div className={`p-2 rounded-full ${alert.priority === 'high' ? 'bg-red-500/20 text-red-500' :
+                              alert.priority === 'medium' ? 'bg-yellow-500/20 text-yellow-500' :
+                                'bg-blue-500/20 text-blue-500'
+                            }`}>
                             {alert.type === 'stock' ? <Package className="w-5 h-5" /> :
-                             alert.type === 'security' ? <Shield className="w-5 h-5" /> :
-                             alert.type === 'order' ? <ShoppingCart className="w-5 h-5" /> :
-                             <AlertCircle className="w-5 h-5" />}
+                              alert.type === 'security' ? <Shield className="w-5 h-5" /> :
+                                alert.type === 'order' ? <ShoppingCart className="w-5 h-5" /> :
+                                  <AlertCircle className="w-5 h-5" />}
                           </div>
                           <div className="space-y-1">
                             <div className="flex items-center gap-2">
@@ -1562,7 +1590,7 @@ export default function AdminDashboard() {
               </div>
             </div>
           </TabsContent>
-          
+
           {/* Discounts Tab */}
           <TabsContent value="discounts" className="space-y-6">
             <Card className="bg-card/50 border-gold-primary/30">
@@ -1589,7 +1617,7 @@ export default function AdminDashboard() {
             </div>
             <OrdersPanel />
           </TabsContent>
-          
+
           <TabsContent value="arrangement" className="space-y-6">
             <ArrangementPanel />
           </TabsContent>
@@ -1624,7 +1652,7 @@ export default function AdminDashboard() {
               </CardContent>
             </Card>
           </TabsContent>
-          
+
           {/* Interactions Tab */}
           <TabsContent value="interactions" className="space-y-6">
             <div className="flex justify-between items-center">
@@ -1700,12 +1728,12 @@ export default function AdminDashboard() {
                 className="max-w-md"
               />
               <div className="flex items-center gap-2">
-                 <Checkbox 
-                    checked={games.length > 0 && selectedGames.length === games.length}
-                    onCheckedChange={(c) => handleSelectAllGames(!!c)}
-                    id="select-all"
-                 />
-                 <Label htmlFor="select-all">Select All</Label>
+                <Checkbox
+                  checked={games.length > 0 && selectedGames.length === games.length}
+                  onCheckedChange={(c) => handleSelectAllGames(!!c)}
+                  id="select-all"
+                />
+                <Label htmlFor="select-all">Select All</Label>
               </div>
             </div>
 
@@ -1723,7 +1751,7 @@ export default function AdminDashboard() {
                 <Card key={game.id} className={`bg-card/50 border-gold-primary/30 ${selectedGames.includes(game.id) ? 'ring-2 ring-gold-primary' : ''}`}>
                   <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
                     <CardTitle className="text-lg">{game.name}</CardTitle>
-                    <Checkbox 
+                    <Checkbox
                       checked={selectedGames.includes(game.id)}
                       onCheckedChange={(c) => handleSelectGame(game.id, !!c)}
                     />
@@ -1864,15 +1892,15 @@ export default function AdminDashboard() {
                             )}
                             <div>
                               <div className="flex gap-2">
-                                <Label 
-                                  htmlFor={`pkg-img-${idx}`} 
+                                <Label
+                                  htmlFor={`pkg-img-${idx}`}
                                   className="cursor-pointer inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80 h-9 px-4 py-2"
                                 >
                                   {p.image ? 'Change Image' : 'Upload Image'}
                                 </Label>
                                 {p.image && (
-                                  <Button 
-                                    variant="destructive" 
+                                  <Button
+                                    variant="destructive"
                                     size="sm"
                                     onClick={() => {
                                       const next = [...packagesDraft];
@@ -1896,14 +1924,14 @@ export default function AdminDashboard() {
                               />
                             </div>
                           </div>
-                            <div className="grid grid-cols-12 gap-2 items-end">
+                          <div className="grid grid-cols-12 gap-2 items-end">
                             <div className="col-span-5">
                               <Label htmlFor={`pkg-amount-${idx}`}>Amount</Label>
-                              <Input 
+                              <Input
                                 id={`pkg-amount-${idx}`}
                                 name={`pkg-amount-${idx}`}
                                 autoComplete="off"
-                                value={p.amount} 
+                                value={p.amount}
                                 placeholder="e.g. 5000 ZP"
                                 onChange={(e) => {
                                   const next = [...packagesDraft];
@@ -2048,9 +2076,9 @@ export default function AdminDashboard() {
                     <p className="text-sm text-muted-foreground">ID: {cat.id}</p>
                     <p className="text-sm text-muted-foreground">Slug: {cat.slug}</p>
                     <div className="flex gap-2">
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
+                      <Button
+                        variant="outline"
+                        size="sm"
                         className="flex-1"
                         onClick={() => {
                           const name = prompt('Category name:', cat.name);
@@ -2076,9 +2104,9 @@ export default function AdminDashboard() {
                         <Edit className="w-4 h-4 mr-2" />
                         Image
                       </Button>
-                      <Button 
-                        variant="destructive" 
-                        size="sm" 
+                      <Button
+                        variant="destructive"
+                        size="sm"
                         className="flex-1"
                         onClick={() => {
                           if (confirm(`Are you sure you want to delete "${cat.name}"?`)) {
@@ -2230,7 +2258,7 @@ export default function AdminDashboard() {
                         ) : (
                           chatSessions.map((session) => {
                             const lastMessage = sessionMessages.find(msg => msg.timestamp === Math.max(...sessionMessages.map(m => m.timestamp)));
-                            
+
                             return (
                               <Button
                                 key={session.id}
@@ -2283,37 +2311,36 @@ export default function AdminDashboard() {
                           {sessionMessages
                             .sort((a, b) => a.timestamp - b.timestamp)
                             .map((msg) => (
-                            <div
-                              key={msg.id}
-                              className={`flex ${msg.sender === 'user' ? 'justify-start' : 'justify-end'}`}
-                            >
                               <div
-                                className={`max-w-[80%] rounded-lg px-3 py-2 text-sm ${
-                                  msg.sender === 'user'
-                                    ? 'bg-gray-700 text-white'
-                                    : 'bg-gradient-to-r from-gold-primary to-neon-pink text-black'
-                                }`}
+                                key={msg.id}
+                                className={`flex ${msg.sender === 'user' ? 'justify-start' : 'justify-end'}`}
                               >
-                                <div className="flex items-center gap-2 mb-1">
-                                  {msg.sender === 'user' ? (
-                                    <User className="w-3 h-3" />
-                                  ) : (
-                                    <Bot className="w-3 h-3" />
-                                  )}
-                                  <span className="text-xs opacity-70">
-                                    {msg.sender === 'user' ? 'Visitor' : 'Support'}
-                                  </span>
+                                <div
+                                  className={`max-w-[80%] rounded-lg px-3 py-2 text-sm ${msg.sender === 'user'
+                                      ? 'bg-gray-700 text-white'
+                                      : 'bg-gradient-to-r from-gold-primary to-neon-pink text-black'
+                                    }`}
+                                >
+                                  <div className="flex items-center gap-2 mb-1">
+                                    {msg.sender === 'user' ? (
+                                      <User className="w-3 h-3" />
+                                    ) : (
+                                      <Bot className="w-3 h-3" />
+                                    )}
+                                    <span className="text-xs opacity-70">
+                                      {msg.sender === 'user' ? 'Visitor' : 'Support'}
+                                    </span>
+                                  </div>
+                                  <p>{msg.message}</p>
+                                  <p className="text-xs opacity-50 mt-1">
+                                    {new Date(msg.timestamp).toLocaleTimeString([], {
+                                      hour: '2-digit',
+                                      minute: '2-digit'
+                                    })}
+                                  </p>
                                 </div>
-                                <p>{msg.message}</p>
-                                <p className="text-xs opacity-50 mt-1">
-                                  {new Date(msg.timestamp).toLocaleTimeString([], {
-                                    hour: '2-digit',
-                                    minute: '2-digit'
-                                  })}
-                                </p>
                               </div>
-                            </div>
-                          ))}
+                            ))}
                           <div ref={messagesEndRef} />
                         </div>
                       </ScrollArea>
@@ -2697,8 +2724,8 @@ export default function AdminDashboard() {
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label className="text-right">Upload Logo</Label>
-                <Input 
-                  type="file" 
+                <Input
+                  type="file"
                   accept="image/*"
                   onChange={(ev) => handleImageUpload(ev, 'logo')}
                   className="col-span-3"
@@ -2747,8 +2774,8 @@ export default function AdminDashboard() {
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label className="text-right">Upload Large Image</Label>
-                <Input 
-                  type="file" 
+                <Input
+                  type="file"
                   accept="image/*"
                   onChange={(ev) => handleImageUpload(ev, 'large')}
                   className="col-span-3"
@@ -2853,157 +2880,157 @@ function CatboxUploadPanel({ allGames, categories }: { allGames: Game[]; categor
       {error && <div className="text-red-500 text-sm">{error}</div>}
     </div>
   );
-  }
+}
 
-  function UsersPanel() {
-    const [q, setQ] = useState('');
-    const [page, setPage] = useState(1);
-    const { data } = useQuery<{ items: Array<{ id: string; name: string; phone: string; created_at: string }>; page: number; limit: number; total: number }>({
-      queryKey: ['/api/admin/users', q, page],
-      enabled: true,
-      queryFn: async () => {
-        const token = localStorage.getItem('adminToken');
-        const res = await fetch(apiPath(`/api/admin/users?q=${encodeURIComponent(q)}&page=${page}&limit=20`), {
-          headers: token ? { Authorization: `Bearer ${token}` } : {}
-        });
-        if (!res.ok) throw new Error('Failed to fetch users');
-        return res.json();
-      }
-    });
-    const exportMutation = useMutation({
-      mutationFn: async () => {
-        const token = localStorage.getItem('adminToken');
-        const res = await fetch(apiPath('/api/admin/users/export'), { headers: token ? { Authorization: `Bearer ${token}` } : {} });
-        const csv = await res.text();
-        const blob = new Blob([csv], { type: 'text/csv' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url; a.download = `users-${Date.now()}.csv`; a.click();
-        URL.revokeObjectURL(url);
-      }
-    });
-    const items = data?.items || [];
-    return (
-      <Card className="bg-card/50 border-gold-primary/30">
-        <CardHeader>
-          <CardTitle className="text-lg">User Directory</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="flex gap-2">
-            <Input placeholder="Search by name or phone" value={q} onChange={(e) => setQ(e.target.value)} className="max-w-md" />
-            <Button onClick={() => exportMutation.mutate()} variant="outline">Export CSV</Button>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="text-left">
-                  <th className="p-2">ID</th>
-                  <th className="p-2">Name</th>
-                  <th className="p-2">Phone</th>
-                  <th className="p-2">Created</th>
+function UsersPanel() {
+  const [q, setQ] = useState('');
+  const [page, setPage] = useState(1);
+  const { data } = useQuery<{ items: Array<{ id: string; name: string; phone: string; created_at: string }>; page: number; limit: number; total: number }>({
+    queryKey: ['/api/admin/users', q, page],
+    enabled: true,
+    queryFn: async () => {
+      const token = localStorage.getItem('adminToken');
+      const res = await fetch(apiPath(`/api/admin/users?q=${encodeURIComponent(q)}&page=${page}&limit=20`), {
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+      });
+      if (!res.ok) throw new Error('Failed to fetch users');
+      return res.json();
+    }
+  });
+  const exportMutation = useMutation({
+    mutationFn: async () => {
+      const token = localStorage.getItem('adminToken');
+      const res = await fetch(apiPath('/api/admin/users/export'), { headers: token ? { Authorization: `Bearer ${token}` } : {} });
+      const csv = await res.text();
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = `users-${Date.now()}.csv`; a.click();
+      URL.revokeObjectURL(url);
+    }
+  });
+  const items = data?.items || [];
+  return (
+    <Card className="bg-card/50 border-gold-primary/30">
+      <CardHeader>
+        <CardTitle className="text-lg">User Directory</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <div className="flex gap-2">
+          <Input placeholder="Search by name or phone" value={q} onChange={(e) => setQ(e.target.value)} className="max-w-md" />
+          <Button onClick={() => exportMutation.mutate()} variant="outline">Export CSV</Button>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-left">
+                <th className="p-2">ID</th>
+                <th className="p-2">Name</th>
+                <th className="p-2">Phone</th>
+                <th className="p-2">Created</th>
+              </tr>
+            </thead>
+            <tbody>
+              {items.map(u => (
+                <tr key={u.id} className="border-t">
+                  <td className="p-2 font-mono">{u.id}</td>
+                  <td className="p-2">{u.name}</td>
+                  <td className="p-2">{u.phone}</td>
+                  <td className="p-2">{u.created_at ? new Date(u.created_at).toLocaleString() : '-'}</td>
                 </tr>
-              </thead>
-              <tbody>
-                {items.map(u => (
-                  <tr key={u.id} className="border-t">
-                    <td className="p-2 font-mono">{u.id}</td>
-                    <td className="p-2">{u.name}</td>
-                    <td className="p-2">{u.phone}</td>
-                    <td className="p-2">{u.created_at ? new Date(u.created_at).toLocaleString() : '-'}</td>
-                  </tr>
-                ))}
-                {items.length === 0 && (
-                  <tr><td className="p-2 text-muted-foreground" colSpan={4}>No users</td></tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
+              ))}
+              {items.length === 0 && (
+                <tr><td className="p-2 text-muted-foreground" colSpan={4}>No users</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
 
-  function InteractionsPanel() {
-    const [q, setQ] = useState('');
-    const [eventType, setEventType] = useState<string>('all');
-    const { data, refetch } = useQuery<{ items: Array<{ id: string; event_type: string; element?: string; page?: string; success: boolean; error?: string; ua?: string; ts: string }> }>({
-      queryKey: ['/api/admin/interactions', q, eventType],
-      enabled: true,
-      queryFn: async () => {
-        const token = localStorage.getItem('adminToken');
-        const params = new URLSearchParams();
-        if (q) params.set('q', q);
-        if (eventType && eventType !== 'all') params.set('event_type', eventType);
-        const res = await fetch(apiPath(`/api/admin/interactions?${params.toString()}`), { headers: token ? { Authorization: `Bearer ${token}` } : {} });
-        if (!res.ok) throw new Error('Failed to fetch interactions');
-        return res.json();
-      }
-    });
-    const exportMutation = useMutation({
-      mutationFn: async () => {
-        const token = localStorage.getItem('adminToken');
-        const res = await fetch(apiPath('/api/admin/interactions/export'), { headers: token ? { Authorization: `Bearer ${token}` } : {} });
-        const csv = await res.text();
-        const blob = new Blob([csv], { type: 'text/csv' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url; a.download = `interactions-${Date.now()}.csv`; a.click();
-        URL.revokeObjectURL(url);
-      }
-    });
-    const items = data?.items || [];
-    return (
-      <Card className="bg-card/50 border-gold-primary/30">
-        <CardHeader>
-          <CardTitle className="text-lg">User Interactions</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="flex flex-wrap gap-2">
-            <Input placeholder="Search text or page" value={q} onChange={(e) => setQ(e.target.value)} className="max-w-md" />
-            <Select value={eventType} onValueChange={(v) => setEventType(v || 'all')}>
-              <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Events</SelectItem>
-                <SelectItem value="click">click</SelectItem>
-                <SelectItem value="submit">submit</SelectItem>
-                <SelectItem value="view">view</SelectItem>
-              </SelectContent>
-            </Select>
-            <Button variant="outline" onClick={() => exportMutation.mutate()}>Export CSV</Button>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="text-left">
-                  <th className="p-2">Event</th>
-                  <th className="p-2">Element</th>
-                  <th className="p-2">Page</th>
-                  <th className="p-2">Success</th>
-                  <th className="p-2">Time</th>
+function InteractionsPanel() {
+  const [q, setQ] = useState('');
+  const [eventType, setEventType] = useState<string>('all');
+  const { data, refetch } = useQuery<{ items: Array<{ id: string; event_type: string; element?: string; page?: string; success: boolean; error?: string; ua?: string; ts: string }> }>({
+    queryKey: ['/api/admin/interactions', q, eventType],
+    enabled: true,
+    queryFn: async () => {
+      const token = localStorage.getItem('adminToken');
+      const params = new URLSearchParams();
+      if (q) params.set('q', q);
+      if (eventType && eventType !== 'all') params.set('event_type', eventType);
+      const res = await fetch(apiPath(`/api/admin/interactions?${params.toString()}`), { headers: token ? { Authorization: `Bearer ${token}` } : {} });
+      if (!res.ok) throw new Error('Failed to fetch interactions');
+      return res.json();
+    }
+  });
+  const exportMutation = useMutation({
+    mutationFn: async () => {
+      const token = localStorage.getItem('adminToken');
+      const res = await fetch(apiPath('/api/admin/interactions/export'), { headers: token ? { Authorization: `Bearer ${token}` } : {} });
+      const csv = await res.text();
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = `interactions-${Date.now()}.csv`; a.click();
+      URL.revokeObjectURL(url);
+    }
+  });
+  const items = data?.items || [];
+  return (
+    <Card className="bg-card/50 border-gold-primary/30">
+      <CardHeader>
+        <CardTitle className="text-lg">User Interactions</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <div className="flex flex-wrap gap-2">
+          <Input placeholder="Search text or page" value={q} onChange={(e) => setQ(e.target.value)} className="max-w-md" />
+          <Select value={eventType} onValueChange={(v) => setEventType(v || 'all')}>
+            <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Events</SelectItem>
+              <SelectItem value="click">click</SelectItem>
+              <SelectItem value="submit">submit</SelectItem>
+              <SelectItem value="view">view</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button variant="outline" onClick={() => exportMutation.mutate()}>Export CSV</Button>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-left">
+                <th className="p-2">Event</th>
+                <th className="p-2">Element</th>
+                <th className="p-2">Page</th>
+                <th className="p-2">Success</th>
+                <th className="p-2">Time</th>
+              </tr>
+            </thead>
+            <tbody>
+              {items.map(it => (
+                <tr key={it.id} className="border-t">
+                  <td className="p-2">{it.event_type}</td>
+                  <td className="p-2">{it.element || '-'}</td>
+                  <td className="p-2">{it.page || '-'}</td>
+                  <td className="p-2">{it.success ? 'Yes' : 'No'}</td>
+                  <td className="p-2">{it.ts ? new Date(it.ts).toLocaleString() : '-'}</td>
                 </tr>
-              </thead>
-              <tbody>
-                {items.map(it => (
-                  <tr key={it.id} className="border-t">
-                    <td className="p-2">{it.event_type}</td>
-                    <td className="p-2">{it.element || '-'}</td>
-                    <td className="p-2">{it.page || '-'}</td>
-                    <td className="p-2">{it.success ? 'Yes' : 'No'}</td>
-                    <td className="p-2">{it.ts ? new Date(it.ts).toLocaleString() : '-'}</td>
-                  </tr>
-                ))}
-                {items.length === 0 && (
-                  <tr><td className="p-2 text-muted-foreground" colSpan={5}>No interactions</td></tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
+              ))}
+              {items.length === 0 && (
+                <tr><td className="p-2 text-muted-foreground" colSpan={5}>No interactions</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
 
-  function ImageManagerPanel() {
+function ImageManagerPanel() {
   const [files, setFiles] = useState<File[]>([]);
   const [urlsText, setUrlsText] = useState('');
   const [storage, setStorage] = useState<'cloudinary' | 'local' | 'catbox'>('local');
@@ -3147,9 +3174,9 @@ function CatboxUploadPanel({ allGames, categories }: { allGames: Game[]; categor
       </div>
     </div>
   );
-  }
+}
 
-  function ChatWidgetConfigPanel() {
+function ChatWidgetConfigPanel() {
   const [enabled, setEnabled] = useState(true);
   const [iconUrl, setIconUrl] = useState('/images/message-icon.svg');
   const [welcomeMessage, setWelcomeMessage] = useState('Hello! How can we help you?');
@@ -3389,7 +3416,7 @@ function LogoManagementPanel() {
               canvas.width = recommendedW; canvas.height = recommendedH;
               const ctx = canvas.getContext('2d');
               if (ctx) {
-                ctx.clearRect(0,0,recommendedW,recommendedH);
+                ctx.clearRect(0, 0, recommendedW, recommendedH);
                 ctx.drawImage(img, 0, 0, recommendedW, recommendedH);
                 const dataUrl = canvas.toDataURL('image/png');
                 const res = await fetch(dataUrl);
@@ -3409,7 +3436,7 @@ function LogoManagementPanel() {
     input.click();
   };
 
-  async function doUpload(blob: Blob, type: 'small'|'large'|'favicon') {
+  async function doUpload(blob: Blob, type: 'small' | 'large' | 'favicon') {
     const formData = new FormData();
     formData.append('file', blob, `logo-${type}.${blob.type === 'image/svg+xml' ? 'svg' : 'png'}`);
     try {
@@ -3435,124 +3462,124 @@ function LogoManagementPanel() {
     const [gameId, setGameId] = useState<string>(games[0]?.id || '');
     const [mode, setMode] = useState<'percentage' | 'amount'>('percentage');
     const [percentage, setPercentage] = useState<string>('10');
-  const [amount, setAmount] = useState<string>('0');
-  const [saving, setSaving] = useState(false);
-  const selectedGame = games.find(g => g.id === gameId);
-  const basePrice = selectedGame ? Number(selectedGame.price) || 0 : 0;
-  const pct = Number(percentage);
-  const amt = Number(amount);
-  const isPctValid = mode === 'percentage' ? pct >= 0 && pct <= 100 : true;
-  const isAmtValid = mode === 'amount' ? amt >= 0 && amt <= basePrice : true;
-  const effectiveDiscount = mode === 'percentage' ? (basePrice * (pct / 100)) : amt;
-  const finalPrice = Math.max(0, basePrice - effectiveDiscount);
-  const updateGameMutation = useMutation({
-    mutationFn: async () => {
-      const token = localStorage.getItem('adminToken');
-      const res = await fetch(apiPath(`/api/games/${gameId}`), {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-        body: JSON.stringify({ id: gameId, discountPrice: finalPrice })
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error((data as any)?.message || 'Failed to update discount');
-      return data;
-    },
-    onSuccess: (_resp) => {
-      setSaving(false);
-      toast({ title: 'Saved', description: 'Discount updated', duration: 1200 });
-      queryClient.invalidateQueries({ queryKey: ['/api/games'] });
-      queryClient.invalidateQueries({ queryKey: [`/api/games/id/${gameId}`] });
-      queryClient.invalidateQueries({ queryKey: ['/api/games/popular'] });
-      onSaved();
-    },
-    onError: (err: any) => {
-      setSaving(false);
-      toast({ title: 'Error', description: err?.message || 'Failed to save', duration: 1800 });
-    }
-  });
-  useEffect(() => {
-    if (!gameId && games.length) setGameId(games[0]?.id);
-  }, [games, gameId]);
-  const reset = () => {
-    setMode('percentage');
-    setPercentage('10');
-    setAmount('0');
-  };
-  const save = () => {
-    if (!gameId || !selectedGame) {
-      toast({ title: 'Error', description: 'Select a game', duration: 1500 });
-      return;
-    }
-    if (!isPctValid || !isAmtValid) {
-      toast({ title: 'Invalid values', description: 'Fix validation errors', duration: 1500 });
-      return;
-    }
-    setSaving(true);
-    updateGameMutation.mutate();
-  };
-  return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div>
-          <Label>Game</Label>
-          <Select value={gameId} onValueChange={setGameId}>
-            <SelectTrigger><SelectValue placeholder="Select game" /></SelectTrigger>
-            <SelectContent>
-              {games.map(g => <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>)}
-            </SelectContent>
-          </Select>
+    const [amount, setAmount] = useState<string>('0');
+    const [saving, setSaving] = useState(false);
+    const selectedGame = games.find(g => g.id === gameId);
+    const basePrice = selectedGame ? Number(selectedGame.price) || 0 : 0;
+    const pct = Number(percentage);
+    const amt = Number(amount);
+    const isPctValid = mode === 'percentage' ? pct >= 0 && pct <= 100 : true;
+    const isAmtValid = mode === 'amount' ? amt >= 0 && amt <= basePrice : true;
+    const effectiveDiscount = mode === 'percentage' ? (basePrice * (pct / 100)) : amt;
+    const finalPrice = Math.max(0, basePrice - effectiveDiscount);
+    const updateGameMutation = useMutation({
+      mutationFn: async () => {
+        const token = localStorage.getItem('adminToken');
+        const res = await fetch(apiPath(`/api/games/${gameId}`), {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+          body: JSON.stringify({ id: gameId, discountPrice: finalPrice })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error((data as any)?.message || 'Failed to update discount');
+        return data;
+      },
+      onSuccess: (_resp) => {
+        setSaving(false);
+        toast({ title: 'Saved', description: 'Discount updated', duration: 1200 });
+        queryClient.invalidateQueries({ queryKey: ['/api/games'] });
+        queryClient.invalidateQueries({ queryKey: [`/api/games/id/${gameId}`] });
+        queryClient.invalidateQueries({ queryKey: ['/api/games/popular'] });
+        onSaved();
+      },
+      onError: (err: any) => {
+        setSaving(false);
+        toast({ title: 'Error', description: err?.message || 'Failed to save', duration: 1800 });
+      }
+    });
+    useEffect(() => {
+      if (!gameId && games.length) setGameId(games[0]?.id);
+    }, [games, gameId]);
+    const reset = () => {
+      setMode('percentage');
+      setPercentage('10');
+      setAmount('0');
+    };
+    const save = () => {
+      if (!gameId || !selectedGame) {
+        toast({ title: 'Error', description: 'Select a game', duration: 1500 });
+        return;
+      }
+      if (!isPctValid || !isAmtValid) {
+        toast({ title: 'Invalid values', description: 'Fix validation errors', duration: 1500 });
+        return;
+      }
+      setSaving(true);
+      updateGameMutation.mutate();
+    };
+    return (
+      <div className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <Label>Game</Label>
+            <Select value={gameId} onValueChange={setGameId}>
+              <SelectTrigger><SelectValue placeholder="Select game" /></SelectTrigger>
+              <SelectContent>
+                {games.map(g => <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label>Mode</Label>
+            <Select value={mode} onValueChange={(v) => setMode(v as any)}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="percentage">Percentage</SelectItem>
+                <SelectItem value="amount">Amount</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label>Base Price</Label>
+            <Input value={basePrice ? `${basePrice} EGP` : '-'} readOnly />
+          </div>
         </div>
-        <div>
-          <Label>Mode</Label>
-          <Select value={mode} onValueChange={(v) => setMode(v as any)}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="percentage">Percentage</SelectItem>
-              <SelectItem value="amount">Amount</SelectItem>
-            </SelectContent>
-          </Select>
+        {mode === 'percentage' ? (
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label className="text-right">Percentage</Label>
+            <Input
+              type="number"
+              value={percentage}
+              onChange={(e) => setPercentage(e.target.value)}
+              className="col-span-3"
+            />
+          </div>
+        ) : (
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label className="text-right">Amount</Label>
+            <Input
+              type="number"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              className="col-span-3"
+            />
+          </div>
+        )}
+        <div className="text-xs text-muted-foreground">
+          {!isPctValid ? 'Percentage must be between 0 and 100. ' : ''}
+          {!isAmtValid ? 'Amount must be ≤ base price. ' : ''}
         </div>
-        <div>
-          <Label>Base Price</Label>
-          <Input value={basePrice ? `${basePrice} EGP` : '-'} readOnly />
-        </div>
-      </div>
-      {mode === 'percentage' ? (
         <div className="grid grid-cols-4 items-center gap-4">
-          <Label className="text-right">Percentage</Label>
-          <Input
-            type="number"
-            value={percentage}
-            onChange={(e) => setPercentage(e.target.value)}
-            className="col-span-3"
-          />
+          <Label className="text-right">Final Price</Label>
+          <Input value={`${finalPrice.toFixed(2)} EGP`} readOnly className="col-span-3" />
         </div>
-      ) : (
-        <div className="grid grid-cols-4 items-center gap-4">
-          <Label className="text-right">Amount</Label>
-          <Input
-            type="number"
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
-            className="col-span-3"
-          />
+        <div className="flex gap-2">
+          <Button onClick={save} disabled={saving || !isPctValid || !isAmtValid} className="bg-gold-primary">Save</Button>
+          <Button variant="outline" onClick={reset}>Cancel</Button>
         </div>
-      )}
-      <div className="text-xs text-muted-foreground">
-        {!isPctValid ? 'Percentage must be between 0 and 100. ' : ''}
-        {!isAmtValid ? 'Amount must be ≤ base price. ' : ''}
       </div>
-      <div className="grid grid-cols-4 items-center gap-4">
-        <Label className="text-right">Final Price</Label>
-        <Input value={`${finalPrice.toFixed(2)} EGP`} readOnly className="col-span-3" />
-      </div>
-      <div className="flex gap-2">
-        <Button onClick={save} disabled={saving || !isPctValid || !isAmtValid} className="bg-gold-primary">Save</Button>
-        <Button variant="outline" onClick={reset}>Cancel</Button>
-      </div>
-    </div>
-  );
-}
+    );
+  }
   // (moved) CheckoutTemplatesPanel is defined below LogoManagementPanel
 
   return (
@@ -3758,7 +3785,7 @@ function WhatsAppConnectionPanel() {
 
   const [to, setTo] = useState('');
   const [text, setText] = useState('Hello from GameCart!');
-  
+
   const sendMutation = useMutation({
     mutationFn: async () => {
       const token = localStorage.getItem('adminToken');
@@ -3783,7 +3810,7 @@ function WhatsAppConnectionPanel() {
               <span className="text-sm text-muted-foreground">({status?.status || 'unknown'})</span>
             </div>
           </div>
-          
+
           {!status?.connected && status?.qr && (
             <div className="bg-white p-4 rounded-lg inline-block">
               {qrDataUrl ? (
@@ -3794,25 +3821,25 @@ function WhatsAppConnectionPanel() {
               <p className="text-center text-black mt-2 text-sm">Scan with WhatsApp</p>
             </div>
           )}
-          
+
           {!status?.connected && !status?.qr && (
-             <div className="text-sm text-muted-foreground">Waiting for QR code... (Check backend logs if stuck)</div>
+            <div className="text-sm text-muted-foreground">Waiting for QR code... (Check backend logs if stuck)</div>
           )}
         </div>
 
         <div className="flex-1 space-y-4 w-full max-w-md">
-           <h3 className="text-lg font-medium">Test Message</h3>
-           <div className="space-y-2">
+          <h3 className="text-lg font-medium">Test Message</h3>
+          <div className="space-y-2">
             <Label>Recipient Phone</Label>
             <Input placeholder="e.g. 201xxxxxxxxx" value={to} onChange={(e) => setTo(e.target.value)} />
-           </div>
-           <div className="space-y-2">
+          </div>
+          <div className="space-y-2">
             <Label>Message</Label>
             <Input placeholder="Message" value={text} onChange={(e) => setText(e.target.value)} />
-           </div>
-           <Button onClick={() => sendMutation.mutate()} disabled={!to || !text || !status?.connected} className="bg-gold-primary w-full">
-             Send Test Message
-           </Button>
+          </div>
+          <Button onClick={() => sendMutation.mutate()} disabled={!to || !text || !status?.connected} className="bg-gold-primary w-full">
+            Send Test Message
+          </Button>
         </div>
       </div>
     </div>

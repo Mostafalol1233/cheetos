@@ -23,7 +23,7 @@ export default function SupportPage() {
           paypal: data?.paypal ?? null,
           etisalat_cash: data?.etisalat_cash ?? null,
         });
-      } catch {}
+      } catch { }
     })();
   }, []);
 
@@ -41,7 +41,7 @@ export default function SupportPage() {
   const etisalatCash = contactInfo?.etisalat_cash || null;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-900 dark:via-blue-900 dark:to-purple-900">
+    <div className="min-h-screen bg-background text-foreground">
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-8">
@@ -52,7 +52,7 @@ export default function SupportPage() {
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back to Home
           </Link>
-          
+
           <div className="text-center mb-8">
             <div className="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
               <Headphones className="w-8 h-8 text-white" />

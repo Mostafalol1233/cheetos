@@ -36,7 +36,7 @@ const writeOrders = (orders) => {
 // Create Order
 router.post('/', async (req, res) => {
   const { customer_name, customer_email, customer_phone, items, total_amount, payment_method, notes, player_id, receipt_url } = req.body;
-  
+
   // Validation
   if (!items || !items.length) return res.status(400).json({ message: 'No items in order' });
   if (!customer_email || !customer_phone) return res.status(400).json({ message: 'Contact info required' });
@@ -51,7 +51,7 @@ router.post('/', async (req, res) => {
     try {
       // Check if user exists
       const userRes = await pool.query('SELECT * FROM users WHERE email = $1', [customer_email]);
-      
+
       if (userRes.rows.length > 0) {
         // User exists, associate order with them
         userId = userRes.rows[0].id;
@@ -59,13 +59,13 @@ router.post('/', async (req, res) => {
         // Create new user
         generatedPassword = Math.random().toString(36).slice(-8);
         const passwordHash = crypto.createHash('sha256').update(generatedPassword).digest('hex');
-        const newUserId = `user_${Date.now()}_${Math.random().toString(36).slice(2,9)}`;
-        
+        const newUserId = `user_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+
         let username = customer_email.split('@')[0];
         // Ensure username uniqueness
         const usernameCheck = await pool.query('SELECT * FROM users WHERE username = $1', [username]);
         if (usernameCheck.rows.length > 0) {
-          username = `${username}_${Math.random().toString(36).slice(2,5)}`;
+          username = `${username}_${Math.random().toString(36).slice(2, 5)}`;
         }
 
         const newUser = await pool.query(
@@ -74,10 +74,10 @@ router.post('/', async (req, res) => {
            RETURNING id, username, email, role, created_at`,
           [newUserId, username, passwordHash, customer_email, Date.now()]
         );
-        
+
         userId = newUserId;
         const userObj = newUser.rows[0];
-        
+
         // Generate Token
         userToken = jwt.sign({ id: userObj.id, email: userObj.email, role: userObj.role }, JWT_SECRET, { expiresIn: '30d' });
         userData = { ...userObj, name: userObj.username };
@@ -102,6 +102,8 @@ router.post('/', async (req, res) => {
     notes,
     player_id,
     receipt_url,
+    payment_details: req.body.payment_details ? JSON.stringify(req.body.payment_details) : null,
+    delivery_method: req.body.deliver_via || req.body.delivery_method || 'whatsapp',
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString()
   };
@@ -109,9 +111,9 @@ router.post('/', async (req, res) => {
   try {
     // Try DB
     await pool.query(
-      `INSERT INTO orders (id, user_id, customer_name, customer_email, customer_phone, items, total_amount, currency, status, payment_method, notes, player_id, receipt_url, created_at, updated_at)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)`,
-      [newOrder.id, newOrder.user_id, newOrder.customer_name, newOrder.customer_email, newOrder.customer_phone, JSON.stringify(newOrder.items), newOrder.total_amount, newOrder.currency, newOrder.status, newOrder.payment_method, newOrder.notes, newOrder.player_id, newOrder.receipt_url, newOrder.created_at, newOrder.updated_at]
+      `INSERT INTO orders (id, user_id, customer_name, customer_email, customer_phone, items, total_amount, currency, status, payment_method, notes, player_id, receipt_url, payment_details, delivery_method, created_at, updated_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)`,
+      [newOrder.id, newOrder.user_id, newOrder.customer_name, newOrder.customer_email, newOrder.customer_phone, JSON.stringify(newOrder.items), newOrder.total_amount, newOrder.currency, newOrder.status, newOrder.payment_method, newOrder.notes, newOrder.player_id, newOrder.receipt_url, newOrder.payment_details, newOrder.delivery_method, newOrder.created_at, newOrder.updated_at]
     );
   } catch (dbError) {
     console.error('DB Insert failed, using JSON fallback:', dbError.message);
@@ -141,7 +143,7 @@ router.post('/', async (req, res) => {
         try { await sendEmail(newOrder.customer_email, 'orderConfirmation', emailData); } catch (e) { console.error('Customer email failed:', e?.message || e); }
       }
     }
-    
+
     // Notify admin
     const adminPhones = (process.env.ADMIN_PHONE || '').split(',').map(p => p.trim()).filter(Boolean);
     const connectedPhone = (process.env.CONNECTED_PHONE || '').trim();
@@ -158,7 +160,7 @@ router.post('/', async (req, res) => {
     console.error('Notification error:', e);
   }
 
-  res.json({ 
+  res.json({
     id: orderId,
     status: newOrder.status,
     token: userToken,
@@ -209,11 +211,11 @@ router.put('/:id/status', authenticateToken, ensureAdmin, async (req, res) => {
   if (!order) {
     return res.status(404).json({ message: 'Order not found' });
   }
-  
+
   // Notify user via WhatsApp
   try {
     if (order.customer_phone) {
-       await sendWhatsAppMessage(order.customer_phone, `Your order #${id} status has been updated to: *${status}*`);
+      await sendWhatsAppMessage(order.customer_phone, `Your order #${id} status has been updated to: *${status}*`);
     }
   } catch (err) {
     console.error('WhatsApp notification failed:', err);
@@ -313,11 +315,11 @@ router.get('/:id', async (req, res) => {
   } catch (err) {
     // Fallback
   }
-  
+
   const orders = readOrders();
   const order = orders.find(o => o.id === id);
   if (order) return res.json(order);
-  
+
   res.status(404).json({ message: 'Order not found' });
 });
 

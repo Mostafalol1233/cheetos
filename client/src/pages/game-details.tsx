@@ -31,9 +31,9 @@ export default function GameDetails() {
 
   const handleAddToCart = async () => {
     if (!game || !selectedPackage) return;
-    
+
     setAddingToCart(true);
-    
+
     addToCart({
       id: `${game.id}-${selectedPackage}`,
       name: `${game.name} - ${selectedPackage}`,
@@ -178,7 +178,7 @@ export default function GameDetails() {
               <h1 className="text-3xl font-bold text-gold-primary mb-2">
                 {game.name}
               </h1>
-              <div 
+              <div
                 className="text-muted-foreground text-lg prose prose-invert prose-lg max-w-none [&_img]:max-w-full [&_img]:h-auto [&_img]:rounded-lg [&_img]:shadow-md"
                 dangerouslySetInnerHTML={{ __html: game.description || '' }}
               />
@@ -197,14 +197,14 @@ export default function GameDetails() {
               <div className="flex items-center gap-4 mb-4">
                 <span className="font-semibold">Amount:</span>
                 <div className="flex items-center border rounded-lg">
-                  <button 
+                  <button
                     onClick={() => setAmount(Math.max(1, amount - 1))}
                     className="px-3 py-1 hover:bg-muted transition-colors border-r"
                   >
                     -
                   </button>
                   <span className="px-4 py-1 font-bold">{amount}</span>
-                  <button 
+                  <button
                     onClick={() => setAmount(amount + 1)}
                     className="px-3 py-1 hover:bg-muted transition-colors border-l"
                   >
@@ -212,7 +212,7 @@ export default function GameDetails() {
                   </button>
                 </div>
               </div>
-              
+
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 {packageNames && packageNames.length > 0 ? (
                   packageNames.map((pkg: string, index: number) => {
@@ -221,20 +221,27 @@ export default function GameDetails() {
                     const isSelected = selectedPackage === pkg;
                     const pkgObj = packagesList[index];
                     const slug = pkgObj?.slug || pkg.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-                    
+
                     return (
                       <div key={index} className="relative group">
                         <button
                           onClick={() => {
-                             setSelectedPackage(pkg);
-                             setSelectedPrice(pricing.final);
-                           }}
-                          className={`w-full relative p-3 rounded-xl border-2 transition-all duration-200 flex flex-col items-center justify-center text-center h-28 group ${
-                            isSelected 
-                              ? 'border-gold-primary bg-gold-primary/10 shadow-lg scale-105 z-10' 
+                            setSelectedPackage(pkg);
+                            setSelectedPrice(pricing.final);
+                          }}
+                          className={`w-full relative p-3 rounded-xl border-2 transition-all duration-200 flex flex-col items-center justify-center text-center h-28 group ${isSelected
+                              ? 'border-gold-primary bg-gold-primary/10 shadow-lg scale-105 z-10'
                               : 'border-border hover:border-gold-primary/50 hover:bg-card/50'
-                          }`}
+                            }`}
                         >
+                          {/* Package Image / Fallback */}
+                          <div className="mb-2 relative w-10 h-10 shrink-0">
+                            <img
+                              src={pkgObj?.image || game.image}
+                              alt={pkg}
+                              className="w-full h-full object-cover rounded-lg shadow-sm"
+                            />
+                          </div>
                           <h4 className="font-bold text-sm mb-1 line-clamp-2">{pkg}</h4>
                           <div className="text-gold-primary font-bold mt-auto">
                             {pricing.original != null && pricing.original !== pricing.final ? (
@@ -252,7 +259,7 @@ export default function GameDetails() {
                         </button>
                         <Link href={`/packages/${slug}`}>
                           <div className="absolute top-1 right-1 p-1.5 text-muted-foreground/50 hover:text-gold-primary z-20 cursor-pointer transition-colors bg-background/50 rounded-full hover:bg-background/80">
-                             <ExternalLink className="w-3 h-3" />
+                            <ExternalLink className="w-3 h-3" />
                           </div>
                         </Link>
                       </div>
@@ -262,11 +269,10 @@ export default function GameDetails() {
                   // Fallback for games without specific packages
                   <button
                     onClick={() => handlePackageChange("Standard Package")}
-                    className={`col-span-full p-4 rounded-xl border-2 transition-all duration-200 text-left group hover:scale-[1.02] ${
-                      selectedPackage 
-                        ? 'border-gold-primary bg-gold-primary/10 shadow-lg' 
+                    className={`col-span-full p-4 rounded-xl border-2 transition-all duration-200 text-left group hover:scale-[1.02] ${selectedPackage
+                        ? 'border-gold-primary bg-gold-primary/10 shadow-lg'
                         : 'border-border hover:border-gold-primary/50 hover:bg-card/50'
-                    }`}
+                      }`}
                   >
                     <div className="flex justify-between items-center">
                       <div>

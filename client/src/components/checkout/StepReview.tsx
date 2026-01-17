@@ -10,7 +10,7 @@ import { useSettings } from '@/lib/settings-context';
 
 export function StepReview() {
   const { cart, contact, paymentMethod, paymentData, subtotal, total, setOrderMeta, setError, setStep } = useCheckout();
-  const [deliverVia, setDeliverVia] = useState<'email'|'whatsapp'>('email');
+  const [deliverVia, setDeliverVia] = useState<'email' | 'whatsapp'>('email');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { settings } = useSettings();
 
@@ -24,25 +24,39 @@ export function StepReview() {
 
     try {
       const key = ensureIdempotencyKey();
-      const orderData = {
-        items: cart.map(item => ({
-          id: item.id,
-          name: item.name,
-          price: item.price,
-          quantity: item.quantity,
-        })),
-        total_amount: total(),
-        payment_method: paymentMethod,
-        deliver_via: deliverVia,
-        customer_name: contact.fullName,
-        customer_email: contact.email,
-        customer_phone: (contact.countryCode || '') + contact.phone,
-        notes: contact.notes,
-        player_id: paymentData?.playerId,
-        receipt_url: paymentData?.receiptUrl,
-      };
 
-      const res = await apiRequest('POST', '/api/orders', { ...orderData, idempotency_key: key });
+      const orderItems = cart.map(item => ({
+        id: item.id,
+        name: item.name,
+        price: item.price,
+        quantity: item.quantity,
+      }));
+
+      // Get token if available for authenticated requests
+      const token = localStorage.getItem('userToken');
+
+      const res = await fetch(apiPath('/api/orders'), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({
+          items: orderItems,
+          total_amount: total(),
+          payment_method: paymentMethod,
+          deliver_via: deliverVia, // Using deliverVia state for delivery_method
+          customer_name: contact.fullName,
+          customer_email: contact.email,
+          customer_phone: contact.phone ? `${contact.countryCode || ''}${contact.phone}` : undefined,
+          notes: contact.notes,
+          player_id: paymentData?.playerId, // Optional chaining for paymentData
+          receipt_url: paymentData?.receiptUrl, // Optional chaining for paymentData
+          payment_details: paymentData ? { ...paymentData, receiptUrl: paymentData.receiptUrl } : undefined, // Include all paymentData
+          idempotency_key: key,
+        })
+      });
+
       const response = await res.json();
 
       // Handle Auto-Login / User Session
@@ -56,20 +70,20 @@ export function StepReview() {
 
       // Handle redirect to orders if account created or already logged in (fallback)
       if (response.status === 'pending_approval' || response.status === 'processing') {
-         // If we have a token (either new or existing), redirect to orders
-         if (localStorage.getItem('userToken')) {
-            window.location.href = '/account/orders';
-            return;
-         }
+        // If we have a token (either new or existing), redirect to orders
+        if (localStorage.getItem('userToken')) {
+          window.location.href = '/account/orders';
+          return;
+        }
       }
 
       setOrderMeta(response.id, response.status || 'processing');
-      
+
       if (paymentMethod === 'whatsapp') {
-          const waNumber = settings?.whatsapp_number?.replace(/\D/g, '') || '201000000000';
-          const message = `*New Order #${response.id}*\nName: ${contact.fullName}\nTotal: ${total()} EGP\nItems:\n${cart.map(i => `- ${i.name} x${i.quantity}`).join('\n')}\n\nPayment: WhatsApp Order`;
-          
-          window.open(`https://wa.me/${waNumber}?text=${encodeURIComponent(message)}`, '_blank');
+        const waNumber = settings?.whatsapp_number?.replace(/\D/g, '') || '201000000000';
+        const message = `*New Order #${response.id}*\nName: ${contact.fullName}\nTotal: ${total()} EGP\nItems:\n${cart.map(i => `- ${i.name} x${i.quantity}`).join('\n')}\n\nPayment: WhatsApp Order`;
+
+        window.open(`https://wa.me/${waNumber}?text=${encodeURIComponent(message)}`, '_blank');
       }
 
       if (response.user) {
@@ -181,12 +195,12 @@ export function StepReview() {
                   <div>
                     <p className="font-medium">{item.name}</p>
                     <p className="text-sm text-muted-foreground">
-                      Qty: {item.quantity} × ${item.price.toFixed(2)}
+                      Qty: {item.quantity} × {item.price.toFixed(2)} EGP
                     </p>
                   </div>
                 </div>
                 <p className="font-semibold">
-                  ${(item.price * item.quantity).toFixed(2)}
+                  {(item.price * item.quantity).toFixed(2)} EGP
                 </p>
               </div>
             ))}

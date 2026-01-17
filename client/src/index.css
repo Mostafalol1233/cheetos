@@ -13,45 +13,36 @@
    ======================================== */
 
 :root {
-  /* Core Background Colors */
-  --background: 230 15% 8%;
-  /* Deep space black #0f1117 */
-  --foreground: 210 40% 98%;
-  /* Clean white */
-
-  /* Card & Surface Colors */
-  --card: 230 15% 11%;
-  /* Slightly lighter card #161922 */
-  --card-foreground: 210 40% 98%;
-  --popover: 230 15% 11%;
-  --popover-foreground: 210 40% 98%;
-
-  /* Primary: Electric Cyan */
-  --primary: 185 100% 50%;
-  /* #00d9ff Cyber Blue */
-  --primary-foreground: 230 15% 8%;
-
-  /* Secondary: Deep Purple */
-  --secondary: 230 20% 18%;
-  --secondary-foreground: 210 40% 98%;
-
-  /* Muted Colors */
-  --muted: 230 15% 20%;
-  --muted-foreground: 215 20% 65%;
-
-  /* Accent: Neon Purple */
-  --accent: 270 90% 65%;
-  /* #a855f7 Neon Purple */
-  --accent-foreground: 210 40% 98%;
-
-  /* Destructive */
-  --destructive: 0 72% 51%;
-  --destructive-foreground: 210 40% 98%;
-
-  /* Border & Input */
-  --border: 230 15% 22%;
-  --input: 230 15% 18%;
-  --ring: 185 100% 50%;
+  /* STRICT WHITE THEME */
+  --background: 0 0% 100%;
+  /* Pure White */
+  --foreground: 0 0% 0%;
+  /* Pure Black */
+  --card: 0 0% 100%;
+  /* Pure White */
+  --card-foreground: 0 0% 0%;
+  /* Pure Black */
+  --popover: 0 0% 100%;
+  --popover-foreground: 0 0% 0%;
+  --primary: 45 100% 50%;
+  /* Gold */
+  --primary-foreground: 0 0% 0%;
+  /* Black text on Gold */
+  --secondary: 0 0% 96%;
+  /* Light Gray for secondary backgrounds */
+  --secondary-foreground: 0 0% 0%;
+  --muted: 0 0% 96%;
+  --muted-foreground: 0 0% 40%;
+  --accent: 45 100% 50%;
+  /* Gold Accent */
+  --accent-foreground: 0 0% 0%;
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 0 0% 98%;
+  --border: 0 0% 90%;
+  /* Light Gray Border */
+  --input: 0 0% 90%;
+  --ring: 45 100% 50%;
+  /* Gold Ring */
 
   /* Charts */
   --chart-1: 185 100% 50%;

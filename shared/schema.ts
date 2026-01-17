@@ -188,5 +188,8 @@ export const orders = pgTable("orders", {
   paymentMethod: text("payment_method").notNull(),
   status: text("status").notNull().default("pending"),
   playerId: text("player_id"),
-  serverId: text("server_id")
+  serverId: text("server_id"),
+  receiptUrl: text("receipt_url"),
+  paymentDetails: text("payment_details"), // JSON string for extra details
+  deliveryMethod: text("delivery_method").default("whatsapp"),
 });

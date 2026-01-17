@@ -71,18 +71,28 @@ export function Header() {
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
               >
-                <div className="relative">
-                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyber-blue to-neon-purple flex items-center justify-center shadow-glow-blue">
-                    <Gamepad2 className="w-5 h-5 text-white" />
+                <img
+                  src="/images/logo.png"
+                  alt="GameCart Logo"
+                  className="h-10 w-auto object-contain hover:scale-105 transition-transform"
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                    e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                  }}
+                />
+                <div className="hidden flex items-center gap-3">
+                  <div className="relative">
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyber-blue to-neon-purple flex items-center justify-center shadow-glow-blue">
+                      <Gamepad2 className="w-5 h-5 text-white" />
+                    </div>
                   </div>
-                  <div className="absolute inset-0 w-10 h-10 rounded-xl bg-gradient-to-br from-cyber-blue to-neon-purple blur-xl opacity-50 group-hover:opacity-70 transition-opacity" />
-                </div>
-                <span className="text-xl md:text-2xl font-bold font-gaming tracking-wider">
-                  <span className="bg-gradient-to-r from-cyber-blue via-neon-purple to-neon-pink bg-clip-text text-transparent drop-shadow-sm">
-                    Diaa
+                  <span className="text-xl md:text-2xl font-bold font-gaming tracking-wider">
+                    <span className="bg-gradient-to-r from-cyber-blue via-neon-purple to-neon-pink bg-clip-text text-transparent drop-shadow-sm">
+                      Diaa
+                    </span>
+                    <span className="text-foreground ml-1">Store</span>
                   </span>
-                  <span className="text-foreground ml-1">Store</span>
-                </span>
+                </div>
               </motion.div>
             </Link>
 

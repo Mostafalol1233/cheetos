@@ -42,7 +42,7 @@ interface PackageWithMultiCurrency extends Package {
 export default function AdminPackagesPage() {
   const [, params] = useRoute('/admin/packages/:gameId');
   const gameId = params?.gameId || '';
-  
+
   const [packages, setPackages] = useState<PackageWithMultiCurrency[]>([]);
   const [isEditing, setIsEditing] = useState(false);
 
@@ -96,7 +96,7 @@ export default function AdminPackagesPage() {
       const packagesWithMultiCurrency = gamePackages.map((pkg, index) => {
         const gameMultiPrices = multiCurrencyPrices[gameId] || {};
         const packageMultiPrices = gameMultiPrices[index] || {};
-        
+
         return {
           ...pkg,
           multiCurrencyPrices: {
@@ -118,13 +118,13 @@ export default function AdminPackagesPage() {
       const gameThumbnails = Array.isArray((game as any).packageThumbnails)
         ? (game as any).packageThumbnails
         : (Array.isArray((game as any).package_thumbnails) ? (game as any).package_thumbnails : []);
-      
+
       if (gamePackagesArray.length > 0) {
         const initialPackages = gamePackagesArray.map((pkg: any, index: number) => {
           const basePrice = Number(gamePrices[index] || 0);
           const gameMultiPrices = multiCurrencyPrices[gameId] || {};
           const packageMultiPrices = gameMultiPrices[index] || {};
-          
+
           return {
             amount: typeof pkg === 'string' ? pkg : (pkg?.amount || ''),
             price: basePrice,
@@ -175,14 +175,14 @@ export default function AdminPackagesPage() {
 
       try {
         await refetchPackages();
-      } catch {}
+      } catch { }
 
       setIsEditing(false);
       toast({ title: 'Success', description: 'Packages saved successfully!' });
     },
     onError: (error: any) => {
-      toast({ 
-        title: 'Error', 
+      toast({
+        title: 'Error',
         description: `Failed to save packages: ${error?.message || 'Unknown error'}`,
         variant: 'destructive'
       });
@@ -212,8 +212,8 @@ export default function AdminPackagesPage() {
       toast({ title: 'Success', description: 'Multi-currency prices saved successfully!' });
     },
     onError: (error: any) => {
-      toast({ 
-        title: 'Error', 
+      toast({
+        title: 'Error',
         description: `Failed to save multi-currency prices: ${error?.message || 'Unknown error'}`,
         variant: 'destructive'
       });
@@ -221,10 +221,10 @@ export default function AdminPackagesPage() {
   });
 
   const handleAddPackage = () => {
-    setPackages([...packages, { 
-      amount: '', 
-      price: 0, 
-      discountPrice: null, 
+    setPackages([...packages, {
+      amount: '',
+      price: 0,
+      discountPrice: null,
       image: null,
       slug: '',
       bonus: '',
@@ -242,7 +242,7 @@ export default function AdminPackagesPage() {
   const handleUpdatePackage = (index: number, field: keyof Package, value: any) => {
     const updated = [...packages];
     updated[index] = { ...updated[index], [field]: value };
-    
+
     // If price is updated, also update the multi-currency prices with default rates
     if (field === 'price') {
       const price = Number(value) || 0;
@@ -257,7 +257,7 @@ export default function AdminPackagesPage() {
         TRY: Math.round(price * 35 * 100) / 100  // Default TRY rate
       };
     }
-    
+
     setPackages(updated);
     setIsEditing(true);
   };
@@ -268,12 +268,12 @@ export default function AdminPackagesPage() {
       updated[index].multiCurrencyPrices = { EGP: 0, USD: 0, TRY: 0 };
     }
     updated[index].multiCurrencyPrices![currency as keyof MultiCurrencyPrices] = value;
-    
+
     // If USD is updated, also update the base price
     if (currency === 'USD') {
       updated[index].price = value;
     }
-    
+
     setPackages(updated);
     setIsEditing(true);
   };
@@ -290,20 +290,20 @@ export default function AdminPackagesPage() {
         bonus: pkg.bonus,
         description: pkg.description
       }));
-      
+
       await updatePackagesMutation.mutateAsync(regularPackages);
-      
+
       // Then save multi-currency prices
       const multiCurrencyData: Record<string, Record<number, Record<string, number>>> = {
         [gameId]: {}
       };
-      
+
       packages.forEach((pkg, index) => {
         if (pkg.multiCurrencyPrices) {
           multiCurrencyData[gameId][index] = pkg.multiCurrencyPrices as unknown as Record<string, number>;
         }
       });
-      
+
       await updateMultiCurrencyPricesMutation.mutateAsync(multiCurrencyData);
     } catch (error) {
       // Error handling is done in the mutations
@@ -393,14 +393,42 @@ export default function AdminPackagesPage() {
                       />
                       <p className="text-xs text-muted-foreground mt-1">Final displayed price (big font)</p>
                     </div>
-                    <div>
-                      <Label>Image URL (optional)</Label>
-                      <Input
-                        value={pkg.image || ''}
-                        onChange={(e) => handleUpdatePackage(index, 'image', e.target.value)}
-                        placeholder="https://example.com/image.jpg or /images/image.jpg"
-                      />
+                    <div className="flex gap-2 items-end">
+                      <div className="flex-1">
+                        <Label>Image URL</Label>
+                        <Input
+                          value={pkg.image || ''}
+                          onChange={(e) => handleUpdatePackage(index, 'image', e.target.value)}
+                          placeholder="/images/file.jpg"
+                        />
+                      </div>
+                      <div className="mb-0.5">
+                        <input
+                          type="file"
+                          id={`pkg-img-${index}`}
+                          className="hidden"
+                          accept="image/*"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) handlePackageImageUpload(index, file);
+                          }}
+                        />
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          onClick={() => document.getElementById(`pkg-img-${index}`)?.click()}
+                          title="Upload Image"
+                        >
+                          <Upload className="w-4 h-4" />
+                        </Button>
+                      </div>
                     </div>
+                    {pkg.image && (
+                      <div className="mt-2 text-xs text-muted-foreground flex items-center gap-2">
+                        <img src={pkg.image} alt="Preview" className="w-8 h-8 object-cover rounded" />
+                        <span>Preview</span>
+                      </div>
+                    )}
                     <div>
                       <Label>Slug (for URL)</Label>
                       <Input
@@ -421,9 +449,8 @@ export default function AdminPackagesPage() {
                     <div className="md:col-span-2">
                       <Label>Description (min 200 chars)</Label>
                       <textarea
-                        className={`flex min-h-[100px] w-full rounded-md border bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${
-                          (pkg.description?.length || 0) < 200 ? 'border-red-500' : 'border-input'
-                        }`}
+                        className={`flex min-h-[100px] w-full rounded-md border bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${(pkg.description?.length || 0) < 200 ? 'border-red-500' : 'border-input'
+                          }`}
                         value={pkg.description || ''}
                         onChange={(e) => handleUpdatePackage(index, 'description', e.target.value)}
                         placeholder="Detailed description of the package..."
@@ -454,8 +481,8 @@ export default function AdminPackagesPage() {
               Add Package
             </Button>
             {isEditing && (
-              <Button 
-                onClick={handleSave} 
+              <Button
+                onClick={handleSave}
                 disabled={updatePackagesMutation.isPending || updateMultiCurrencyPricesMutation.isPending}
               >
                 {(updatePackagesMutation.isPending || updateMultiCurrencyPricesMutation.isPending) ? 'Saving...' : 'Save Changes'}

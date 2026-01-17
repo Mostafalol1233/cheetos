@@ -426,7 +426,7 @@ export function registerRoutes(app: Express): Server {
 
   app.post("/api/orders", async (req, res) => {
     try {
-      const { items, payment_method, player_id, server_id, customer_email, customer_name, customer_phone } = req.body || {};
+      const { items, payment_method, player_id, server_id, customer_email, customer_name, customer_phone, receipt_url, payment_details, delivery_method } = req.body || {};
       let userId = (req.user as any)?.id || null;
       let newUserCreated = false;
       let generatedPassword = "";
@@ -497,7 +497,10 @@ export function registerRoutes(app: Express): Server {
         paymentMethod: payment_method,
         status: "pending",
         playerId: player_id || null,
-        serverId: server_id || null
+        serverId: server_id || null,
+        receiptUrl: receipt_url || null,
+        paymentDetails: payment_details ? JSON.stringify(payment_details) : null,
+        deliveryMethod: delivery_method || 'whatsapp'
       } as any);
 
       res.status(201).json({
