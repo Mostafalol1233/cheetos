@@ -220,12 +220,12 @@ export function SEO({
       {/* Additional SEO */}
       <meta name="theme-color" content="#FFD700" />
       <meta name="msapplication-TileColor" content="#FFD700" />
-      <link rel="icon" href="/favicon.png" />
+      <link rel="icon" href="/favicon.ico" />
       <link rel="apple-touch-icon" href="/logo.png" />
 
       {/* Preload critical resources */}
       <link rel="preload" href="/logo.png" as="image" />
-      <link rel="preload" href="/favicon.png" as="image" />
+      <link rel="preload" href="/favicon.ico" as="image" />
 
       {/* DNS prefetch for external resources */}
       <link rel="dns-prefetch" href="//fonts.googleapis.com" />

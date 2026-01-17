@@ -72,7 +72,7 @@ export function Header() {
                 whileTap={{ scale: 0.98 }}
               >
                 <img
-                  src="/favicon.png"
+                  src="/logo.png"
                   alt="GameCart Logo"
                   className="h-10 w-auto object-contain hover:scale-105 transition-transform"
                 />

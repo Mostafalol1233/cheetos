@@ -130,7 +130,7 @@ export function InteractiveGamePreview({ game, onGameSelect }: InteractiveGamePr
         <div className="p-4">
           <div className="flex items-center justify-between mb-2">
             <h3 className="font-bold text-lg text-gold-primary truncate">{game.name}</h3>
-            <span className="text-neon-pink font-bold">{game.price} {(game as any).currency || t('egp')}</span>
+            <span className="text-neon-pink font-bold">{game.price} EGP</span>
           </div>
           
           <p className="text-muted-foreground text-sm mb-3 line-clamp-2">

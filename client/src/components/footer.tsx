@@ -64,7 +64,7 @@ export function Footer() {
               <Link href="/">
                 <div className="flex items-center gap-3 cursor-pointer group">
                   <img
-                    src="/favicon.png"
+                    src="/logo.png"
                     alt="GameCart Logo"
                     className="h-12 w-auto object-contain hover:scale-105 transition-transform"
                   />

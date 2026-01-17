@@ -253,9 +253,9 @@ export default function CategoryPage() {
                                   <span className="text-gray-600 dark:text-gray-300">{pkg}</span>
                                   <div className="flex items-center gap-1">
                                     {pricing.original != null && (
-                                      <span className="text-red-500 line-through text-[10px]">{pricing.base} {game.currency}</span>
+                                      <span className="text-red-500 line-through text-[10px]">{pricing.base} EGP</span>
                                     )}
-                                    <span className="text-blue-600 dark:text-blue-400 font-bold">{pricing.final} {game.currency}</span>
+                                    <span className="text-blue-600 dark:text-blue-400 font-bold">{pricing.final} EGP</span>
                                   </div>
                                 </div>
                               );
@@ -273,11 +273,11 @@ export default function CategoryPage() {
                               const finalPrice = hasDiscount ? (discount as number) : base;
                               return hasDiscount ? (
                                 <div className="flex items-center gap-2">
-                                  <span className="text-gray-500 line-through text-sm">{base} {game.currency}</span>
-                                  <span className="text-gold-primary font-bold text-lg">{finalPrice} {game.currency}</span>
+                                  <span className="text-gray-500 line-through text-sm">{base} EGP</span>
+                                  <span className="text-gold-primary font-bold text-lg">{finalPrice} EGP</span>
                                 </div>
                               ) : (
-                                <div className="text-gold-primary font-bold text-lg">{finalPrice} {game.currency}</div>
+                                <div className="text-gold-primary font-bold text-lg">{finalPrice} EGP</div>
                               );
                             })()}
                           </div>

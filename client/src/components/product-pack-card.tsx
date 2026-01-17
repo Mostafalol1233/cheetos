@@ -21,7 +21,7 @@ export function ProductPackCard({
   name,
   originalPrice,
   finalPrice,
-  currency,
+  currency = "EGP",
   image,
   badgeLabel = "HOT",
   highlight,
@@ -86,7 +86,7 @@ export function ProductPackCard({
             </span>
           </div>
 
-          <span className="inline-flex items-center justify-center rounded-lg bg-gradient-to-r from-gold-primary to-neon-pink px-4 py-2 text-sm font-bold uppercase tracking-wide text-white shadow-md hover:scale-105 transition-transform min-w-[100px]">
+          <span className="inline-flex items-center justify-center rounded-lg bg-primary text-primary-foreground px-4 py-2 text-sm font-bold uppercase tracking-wide shadow-md hover:scale-105 transition-transform min-w-[100px]">
             Buy Now
           </span>
         </div>

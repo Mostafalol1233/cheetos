@@ -103,7 +103,7 @@ export default function PackageCheckoutPage() {
     const formatPrice = (price: number, curr: string) => {
         return new Intl.NumberFormat('en-EG', {
             style: 'currency',
-            currency: curr === 'EGP' ? 'EGP' : curr === 'USD' ? 'USD' : 'EGP',
+            currency: 'EGP',
             minimumFractionDigits: 0,
         }).format(price);
     };

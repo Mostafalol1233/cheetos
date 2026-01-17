@@ -147,7 +147,7 @@ export default function GameDetails() {
             offers: {
               '@type': 'Offer',
               url: typeof window !== 'undefined' ? window.location.href : `https://diaa-eldeen.example/game/${game.slug}`,
-              priceCurrency: game.currency,
+              priceCurrency: 'EGP',
               price: String(selectedPrice || parseFloat(game.price)),
               availability: 'https://schema.org/InStock'
             }
@@ -246,11 +246,11 @@ export default function GameDetails() {
                           <div className="text-gold-primary font-bold mt-auto">
                             {pricing.original != null && pricing.original !== pricing.final ? (
                               <span className="inline-flex items-center gap-2">
-                                <span className="line-through opacity-70 text-muted-foreground">{pricing.base} {game.currency}</span>
-                                <span>{pricing.final} {game.currency}</span>
+                                <span className="line-through opacity-70 text-muted-foreground">{pricing.base} EGP</span>
+                                <span>{pricing.final} EGP</span>
                               </span>
                             ) : (
-                              <span>{pricing.final} {game.currency}</span>
+                              <span>{pricing.final} EGP</span>
                             )}
                           </div>
                           {isSelected && (
@@ -300,7 +300,7 @@ export default function GameDetails() {
                           })()}
                         </div>
                         <div className="text-xs text-muted-foreground">
-                          {game.currency}
+                          EGP
                         </div>
                       </div>
                     </div>
@@ -313,11 +313,11 @@ export default function GameDetails() {
                 <Button
                   onClick={handleAddToCart}
                   disabled={!selectedPackage || addingToCart}
-                  className="w-full bg-gradient-to-r from-gold-primary to-neon-pink hover:from-gold-secondary hover:to-neon-pink text-white font-semibold py-3 rounded-xl hover:scale-105 transition-all duration-200"
+                  className="w-full"
                   size="lg"
                 >
                   <ShoppingCart className="mr-2 h-5 w-5" />
-                  {addingToCart ? "Added to Cart!" : `Add to Cart - $${selectedPrice || parseFloat(String(game.price))}`}
+                  {addingToCart ? "Added to Cart!" : `Add to Cart - ${(selectedPrice || parseFloat(String(game.price)))} EGP`}
                 </Button>
               )}
             </div>

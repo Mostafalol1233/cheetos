@@ -112,8 +112,8 @@ export function SocialSharing({ game }: SocialSharingProps) {
                 {game.description}
               </p>
               <div className="flex items-center gap-2 mt-1">
-                <span className="text-neon-pink font-bold">${game.price}</span>
-                <span className="text-xs text-muted-foreground">• {game.currency}</span>
+                <span className="text-neon-pink font-bold">{game.price} EGP</span>
+                <span className="text-xs text-muted-foreground">• EGP</span>
               </div>
             </div>
           </div>

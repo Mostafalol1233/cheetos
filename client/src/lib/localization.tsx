@@ -1,12 +1,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 
-export type Currency = "EGP" | "USD";
+export type Currency = "EGP";
 export type Country = string | null;
-export function shouldUpdateCurrency(saved: Currency | null, detected: Currency | null) {
-  if (saved && (saved === 'EGP' || saved === 'USD')) return null;
-  if (detected && (detected === 'EGP' || detected === 'USD')) return detected;
-  return null;
-}
 
 interface LocalizationContextType {
   country: Country;

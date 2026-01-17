@@ -5,13 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ProductPackGrid } from "@/components/product-pack-card";
 import { useCart } from "@/lib/cart-context";
-import { useLocalization } from "@/lib/localization";
 import ImageWithFallback from "@/components/image-with-fallback";
 
 export default function PacksPage() {
   const { data: games = [], isLoading } = useQuery<any[]>({ queryKey: ["/api/games"] });
   const { addToCart } = useCart();
-  const { currency } = useLocalization();
 
   const computeDiscount = (base: number) => {
     if (!Number.isFinite(base) || base < 50) return null;
@@ -48,7 +46,7 @@ export default function PacksPage() {
             name: pkg.name || pkg,
             originalPrice: hasDiscount ? base : null,
             finalPrice: final,
-            currency: currency,
+            currency: "EGP",
             image: pkg.image || g.image,
             href: `/packages/${pkg.slug || (pkg.name || pkg).toLowerCase().replace(/[^a-z0-9]+/g, '-')}`
           });
