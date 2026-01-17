@@ -63,12 +63,9 @@ export function PopularGames() {
 
                     {/* Game Info */}
                     <div className="relative z-10 flex-1 flex flex-col px-3 pb-3 sm:px-4 sm:pb-4">
-                      <h3 className="font-bold text-foreground mb-1 text-base sm:text-lg line-clamp-1 group-hover:text-gold-primary transition-colors">
+                      <h3 className="font-bold text-foreground mb-3 text-base sm:text-lg line-clamp-1 group-hover:text-gold-primary transition-colors">
                         {game.name}
                       </h3>
-                      <p className="text-xs text-muted-foreground line-clamp-1 mb-3 opacity-80">
-                        {game.category || 'Action RPG'}
-                      </p>
 
                       <div className="mt-auto flex items-center justify-between">
                         <span className="text-xs px-2 py-1 rounded-full text-gold-primary bg-gold-primary/10 group-hover:bg-gold-primary group-hover:text-black transition-colors font-medium">

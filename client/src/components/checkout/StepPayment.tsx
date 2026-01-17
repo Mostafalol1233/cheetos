@@ -1,5 +1,5 @@
 import React from 'react';
-import { useCheckout } from '@/state/checkout';
+import { useCheckout, PAYMENT_METHODS } from '@/state/checkout';
 import { PaymentMethods } from './PaymentMethods';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -42,7 +42,8 @@ export function StepPayment() {
     }
   };
 
-  const isManualPayment = ['vodafone_cash', 'instapay', 'orange_cash', 'etisalat_cash', 'we_pay', 'other'].includes(paymentMethod || '');
+  const isManualPayment = ['vodafone_cash', 'instapay', 'orange_cash', 'etisalat_cash', 'we_pay', 'credit_card', 'other'].includes(paymentMethod || '');
+  const selectedConfig = PAYMENT_METHODS.find((m) => m.key === paymentMethod);
 
   return (
     <div className="space-y-6">
@@ -53,28 +54,46 @@ export function StepPayment() {
         </CardHeader>
         <CardContent className="space-y-6">
           <PaymentMethods />
-          
-          {isManualPayment && (
+
+          {selectedConfig && (
             <div className="space-y-4 border-t pt-4 animate-in fade-in slide-in-from-top-2">
-                <h3 className="font-semibold">Payment Details</h3>
-                <div className="grid gap-4">
-                    <div className="space-y-2">
-                        <Label>Player ID / Account ID (if applicable)</Label>
-                        <Input 
-                            placeholder="Enter your Player ID" 
-                            value={paymentData.playerId || ''}
-                            onChange={e => setPaymentData({ playerId: e.target.value })}
-                        />
-                    </div>
-                    <div className="space-y-2">
-                        <Label>Upload Receipt (Required for Wallet Payments)</Label>
-                        <ReceiptUpload 
-                            onUpload={handleFileUpload}
-                            onRemove={() => setPaymentData({ receiptUrl: null })}
-                        />
-                         {isUploading && <span className="text-sm text-muted-foreground block mt-2">Uploading...</span>}
-                    </div>
+              <h3 className="font-semibold">Payment Details</h3>
+
+              {selectedConfig.info?.accountNumber && (
+                <p className="text-sm text-muted-foreground">
+                  Send the total amount to
+                  <span className="ml-1 font-mono font-semibold text-foreground">
+                    {selectedConfig.info.accountNumber}
+                  </span>
+                </p>
+              )}
+
+              {selectedConfig.info?.instructions && (
+                <p className="text-sm text-muted-foreground">
+                  {selectedConfig.info.instructions}
+                </p>
+              )}
+
+              {isManualPayment && (
+                <div className="grid gap-4 pt-2">
+                  <div className="space-y-2">
+                    <Label>Player ID / Account ID (if applicable)</Label>
+                    <Input
+                      placeholder="Enter your Player ID"
+                      value={paymentData.playerId || ''}
+                      onChange={e => setPaymentData({ playerId: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Upload Payment Receipt (Required)</Label>
+                    <ReceiptUpload
+                      onUpload={handleFileUpload}
+                      onRemove={() => setPaymentData({ receiptUrl: null })}
+                    />
+                    {isUploading && <span className="text-sm text-muted-foreground block mt-2">Uploading...</span>}
+                  </div>
                 </div>
+              )}
             </div>
           )}
 
