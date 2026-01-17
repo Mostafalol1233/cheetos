@@ -48,44 +48,36 @@ export function PopularGames() {
             return (
               <div key={game.id} className="relative group perspective">
                 <Link href={`/game/${game.slug}`} className="block h-full">
-                  <div className="relative rounded-2xl overflow-hidden border border-border/50 bg-card/50 backdrop-blur-sm p-3 sm:p-4 h-full flex flex-col justify-between shadow-lg transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl hover:shadow-gold-primary/20 hover:border-gold-primary/50 group-hover:bg-card/80">
-                    {/* Card glow effect */}
-                    <div className="absolute inset-0 bg-gradient-to-br from-gold-primary/0 via-transparent to-neon-pink/0 group-hover:from-gold-primary/5 group-hover:to-neon-pink/5 transition-all duration-500 pointer-events-none"></div>
+                  {/* High-tech Border Effect */}
+                  <div className="absolute inset-0 border border-border/50 rounded-2xl group-hover:border-gold-primary/50 transition-colors duration-500 z-20 pointer-events-none"></div>
 
-                    {/* Game Image */}
-                    <div className="relative mb-3 aspect-video overflow-hidden rounded-xl bg-muted/20">
-                      <ImageWithFallback
-                        src={game.image || ''}
-                        alt={game.name}
-                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                      />
+                  {/* Game Image */}
+                  <div className="relative mb-3 aspect-[16/9] w-full overflow-hidden rounded-xl bg-muted/20">
+                    <ImageWithFallback
+                      src={game.image || ''}
+                      alt={game.name}
+                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                    />
+                  </div>
 
-                      {/* Overlay on hover */}
-                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center backdrop-blur-[2px]">
-                        <span className="bg-white/20 text-white px-4 py-2 rounded-full backdrop-blur-md font-bold text-sm border border-white/30 flex items-center gap-2 transform scale-90 group-hover:scale-100 transition-transform duration-300">
-                          <Play className="w-4 h-4 fill-current" /> Play Now
-                        </span>
-                      </div>
-                    </div>
+                  {/* Game Info */}
+                  <div className="relative z-10 mt-auto">
+                    <h3 className="font-bold text-foreground mb-1 text-lg line-clamp-1 group-hover:text-gold-primary transition-colors">{game.name}</h3>
+                    <p className="text-xs text-muted-foreground line-clamp-1 mb-3 opacity-80">{game.category || 'Action RPG'}</p>
 
-                    {/* Game Info */}
-                    <div className="relative z-10 mt-auto">
-                      <h3 className="font-bold text-foreground mb-1 text-lg line-clamp-1 group-hover:text-gold-primary transition-colors">{game.name}</h3>
-                      <p className="text-xs text-muted-foreground line-clamp-1 mb-3 opacity-80">{game.category || 'Action RPG'}</p>
-
-                      <div className="flex items-center justify-between mt-2">
-                        <span className="text-xs px-2 py-1 rounded-full text-gold-primary bg-gold-primary/10 group-hover:bg-gold-primary group-hover:text-black transition-colors font-medium">
-                          {t('view_details')}
-                        </span>
-                      </div>
+                    <div className="flex items-center justify-between mt-2">
+                      <span className="text-xs px-2 py-1 rounded-full text-gold-primary bg-gold-primary/10 group-hover:bg-gold-primary group-hover:text-black transition-colors font-medium">
+                        {t('view_details')}
+                      </span>
                     </div>
                   </div>
-                </Link>
               </div>
-            );
-          })}
-        </div>
+                </Link>
       </div>
-    </section>
+      );
+          })}
+    </div>
+      </div >
+    </section >
   );
 }

@@ -139,8 +139,8 @@ export function Header() {
                       <ul className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 glass border-cyber-blue/20">
                         <li className="row-span-3">
                           <NavigationMenuLink asChild>
-                            <Link href="/games" className="flex h-full w-full select-none flex-col justify-end rounded-xl bg-gradient-to-b from-cyber-blue/20 to-neon-purple/20 p-6 no-underline outline-none focus:shadow-md hover:shadow-glow-blue transition-all">
-                              <Gamepad2 className="h-8 w-8 text-cyber-blue" />
+                            <Link href="/games" className="flex h-full w-full select-none flex-col justify-end rounded-xl bg-gradient-to-b from-muted to-muted/50 p-6 no-underline outline-none focus:shadow-md hover:shadow-lg hover:border-gold-primary/50 border border-transparent transition-all group">
+                              <Gamepad2 className="h-8 w-8 text-gold-primary group-hover:scale-110 transition-transform" />
                               <div className="mb-2 mt-4 text-lg font-bold text-foreground">
                                 All Games
                               </div>
@@ -152,7 +152,7 @@ export function Header() {
                         </li>
                         <li>
                           <Link href="/category/mobile-games">
-                            <NavigationMenuLink className="block select-none space-y-1 rounded-xl p-3 leading-none no-underline outline-none transition-all hover:bg-cyber-blue/10 hover:text-cyber-blue">
+                            <NavigationMenuLink className="block select-none space-y-1 rounded-xl p-3 leading-none no-underline outline-none transition-all hover:bg-gold-primary/10 hover:text-gold-primary">
                               <div className="text-sm font-semibold leading-none">Mobile Games</div>
                               <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
                                 PUBG, Free Fire, Mobile Legends
@@ -162,7 +162,7 @@ export function Header() {
                         </li>
                         <li>
                           <Link href="/category/pc-games">
-                            <NavigationMenuLink className="block select-none space-y-1 rounded-xl p-3 leading-none no-underline outline-none transition-all hover:bg-neon-purple/10 hover:text-neon-purple">
+                            <NavigationMenuLink className="block select-none space-y-1 rounded-xl p-3 leading-none no-underline outline-none transition-all hover:bg-gold-primary/10 hover:text-gold-primary">
                               <div className="text-sm font-semibold leading-none">PC Games</div>
                               <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
                                 Steam, Valorant, League of Legends
@@ -172,7 +172,7 @@ export function Header() {
                         </li>
                         <li>
                           <Link href="/category/gift-cards">
-                            <NavigationMenuLink className="block select-none space-y-1 rounded-xl p-3 leading-none no-underline outline-none transition-all hover:bg-cyber-gold/10 hover:text-cyber-gold">
+                            <NavigationMenuLink className="block select-none space-y-1 rounded-xl p-3 leading-none no-underline outline-none transition-all hover:bg-gold-primary/10 hover:text-gold-primary">
                               <div className="text-sm font-semibold leading-none">Gift Cards</div>
                               <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
                                 iTunes, Google Play, PlayStation
@@ -360,19 +360,16 @@ export function Header() {
                     <p className="text-sm font-semibold text-muted-foreground px-4 mb-2">Categories</p>
                     <Link href="/category/mobile-games">
                       <div className="flex items-center gap-4 px-4 py-3 rounded-xl hover:bg-muted transition-all text-foreground">
-                        <span className="text-cyber-blue">📱</span>
                         Mobile Games
                       </div>
                     </Link>
                     <Link href="/category/pc-games">
                       <div className="flex items-center gap-4 px-4 py-3 rounded-xl hover:bg-muted transition-all text-foreground">
-                        <span className="text-neon-purple">💻</span>
                         PC Games
                       </div>
                     </Link>
                     <Link href="/category/gift-cards">
                       <div className="flex items-center gap-4 px-4 py-3 rounded-xl hover:bg-muted transition-all text-foreground">
-                        <span className="text-cyber-gold">🎁</span>
                         Gift Cards
                       </div>
                     </Link>
