@@ -40,7 +40,9 @@ export const PaymentMethods: React.FC = () => {
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
-                    <img src={m.logo} alt="" className="h-12 w-12 object-contain" />
+                    <div className="h-12 w-12 md:h-14 md:w-14 flex items-center justify-center rounded-xl bg-card">
+                      <img src={m.logo} alt="" className="max-h-10 md:max-h-12 w-auto object-contain" />
+                    </div>
                     <div>
                       <h3 className="font-semibold text-lg">{m.label}</h3>
                       {m.info?.accountNumber && (
@@ -70,7 +72,9 @@ export const PaymentMethods: React.FC = () => {
             return (
               <div className="space-y-3">
                 <div className="flex items-center gap-3">
-                  <img src={conf.logo} alt="" className="h-8 w-8 object-contain" />
+                  <div className="h-8 w-8 flex items-center justify-center rounded-lg bg-card">
+                    <img src={conf.logo} alt="" className="max-h-6 w-auto object-contain" />
+                  </div>
                   <div>
                     <h4 className="font-medium">{conf.label} Selected</h4>
                     <p className="text-sm text-muted-foreground">Complete your payment using this method</p>

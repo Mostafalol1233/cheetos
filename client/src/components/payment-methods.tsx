@@ -21,12 +21,12 @@ export default function PaymentMethods() {
     } catch { }
   }, []);
   return (
-    <div className="bg-dark-bg py-16 overflow-hidden">
+    <div className="bg-background py-16 overflow-hidden">
       <div className="container mx-auto px-4">
-        <h2 className="text-3xl font-bold text-center text-white mb-2">
+        <h2 className="text-3xl font-bold text-center text-foreground mb-2">
           Payment Methods We Accept
         </h2>
-        <p className="text-gray-400 text-center mb-12">
+        <p className="text-muted-foreground text-center mb-12">
           Secure payments through multiple trusted providers
         </p>
 
@@ -37,12 +37,11 @@ export default function PaymentMethods() {
             {paymentMethods.map((method, index) => (
               <div
                 key={`first-${method.name}`}
-                className="flex-shrink-0"
-              >
+                className="flex-shrink-0 flex items-center justify-center rounded-2xl bg-card shadow-sm px-6 py-4">
                 <img
                   src={method.image}
                   alt={method.name}
-                  className="w-20 h-20 object-contain opacity-70 hover:opacity-100 transition-opacity duration-300"
+                  className="w-20 h-12 md:h-16 object-contain opacity-80 hover:opacity-100 transition-all duration-300"
                 />
               </div>
             ))}
@@ -51,12 +50,11 @@ export default function PaymentMethods() {
             {paymentMethods.map((method, index) => (
               <div
                 key={`second-${method.name}`}
-                className="flex-shrink-0"
-              >
+                className="flex-shrink-0 flex items-center justify-center rounded-2xl bg-card shadow-sm px-6 py-4">
                 <img
                   src={method.image}
                   alt={method.name}
-                  className="w-20 h-20 object-contain opacity-70 hover:opacity-100 transition-opacity duration-300"
+                  className="w-20 h-12 md:h-16 object-contain opacity-80 hover:opacity-100 transition-all duration-300"
                 />
               </div>
             ))}

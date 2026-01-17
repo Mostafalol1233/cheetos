@@ -71,19 +71,21 @@ export function Header() {
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
               >
-                <img
-                  src="/logo.png"
-                  alt="GameCart Logo"
-                  className="h-10 w-auto object-contain hover:scale-105 transition-transform"
-                />
+                <div className="h-10 w-auto flex items-center">
+                  <img
+                    src="/logo.png"
+                    alt="GameCart Logo"
+                    className="h-full w-auto max-h-10 object-contain hover:scale-105 transition-transform"
+                  />
+                </div>
                 <div className="hidden flex items-center gap-3">
                   <div className="relative">
-                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyber-blue to-neon-purple flex items-center justify-center shadow-glow-blue">
-                      <Gamepad2 className="w-5 h-5 text-white" />
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-gold-primary to-gold-secondary flex items-center justify-center shadow-[0_0_20px_rgba(255,215,0,0.5)]">
+                      <Gamepad2 className="w-5 h-5 text-black" />
                     </div>
                   </div>
                   <span className="text-xl md:text-2xl font-bold font-gaming tracking-wider">
-                    <span className="bg-gradient-to-r from-cyber-blue via-neon-purple to-neon-pink bg-clip-text text-transparent drop-shadow-sm">
+                    <span className="bg-gradient-to-r from-gold-primary via-gold-accent to-gold-secondary bg-clip-text text-transparent drop-shadow-sm">
                       Diaa
                     </span>
                     <span className="text-foreground ml-1">Store</span>
@@ -103,8 +105,8 @@ export function Header() {
                       className={cn(
                         "relative px-4 py-2 rounded-xl font-medium transition-all duration-300 flex items-center gap-2",
                         isActive
-                          ? "text-cyber-blue"
-                          : "text-muted-foreground hover:text-foreground"
+                          ? "text-gold-primary"
+                          : "text-muted-foreground hover:text-gold-primary"
                       )}
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
@@ -114,7 +116,7 @@ export function Header() {
                       {isActive && (
                         <motion.div
                           layoutId="activeTab"
-                          className="absolute inset-0 bg-cyber-blue/10 border border-cyber-blue/30 rounded-xl -z-10"
+                          className="absolute inset-0 bg-gold-primary/10 border border-gold-primary/40 rounded-xl -z-10"
                           transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
                         />
                       )}
@@ -127,7 +129,7 @@ export function Header() {
               <NavigationMenu>
                 <NavigationMenuList>
                   <NavigationMenuItem>
-                    <NavigationMenuTrigger className="bg-transparent hover:bg-cyber-blue/10 hover:text-cyber-blue text-muted-foreground data-[state=open]:text-cyber-blue">
+                    <NavigationMenuTrigger className="bg-transparent hover:bg-gold-primary/10 hover:text-gold-primary text-muted-foreground data-[state=open]:text-gold-primary">
                       <Grid3X3 className="w-4 h-4 mr-2" />
                       {t('categories')}
                     </NavigationMenuTrigger>
@@ -193,7 +195,7 @@ export function Header() {
                   variant="ghost"
                   size="icon"
                   onClick={toggleTheme}
-                  className="rounded-xl hover:bg-cyber-blue/10 hover:text-cyber-blue transition-all duration-300"
+                  className="rounded-xl hover:bg-gold-primary/10 hover:text-gold-primary transition-all duration-300"
                 >
                   <AnimatePresence mode="wait">
                     {theme === "dark" ? (
@@ -225,7 +227,7 @@ export function Header() {
               {isAuthenticated ? (
                 <div className="hidden md:flex items-center gap-2">
                   <Link href="/profile">
-                    <Button variant="ghost" size="sm" className="rounded-xl hover:bg-cyber-blue/10 hover:text-cyber-blue">
+                    <Button variant="ghost" size="sm" className="rounded-xl hover:bg-gold-primary/10 hover:text-gold-primary">
                       <User className="mr-2 h-4 w-4" />
                       <span className="hidden sm:inline">{user?.name}</span>
                     </Button>
@@ -241,7 +243,7 @@ export function Header() {
                 </div>
               ) : (
                 <Link href="/login" className="hidden md:block">
-                  <Button className="btn-gaming rounded-xl px-6">
+                  <Button className="rounded-xl px-6 bg-gold-primary text-background hover:bg-gold-accent transition-colors">
                     Sign In
                   </Button>
                 </Link>
@@ -253,7 +255,7 @@ export function Header() {
                   variant="ghost"
                   size="icon"
                   onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                  className="rounded-xl hover:bg-cyber-blue/10"
+                  className="rounded-xl hover:bg-gold-primary/10 hover:text-gold-primary"
                 >
                   <AnimatePresence mode="wait">
                     {isMobileMenuOpen ? (

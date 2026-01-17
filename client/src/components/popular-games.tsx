@@ -40,35 +40,41 @@ export function PopularGames() {
           <h2 className="text-3xl font-black text-foreground tracking-tight">{t('popular_games')}</h2>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5 sm:gap-6 lg:gap-8">
           {Array.isArray(games) && games.map((game) => {
             const isAdding = addingItems.includes(game.id);
             const isOutOfStock = false;
 
             return (
-              <div key={game.id} className="relative group perspective">
+              <div key={game.id} className="relative group perspective h-full">
                 <Link href={`/game/${game.slug}`} className="block h-full">
-                  {/* High-tech Border Effect */}
-                  <div className="absolute inset-0 border border-border/50 rounded-2xl group-hover:border-gold-primary/50 transition-colors duration-500 z-20 pointer-events-none"></div>
+                  <div className="relative h-full flex flex-col rounded-2xl glass border border-white/10 hover:border-gold-primary/60 transition-all duration-300 overflow-hidden">
+                    {/* High-tech Border Effect */}
+                    <div className="absolute inset-0 pointer-events-none rounded-2xl shadow-[0_12px_30px_rgba(0,0,0,0.25)]" />
 
-                  {/* Game Image */}
-                  <div className="relative mb-3 aspect-[16/9] w-full overflow-hidden rounded-xl bg-muted/20">
-                    <ImageWithFallback
-                      src={game.image || ''}
-                      alt={game.name}
-                      className="w-full h-full object-contain transition-transform duration-700 group-hover:scale-105"
-                    />
-                  </div>
+                    {/* Game Image */}
+                    <div className="relative mb-3 w-full overflow-hidden rounded-t-2xl bg-muted/30 aspect-[4/3] sm:aspect-[16/9]">
+                      <ImageWithFallback
+                        src={game.image || ''}
+                        alt={game.name}
+                        className="w-full h-full object-contain transition-transform duration-700 group-hover:scale-105"
+                      />
+                    </div>
 
-                  {/* Game Info */}
-                  <div className="relative z-10 mt-auto">
-                    <h3 className="font-bold text-foreground mb-1 text-lg line-clamp-1 group-hover:text-gold-primary transition-colors">{game.name}</h3>
-                    <p className="text-xs text-muted-foreground line-clamp-1 mb-3 opacity-80">{game.category || 'Action RPG'}</p>
+                    {/* Game Info */}
+                    <div className="relative z-10 flex-1 flex flex-col px-3 pb-3 sm:px-4 sm:pb-4">
+                      <h3 className="font-bold text-foreground mb-1 text-base sm:text-lg line-clamp-1 group-hover:text-gold-primary transition-colors">
+                        {game.name}
+                      </h3>
+                      <p className="text-xs text-muted-foreground line-clamp-1 mb-3 opacity-80">
+                        {game.category || 'Action RPG'}
+                      </p>
 
-                    <div className="flex items-center justify-between mt-2">
-                      <span className="text-xs px-2 py-1 rounded-full text-gold-primary bg-gold-primary/10 group-hover:bg-gold-primary group-hover:text-black transition-colors font-medium">
-                        {t('view_details')}
-                      </span>
+                      <div className="mt-auto flex items-center justify-between">
+                        <span className="text-xs px-2 py-1 rounded-full text-gold-primary bg-gold-primary/10 group-hover:bg-gold-primary group-hover:text-black transition-colors font-medium">
+                          {t('view_details')}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </Link>

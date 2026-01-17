@@ -39,7 +39,6 @@ import { FloatingWhatsAppButton } from "@/components/floating-whatsapp-button";
 import { Header } from "@/components/header";
 import { CartSidebar } from "@/components/cart-sidebar";
 import { CheckoutModal } from "@/components/checkout-modal";
-import { ChristmasSnow } from "@/components/christmas-snow";
 import GameDescriptionEditor from "./pages/game-description-editor";
 
 import PackageDetailsPage from "./pages/package-details";
@@ -175,7 +174,6 @@ function AppShell() {
       </div>
 
       {!isAdminRoute && <FloatingWhatsAppButton />}
-      <ChristmasSnow />
     </>
   );
 }

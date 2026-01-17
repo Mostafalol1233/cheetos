@@ -88,6 +88,17 @@ export default function GamePage() {
 
   const isOutOfStock = Number(game.stock) <= 0;
 
+  const getHeroImage = () => {
+    const direct = (game as any).image_url || game.image;
+    if (direct) return direct;
+    const slug = (game as any).slug || (game as any).id || '';
+    if (!slug) return '';
+    if (slug === 'crossfire') {
+      return '/images/crossfire-icon.webp';
+    }
+    return `/images/${slug}.webp`;
+  };
+
   const getPackagePricing = (index: number) => {
     if (localizedPrices && localizedPrices[index]) {
       const localized = localizedPrices[index];
@@ -129,7 +140,7 @@ export default function GamePage() {
         title={`شحن ${game.name} - متجر ضياء | Diaa Gaming Top Up`}
         description={`اشحن عملات ${game.name} بسهولة في متجر ضياء. خدمة شحن آمنة وسريعة في مصر.`}
         keywords={[`شحن ${game.name}`, game.name, 'ضياء', 'Diaa', 'شحن ألعاب']}
-        image={`/images/${game.slug}.webp`}
+        image={getHeroImage() || `/images/${game.slug}.webp`}
         url={`${window.location.origin}/game/${game.slug}`}
       />
 
@@ -166,9 +177,9 @@ export default function GamePage() {
               >
                 <div className="relative rounded-3xl overflow-hidden glass border border-white/10">
                   <ImageWithFallback
-                    src={(game as any).image_url || game.image}
+                    src={getHeroImage()}
                     alt={game.name}
-                    className="w-full h-auto max-h-[500px] object-cover"
+                    className="w-full h-auto max-h-[500px] object-contain bg-black/10"
                   />
 
                   {/* Badges */}
@@ -249,7 +260,7 @@ export default function GamePage() {
               {packages.map((pkgItem: any, index: number) => {
                 const pkgData = getPackageData(index);
                 const name = pkgData.name || (typeof pkgItem === 'string' ? pkgItem : pkgItem.name);
-                const image = pkgData.image || (game as any).image_url || game.image;
+                const image = pkgData.image || getHeroImage();
 
                 const pricing = getPackagePricing(index);
                 // Prefer bonus from rich object, then array

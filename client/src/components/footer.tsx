@@ -32,15 +32,15 @@ export function Footer() {
   return (
     <footer className="relative mt-auto overflow-hidden">
       {/* Gradient Top Border */}
-      <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-cyber-blue via-neon-purple to-neon-pink" />
+      <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-gold-primary via-gold-accent to-gold-secondary" />
 
       {/* Background Glow Effects */}
-      <div className="absolute -top-40 -left-40 w-80 h-80 bg-cyber-blue/10 rounded-full blur-3xl" />
-      <div className="absolute -bottom-40 -right-40 w-80 h-80 bg-neon-purple/10 rounded-full blur-3xl" />
+      <div className="absolute -top-40 -left-40 w-80 h-80 bg-gold-primary/10 rounded-full blur-3xl" />
+      <div className="absolute -bottom-40 -right-40 w-80 h-80 bg-gold-secondary/10 rounded-full blur-3xl" />
 
       {/* Back to Top */}
       <motion.button
-        className="absolute bottom-8 right-8 p-3 rounded-full bg-cyber-blue/10 text-cyber-blue border border-cyber-blue/20 hover:bg-cyber-blue/20 transition-all z-10"
+        className="absolute bottom-8 right-8 p-3 rounded-full bg-gold-primary/10 text-gold-primary border border-gold-primary/30 hover:bg-gold-primary/20 transition-all z-10"
         whileHover={{ scale: 1.1, y: -5 }}
         whileTap={{ scale: 0.9 }}
         onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
@@ -63,14 +63,16 @@ export function Footer() {
             >
               <Link href="/">
                 <div className="flex items-center gap-3 cursor-pointer group">
-                  <img
-                    src="/logo.png"
-                    alt="GameCart Logo"
-                    className="h-12 w-auto object-contain hover:scale-105 transition-transform"
-                  />
+                  <div className="h-12 w-auto flex items-center">
+                    <img
+                      src="/logo.png"
+                      alt="GameCart Logo"
+                      className="h-full w-auto max-h-12 object-contain hover:scale-105 transition-transform"
+                    />
+                  </div>
                   <div>
                     <span className="text-xl font-bold font-gaming">
-                      <span className="bg-gradient-to-r from-cyber-blue to-neon-purple bg-clip-text text-transparent">Diaa</span>
+                      <span className="bg-gradient-to-r from-gold-primary via-gold-accent to-gold-secondary bg-clip-text text-transparent">Diaa</span>
                       <span className="text-foreground ml-1">Store</span>
                     </span>
                     <p className="text-xs text-muted-foreground">Premium Gaming Store</p>
@@ -110,14 +112,14 @@ export function Footer() {
             >
               <h3 className="text-lg font-bold text-foreground mb-6 flex items-center gap-2">
                 Quick Links
-                <span className="flex-1 h-px bg-gradient-to-r from-cyber-blue/50 to-transparent" />
+                <span className="flex-1 h-px bg-gradient-to-r from-gold-primary/60 to-transparent" />
               </h3>
               <ul className="space-y-3">
                 {quickLinks.map((link) => (
                   <li key={link.href}>
                     <Link href={link.href}>
-                      <span className="text-muted-foreground hover:text-cyber-blue transition-colors duration-300 flex items-center gap-2 group">
-                        <span className="w-1.5 h-1.5 rounded-full bg-cyber-blue/50 group-hover:bg-cyber-blue group-hover:shadow-glow-blue transition-all" />
+                      <span className="text-muted-foreground hover:text-gold-primary transition-colors duration-300 flex items-center gap-2 group">
+                        <span className="w-1.5 h-1.5 rounded-full bg-gold-primary/60 group-hover:bg-gold-primary group-hover:shadow-[0_0_12px_rgba(255,215,0,0.6)] transition-all" />
                         {link.label}
                       </span>
                     </Link>
@@ -135,14 +137,14 @@ export function Footer() {
             >
               <h3 className="text-lg font-bold text-foreground mb-6 flex items-center gap-2">
                 Support
-                <span className="flex-1 h-px bg-gradient-to-r from-neon-purple/50 to-transparent" />
+                <span className="flex-1 h-px bg-gradient-to-r from-gold-secondary/60 to-transparent" />
               </h3>
               <ul className="space-y-3">
                 {supportLinks.map((link) => (
                   <li key={link.href}>
                     <Link href={link.href}>
-                      <span className="text-muted-foreground hover:text-neon-purple transition-colors duration-300 flex items-center gap-2 group">
-                        <span className="w-1.5 h-1.5 rounded-full bg-neon-purple/50 group-hover:bg-neon-purple group-hover:shadow-glow-purple transition-all" />
+                      <span className="text-muted-foreground hover:text-gold-primary transition-colors duration-300 flex items-center gap-2 group">
+                        <span className="w-1.5 h-1.5 rounded-full bg-gold-secondary/60 group-hover:bg-gold-primary group-hover:shadow-[0_0_12px_rgba(255,215,0,0.6)] transition-all" />
                         {link.label}
                       </span>
                     </Link>
@@ -160,24 +162,24 @@ export function Footer() {
             >
               <h3 className="text-lg font-bold text-foreground mb-6 flex items-center gap-2">
                 Contact Us
-                <span className="flex-1 h-px bg-gradient-to-r from-cyber-gold/50 to-transparent" />
+                <span className="flex-1 h-px bg-gradient-to-r from-gold-primary/60 to-transparent" />
               </h3>
               <ul className="space-y-4">
                 <li className="flex items-start gap-3 text-muted-foreground group">
-                  <div className="w-8 h-8 rounded-lg bg-cyber-blue/10 flex items-center justify-center shrink-0 group-hover:bg-cyber-blue/20 transition-colors">
-                    <MapPin className="w-4 h-4 text-cyber-blue" />
+                  <div className="w-8 h-8 rounded-lg bg-gold-primary/10 flex items-center justify-center shrink-0 group-hover:bg-gold-primary/20 transition-colors">
+                    <MapPin className="w-4 h-4 text-gold-primary" />
                   </div>
                   <span className="text-sm">Cairo, Egypt</span>
                 </li>
                 <li className="flex items-start gap-3 text-muted-foreground group">
-                  <div className="w-8 h-8 rounded-lg bg-neon-purple/10 flex items-center justify-center shrink-0 group-hover:bg-neon-purple/20 transition-colors">
-                    <Phone className="w-4 h-4 text-neon-purple" />
+                  <div className="w-8 h-8 rounded-lg bg-gold-secondary/10 flex items-center justify-center shrink-0 group-hover:bg-gold-secondary/20 transition-colors">
+                    <Phone className="w-4 h-4 text-gold-secondary" />
                   </div>
                   <span className="text-sm">+20 106 858 6636</span>
                 </li>
                 <li className="flex items-start gap-3 text-muted-foreground group">
-                  <div className="w-8 h-8 rounded-lg bg-cyber-gold/10 flex items-center justify-center shrink-0 group-hover:bg-cyber-gold/20 transition-colors">
-                    <Mail className="w-4 h-4 text-cyber-gold" />
+                  <div className="w-8 h-8 rounded-lg bg-gold-primary/10 flex items-center justify-center shrink-0 group-hover:bg-gold-primary/20 transition-colors">
+                    <Mail className="w-4 h-4 text-gold-primary" />
                   </div>
                   <span className="text-sm">support@diaaeldeen.com</span>
                 </li>
@@ -197,7 +199,7 @@ export function Footer() {
               {/* Copyright */}
               <p className="text-sm text-muted-foreground flex items-center gap-1">
                 © 2015–{currentYear} Diaa Eldeen. Made with
-                <Heart className="w-4 h-4 text-neon-pink inline animate-pulse" />
+                <Heart className="w-4 h-4 text-gold-primary inline animate-pulse" />
                 in Egypt
               </p>
 

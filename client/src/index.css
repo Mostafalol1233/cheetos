@@ -105,17 +105,17 @@
    LIGHT MODE THEME - BLACK & GOLD LUXURY
    ======================================== */
 .light {
-  /* Core: Black backgrounds with gold accents */
-  --background: 0 0% 8%;
-  /* Rich black #141414 */
-  --foreground: 48 100% 92%;
-  /* Warm cream #FFF9E6 for readability */
+  /* Core: Light backgrounds with gold accents */
+  --background: 48 100% 98%;
+  /* Soft cream */
+  --foreground: 222 15% 15%;
+  /* Dark text for contrast */
 
-  --card: 0 0% 11%;
-  /* Darker card #1C1C1C */
-  --card-foreground: 48 100% 92%;
-  --popover: 0 0% 11%;
-  --popover-foreground: 48 100% 92%;
+  --card: 0 0% 100%;
+  /* Pure white cards */
+  --card-foreground: 222 15% 15%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 222 15% 15%;
 
   /* Primary: Royal Gold */
   --primary: 45 100% 50%;
@@ -123,16 +123,16 @@
   --primary-foreground: 0 0% 5%;
   /* Near black for contrast */
 
-  /* Secondary: Warm Bronze */
-  --secondary: 0 0% 15%;
-  /* Dark gray */
-  --secondary-foreground: 45 70% 75%;
-  /* Light gold */
+  /* Secondary: Soft neutral */
+  --secondary: 48 30% 96%;
+  /* Light neutral */
+  --secondary-foreground: 222 15% 25%;
+  /* Darker text */
 
-  /* Muted: Charcoal */
-  --muted: 0 0% 18%;
-  --muted-foreground: 48 30% 65%;
-  /* Muted gold text */
+  /* Muted: Pale neutral */
+  --muted: 48 40% 96%;
+  --muted-foreground: 222 10% 40%;
+  /* Muted text */
 
   /* Accent: Bright Gold */
   --accent: 43 96% 56%;
@@ -144,9 +144,9 @@
   --destructive-foreground: 0 0% 100%;
 
   /* Border & Input */
-  --border: 45 50% 25%;
-  /* Gold tinted border */
-  --input: 0 0% 14%;
+  --border: 48 15% 82%;
+  /* Soft border */
+  --input: 0 0% 100%;
   --ring: 45 100% 50%;
   /* Gold ring */
 
@@ -171,14 +171,14 @@
   /* Bright gold */
 
   /* Background Layers */
-  --dark-bg: 0 0% 8%;
-  --darker-bg: 0 0% 5%;
-  --card-bg: 0 0% 11%;
-  --card-bg-alt: 0 0% 14%;
+  --dark-bg: 48 40% 97%;
+  --darker-bg: 48 40% 94%;
+  --card-bg: 0 0% 100%;
+  --card-bg-alt: 48 40% 95%;
 
-  /* Glassmorphism Light - dark glass with gold tint */
-  --glass-bg: 0 0% 10% / 0.9;
-  --glass-border: 45 100% 50% / 0.2;
+  /* Glassmorphism Light - subtle light glass with gold tint */
+  --glass-bg: 0 0% 100% / 0.85;
+  --glass-border: 45 100% 50% / 0.15;
 }
 
 /* ========================================
@@ -989,13 +989,13 @@
    ======================================== */
 .btn-gaming {
   @apply relative overflow-hidden font-semibold py-3 px-6 rounded-xl transition-all duration-300;
-  background: linear-gradient(135deg, hsl(var(--cyber-blue)), hsl(var(--neon-purple)));
-  color: white;
+  background: linear-gradient(135deg, hsl(var(--gold-primary)), hsl(var(--gold-secondary)));
+  color: hsl(var(--background));
 }
 
 .btn-gaming:hover {
   transform: translateY(-2px);
-  box-shadow: 0 10px 30px hsl(var(--cyber-blue) / 0.4);
+  box-shadow: 0 10px 30px hsl(var(--gold-primary) / 0.4);
 }
 
 .btn-gaming::before {
@@ -1039,8 +1039,8 @@
 
 .input-gaming:focus {
   outline: none;
-  border-color: hsl(var(--cyber-blue));
-  box-shadow: 0 0 0 3px hsl(var(--cyber-blue) / 0.2);
+  border-color: hsl(var(--gold-primary));
+  box-shadow: 0 0 0 3px hsl(var(--gold-primary) / 0.2);
 }
 
 .input-gaming::placeholder {
