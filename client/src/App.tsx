@@ -43,11 +43,12 @@ import { ChristmasSnow } from "@/components/christmas-snow";
 import GameDescriptionEditor from "./pages/game-description-editor";
 
 import PackageDetailsPage from "./pages/package-details";
+import PackageCheckoutPage from "./pages/package-checkout";
 
 // Protected admin route component
 function ProtectedAdminRoute() {
   const { isAuthenticated, isLoading } = useAuth();
-  
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -55,47 +56,48 @@ function ProtectedAdminRoute() {
       </div>
     );
   }
-  
+
   if (!isAuthenticated) {
     window.location.href = "/admin/login";
     return null;
   }
-  
+
   return <AdminDashboard />;
 }
 
-  function Router() {
-    return (
-      <div className="pt-[100px] lg:pt-[120px]">
-        <Switch>
-          <Route path="/" component={Home} />
-          <Route path="/games" component={GamesPage} />
-          <Route path="/packs" component={PacksPage} />
-          <Route path="/support" component={SupportPage} />
-          <Route path="/checkout" component={Checkout} />
-          <Route path="/checkout/security/:id" component={CheckoutSecurityPage} />
-          <Route path="/login" component={UserLoginPage} />
-          <Route path="/profile" component={UserProfilePage} />
-          <Route path="/admin/login" component={AdminLoginPage} />
-          <Route path="/admin/packages/:gameId" component={AdminPackagesPage} />
-          <Route path="/admin/games/:id/description" component={GameDescriptionEditor} />
-          {/* QR login removed */}
-          <Route path="/admin" component={ProtectedAdminRoute} />
-          <Route path="/admin/confirmation/:id" component={AdminConfirmationPage} />
-          <Route path="/category/:slug" component={CategoryPage} />
-          <Route path="/game/:slug" component={GamePage} />
-          <Route path="/packages/:slug" component={PackageDetailsPage} />
-          <Route path="/faq" component={FAQPage} />
-          <Route path="/terms" component={TermsPage} />
-          <Route path="/privacy" component={PrivacyPage} />
-          <Route path="/refunds" component={RefundsPage} />
-          <Route path="/track-order" component={TrackOrderPage} />
+function Router() {
+  return (
+    <div className="pt-[100px] lg:pt-[120px]">
+      <Switch>
+        <Route path="/" component={Home} />
+        <Route path="/games" component={GamesPage} />
+        <Route path="/packs" component={PacksPage} />
+        <Route path="/support" component={SupportPage} />
+        <Route path="/checkout" component={Checkout} />
+        <Route path="/checkout/security/:id" component={CheckoutSecurityPage} />
+        <Route path="/login" component={UserLoginPage} />
+        <Route path="/profile" component={UserProfilePage} />
+        <Route path="/admin/login" component={AdminLoginPage} />
+        <Route path="/admin/packages/:gameId" component={AdminPackagesPage} />
+        <Route path="/admin/games/:id/description" component={GameDescriptionEditor} />
+        {/* QR login removed */}
+        <Route path="/admin" component={ProtectedAdminRoute} />
+        <Route path="/admin/confirmation/:id" component={AdminConfirmationPage} />
+        <Route path="/category/:slug" component={CategoryPage} />
+        <Route path="/game/:slug" component={GamePage} />
+        <Route path="/package/:gameSlug/:packageIndex" component={PackageCheckoutPage} />
+        <Route path="/packages/:slug" component={PackageDetailsPage} />
+        <Route path="/faq" component={FAQPage} />
+        <Route path="/terms" component={TermsPage} />
+        <Route path="/privacy" component={PrivacyPage} />
+        <Route path="/refunds" component={RefundsPage} />
+        <Route path="/track-order" component={TrackOrderPage} />
 
-          <Route component={NotFound} />
-        </Switch>
-      </div>
-    );
-  }
+        <Route component={NotFound} />
+      </Switch>
+    </div>
+  );
+}
 
 function AppShell() {
   const [location] = useLocation();
@@ -114,7 +116,7 @@ function AppShell() {
       const element = label ? `${tag}:${label.slice(0, 120)}` : tag;
       const page = window.location.pathname;
       const ua = navigator.userAgent;
-      apiRequest("POST", "/api/metrics/interaction", { event_type: "click", element, page, success: true, ua }).catch(() => {});
+      apiRequest("POST", "/api/metrics/interaction", { event_type: "click", element, page, success: true, ua }).catch(() => { });
     };
     document.addEventListener("click", handler, { capture: true });
     return () => document.removeEventListener("click", handler, { capture: true } as any);
@@ -130,7 +132,7 @@ function AppShell() {
         });
         // @ts-ignore
         po.observe({ type, buffered: true });
-      } catch {}
+      } catch { }
     };
     observe("paint", (e) => {
       if (e.name === "first-contentful-paint") entries.push({ name: "FCP", value: e.startTime, page });
@@ -147,7 +149,7 @@ function AppShell() {
       const nav = performance.getEntriesByType("navigation")[0] as PerformanceNavigationTiming | undefined;
       if (nav) entries.push({ name: "TTFB", value: nav.responseStart, page });
       if (clsTotal > 0) entries.push({ name: "CLS", value: clsTotal, page });
-      if (entries.length) apiRequest("POST", "/api/metrics/perf", { entries, ua: navigator.userAgent }).catch(() => {});
+      if (entries.length) apiRequest("POST", "/api/metrics/perf", { entries, ua: navigator.userAgent }).catch(() => { });
     };
     const vis = () => {
       if (document.visibilityState === "hidden") send();

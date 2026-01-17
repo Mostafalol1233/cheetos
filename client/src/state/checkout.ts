@@ -35,59 +35,62 @@ export const PAYMENT_METHODS: PaymentConfig[] = [
   {
     key: 'vodafone_cash',
     label: 'Vodafone Cash',
-    logo: 'https://raw.githubusercontent.com/game-cart/assets/main/payments/vodafone.png',
-    info: { 
-      accountNumber: '010XXXXXXXX',
-      instructions: 'Send the total amount to this wallet number and upload the receipt.'
+    logo: '/payments/vodafone-logo.png',
+    info: {
+      accountNumber: '01068586636',
+      instructions: 'Send the total amount to this Vodafone Cash wallet and upload the transfer receipt.'
     }
   },
   {
     key: 'instapay',
     label: 'InstaPay',
-    logo: 'https://raw.githubusercontent.com/game-cart/assets/main/payments/instapay.png',
-    info: { 
-      accountNumber: 'username@instapay',
-      instructions: 'Send via InstaPay to this address and upload the receipt.'
+    logo: '/payments/instapay-logo.png',
+    info: {
+      accountNumber: 'diaaeldeen@instapay',
+      instructions: 'Send via InstaPay to this address and upload your transfer confirmation.'
     }
   },
   {
     key: 'orange_cash',
     label: 'Orange Cash',
-    logo: 'https://raw.githubusercontent.com/game-cart/assets/main/payments/orange.png',
-    info: { 
-      accountNumber: '012XXXXXXXX',
-      instructions: 'Send the total amount to this wallet number and upload the receipt.'
+    logo: '/payments/orange-logo-new.png',
+    info: {
+      accountNumber: '01068586636',
+      instructions: 'Send the total amount to this Orange Cash wallet and upload the receipt.'
     }
   },
   {
     key: 'etisalat_cash',
     label: 'Etisalat Cash',
-    logo: 'https://raw.githubusercontent.com/game-cart/assets/main/payments/etisalat.png',
-    info: { 
-      accountNumber: '011XXXXXXXX',
-      instructions: 'Send the total amount to this wallet number and upload the receipt.'
+    logo: '/payments/etisalat-logo.png',
+    info: {
+      accountNumber: '01068586636',
+      instructions: 'Send the total amount to this Etisalat Cash wallet and upload the receipt.'
     }
   },
   {
     key: 'we_pay',
     label: 'WePay',
-    logo: 'https://raw.githubusercontent.com/game-cart/assets/main/payments/we.png',
-    info: { 
-      accountNumber: '015XXXXXXXX',
-      instructions: 'Send the total amount to this wallet number and upload the receipt.'
+    logo: '/payments/we-pay-logo.png',
+    info: {
+      accountNumber: '01068586636',
+      instructions: 'Send the total amount to this WePay wallet and upload the receipt.'
     }
   },
   {
     key: 'credit_card',
-    label: 'Credit Card',
-    logo: 'https://raw.githubusercontent.com/game-cart/assets/main/payments/mastercard.png', 
-    info: { instructions: 'Secure payment via Credit/Debit Card.' }
+    label: 'PayPal',
+    logo: '/payments/paypal-logo.png',
+    info: {
+      accountNumber: 'diaaeldeen@paypal.com',
+      instructions: 'Send payment via PayPal and upload the confirmation screenshot.'
+    }
   },
   {
     key: 'other',
     label: 'Other Methods',
-    logo: 'https://raw.githubusercontent.com/game-cart/assets/main/payments/generic.png', 
-    info: { instructions: 'Contact support for other payment options.' }
+    logo: '/payments/generic.png',
+    info: { instructions: 'Contact support on WhatsApp for other payment options.' }
   }
 ];
 
@@ -134,7 +137,7 @@ export function generateIdempotencyKey() {
 export function ensureIdempotencyKey() {
   const state = useCheckout.getState();
   if (state.idempotencyKey) return state.idempotencyKey;
-  
+
   const newKey = generateIdempotencyKey();
   state.setIdempotencyKey(newKey);
   return newKey;
@@ -173,7 +176,7 @@ export const useCheckout = create<CheckoutState>()(
       setPaymentMethod: (m) => set({ paymentMethod: m }),
       setPaymentData: (d) => set((state) => ({ paymentData: { ...state.paymentData, ...d } })),
       setIdempotencyKey: (k) => set({ idempotencyKey: k }),
-      setOrderMeta: (id, status) => set((state) => ({ 
+      setOrderMeta: (id, status) => set((state) => ({
         orderId: id !== undefined ? id : state.orderId,
         orderStatus: status !== undefined ? status : state.orderStatus
       })),

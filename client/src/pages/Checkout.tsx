@@ -30,38 +30,50 @@ export function CheckoutContent({ isEmbedded = false }: { isEmbedded?: boolean }
   const [, setLocation] = useLocation();
 
   useEffect(() => {
-    if (!isAuthenticated) {
-      setLocation('/user-login?redirect=/checkout');
-    }
-  }, [isAuthenticated, setLocation]);
-
-  useEffect(() => {
-    // Sync checkout cart with global cart on mount
-    if (globalCart.length > 0) {
+    // Check for single package checkout
+    const checkoutPackageJson = localStorage.getItem('checkout_package');
+    if (checkoutPackageJson) {
+      try {
+        const pkg = JSON.parse(checkoutPackageJson);
+        setCart([{
+          id: `${pkg.gameId}-${pkg.packageIndex}`,
+          name: `${pkg.gameName} - ${pkg.packageName}`,
+          price: pkg.price,
+          quantity: 1,
+          image: pkg.gameImage,
+          gameId: pkg.gameId
+        }]);
+      } catch (e) {
+        console.error("Failed to parse checkout package", e);
+      }
+    } else if (globalCart.length > 0) {
+      // Sync checkout cart with global cart
       setCart(globalCart);
     }
   }, [globalCart, setCart]);
 
   const currentStepIndex = steps.findIndex(s => s.key === step);
   // Default to details if step is 'cart' (legacy) or invalid
-  const currentStep = steps[currentStepIndex] || steps[0]; 
+  const currentStep = steps[currentStepIndex] || steps[0];
   const progress = ((currentStepIndex + 1) / (steps.length - 2)) * 100; // Exclude processing and result
 
   useEffect(() => {
     // Redirect if cart is empty and not on result step
-    if (cart.length === 0 && step !== 'result') {
-      // If global cart is also empty, maybe redirect to home? 
-      // But for now just stay or maybe redirect to home.
-      if (globalCart.length === 0) {
-          // Optional: setLocation('/'); 
+    // But give it a moment to load from localStorage
+    const timer = setTimeout(() => {
+      if (cart.length === 0 && step !== 'result') {
+        // Optional: setLocation('/'); 
       }
-    }
-    
-    // If step is 'cart' which we removed, go to 'details'
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [cart, step]);
+
+  // If step is 'cart' which we removed, go to 'details'
+  useEffect(() => {
     if (step === 'cart') {
-        setStep('details');
+      setStep('details');
     }
-  }, [cart, step, setStep, globalCart]);
+  }, [step, setStep]);
 
   const canGoNext = () => {
     switch (step) {
@@ -92,7 +104,7 @@ export function CheckoutContent({ isEmbedded = false }: { isEmbedded?: boolean }
   const StepComponent = currentStep.component;
 
   if (!isAuthenticated) {
-      return null; // or a loading spinner while redirecting
+    return null; // or a loading spinner while redirecting
   }
 
   return (
@@ -107,11 +119,10 @@ export function CheckoutContent({ isEmbedded = false }: { isEmbedded?: boolean }
                 <Progress value={progress} className="h-2" />
                 <div className="absolute top-0 left-0 w-full flex justify-between -mt-2">
                   {steps.slice(0, 3).map((s, i) => ( // Show first 3 steps in progress bar
-                    <div 
+                    <div
                       key={s.key}
-                      className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-colors ${
-                        i <= currentStepIndex ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
-                      }`}
+                      className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-colors ${i <= currentStepIndex ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
+                        }`}
                     >
                       {i + 1}
                     </div>
@@ -128,8 +139,8 @@ export function CheckoutContent({ isEmbedded = false }: { isEmbedded?: boolean }
 
           <Card>
             <CardContent className="p-6">
-              <StepComponent 
-                onNext={handleNext} 
+              <StepComponent
+                onNext={handleNext}
                 onBack={handleBack}
                 canGoNext={canGoNext()}
               />

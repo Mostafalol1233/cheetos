@@ -21,7 +21,7 @@ export function registerRoutes(app: Express): Server {
     if (!fs.existsSync(receiptsDir)) {
       fs.mkdirSync(receiptsDir, { recursive: true });
     }
-  } catch {}
+  } catch { }
   const upload = multer({ dest: receiptsDir });
 
   // Middleware to protect routes
@@ -40,12 +40,12 @@ export function registerRoutes(app: Express): Server {
     try {
       const { username, password, email } = req.body;
       if (!username || !password || !email) return res.status(400).json({ message: "Missing fields" });
-      
+
       const existingUser = await storage.getUserByUsername(username);
       if (existingUser) return res.status(400).json({ message: "Username already exists" });
 
       const hashedPassword = hashPassword(password);
-      
+
       await storage.createUser({
         id: crypto.randomBytes(12).toString("hex"),
         username,
@@ -53,7 +53,7 @@ export function registerRoutes(app: Express): Server {
         email,
         role: "user"
       });
-      
+
       res.json({ message: "Registered successfully" });
     } catch (err: any) {
       res.status(500).json({ message: err.message });
@@ -96,6 +96,13 @@ export function registerRoutes(app: Express): Server {
     } catch (err: any) {
       res.status(500).json({ message: err.message });
     }
+  });
+
+  app.post("/api/uploads/receipt", upload.single("image"), (req, res) => {
+    if (!req.file) return res.status(400).json({ message: "No file uploaded" });
+    // Assuming static serving is set up for attached_assets
+    const url = `/attached_assets/receipts/${req.file.filename}`;
+    res.json({ url });
   });
 
   const PAYMENT_DETAILS: Record<string, { title: string; value: string; instructions?: string }> = {
@@ -179,7 +186,7 @@ export function registerRoutes(app: Express): Server {
       if (!fs.existsSync(filePath)) {
         return res.status(404).json({ message: "File not found" });
       }
-      
+
       const content = fs.readFileSync(filePath, "utf-8");
       const json = JSON.parse(content);
       const products = json.products || [];
@@ -197,12 +204,12 @@ export function registerRoutes(app: Express): Server {
       for (const [name, items] of Object.entries(groups)) {
         const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, "-");
         let game = await storage.getGameBySlug(slug);
-        
+
         const packages = items.map(i => i.denomination);
         const packagePrices = items.map(i => String(i.price_EGP));
-        const basePrice = packagePrices[0]; 
+        const basePrice = packagePrices[0];
         const totalStock = items.reduce((sum, i) => sum + (i.stock_estimate || 0), 0);
-        
+
         if (game) {
           await storage.updateGame(game.id, {
             packages,
@@ -219,7 +226,7 @@ export function registerRoutes(app: Express): Server {
           } else if (items[0].category?.toLowerCase().includes("gift")) {
             category = "gift-cards";
           }
-          
+
           await storage.createGame({
             id: `game_${Date.now()}_${created}`,
             name: name,
@@ -227,7 +234,7 @@ export function registerRoutes(app: Express): Server {
             description: items[0].notes || `${name} Top-Up`,
             price: basePrice,
             currency: "EGP",
-            image: "/attached_assets/placeholder.png", 
+            image: "/attached_assets/placeholder.png",
             category,
             isPopular: false,
             stock: totalStock,
@@ -237,7 +244,7 @@ export function registerRoutes(app: Express): Server {
           created++;
         }
       }
-      
+
       res.json({ message: "Import completed", created, updated });
     } catch (err: any) {
       res.status(500).json({ message: err.message });
@@ -245,7 +252,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // --- Existing Routes (Updated) ---
-  
+
   // Get all categories
   app.get("/api/categories", async (req, res) => {
     try {
@@ -330,9 +337,9 @@ export function registerRoutes(app: Express): Server {
     try {
       const { sender, message, sessionId } = req.body;
       const userId = (req.user as any)?.id; // If authenticated
-      
+
       const validated = insertChatMessageSchema.parse({ sender, message, sessionId, userId });
-      
+
       await storage.createChatMessage({
         sender,
         message,
@@ -345,13 +352,13 @@ export function registerRoutes(app: Express): Server {
         await storage.createSellerAlert({
           id: `alert_${Date.now()}`,
           type: 'customer_message',
-          summary: `Session ${sessionId.slice(0,8)}: ${message.slice(0,50)}`,
+          summary: `Session ${sessionId.slice(0, 8)}: ${message.slice(0, 50)}`,
           read: false,
           flagged: false,
           createdAt: Date.now()
         });
       }
-      
+
       res.json({ sender, message, timestamp: Date.now(), sessionId });
     } catch (error) {
       console.error(error);
@@ -386,10 +393,10 @@ export function registerRoutes(app: Express): Server {
       if (!customerName || !customerPhone || !paymentMethod || !Array.isArray(items)) {
         return res.status(400).json({ message: "Invalid checkout payload" });
       }
-      
+
       const total = items.reduce((sum: number, it: any) => sum + Number(it.price) * Number(it.quantity || 1), 0);
       const id = `tx_${Date.now()}`;
-      
+
       await storage.createTransaction({
         id,
         userId: userId || null,
@@ -435,12 +442,12 @@ export function registerRoutes(app: Express): Server {
       let user = null;
       if (!userId && customer_email) {
         user = await storage.getUserByEmail(customer_email);
-        
+
         if (!user) {
           generatedPassword = crypto.randomBytes(8).toString('hex');
           const hashedPassword = hashPassword(generatedPassword);
           const username = customer_email.split('@')[0] + Math.floor(Math.random() * 10000);
-          
+
           user = await storage.createUser({
             id: crypto.randomBytes(12).toString("hex"),
             username,
@@ -492,10 +499,10 @@ export function registerRoutes(app: Express): Server {
         playerId: player_id || null,
         serverId: server_id || null
       } as any);
-      
-      res.status(201).json({ 
-        id, 
-        status: "pending", 
+
+      res.status(201).json({
+        id,
+        status: "pending",
         user: user,
         newAccount: newUserCreated,
         generatedPassword: newUserCreated ? generatedPassword : undefined

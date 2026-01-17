@@ -9,13 +9,14 @@ import { Upload } from 'lucide-react';
 import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 
+import { ReceiptUpload } from './receipt-upload';
+
 export function StepPayment() {
   const { paymentMethod, paymentData, setPaymentData, setStep } = useCheckout();
   const { toast } = useToast();
   const [isUploading, setIsUploading] = React.useState(false);
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+  const handleFileUpload = async (file: File) => {
     if (!file) return;
 
     setIsUploading(true);
@@ -23,15 +24,6 @@ export function StepPayment() {
     formData.append('image', file);
 
     try {
-      // Use existing header upload or create a new one?
-      // Using header-images/upload for now as it returns a URL and is authenticated admin only... wait.
-      // Users need to upload receipts. They are not admins.
-      // I need a public upload endpoint or user-authenticated one.
-      // For now, let's assume I need to create a route for receipt uploads.
-      
-      // Temporary: Simulate upload or use a placeholder if route doesn't exist
-      // But I should create the route.
-      
       const res = await fetch('/api/uploads/receipt', {
         method: 'POST',
         body: formData,
@@ -41,7 +33,7 @@ export function StepPayment() {
       
       const data = await res.json();
       setPaymentData({ receiptUrl: data.url });
-      toast({ title: "Receipt uploaded" });
+      toast({ title: "Receipt uploaded successfully" });
     } catch (error) {
       console.error(error);
       toast({ title: "Upload failed", variant: "destructive" });
@@ -76,21 +68,11 @@ export function StepPayment() {
                     </div>
                     <div className="space-y-2">
                         <Label>Upload Receipt (Required for Wallet Payments)</Label>
-                        <div className="flex items-center gap-4">
-                            <Input 
-                                type="file" 
-                                accept="image/*,.pdf"
-                                onChange={handleFileUpload}
-                                className="cursor-pointer"
-                                disabled={isUploading}
-                            />
-                            {isUploading && <span className="text-sm text-muted-foreground">Uploading...</span>}
-                        </div>
-                        {paymentData.receiptUrl && (
-                            <p className="text-xs text-green-500 flex items-center gap-1">
-                                <Upload className="w-3 h-3" /> Receipt attached
-                            </p>
-                        )}
+                        <ReceiptUpload 
+                            onUpload={handleFileUpload}
+                            onRemove={() => setPaymentData({ receiptUrl: null })}
+                        />
+                         {isUploading && <span className="text-sm text-muted-foreground block mt-2">Uploading...</span>}
                     </div>
                 </div>
             </div>

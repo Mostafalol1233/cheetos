@@ -1,22 +1,62 @@
-import { useState } from "react";
-import { Gamepad2, Zap, Headphones, Shield, Tag } from "lucide-react";
-import { SiTelegram, SiTiktok, SiYoutube, SiFacebook, SiWhatsapp } from "react-icons/si";
-
+import { useState, useEffect } from "react";
+import { Zap, Headphones, Shield, Tag, ArrowRight, Sparkles, Trophy, Clock } from "lucide-react";
+import { motion } from "framer-motion";
+import { Link } from "wouter";
 
 import { ShoppingCategories } from "@/components/shopping-categories";
 import { PopularGames } from "@/components/popular-games";
-
 import PaymentMethods from "@/components/payment-methods";
 import { HeroCarousel } from "@/components/hero-carousel";
-
 import { Footer } from "@/components/footer";
 import { useTranslation } from "@/lib/translation";
 import { SEO } from "@/components/SEO";
+import { Button } from "@/components/ui/button";
+
+const features = [
+  {
+    icon: Zap,
+    title: "Fast Delivery",
+    description: "Instant delivery within minutes",
+    gradient: "from-cyber-blue to-neon-purple",
+    delay: 0,
+  },
+  {
+    icon: Headphones,
+    title: "24/7 Support",
+    description: "Always here to help you",
+    gradient: "from-neon-purple to-neon-pink",
+    delay: 0.1,
+  },
+  {
+    icon: Shield,
+    title: "Secure Payment",
+    description: "100% safe transactions",
+    gradient: "from-electric-green to-cyber-blue",
+    delay: 0.2,
+  },
+  {
+    icon: Tag,
+    title: "Best Prices",
+    description: "Competitive rates guaranteed",
+    gradient: "from-cyber-gold to-plasma-orange",
+    delay: 0.3,
+  },
+];
+
+const stats = [
+  { value: "10K+", label: "Happy Customers", icon: Trophy },
+  { value: "50K+", label: "Orders Completed", icon: Sparkles },
+  { value: "24/7", label: "Customer Support", icon: Clock },
+];
+
+const reviews = [
+  { name: "Ahmed Hassan", initial: "A", text: "Fast delivery and great prices! Best gaming store in Egypt.", rating: 5 },
+  { name: "Mohamed Ali", initial: "M", text: "Best gaming store 10/10. Highly recommended!", rating: 5 },
+  { name: "Karim Mohamed", initial: "K", text: "Competitive prices and instant delivery. My go-to store!", rating: 5 },
+];
 
 export default function Home() {
-  const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const { t } = useTranslation();
-
 
   return (
     <>
@@ -28,8 +68,7 @@ export default function Home() {
           "شحن ألعاب إلكترونية", "gaming store Egypt", "Diaa Sadek", "متجر ضياء",
           "شحن عملات ألعاب", "ألعاب إلكترونية مصر", "top up Egypt", "gaming top up",
           "ضياء ألعاب", "Diaa gaming", "شحن ألعاب اونلاين", "متجر ألعاب مصر",
-          "gaming store", "شحن ألعاب سريع", "Free Fire", "PUBG", "ألعاب موبايل",
-          "شحن ألعاب مجاني", "أفضل متجر ألعاب مصر", "gaming shop Egypt"
+          "gaming store", "شحن ألعاب سريع", "Free Fire", "PUBG", "ألعاب موبايل"
         ]}
         structuredData={{
           "@context": "https://schema.org",
@@ -41,189 +80,210 @@ export default function Home() {
             "@type": "WebSite",
             "name": "متجر ضياء",
             "url": window.location.origin
-          },
-          "about": {
-            "@type": "Organization",
-            "name": "متجر ضياء",
-            "description": "متخصص في شحن ألعاب إلكترونية في مصر"
-          },
-          "mainEntity": {
-            "@type": "ItemList",
-            "name": "ألعاب متاحة للشحن",
-            "description": "قائمة بجميع الألعاب المتاحة للشحن في متجر ضياء"
-          },
-          "breadcrumb": {
-            "@type": "BreadcrumbList",
-            "itemListElement": [{
-              "@type": "ListItem",
-              "position": 1,
-              "name": "الرئيسية",
-              "item": window.location.origin
-            }]
           }
         }}
       />
-      <div className="min-h-screen text-foreground font-gaming overflow-x-hidden custom-cursor bg-background animate-fade-in">
 
-      {/* Hero Section */}
-      <section className="container mx-auto px-4 pt-6">
-        <HeroCarousel />
-      </section>
+      <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
+        {/* Hero Section */}
+        <section className="relative">
+          {/* Background Effects */}
+          <div className="absolute inset-0 overflow-hidden pointer-events-none">
+            <div className="absolute top-20 left-10 w-72 h-72 bg-cyber-blue/20 rounded-full blur-[100px]" />
+            <div className="absolute top-40 right-20 w-96 h-96 bg-neon-purple/15 rounded-full blur-[120px]" />
+            <div className="absolute bottom-20 left-1/3 w-80 h-80 bg-neon-pink/10 rounded-full blur-[100px]" />
+          </div>
 
-      {/* Shopping Categories */}
-      <div id="categories">
-        <ShoppingCategories />
+          <div className="container mx-auto px-4 pt-8 relative z-10">
+            <HeroCarousel />
+          </div>
+        </section>
+
+        {/* Features Section */}
+        <section className="container mx-auto px-4 py-20">
+          <motion.div
+            className="text-center mb-12"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            viewport={{ once: true }}
+          >
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">
+              Why Choose <span className="text-cyber-blue">Diaa</span> Store?
+            </h2>
+            <p className="text-muted-foreground max-w-2xl mx-auto">
+              Experience the best gaming top-up service with unmatched speed, security, and support.
+            </p>
+          </motion.div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {features.map((feature, index) => (
+              <motion.div
+                key={feature.title}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: feature.delay }}
+                viewport={{ once: true }}
+                whileHover={{ y: -5 }}
+                className="group"
+              >
+                <div className="relative p-6 rounded-2xl glass border border-white/5 hover:border-cyber-blue/30 transition-all duration-300">
+                  {/* Icon */}
+                  <div className={`w-14 h-14 rounded-xl bg-gradient-to-br ${feature.gradient} flex items-center justify-center mb-4 shadow-lg group-hover:scale-110 transition-transform duration-300`}>
+                    <feature.icon className="w-7 h-7 text-white" />
+                  </div>
+
+                  {/* Content */}
+                  <h3 className="text-lg font-bold text-foreground mb-2">{feature.title}</h3>
+                  <p className="text-sm text-muted-foreground">{feature.description}</p>
+
+                  {/* Hover Glow */}
+                  <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-cyber-blue/5 to-neon-purple/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 -z-10" />
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </section>
+
+        {/* Shopping Categories */}
+        <div id="categories">
+          <ShoppingCategories />
+        </div>
+
+        {/* Most Popular Games */}
+        <PopularGames />
+
+        {/* About Section with Stats */}
+        <section className="container mx-auto px-4 py-20">
+          <div className="relative rounded-3xl overflow-hidden">
+            {/* Background */}
+            <div className="absolute inset-0 bg-gradient-to-br from-card via-card to-muted/20" />
+            <div className="absolute top-0 right-0 w-96 h-96 bg-cyber-blue/10 rounded-full blur-3xl" />
+            <div className="absolute bottom-0 left-0 w-80 h-80 bg-neon-purple/10 rounded-full blur-3xl" />
+
+            <div className="relative p-8 md:p-12 lg:p-16">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+                {/* Content */}
+                <motion.div
+                  initial={{ opacity: 0, x: -30 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.6 }}
+                  viewport={{ once: true }}
+                >
+                  <h2 className="text-3xl md:text-4xl font-bold mb-6">
+                    Welcome to <span className="bg-gradient-to-r from-cyber-blue via-neon-purple to-neon-pink bg-clip-text text-transparent">Diaa Store</span>
+                  </h2>
+                  <p className="text-muted-foreground text-lg mb-4">
+                    {t('about_p1') || "Your trusted partner for gaming top-ups in Egypt. We offer fast, secure, and affordable services for all your favorite games."}
+                  </p>
+                  <p className="text-muted-foreground text-lg mb-8">
+                    {t('about_p2') || "Join thousands of happy gamers who trust Diaa Store for their gaming currency needs."}
+                  </p>
+
+                  {/* Stats */}
+                  <div className="grid grid-cols-3 gap-4">
+                    {stats.map((stat, index) => (
+                      <motion.div
+                        key={stat.label}
+                        initial={{ opacity: 0, y: 20 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.5, delay: index * 0.1 }}
+                        viewport={{ once: true }}
+                        className="text-center p-4 rounded-xl glass border border-white/5"
+                      >
+                        <stat.icon className="w-6 h-6 text-cyber-blue mx-auto mb-2" />
+                        <p className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-cyber-blue to-neon-purple bg-clip-text text-transparent">
+                          {stat.value}
+                        </p>
+                        <p className="text-xs text-muted-foreground">{stat.label}</p>
+                      </motion.div>
+                    ))}
+                  </div>
+
+                  {/* CTA */}
+                  <Link href="/games">
+                    <Button className="mt-8 btn-gaming group">
+                      Browse All Games
+                      <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                    </Button>
+                  </Link>
+                </motion.div>
+
+                {/* Logo/Image */}
+                <motion.div
+                  initial={{ opacity: 0, x: 30 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.6 }}
+                  viewport={{ once: true }}
+                  className="relative"
+                >
+                  <div className="relative rounded-2xl overflow-hidden glass border border-white/10 p-8">
+                    <div className="absolute inset-0 bg-gradient-to-br from-cyber-blue/10 via-neon-purple/10 to-neon-pink/10 animate-gradient" style={{ backgroundSize: "200% 200%" }} />
+                    <img
+                      src="https://i.postimg.cc/zG8jHjqS/large-image-logo.png"
+                      alt="Diaa Store Logo"
+                      className="w-full max-w-md mx-auto h-auto object-contain relative z-10"
+                    />
+                  </div>
+                </motion.div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Customer Reviews */}
+        <section className="container mx-auto px-4 py-20">
+          <motion.div
+            className="text-center mb-12"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            viewport={{ once: true }}
+          >
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">
+              What Our <span className="text-neon-purple">Customers</span> Say
+            </h2>
+            <p className="text-muted-foreground">Trusted by thousands of gamers across Egypt</p>
+          </motion.div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {reviews.map((review, index) => (
+              <motion.div
+                key={review.name}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: index * 0.1 }}
+                viewport={{ once: true }}
+                whileHover={{ y: -5 }}
+                className="p-6 rounded-2xl glass border border-white/5 hover:border-neon-purple/30 transition-all duration-300"
+              >
+                <div className="flex items-center gap-4 mb-4">
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-cyber-blue to-neon-purple flex items-center justify-center text-white font-bold text-lg">
+                    {review.initial}
+                  </div>
+                  <div>
+                    <p className="font-bold text-foreground">{review.name}</p>
+                    <div className="flex text-cyber-gold">
+                      {Array.from({ length: review.rating }).map((_, i) => (
+                        <span key={i}>⭐</span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+                <p className="text-muted-foreground">{review.text}</p>
+              </motion.div>
+            ))}
+          </div>
+        </section>
+
+        {/* Payment Methods */}
+        <section className="container mx-auto px-4 py-8">
+          <PaymentMethods />
+        </section>
+
+        {/* Footer */}
+        <Footer />
       </div>
-
-      {/* Most Popular Games */}
-      <PopularGames />
-
-      {/* Features Section */}
-      <section className="container mx-auto px-4 py-16">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 text-center">
-          <div className="flex flex-col items-center group">
-            <div className="bg-gradient-to-br from-gold-primary to-neon-pink w-16 h-16 rounded-full flex items-center justify-center mb-4 animate-float shadow-lg group-hover:shadow-xl transition-shadow">
-              <Zap className="text-white text-2xl" />
-            </div>
-            <h3 className="text-foreground font-semibold mb-2">Fast Delivery</h3>
-            <p className="text-muted-foreground text-sm">{t('features_fast_delivery_desc')}</p>
-          </div>
-          
-          <div className="flex flex-col items-center group">
-            <div className="bg-gradient-to-br from-neon-pink to-gold-primary w-16 h-16 rounded-full flex items-center justify-center mb-4 animate-float animation-delay-500 shadow-lg group-hover:shadow-xl transition-shadow">
-              <Headphones className="text-white text-2xl" />
-            </div>
-            <h3 className="text-foreground font-semibold mb-2">Online Support</h3>
-            <p className="text-muted-foreground text-sm">{t('features_online_support_desc')}</p>
-          </div>
-          
-          <div className="flex flex-col items-center group">
-            <div className="bg-gradient-to-br from-gold-primary to-gold-secondary w-16 h-16 rounded-full flex items-center justify-center mb-4 animate-float animation-delay-1000 shadow-lg group-hover:shadow-xl transition-shadow">
-              <Shield className="text-white text-2xl" />
-            </div>
-            <h3 className="text-foreground font-semibold mb-2">Secure Payment</h3>
-            <p className="text-muted-foreground text-sm">{t('features_secure_payment_desc')}</p>
-          </div>
-          
-          <div className="flex flex-col items-center">
-            <div className="bg-gradient-to-br from-gold-primary to-gold-secondary w-16 h-16 rounded-full flex items-center justify-center mb-4 animate-float animation-delay-1500">
-              <Tag className="text-darker-bg text-2xl" />
-            </div>
-            <h3 className="text-foreground font-semibold mb-2">Best Prices</h3>
-            <p className="text-muted-foreground text-sm">{t('features_best_prices_desc')}</p>
-          </div>
-        </div>
-      </section>
-
-      {/* About Diaa Section */}
-      <section className="container mx-auto px-4 py-16">
-        <div className="bg-card/50 backdrop-blur-sm rounded-3xl p-6 md:p-10 border border-gold-primary/30 shadow-lg shadow-gold-primary/5">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
-            {/* Text Content */}
-            <div>
-              <h2 className="text-3xl font-bold text-gold-primary mb-4">{t('about_title')}</h2>
-              <p className="text-muted-foreground text-lg mb-4">
-                {t('about_p1')}
-              </p>
-              <p className="text-muted-foreground text-lg mb-6">
-                {t('about_p2')}
-              </p>
-              <div className="flex gap-4">
-                <div className="text-center">
-                  <p className="text-3xl font-bold text-gold-primary">1K+</p>
-                  <p className="text-muted-foreground text-sm">{t('happy_customers')}</p>
-                </div>
-                <div className="text-center">
-                  <p className="text-3xl font-bold text-gold-primary">5K+</p>
-                  <p className="text-muted-foreground text-sm">{t('orders_completed')}</p>
-                </div>
-                <div className="text-center">
-                  <p className="text-3xl font-bold text-gold-primary">24/7</p>
-                  <p className="text-muted-foreground text-sm">{t('customer_support')}</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Image */}
-            <div className="rounded-2xl overflow-hidden bg-gradient-to-br from-neon-pink/20 via-purple-900/20 to-gold-primary/20 border border-gold-primary/30">
-              <div className="relative w-full bg-card/80 rounded-xl flex items-center justify-center overflow-hidden group">
-                {/* Animated background */}
-                <div className="absolute inset-0 bg-gradient-to-r from-gold-primary/10 via-neon-pink/10 to-purple-600/10 animate-pulse"></div>
-                
-                {/* Main image or placeholder */}
-                <div className="relative z-10 flex flex-col items-center justify-center w-full p-8">
-                  <img 
-                    src="https://i.postimg.cc/zG8jHjqS/large-image-logo.png" 
-                    alt="Diaa Sadek Logo"
-                    className="w-full max-w-[440px] h-auto object-contain transition-transform duration-500 group-hover:scale-105"
-                  />
-                </div>
-                
-                {/* Decorative elements */}
-                <div className="absolute top-2 right-2 w-20 h-20 bg-gradient-to-br from-gold-primary to-transparent rounded-full opacity-20 blur-2xl"></div>
-                <div className="absolute bottom-2 left-2 w-24 h-24 bg-gradient-to-tr from-neon-pink to-transparent rounded-full opacity-20 blur-2xl"></div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Customer Reviews Section */}
-      <section className="container mx-auto px-4 py-16">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold text-foreground mb-2">{t('reviews_title')}</h2>
-          <p className="text-gray-600 dark:text-gray-400">{t('reviews_subtitle')}</p>
-        </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Review 1 */}
-          <div className="bg-card/50 backdrop-blur border border-gold-primary/20 rounded-2xl p-6 hover:border-gold-primary/50 transition-colors">
-            <div className="flex items-center mb-4">
-              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-gold-primary to-gold-secondary flex items-center justify-center text-white font-bold">A</div>
-              <div className="ml-4">
-                <p className="font-bold text-gray-900 dark:text-white">Ahmed Hassan</p>
-                <p className="text-sm text-gold-primary">⭐⭐⭐⭐⭐</p>
-              </div>
-            </div>
-            <p className="text-gray-700 dark:text-gray-300">Fast delivery and great prices</p>
-          </div>
-
-          {/* Review 2 */}
-          <div className="bg-card/50 backdrop-blur border border-gold-primary/20 rounded-2xl p-6 hover:border-gold-primary/50 transition-colors">
-            <div className="flex items-center mb-4">
-              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-gold-primary to-gold-secondary flex items-center justify-center text-white font-bold">M</div>
-              <div className="ml-4">
-                <p className="font-bold text-gray-900 dark:text-white">Mohamed Ali</p>
-                <p className="text-sm text-gold-primary">⭐⭐⭐⭐⭐</p>
-              </div>
-            </div>
-            <p className="text-gray-700 dark:text-gray-300">"Best gaming store 10/10"</p>
-          </div>
-
-          {/* Review 3 */}
-          <div className="bg-card/50 backdrop-blur border border-gold-primary/20 rounded-2xl p-6 hover:border-gold-primary/50 transition-colors">
-            <div className="flex items-center mb-4">
-              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-gold-primary to-gold-secondary flex items-center justify-center text-white font-bold">K</div>
-              <div className="ml-4">
-                <p className="font-bold text-gray-900 dark:text-white">Karim Mohamed</p>
-                <p className="text-sm text-gold-primary">⭐⭐⭐⭐⭐</p>
-              </div>
-            </div>
-            <p className="text-gray-700 dark:text-gray-300">"Competitive prices and instant delivery. This is my go-to store for all gaming needs</p>
-          </div>
-        </div>
-      </section>
-
-
-
-      {/* Payment Methods */}
-      <section className="container mx-auto px-4 py-8">
-        <PaymentMethods />
-      </section>
-
-      {/* Footer */}
-      <Footer />
-    </div>
     </>
   );
 }
