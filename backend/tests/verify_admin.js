@@ -1,7 +1,7 @@
 
 const BASE_URL = 'http://127.0.0.1:3001';
 const ADMIN_EMAIL = 'admin@diaaldeen.com';
-const ADMIN_PASSWORD = 'admin123';
+const ADMIN_PASSWORD = "A!dm1n_2025_Diaa_Secure_#42";
 
 async function runTests() {
     console.log('🚀 Starting Backend Verification...\n');
@@ -79,4 +79,7 @@ async function runTests() {
 
     } catch (error) {
         console.error('\n❌ Verification Failed:', error.message);
-    
+    }
+}
+
+runTests();
