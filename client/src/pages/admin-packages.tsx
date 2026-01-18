@@ -33,6 +33,7 @@ interface Package {
 interface MultiCurrencyPrices {
   EGP: number;
   USD: number;
+  TRY: number;
 }
 
 interface PackageWithMultiCurrency extends Package {
@@ -96,12 +97,17 @@ export default function AdminPackagesPage() {
       const packagesWithMultiCurrency = gamePackages.map((pkg, index) => {
         const gameMultiPrices = multiCurrencyPrices[gameId] || {};
         const packageMultiPrices = gameMultiPrices[index] || {};
+        const basePrice = pkg.price || 0;
+        const usd = packageMultiPrices.USD || Math.round((basePrice || 0) / 50 * 100) / 100 || 0;
+        const egp = packageMultiPrices.EGP || basePrice || 0;
+        const tryPrice = packageMultiPrices.TRY || Math.round(usd * 35 * 100) / 100 || 0;
 
         return {
           ...pkg,
           multiCurrencyPrices: {
-            EGP: packageMultiPrices.EGP || pkg.price || 0,
-            USD: packageMultiPrices.USD || Math.round((pkg.price || 0) / 50 * 100) / 100 || 0,
+            EGP: egp,
+            USD: usd,
+            TRY: tryPrice,
           }
         };
       });
@@ -124,6 +130,9 @@ export default function AdminPackagesPage() {
           const basePrice = Number(gamePrices[index] || 0);
           const gameMultiPrices = multiCurrencyPrices[gameId] || {};
           const packageMultiPrices = gameMultiPrices[index] || {};
+          const usd = packageMultiPrices.USD || Math.round((basePrice || 0) / 50 * 100) / 100 || 0;
+          const egp = packageMultiPrices.EGP || basePrice || 0;
+          const tryPrice = packageMultiPrices.TRY || Math.round(usd * 35 * 100) / 100 || 0;
 
           return {
             amount: typeof pkg === 'string' ? pkg : (pkg?.amount || ''),
@@ -133,8 +142,9 @@ export default function AdminPackagesPage() {
               : null,
             image: gameThumbnails[index] ? String(gameThumbnails[index]) : null,
             multiCurrencyPrices: {
-              EGP: packageMultiPrices.EGP || basePrice || 0,
-              USD: packageMultiPrices.USD || Math.round((basePrice || 0) / 50 * 100) / 100 || 0,
+              EGP: egp,
+              USD: usd,
+              TRY: tryPrice,
             }
           };
         });
@@ -220,6 +230,31 @@ export default function AdminPackagesPage() {
     }
   });
 
+  const handlePackageImageUpload = async (index: number, file: File) => {
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const token = localStorage.getItem('adminToken');
+      const res = await fetch(apiPath('/api/admin/upload-image'), {
+        method: 'POST',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        body: formData
+      });
+
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error((data as any)?.message || 'Upload failed');
+
+      const next = [...packages];
+      next[index] = { ...next[index], image: (data as any).url || null };
+      setPackages(next);
+
+      toast({ title: 'Uploaded', description: 'Image attached to package', duration: 1500 });
+    } catch (err: any) {
+      toast({ title: 'Error', description: err?.message || 'Upload failed', variant: 'destructive' });
+    }
+  };
+
   const handleAddPackage = () => {
     setPackages([...packages, {
       amount: '',
@@ -229,7 +264,7 @@ export default function AdminPackagesPage() {
       slug: '',
       bonus: '',
       description: '',
-      multiCurrencyPrices: { EGP: 0, USD: 0 }
+      multiCurrencyPrices: { EGP: 0, USD: 0, TRY: 0 }
     }]);
     setIsEditing(true);
   };

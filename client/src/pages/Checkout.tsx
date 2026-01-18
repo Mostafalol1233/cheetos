@@ -13,7 +13,7 @@ import { ChevronLeft, ChevronRight, Check } from 'lucide-react';
 import { useUserAuth } from "@/lib/user-auth-context";
 import { useLocation } from "wouter";
 
-const steps = [
+const steps: { key: string; label: string; component: React.ComponentType<any> }[] = [
   { key: 'details', label: 'Details', component: StepDetails },
   { key: 'payment', label: 'Payment', component: StepPayment },
   { key: 'review', label: 'Review', component: StepReview },

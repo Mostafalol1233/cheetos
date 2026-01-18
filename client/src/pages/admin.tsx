@@ -95,9 +95,9 @@ export default function AdminDashboard() {
   const [searchGameTerm, setSearchGameTerm] = useState('');
   const [editingGame, setEditingGame] = useState<Game | null>(null);
   const [packagesGameId, setPackagesGameId] = useState<string | null>(null);
-  const [packagesDraft, setPackagesDraft] = useState<Array<{ amount: string; price: number; discountPrice: number | null; image?: string | null }>>([]);
+  const [packagesDraft, setPackagesDraft] = useState<Array<{ amount: string; price: number; discountPrice: number | null; image?: string | null; bonus?: string | null }>>([]);
   const { toast } = useToast();
-  const [originalPackages, setOriginalPackages] = useState<Array<{ amount: string; price: number; discountPrice: number | null; image?: string | null }>>([]);
+  const [originalPackages, setOriginalPackages] = useState<Array<{ amount: string; price: number; discountPrice: number | null; image?: string | null; bonus?: string | null }>>([]);
   const [addedIndices, setAddedIndices] = useState<Set<number>>(new Set());
   const [selectedUser, setSelectedUser] = useState<string | null>(null);
   const [replyMessage, setReplyMessage] = useState('');
@@ -116,7 +116,7 @@ export default function AdminDashboard() {
     queryKey: ['/api/games'],
   });
 
-  const { data: adminPackagesData = [], isFetching: isFetchingAdminPackages } = useQuery<Array<{ amount: string; price: number; discountPrice: number | null; image?: string | null }>>({
+  const { data: adminPackagesData = [], isFetching: isFetchingAdminPackages } = useQuery<Array<{ amount: string; price: number; discountPrice: number | null; image?: string | null; bonus?: string | null }>>({
     queryKey: packagesGameId ? [`/api/games/${packagesGameId}/packages`] : ['_disabled_admin_packages'],
     enabled: !!packagesGameId,
     queryFn: async () => {
@@ -135,7 +135,8 @@ export default function AdminDashboard() {
       amount: String(p?.amount || ''),
       price: Number(p?.price || 0),
       discountPrice: p?.discountPrice != null ? Number(p.discountPrice) : null,
-      image: p?.image || null
+      image: p?.image || null,
+      bonus: p?.bonus != null ? String(p.bonus) : ''
     }));
     setPackagesDraft(normalized);
     setOriginalPackages(normalized);
@@ -596,11 +597,15 @@ export default function AdminDashboard() {
                 Cancel
               </Button>
               <Button
-                onClick={() => respondToOrderMutation.mutate({
-                  orderId: selectedOrder?.id,
-                  message: responseMessage
-                })}
-                disabled={respondToOrderMutation.isPending || !responseMessage.trim()}
+                onClick={() => {
+                  if (!selectedOrder) return;
+                  respondToOrderMutation.mutate({
+                    orderId: selectedOrder.id,
+                    message: responseMessage,
+                    status: actionType
+                  });
+                }}
+                disabled={respondToOrderMutation.isPending || !responseMessage.trim() || !selectedOrder}
                 className="bg-green-600 hover:bg-green-700"
               >
                 {respondToOrderMutation.isPending ? 'Sending...' : 'Confirm & Send'}
@@ -1981,6 +1986,21 @@ export default function AdminDashboard() {
                                   const v = e.target.value;
                                   const next = [...packagesDraft];
                                   next[idx] = { ...next[idx], discountPrice: v === '' ? null : Number(normalizeNumericString(v)) };
+                                  setPackagesDraft(next);
+                                }}
+                              />
+                            </div>
+                            <div className="col-span-12 mt-2">
+                              <Label htmlFor={`pkg-bonus-${idx}`}>Bonus (optional)</Label>
+                              <Input
+                                id={`pkg-bonus-${idx}`}
+                                name={`pkg-bonus-${idx}`}
+                                autoComplete="off"
+                                value={p.bonus ?? ''}
+                                placeholder="+ 500 ZP Bonus"
+                                onChange={(e) => {
+                                  const next = [...packagesDraft];
+                                  next[idx] = { ...next[idx], bonus: e.target.value };
                                   setPackagesDraft(next);
                                 }}
                               />

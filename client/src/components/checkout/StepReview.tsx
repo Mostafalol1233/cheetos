@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { ensureIdempotencyKey } from '@/state/checkout';
-import { apiRequest } from '@/lib/queryClient';
+import { API_BASE_URL } from '@/lib/queryClient';
 import { Loader2 } from 'lucide-react';
 import { useSettings } from '@/lib/settings-context';
 
@@ -32,10 +32,9 @@ export function StepReview() {
         quantity: item.quantity,
       }));
 
-      // Get token if available for authenticated requests
       const token = localStorage.getItem('userToken');
 
-      const res = await fetch(apiPath('/api/orders'), {
+      const res = await fetch(`${API_BASE_URL}/api/orders`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -79,8 +78,8 @@ export function StepReview() {
 
       setOrderMeta(response.id, response.status || 'processing');
 
-      if (paymentMethod === 'whatsapp') {
-        const waNumber = settings?.whatsapp_number?.replace(/\D/g, '') || '201000000000';
+      if (deliverVia === 'whatsapp') {
+        const waNumber = settings?.whatsappNumber?.replace(/\D/g, '') || '201000000000';
         const message = `*New Order #${response.id}*\nName: ${contact.fullName}\nTotal: ${total()} EGP\nItems:\n${cart.map(i => `- ${i.name} x${i.quantity}`).join('\n')}\n\nPayment: WhatsApp Order`;
 
         window.open(`https://wa.me/${waNumber}?text=${encodeURIComponent(message)}`, '_blank');
