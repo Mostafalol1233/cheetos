@@ -69,18 +69,18 @@ export function Header() {
               <motion.div
                 className="flex items-center gap-3 cursor-pointer group"
                 whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
+                whileTap={{ scale: 1.98 }}
               >
-                <div className="h-10 w-auto flex items-center">
+                <div className="h-16 w-auto flex items-center">
                   <img
                     src="https://files.catbox.moe/brmkrj.png"
                     alt="GameCart Logo"
-                    className="h-full w-auto max-h-10 object-contain hover:scale-105 transition-transform"
+                    className="h-full w-auto max-h-16 object-contain hover:scale-105 transition-transform"
                   />
                 </div>
                 <div className="hidden flex items-center gap-3">
                   <div className="relative">
-                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-gold-primary to-gold-secondary flex items-center justify-center shadow-[0_0_20px_rgba(255,215,0,0.5)]">
+                    <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-gold-primary to-gold-secondary flex items-center justify-center shadow-[0_0_20px_rgba(255,215,0,0.5)]">
                       <Gamepad2 className="w-5 h-5 text-black" />
                     </div>
                   </div>
