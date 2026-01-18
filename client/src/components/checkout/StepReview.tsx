@@ -7,12 +7,14 @@ import { ensureIdempotencyKey } from '@/state/checkout';
 import { API_BASE_URL } from '@/lib/queryClient';
 import { Loader2 } from 'lucide-react';
 import { useSettings } from '@/lib/settings-context';
+import { FaPaypal } from 'react-icons/fa';
 
 export function StepReview() {
   const { cart, contact, paymentMethod, paymentData, subtotal, total, setOrderMeta, setError, setStep } = useCheckout();
   const [deliverVia, setDeliverVia] = useState<'email' | 'whatsapp'>('email');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { settings } = useSettings();
+  const [logoError, setLogoError] = useState(false);
 
   const selectedPayment = PAYMENT_METHODS.find(m => m.key === paymentMethod);
 
@@ -124,11 +126,18 @@ export function StepReview() {
           <CardContent>
             {selectedPayment && (
               <div className="flex items-center space-x-3">
-                <img
-                  src={selectedPayment.logo}
-                  alt={selectedPayment.label}
-                  className="w-8 h-8 object-contain"
-                />
+                <div className="w-8 h-8 flex items-center justify-center">
+                  {logoError || !selectedPayment.logo ? (
+                    <FaPaypal className="w-8 h-8 text-[#003087]" />
+                  ) : (
+                    <img
+                      src={selectedPayment.logo}
+                      alt={selectedPayment.label}
+                      className="w-8 h-8 object-contain"
+                      onError={() => setLogoError(true)}
+                    />
+                  )}
+                </div>
                 <div>
                   <p className="font-medium">{selectedPayment.label}</p>
                   {selectedPayment.info?.accountNumber && (

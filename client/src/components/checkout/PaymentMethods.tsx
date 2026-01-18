@@ -2,6 +2,7 @@ import React from 'react';
 import { PAYMENT_METHODS, PaymentMethod, useCheckout } from '../../state/checkout';
 import { Card, CardContent } from '@/components/ui/card';
 import { CheckCircle } from 'lucide-react';
+import { FaPaypal } from 'react-icons/fa';
 
 function classNames(...xs: Array<string | false | undefined>) {
   return xs.filter(Boolean).join(' ');
@@ -9,6 +10,7 @@ function classNames(...xs: Array<string | false | undefined>) {
 
 export const PaymentMethods: React.FC = () => {
   const { paymentMethod, setPaymentMethod } = useCheckout();
+  const [logoError, setLogoError] = React.useState<Record<string, boolean>>({});
 
   const onSelect = (m: PaymentMethod) => {
     setPaymentMethod(m);
@@ -41,7 +43,18 @@ export const PaymentMethods: React.FC = () => {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
                     <div className="h-12 w-12 md:h-14 md:w-14 flex items-center justify-center rounded-xl bg-card">
-                      <img src={m.logo} alt="" className="max-h-10 md:max-h-12 w-auto object-contain" />
+                      {logoError[m.key] || !m.logo ? (
+                        <FaPaypal className="w-8 h-8 text-[#003087]" />
+                      ) : (
+                        <img
+                          src={m.logo}
+                          alt=""
+                          className="max-h-10 md:max-h-12 w-auto object-contain"
+                          onError={() =>
+                            setLogoError((prev) => ({ ...prev, [m.key]: true }))
+                          }
+                        />
+                      )}
                     </div>
                     <div>
                       <h3 className="font-semibold text-lg">{m.label}</h3>
@@ -73,7 +86,21 @@ export const PaymentMethods: React.FC = () => {
               <div className="space-y-3">
                 <div className="flex items-center gap-3">
                   <div className="h-8 w-8 flex items-center justify-center rounded-lg bg-card">
-                    <img src={conf.logo} alt="" className="max-h-6 w-auto object-contain" />
+                    {logoError[paymentMethod] || !conf.logo ? (
+                      <FaPaypal className="w-6 h-6 text-[#003087]" />
+                    ) : (
+                      <img
+                        src={conf.logo}
+                        alt=""
+                        className="max-h-6 w-auto object-contain"
+                        onError={() =>
+                          setLogoError((prev) => ({
+                            ...prev,
+                            [paymentMethod]: true,
+                          }))
+                        }
+                      />
+                    )}
                   </div>
                   <div>
                     <h4 className="font-medium">{conf.label} Selected</h4>
