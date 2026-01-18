@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
 
 const paymentMethods = [
-  { id: "pm1", name: "Vodafone Cash", image: "/payments/vodafone-logo.png" },
-  { id: "pm2", name: "InstaPay", image: "/payments/instapay-logo.png" },
-  { id: "pm3", name: "Etisalat Cash", image: "/payments/etisalat-logo.png" },
-  { id: "pm4", name: "Orange Cash", image: "/payments/orange-logo-new.png" },
-  { id: "pm5", name: "We Pay", image: "/payments/we-pay-logo.png" },
-  { id: "pm6", name: "PayPal", image: "/payments/paypal-logo.png" },
+  { id: "pm1", name: "Payment 1", image: "https://i.postimg.cc/wRzp9C8N/image-29-1754874736252.png" },
+  { id: "pm2", name: "Payment 2", image: "https://i.postimg.cc/tnbj9KQY/image-32-1754945434846.png" },
+  { id: "pm3", name: "Payment 3", image: "https://i.postimg.cc/RJmBvk57/image-33-1754945434846.png" },
+  { id: "pm4", name: "Payment 4", image: "https://i.postimg.cc/5QJVfhdk/image-34-1754945434846.png" },
+  { id: "pm5", name: "Payment 5", image: "https://i.postimg.cc/JHQW0pM3/image-35-1754945434846.png" },
+  { id: "pm6", name: "Payment 6", image: "https://i.postimg.cc/XBg0qs4h/image-36-1754945434846.png" },
 ];
 
 export default function PaymentMethods() {
