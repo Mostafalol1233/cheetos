@@ -20,39 +20,39 @@ const normalizeImageUrl = (raw) => {
 const formatGame = (game, packages = []) => {
   try {
     if (!game) return null;
-    
+
     // If packages is empty, try to construct it from game legacy fields
     let pkgList = Array.isArray(packages) ? packages : [];
-    
+
     // If we have packagesList in the game object (from local DB), use it
     if (pkgList.length === 0 && Array.isArray(game.packagesList)) {
-        pkgList = game.packagesList;
+      pkgList = game.packagesList;
     }
-    
+
     if (pkgList.length === 0 && Array.isArray(game.packages) && game.packages.length > 0) {
-       // Construct from legacy
-       const prices = Array.isArray(game.packagePrices)
-         ? game.packagePrices
-         : (Array.isArray(game.package_prices) ? game.package_prices : []);
-       const discounts = Array.isArray(game.packageDiscountPrices)
-         ? game.packageDiscountPrices
-         : (Array.isArray(game.package_discount_prices)
-           ? game.package_discount_prices
-           : (Array.isArray(game.discountPrices) ? game.discountPrices : []));
-       const thumbnails = Array.isArray(game.packageThumbnails)
-         ? game.packageThumbnails
-         : (Array.isArray(game.package_thumbnails) ? game.package_thumbnails : []);
-       
-       pkgList = game.packages.map((p, i) => {
-         if (typeof p === 'object' && p !== null) return p;
-         return {
-           id: `pkg_${game.id}_${i}`,
-           name: String(p),
-           price: Number(prices[i] || 0),
-           discount_price: (discounts[i] !== undefined && discounts[i] !== null && discounts[i] !== '') ? Number(discounts[i]) : null,
-           image: thumbnails[i] || null
-         };
-       });
+      // Construct from legacy
+      const prices = Array.isArray(game.packagePrices)
+        ? game.packagePrices
+        : (Array.isArray(game.package_prices) ? game.package_prices : []);
+      const discounts = Array.isArray(game.packageDiscountPrices)
+        ? game.packageDiscountPrices
+        : (Array.isArray(game.package_discount_prices)
+          ? game.package_discount_prices
+          : (Array.isArray(game.discountPrices) ? game.discountPrices : []));
+      const thumbnails = Array.isArray(game.packageThumbnails)
+        ? game.packageThumbnails
+        : (Array.isArray(game.package_thumbnails) ? game.package_thumbnails : []);
+
+      pkgList = game.packages.map((p, i) => {
+        if (typeof p === 'object' && p !== null) return p;
+        return {
+          id: `pkg_${game.id}_${i}`,
+          name: String(p),
+          price: Number(prices[i] || 0),
+          discount_price: (discounts[i] !== undefined && discounts[i] !== null && discounts[i] !== '') ? Number(discounts[i]) : null,
+          image: thumbnails[i] || null
+        };
+      });
     }
 
     // Backward compatibility fields
@@ -88,6 +88,7 @@ const formatGame = (game, packages = []) => {
           : (p.discountPrice !== undefined && p.discountPrice !== null && p.discountPrice !== '' ? Number(p.discountPrice) : null)),
         image: p.image ? normalizeImageUrl(p.image) : null,
         value: p.value != null ? Number(p.value) : null,
+        bonus: p.bonus || null,
         duration: p.duration || null,
         description: p.description || null
       }))
@@ -144,7 +145,7 @@ router.get('/', async (req, res) => {
       ORDER BY g.is_popular DESC, g.created_at DESC
       LIMIT $1 OFFSET $2
     `, [limit, offset]);
-    
+
     const countRes = await pool.query('SELECT COUNT(*) FROM games');
     const total = parseInt(countRes.rows[0].count);
 
@@ -178,10 +179,10 @@ router.get('/', async (req, res) => {
       });
     } catch (fallbackError) {
       console.error('Fallback LocalDB Error in GET /api/games:', fallbackError);
-      res.status(500).json({ 
-        message: 'Failed to fetch games (DB and Fallback failed)', 
+      res.status(500).json({
+        message: 'Failed to fetch games (DB and Fallback failed)',
         error: error.message,
-        fallbackError: fallbackError.message 
+        fallbackError: fallbackError.message
       });
     }
   }
@@ -204,7 +205,7 @@ router.get('/popular', async (req, res) => {
       ORDER BY g.display_order ASC, g.name ASC
       LIMIT 50
     `);
-    
+
     const items = gamesRes.rows.map(row => {
       const { packages_data, ...game } = row;
       return formatGame(game, packages_data);
@@ -298,7 +299,7 @@ router.get('/:id', async (req, res) => {
       WHERE g.id = $1 OR g.slug = $1
       GROUP BY g.id
     `, [id]);
-    
+
     if (gamesRes.rows.length === 0) {
       const fallback = localDb.findGame(id);
       if (fallback) return res.json(formatGame(fallback));
@@ -317,7 +318,7 @@ router.get('/:id', async (req, res) => {
 
 // POST /api/games
 router.post('/', authenticateToken, ensureAdmin, async (req, res) => {
-  const { 
+  const {
     name, slug, description, price, currency, image, category, isPopular, stock, discountPrice,
     packagesList, packages, packagePrices, packageDiscountPrices,
     showOnMainPage, displayOrder
@@ -329,7 +330,7 @@ router.post('/', authenticateToken, ensureAdmin, async (req, res) => {
     if (dup.rows.length) {
       return res.status(409).json({ message: 'Duplicate game name' });
     }
-  } catch {}
+  } catch { }
 
   // Validate order number if provided
   if (displayOrder !== undefined) {
@@ -347,37 +348,37 @@ router.post('/', authenticateToken, ensureAdmin, async (req, res) => {
 
   // Prepare game object for potential local save
   const gameData = {
-      id: gameId,
-      name,
-      slug: gameSlug,
-      description: description || '',
-      price: Number(price) || 0,
-      currency: currency || 'EGP',
-      image: image || '',
-      category: category || 'other',
-      is_popular: isPop,
-      isPopular: isPop,
-      stock: Number(stock) || 0,
-      discount_price: discountPrice ? Number(discountPrice) : null,
-      show_on_main_page: showMain,
-      showOnMainPage: showMain,
-      display_order: dispOrder,
-      displayOrder: dispOrder,
-      created_at: new Date().toISOString()
+    id: gameId,
+    name,
+    slug: gameSlug,
+    description: description || '',
+    price: Number(price) || 0,
+    currency: currency || 'EGP',
+    image: image || '',
+    category: category || 'other',
+    is_popular: isPop,
+    isPopular: isPop,
+    stock: Number(stock) || 0,
+    discount_price: discountPrice ? Number(discountPrice) : null,
+    show_on_main_page: showMain,
+    showOnMainPage: showMain,
+    display_order: dispOrder,
+    displayOrder: dispOrder,
+    created_at: new Date().toISOString()
   };
 
   // Prepare packages
   let pkgsToInsert = [];
   if (Array.isArray(packagesList)) {
-      pkgsToInsert = packagesList;
+    pkgsToInsert = packagesList;
   } else if (Array.isArray(packages)) {
-      pkgsToInsert = packages.map((p, i) => ({
-        id: `pkg_${gameId}_${i}`,
-        name: p,
-        price: Number(packagePrices?.[i] || 0),
-        discount_price: packageDiscountPrices?.[i] ? Number(packageDiscountPrices[i]) : null,
-        image: null
-      }));
+    pkgsToInsert = packages.map((p, i) => ({
+      id: `pkg_${gameId}_${i}`,
+      name: p,
+      price: Number(packagePrices?.[i] || 0),
+      discount_price: packageDiscountPrices?.[i] ? Number(packageDiscountPrices[i]) : null,
+      image: null
+    }));
   }
   gameData.packagesList = pkgsToInsert; // Store in new format for local DB
 
@@ -385,13 +386,13 @@ router.post('/', authenticateToken, ensureAdmin, async (req, res) => {
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
-      
+
       await client.query(`
         INSERT INTO games (id, name, slug, description, price, currency, image, category, is_popular, stock, discount_price, show_on_main_page, display_order)
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
       `, [
-        gameId, name, gameSlug, description || '', Number(price) || 0, currency || 'EGP', 
-        image || '', category || 'other', isPop, Number(stock) || 0, 
+        gameId, name, gameSlug, description || '', Number(price) || 0, currency || 'EGP',
+        image || '', category || 'other', isPop, Number(stock) || 0,
         discountPrice ? Number(discountPrice) : null, showMain, dispOrder
       ]);
 
@@ -401,7 +402,7 @@ router.post('/', authenticateToken, ensureAdmin, async (req, res) => {
             INSERT INTO game_packages (game_id, name, price, discount_price, image)
             VALUES ($1, $2, $3, $4, $5)
           `, [
-            gameId, pkg.name, Number(pkg.price || 0), 
+            gameId, pkg.name, Number(pkg.price || 0),
             pkg.discountPrice || pkg.discount_price ? Number(pkg.discountPrice || pkg.discount_price) : null,
             pkg.image || null
           ]);
@@ -410,7 +411,7 @@ router.post('/', authenticateToken, ensureAdmin, async (req, res) => {
 
       await client.query('COMMIT');
       await logAudit('create_game', `Created game: ${name} (${gameId})`, req.user);
-      
+
       const created = formatGame(gameData, pkgsToInsert);
       invalidatePopularCache();
       res.status(201).json(created);
@@ -430,7 +431,7 @@ router.post('/', authenticateToken, ensureAdmin, async (req, res) => {
 // PUT /api/games/:id
 router.put('/:id', authenticateToken, ensureAdmin, async (req, res) => {
   const { id } = req.params;
-  const { 
+  const {
     name, slug, description, price, currency, image, category, isPopular, stock, discountPrice,
     packagesList, packages, packagePrices, packageDiscountPrices,
     showOnMainPage, displayOrder
@@ -486,8 +487,8 @@ router.put('/:id', authenticateToken, ensureAdmin, async (req, res) => {
         WHERE id = $13
       `, [
         name, slug, description, price !== undefined ? Number(price) : undefined, currency,
-        image, category, isPopular !== undefined ? !!isPopular : undefined, 
-        stock !== undefined ? Number(stock) : undefined, 
+        image, category, isPopular !== undefined ? !!isPopular : undefined,
+        stock !== undefined ? Number(stock) : undefined,
         discountPrice !== undefined ? (discountPrice ? Number(discountPrice) : null) : undefined,
         showOnMainPage !== undefined ? !!showOnMainPage : undefined,
         displayOrder !== undefined ? Number(displayOrder) : undefined,
@@ -497,7 +498,7 @@ router.put('/:id', authenticateToken, ensureAdmin, async (req, res) => {
       // Update Packages if provided
       if (packagesList || packages) {
         await client.query('DELETE FROM game_packages WHERE game_id = $1', [realId]);
-        
+
         let pkgsToInsert = [];
         if (Array.isArray(packagesList)) {
           pkgsToInsert = packagesList;
@@ -516,7 +517,7 @@ router.put('/:id', authenticateToken, ensureAdmin, async (req, res) => {
               INSERT INTO game_packages (game_id, name, price, discount_price, image)
               VALUES ($1, $2, $3, $4, $5)
             `, [
-              realId, pkg.name, Number(pkg.price || 0), 
+              realId, pkg.name, Number(pkg.price || 0),
               pkg.discountPrice || pkg.discount_price ? Number(pkg.discountPrice || pkg.discount_price) : null,
               pkg.image || null
             ]);
@@ -536,7 +537,7 @@ router.put('/:id', authenticateToken, ensureAdmin, async (req, res) => {
         WHERE g.id = $1
         GROUP BY g.id
       `, [realId]);
-      
+
       const { packages_data, ...game } = finalRes.rows[0];
       // Sync packages into local JSON so static readers see the update
       try {
@@ -606,7 +607,7 @@ router.get('/category/:category', async (req, res) => {
       WHERE LOWER(g.category) = LOWER($1)
       GROUP BY g.id
     `, [category]);
-    
+
     const items = gamesRes.rows.map(row => {
       const { packages_data, ...game } = row;
       return formatGame(game, packages_data);
@@ -664,7 +665,7 @@ router.get('/:id/packages', async (req, res) => {
     }
 
     res.json([]);
-    } catch (error) {
+  } catch (error) {
     console.error('DB Error (packages), falling back to local DB:', error.message);
     const game = localDb.findGame(id);
     if (!game) {
@@ -688,100 +689,100 @@ router.get('/:id/packages', async (req, res) => {
 router.put('/:id/packages', authenticateToken, ensureAdmin, async (req, res) => {
   console.log('PUT /:id/packages called with body:', JSON.stringify(req.body));
   const { id } = req.params;
-  const { packages, packagesList } = req.body; 
+  const { packages, packagesList } = req.body;
 
   try {
     const client = await pool.connect();
     try {
-        await client.query('BEGIN');
-        
-        const gameCheck = await client.query('SELECT id FROM games WHERE id = $1', [id]);
-        if (gameCheck.rows.length === 0) {
+      await client.query('BEGIN');
+
+      const gameCheck = await client.query('SELECT id FROM games WHERE id = $1', [id]);
+      if (gameCheck.rows.length === 0) {
         await client.query('ROLLBACK');
         // Throw to trigger the outer DB-catch fallback which will persist to localDb
         throw new Error('Game not found in DB, falling back to local');
+      }
+
+      await client.query('DELETE FROM game_packages WHERE game_id = $1', [id]);
+
+      const pkgsArr = Array.isArray(packages) ? packages : Array.isArray(packagesList) ? packagesList : [];
+      const legacyPackages = [];
+      const legacyPrices = [];
+      const legacyDiscounts = [];
+      const legacyThumbnails = [];
+
+      for (const pkg of pkgsArr) {
+        const name = pkg.name || pkg.amount;
+        if (!name) continue;
+        const price = Number(pkg.price || 0);
+        const discount = pkg.discountPrice != null && pkg.discountPrice !== '' ? Number(pkg.discountPrice) : null;
+        const image = pkg.image || null;
+        let value = pkg.value != null && pkg.value !== '' ? Number(pkg.value) : null;
+        // Derive quantity from amount if value not provided
+        if (value == null) {
+          const amt = String(pkg.amount || pkg.name || '').trim();
+          const normalizedAmt = amt
+            .replace(/[,\s]+/g, '')
+            .replace(/[\u0660-\u0669]/g, (c) => String(c.charCodeAt(0) - 0x0660))
+            .replace(/[\u06F0-\u06F9]/g, (c) => String(c.charCodeAt(0) - 0x06F0));
+          const digits = (normalizedAmt.match(/[0-9]+/) || [''])[0];
+          value = digits ? Number(digits) : null;
+        }
+        const duration = pkg.duration ? String(pkg.duration) : null;
+        const description = pkg.description ? String(pkg.description) : null;
+        const slug = pkg.slug ? String(pkg.slug) : (name ? name.toLowerCase().replace(/[^a-z0-9]+/g, '-') : null);
+        const bonus = pkg.bonus ? String(pkg.bonus) : null;
+
+        // Server-side validation
+        if (price < 0 || (value != null && (!Number.isFinite(value) || value <= 0))) {
+          await client.query('ROLLBACK');
+          return res.status(400).json({ message: 'Invalid quantity/value or price' });
+        }
+        if (duration && duration.length > 50) {
+          await client.query('ROLLBACK');
+          return res.status(400).json({ message: 'Duration too long' });
+        }
+        if (description && description.length < 200) {
+          await client.query('ROLLBACK');
+          return res.status(400).json({ message: 'Package description must be at least 200 characters' });
         }
 
-        await client.query('DELETE FROM game_packages WHERE game_id = $1', [id]);
-        
-        const pkgsArr = Array.isArray(packages) ? packages : Array.isArray(packagesList) ? packagesList : [];
-        const legacyPackages = [];
-        const legacyPrices = [];
-        const legacyDiscounts = [];
-        const legacyThumbnails = [];
+        legacyPackages.push(String(name));
+        legacyPrices.push(price);
+        legacyDiscounts.push(Number.isFinite(discount) ? discount : null);
+        legacyThumbnails.push(image);
 
-        for (const pkg of pkgsArr) {
-          const name = pkg.name || pkg.amount;
-          if (!name) continue;
-          const price = Number(pkg.price || 0);
-          const discount = pkg.discountPrice != null && pkg.discountPrice !== '' ? Number(pkg.discountPrice) : null;
-          const image = pkg.image || null;
-          let value = pkg.value != null && pkg.value !== '' ? Number(pkg.value) : null;
-          // Derive quantity from amount if value not provided
-          if (value == null) {
-            const amt = String(pkg.amount || pkg.name || '').trim();
-            const normalizedAmt = amt
-              .replace(/[,\s]+/g, '')
-              .replace(/[\u0660-\u0669]/g, (c) => String(c.charCodeAt(0) - 0x0660))
-              .replace(/[\u06F0-\u06F9]/g, (c) => String(c.charCodeAt(0) - 0x06F0));
-            const digits = (normalizedAmt.match(/[0-9]+/) || [''])[0];
-            value = digits ? Number(digits) : null;
-          }
-          const duration = pkg.duration ? String(pkg.duration) : null;
-          const description = pkg.description ? String(pkg.description) : null;
-          const slug = pkg.slug ? String(pkg.slug) : (name ? name.toLowerCase().replace(/[^a-z0-9]+/g, '-') : null);
-          const bonus = pkg.bonus ? String(pkg.bonus) : null;
-
-          // Server-side validation
-          if (price < 0 || (value != null && (!Number.isFinite(value) || value <= 0))) {
-            await client.query('ROLLBACK');
-            return res.status(400).json({ message: 'Invalid quantity/value or price' });
-          }
-          if (duration && duration.length > 50) {
-            await client.query('ROLLBACK');
-            return res.status(400).json({ message: 'Duration too long' });
-          }
-          if (description && description.length < 200) {
-            await client.query('ROLLBACK');
-            return res.status(400).json({ message: 'Package description must be at least 200 characters' });
-          }
-
-          legacyPackages.push(String(name));
-          legacyPrices.push(price);
-          legacyDiscounts.push(Number.isFinite(discount) ? discount : null);
-          legacyThumbnails.push(image);
-
-          await client.query(`
+        await client.query(`
               INSERT INTO game_packages (game_id, name, price, discount_price, image, value, duration, description, slug, bonus)
               VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
           `, [
-              id, name, price,
-              Number.isFinite(discount) ? discount : null,
-              image,
-              Number.isFinite(value) ? value : null,
-              duration,
-              description,
-              slug,
-              bonus
-          ]);
-        }
+          id, name, price,
+          Number.isFinite(discount) ? discount : null,
+          image,
+          Number.isFinite(value) ? value : null,
+          duration,
+          description,
+          slug,
+          bonus
+        ]);
+      }
 
-        // Also persist packages onto the games row (so website/game page can render without joining game_packages)
-        await client.query(
-          `UPDATE games
+      // Also persist packages onto the games row (so website/game page can render without joining game_packages)
+      await client.query(
+        `UPDATE games
            SET packages = $2::jsonb,
                package_prices = $3::jsonb,
                package_discount_prices = $4::jsonb,
                package_thumbnails = $5::jsonb,
                updated_at = CURRENT_TIMESTAMP
            WHERE id = $1`,
-          [id, JSON.stringify(legacyPackages), JSON.stringify(legacyPrices), JSON.stringify(legacyDiscounts), JSON.stringify(legacyThumbnails)]
-        );
+        [id, JSON.stringify(legacyPackages), JSON.stringify(legacyPrices), JSON.stringify(legacyDiscounts), JSON.stringify(legacyThumbnails)]
+      );
 
-        await client.query('COMMIT');
-        
-        const resDb = await pool.query('SELECT * FROM game_packages WHERE game_id = $1 ORDER BY price ASC', [id]);
-        const items = resDb.rows.map(p => ({
+      await client.query('COMMIT');
+
+      const resDb = await pool.query('SELECT * FROM game_packages WHERE game_id = $1 ORDER BY price ASC', [id]);
+      const items = resDb.rows.map(p => ({
         ...p,
         amount: p.name,
         price: Number(p.price),
@@ -789,37 +790,37 @@ router.put('/:id/packages', authenticateToken, ensureAdmin, async (req, res) => 
         value: p.value != null ? Number(p.value) : null,
         duration: p.duration || null,
         description: p.description || null
-        }));
-        
-        const count = items.length;
-        const prices = items.map(p => Number(p.price || 0)).filter(n => Number.isFinite(n));
-        const min = prices.length ? Math.min(...prices) : 0;
-        const max = prices.length ? Math.max(...prices) : 0;
-        await logAudit('update_packages', `Updated packages for game: ${id} (${count} packages, price range ${min}-${max})`, req.user);
-        // Sync packages to local JSON so static readers see the update
-        try {
-          const lp = (Array.isArray(legacyPackages) && legacyPackages.length) ? legacyPackages : items.map(p => String(p.amount || p.name || ''));
-          const lpPrices = (Array.isArray(legacyPrices) && legacyPrices.length) ? legacyPrices : items.map(p => Number(p.price || 0));
-          const lpDiscounts = (Array.isArray(legacyDiscounts) && legacyDiscounts.length) ? legacyDiscounts : items.map(p => (p.discountPrice != null ? Number(p.discountPrice) : null));
-          const lpThumbs = (Array.isArray(legacyThumbnails) && legacyThumbnails.length) ? legacyThumbnails : items.map(p => p.image || null);
-          localDb.updateGame(id, {
-            packagesList: pkgsArr.map((p, i) => ({ id: `pkg_${id}_${i}`, name: (p && (p.name || p.amount)) || String(p || '') })),
-            packages: lp,
-            package_prices: lpPrices,
-            package_discount_prices: lpDiscounts,
-            package_thumbnails: lpThumbs
-          });
-        } catch (e) {
-          console.error('Failed to sync packages to local JSON (DB path):', e && e.message);
-        }
+      }));
 
-        invalidatePopularCache();
-        res.json(items);
+      const count = items.length;
+      const prices = items.map(p => Number(p.price || 0)).filter(n => Number.isFinite(n));
+      const min = prices.length ? Math.min(...prices) : 0;
+      const max = prices.length ? Math.max(...prices) : 0;
+      await logAudit('update_packages', `Updated packages for game: ${id} (${count} packages, price range ${min}-${max})`, req.user);
+      // Sync packages to local JSON so static readers see the update
+      try {
+        const lp = (Array.isArray(legacyPackages) && legacyPackages.length) ? legacyPackages : items.map(p => String(p.amount || p.name || ''));
+        const lpPrices = (Array.isArray(legacyPrices) && legacyPrices.length) ? legacyPrices : items.map(p => Number(p.price || 0));
+        const lpDiscounts = (Array.isArray(legacyDiscounts) && legacyDiscounts.length) ? legacyDiscounts : items.map(p => (p.discountPrice != null ? Number(p.discountPrice) : null));
+        const lpThumbs = (Array.isArray(legacyThumbnails) && legacyThumbnails.length) ? legacyThumbnails : items.map(p => p.image || null);
+        localDb.updateGame(id, {
+          packagesList: pkgsArr.map((p, i) => ({ id: `pkg_${id}_${i}`, name: (p && (p.name || p.amount)) || String(p || '') })),
+          packages: lp,
+          package_prices: lpPrices,
+          package_discount_prices: lpDiscounts,
+          package_thumbnails: lpThumbs
+        });
+      } catch (e) {
+        console.error('Failed to sync packages to local JSON (DB path):', e && e.message);
+      }
+
+      invalidatePopularCache();
+      res.json(items);
     } catch (error) {
-        await client.query('ROLLBACK');
-        throw error;
+      await client.query('ROLLBACK');
+      throw error;
     } finally {
-        client.release();
+      client.release();
     }
   } catch (error) {
     console.error('DB Error (update packages), falling back to local DB:', error.message);

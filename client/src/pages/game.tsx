@@ -282,76 +282,83 @@ export default function GamePage() {
                     onClick={() => !isOutOfStock && handlePackageClick(index)}
                     className={`relative cursor-pointer ${isOutOfStock ? 'opacity-50 cursor-not-allowed' : ''}`}
                   >
-                    <div className="relative rounded-2xl glass border border-white/10 hover:border-cyber-blue/50 transition-all duration-300 h-full flex flex-col group overflow-hidden">
-                      {/* Discount Badge */}
+                    <div className="relative rounded-xl glass border border-white/10 hover:border-gold-primary/50 transition-all duration-300 h-full flex flex-col group overflow-hidden bg-[#1a1a1a]">
+
+                      {/* Sale Badge (Top Left) */}
                       {hasDiscount && (
-                        <div className="absolute top-0 right-0 z-20">
-                          <div className="bg-gradient-to-r from-neon-pink to-plasma-orange text-white text-xs font-bold px-3 py-1.5 rounded-bl-xl rounded-tr-2xl shadow-lg">
-                            -{discountPercent}%
+                        <div className="absolute top-3 left-3 z-20">
+                          <div className="bg-[#8b5cf6] text-white text-[10px] font-bold px-2 py-1 rounded shadow-lg">
+                            -{discountPercent}% Sale
                           </div>
                         </div>
                       )}
 
-                      {/* Bonus Badge */}
+                      {/* Bonus Badge (Top Right) */}
                       {bonus && (
-                        <div className="absolute top-0 left-0 z-20">
-                          <div className="bg-gradient-to-r from-cyber-gold to-plasma-orange text-black text-xs font-bold px-3 py-1.5 rounded-br-xl rounded-tl-2xl flex items-center gap-1 shadow-lg">
-                            <Gift className="w-3 h-3" />
-                            +{bonus}
+                        <div className="absolute top-3 right-3 z-20">
+                          <div className="bg-[#fbbf24] text-black text-[10px] font-black px-3 py-1.5 rounded-full flex items-center justify-center shadow-lg leading-tight uppercase tracking-wider transform rotate-3 group-hover:rotate-0 transition-transform">
+                            {bonus}
                           </div>
                         </div>
                       )}
 
-                      {/* Package Image Area - Full Width */}
-                      <div className="relative w-full aspect-[16/9] bg-black/20 overflow-hidden border-b border-white/5 group-hover:border-cyber-blue/30 transition-colors">
+                      {/* Package Image Area - Square for full visibility */}
+                      <div className="relative w-full aspect-square bg-gradient-to-b from-transparent to-black/20 p-4 flex items-center justify-center">
                         {image ? (
-                          <div className="w-full h-full p-2">
-                            <ImageWithFallback
-                              src={image}
-                              alt={name}
-                              className="w-full h-full object-contain drop-shadow-xl transition-transform duration-500 group-hover:scale-105"
-                            />
-                          </div>
+                          <ImageWithFallback
+                            src={image}
+                            alt={name}
+                            className="w-full h-full object-contain drop-shadow-2xl transition-transform duration-500 group-hover:scale-110"
+                          />
                         ) : (
-                          <div className="w-full h-full flex items-center justify-center">
-                            <Sparkles className="w-12 h-12 text-cyber-blue/50" />
-                          </div>
+                          <Sparkles className="w-16 h-16 text-white/20" />
                         )}
-                        {/* Glow overlay */}
-                        <div className="absolute inset-0 bg-cyber-blue/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                       </div>
 
                       {/* Package Content */}
-                      <div className="flex-1 flex flex-col p-5 text-center relative z-10">
-                        {/* Package Name */}
-                        <h3 className="text-lg font-bold text-foreground mb-1 line-clamp-2 group-hover:text-cyber-blue transition-colors leading-tight">
+                      <div className="flex-1 flex flex-col px-4 pb-4 pt-0 text-center relative z-10">
+                        {/* Name */}
+                        <h3 className="text-sm font-bold text-white mb-2 line-clamp-2 leading-snug min-h-[2.5rem] flex items-center justify-center">
                           {name}
                         </h3>
 
-                        {/* Price */}
-                        <div className="mt-auto pt-3">
+                        {/* Fake Stars for visual matching */}
+                        <div className="flex items-center justify-center gap-0.5 mb-2">
+                          {[1, 2, 3, 4, 5].map(i => (
+                            <Star key={i} className="w-3 h-3 text-[#fbbf24] fill-[#fbbf24]" />
+                          ))}
+                          <span className="text-[10px] text-muted-foreground ml-1">(5)</span>
+                        </div>
+
+                        {/* Prices */}
+                        <div className="mt-auto mb-2 space-y-0.5">
                           {hasDiscount && (
-                            <p className="text-sm text-muted-foreground line-through mb-0.5">
+                            <p className="text-xs text-muted-foreground line-through decoration-red-500/50">
                               {formatPrice(pricing.original!, pricing.currency)}
                             </p>
                           )}
-                          <p className="text-2xl font-bold text-cyber-blue text-glow-cyber-blue">
+                          <p className="text-lg font-black text-white">
                             {formatPrice(pricing.final, pricing.currency)}
                           </p>
                         </div>
 
+                        {/* In Stock Indicator */}
+                        <div className="flex items-center justify-center gap-1.5 mb-3">
+                          <div className={`w-1.5 h-1.5 rounded-full ${isOutOfStock ? 'bg-red-500' : 'bg-green-500'}`} />
+                          <span className={`text-[10px] font-medium ${isOutOfStock ? 'text-red-400' : 'text-green-400'}`}>
+                            {isOutOfStock ? 'Out of stock' : 'In stock'}
+                          </span>
+                        </div>
+
                         {/* CTA */}
                         <Button
-                          className="w-full mt-4 btn-gaming group/btn shadow-lg shadow-cyber-blue/20"
+                          className="w-full h-9 text-xs font-bold uppercase tracking-wider bg-gradient-to-r from-gold-primary to-orange-500 text-black border-none hover:opacity-90 hover:scale-[1.02] transition-all rounded shadow-lg shadow-gold-primary/20"
                           disabled={isOutOfStock}
                         >
-                          <Zap className="w-4 h-4 mr-2 group-hover/btn:animate-pulse" />
-                          Buy Now
+                          <Zap className="w-3 h-3 mr-1.5 fill-black" />
+                          {t('buy_now') || 'Buy Now'}
                         </Button>
                       </div>
-
-                      {/* Hover Glow Effect for Card */}
-                      <div className="absolute inset-0 bg-gradient-to-br from-cyber-blue/5 to-neon-purple/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none -z-10" />
                     </div>
                   </motion.div>
                 );
