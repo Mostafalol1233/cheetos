@@ -494,6 +494,7 @@ export function registerRoutes(app: Express): Server {
         id,
         userId,
         items: JSON.stringify(items),
+        totalAmount: total_amount ? String(total_amount) : null,
         paymentMethod: payment_method,
         status: "pending",
         playerId: player_id || null,

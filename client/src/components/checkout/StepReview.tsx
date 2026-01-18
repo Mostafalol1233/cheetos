@@ -46,7 +46,7 @@ export function StepReview() {
           items: orderItems,
           total_amount: total(),
           payment_method: paymentMethod,
-          deliver_via: deliverVia, // Using deliverVia state for delivery_method
+          delivery_method: deliverVia, // Aligning with backend field name
           customer_name: contact.fullName,
           customer_email: contact.email,
           customer_phone: contact.phone ? `${contact.countryCode || ''}${contact.phone}` : undefined,
@@ -217,11 +217,11 @@ export function StepReview() {
           <div className="space-y-2">
             <div className="flex justify-between">
               <span>Subtotal:</span>
-              <span>${subtotal().toFixed(2)}</span>
+              <span>{subtotal().toFixed(2)} EGP</span>
             </div>
             <div className="flex justify-between font-bold text-lg">
               <span>Total:</span>
-              <span>${total().toFixed(2)}</span>
+              <span>{total().toFixed(2)} EGP</span>
             </div>
           </div>
         </CardContent>

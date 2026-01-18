@@ -65,7 +65,7 @@ export function Footer() {
                 <div className="flex items-center gap-3 cursor-pointer group">
                   <div className="h-12 w-auto flex items-center">
                     <img
-                      src="/logo.png"
+                      src="https://i.postimg.cc/bJWDcc9V/logo.png"
                       alt="GameCart Logo"
                       className="h-full w-auto max-h-12 object-contain hover:scale-105 transition-transform"
                     />

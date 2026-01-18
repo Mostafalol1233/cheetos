@@ -185,6 +185,7 @@ export const orders = pgTable("orders", {
   createdAt: integer("created_at").notNull().default(Date.now()),
   userId: varchar("user_id", { length: 50 }),
   items: text("items").notNull(),
+  totalAmount: decimal("total_amount", { precision: 10, scale: 2 }),
   paymentMethod: text("payment_method").notNull(),
   status: text("status").notNull().default("pending"),
   playerId: text("player_id"),

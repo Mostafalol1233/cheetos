@@ -73,7 +73,7 @@ export function Header() {
               >
                 <div className="h-10 w-auto flex items-center">
                   <img
-                    src="/logo.png"
+                    src="https://i.postimg.cc/bJWDcc9V/logo.png"
                     alt="GameCart Logo"
                     className="h-full w-auto max-h-10 object-contain hover:scale-105 transition-transform"
                   />
