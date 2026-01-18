@@ -71,11 +71,11 @@ export function Header() {
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 1.98 }}
               >
-                <div className="h-16 w-auto flex items-center">
+                <div className="h-24 w-auto flex items-center">
                   <img
                     src="https://files.catbox.moe/brmkrj.png"
                     alt="GameCart Logo"
-                    className="h-full w-auto max-h-16 object-contain hover:scale-105 transition-transform"
+                    className="h-full w-auto max-h-24 object-contain hover:scale-105 transition-transform"
                   />
                 </div>
                 <div className="hidden flex items-center gap-3">
@@ -95,23 +95,21 @@ export function Header() {
             </Link>
 
             {/* Desktop Navigation */}
-            <nav className="hidden lg:flex items-center gap-1">
+            <nav className="hidden lg:flex items-center gap-4">
               {navLinks.map((link) => {
-                const Icon = link.icon;
                 const isActive = location === link.href;
                 return (
                   <Link key={link.href} href={link.href}>
                     <motion.div
                       className={cn(
-                        "relative px-4 py-2 rounded-xl font-medium transition-all duration-300 flex items-center gap-2",
+                        "relative px-4 py-2 rounded-xl font-gaming tracking-widest text-lg transition-all duration-300 flex items-center gap-2",
                         isActive
                           ? "text-gold-primary"
-                          : "text-muted-foreground hover:text-gold-primary"
+                          : "text-muted-foreground hover:text-gold-primary hover:tracking-[0.2em]"
                       )}
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
                     >
-                      <Icon className="w-4 h-4" />
                       {link.label}
                       {isActive && (
                         <motion.div
@@ -129,8 +127,7 @@ export function Header() {
               <NavigationMenu>
                 <NavigationMenuList>
                   <NavigationMenuItem>
-                    <NavigationMenuTrigger className="bg-transparent hover:bg-gold-primary/10 hover:text-gold-primary text-muted-foreground data-[state=open]:text-gold-primary">
-                      <Grid3X3 className="w-4 h-4 mr-2" />
+                    <NavigationMenuTrigger className="bg-transparent font-gaming tracking-widest text-lg hover:bg-gold-primary/10 hover:text-gold-primary text-muted-foreground data-[state=open]:text-gold-primary">
                       {t('categories')}
                     </NavigationMenuTrigger>
                     <NavigationMenuContent>
