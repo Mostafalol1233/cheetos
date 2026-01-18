@@ -58,45 +58,59 @@ export function StepReview() {
         })
       });
 
+      // Clear checkout state regardless of outcome
+      localStorage.removeItem('checkout_package');
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.message || `Order failed with status ${res.status}`);
+      }
+
       const response = await res.json();
 
       // Handle Auto-Login / User Session
-      if (response.token && response.user) {
+      if (response.token) {
         localStorage.setItem('userToken', response.token);
-        localStorage.setItem('userData', JSON.stringify(response.user));
+        if (response.user) {
+          localStorage.setItem('userData', JSON.stringify(response.user));
+        }
+        // Clear cart after successful order
+        localStorage.removeItem('cart');
         // Force reload to pick up auth state and redirect to orders
-        window.location.href = '/account/orders';
+        window.location.href = '/track-order?id=' + response.id;
         return;
       }
 
-      // Handle redirect to orders if account created or already logged in (fallback)
-      if (response.status === 'pending_approval' || response.status === 'processing') {
-        // If we have a token (either new or existing), redirect to orders
-        if (localStorage.getItem('userToken')) {
-          window.location.href = '/account/orders';
-          return;
-        }
+      // If user already exists (no new token generated), still redirect to track order
+      if (response.id) {
+        // Clear cart after successful order
+        localStorage.removeItem('cart');
+        setOrderMeta(response.id, response.status || 'pending_approval');
       }
 
-      setOrderMeta(response.id, response.status || 'processing');
-
       if (deliverVia === 'whatsapp') {
-        const waNumber = settings?.whatsappNumber?.replace(/\D/g, '') || '201000000000';
+        const waNumber = settings?.whatsappNumber?.replace(/\D/g, '') || '201011696196';
         const message = `*New Order #${response.id}*\nName: ${contact.fullName}\nTotal: ${total()} EGP\nItems:\n${cart.map(i => `- ${i.name} x${i.quantity}`).join('\n')}\n\nPayment: WhatsApp Order`;
 
         window.open(`https://wa.me/${waNumber}?text=${encodeURIComponent(message)}`, '_blank');
       }
 
-      if (response.user) {
-        // Force reload to pick up auth state and redirect to orders
-        window.location.href = '/account/orders';
+      // If we have existing token, redirect to track order
+      if (localStorage.getItem('userToken') && response.id) {
+        window.location.href = '/track-order?id=' + response.id;
+        return;
+      }
+
+      // Redirect to track order page with order ID
+      if (response.id) {
+        window.location.href = '/track-order?id=' + response.id;
         return;
       }
 
       setStep('processing');
     } catch (error) {
       console.error('Order submission failed:', error);
-      setError('Failed to submit order. Please try again.');
+      setError(error instanceof Error ? error.message : 'Failed to submit order. Please try again.');
     } finally {
       setIsSubmitting(false);
     }

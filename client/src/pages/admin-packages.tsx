@@ -98,9 +98,10 @@ export default function AdminPackagesPage() {
         const gameMultiPrices = multiCurrencyPrices[gameId] || {};
         const packageMultiPrices = gameMultiPrices[index] || {};
         const basePrice = pkg.price || 0;
-        const usd = packageMultiPrices.USD || Math.round((basePrice || 0) / 50 * 100) / 100 || 0;
+        // EGP is the primary currency, derive others from it
         const egp = packageMultiPrices.EGP || basePrice || 0;
-        const tryPrice = packageMultiPrices.TRY || Math.round(usd * 35 * 100) / 100 || 0;
+        const usd = packageMultiPrices.USD || Math.round((egp / 50) * 100) / 100 || 0;
+        const tryPrice = packageMultiPrices.TRY || Math.round((egp / 50) * 35 * 100) / 100 || 0;
 
         return {
           ...pkg,
@@ -130,9 +131,10 @@ export default function AdminPackagesPage() {
           const basePrice = Number(gamePrices[index] || 0);
           const gameMultiPrices = multiCurrencyPrices[gameId] || {};
           const packageMultiPrices = gameMultiPrices[index] || {};
-          const usd = packageMultiPrices.USD || Math.round((basePrice || 0) / 50 * 100) / 100 || 0;
+          // EGP is the primary currency
           const egp = packageMultiPrices.EGP || basePrice || 0;
-          const tryPrice = packageMultiPrices.TRY || Math.round(usd * 35 * 100) / 100 || 0;
+          const usd = packageMultiPrices.USD || Math.round((egp / 50) * 100) / 100 || 0;
+          const tryPrice = packageMultiPrices.TRY || Math.round((egp / 50) * 35 * 100) / 100 || 0;
 
           return {
             amount: typeof pkg === 'string' ? pkg : (pkg?.amount || ''),
@@ -284,12 +286,12 @@ export default function AdminPackagesPage() {
       if (!updated[index].multiCurrencyPrices) {
         updated[index].multiCurrencyPrices = { EGP: 0, USD: 0, TRY: 0 };
       }
-      // Assuming USD is the base price
+      // EGP is the primary currency - derive USD and TRY from EGP
       updated[index].multiCurrencyPrices = {
         ...updated[index].multiCurrencyPrices!,
-        USD: price,
-        EGP: Math.round(price * 50 * 100) / 100, // Default EGP rate
-        TRY: Math.round(price * 35 * 100) / 100  // Default TRY rate
+        EGP: price,
+        USD: Math.round((price / 50) * 100) / 100, // EGP to USD (divide by 50)
+        TRY: Math.round((price / 50) * 35 * 100) / 100  // EGP to TRY
       };
     }
 
@@ -304,9 +306,13 @@ export default function AdminPackagesPage() {
     }
     updated[index].multiCurrencyPrices![currency as keyof MultiCurrencyPrices] = value;
 
-    // If USD is updated, also update the base price
-    if (currency === 'USD') {
-      updated[index].price = value;
+    // If EGP is updated, also update the base price and derive other currencies
+    if (currency === 'EGP') {
+      const egpValue = value;
+      updated[index].price = egpValue;
+      // Auto-derive USD and TRY from EGP
+      updated[index].multiCurrencyPrices!.USD = Math.round((egpValue / 50) * 100) / 100;
+      updated[index].multiCurrencyPrices!.TRY = Math.round((egpValue / 50) * 35 * 100) / 100;
     }
 
     setPackages(updated);

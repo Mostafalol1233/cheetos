@@ -3,7 +3,7 @@ import { ArrowLeft, Package, CheckCircle, Clock, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "@/lib/translation";
 import { LanguageSwitcher } from "@/components/language-switcher";
@@ -15,8 +15,18 @@ export default function TrackOrderPage() {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
-  const handleTrackOrder = async () => {
-    if (!orderId.trim()) {
+  // Auto-fetch order if ID is in URL
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const urlOrderId = params.get('id');
+    if (urlOrderId) {
+      setOrderId(urlOrderId);
+      fetchOrder(urlOrderId);
+    }
+  }, []);
+
+  const fetchOrder = async (id: string) => {
+    if (!id.trim()) {
       toast({
         title: "Error",
         description: "Please enter an order ID",
@@ -27,12 +37,34 @@ export default function TrackOrderPage() {
 
     setLoading(true);
     try {
-      const response = await fetch(`/api/orders/${encodeURIComponent(orderId.trim())}`);
+      const response = await fetch(`/api/orders/${encodeURIComponent(id.trim())}`);
       if (!response.ok) {
         throw new Error("Order not found");
       }
       const data = await response.json();
-      setOrderStatus(data);
+
+      // Parse items if it's a JSON string
+      let parsedItems = data.items;
+      if (typeof data.items === 'string') {
+        try {
+          parsedItems = JSON.parse(data.items);
+        } catch {
+          parsedItems = [];
+        }
+      }
+
+      setOrderStatus({
+        ...data,
+        items: parsedItems,
+        // Normalize field names for display
+        transaction: {
+          id: data.id,
+          status: data.status,
+          payment_method: data.payment_method,
+          total: data.total_amount,
+          created_at: data.created_at
+        }
+      });
     } catch (error) {
       toast({
         title: "Order Not Found",
@@ -43,6 +75,10 @@ export default function TrackOrderPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleTrackOrder = async () => {
+    await fetchOrder(orderId);
   };
 
   const getStatusIcon = (status: string) => {
@@ -151,12 +187,24 @@ export default function TrackOrderPage() {
                 {orderStatus.items && orderStatus.items.length > 0 && (
                   <div>
                     <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">{t("items")}</p>
-                    <div className="space-y-2">
+                    <div className="space-y-3">
                       {orderStatus.items.map((item: any, index: number) => (
-                        <div key={index} className="flex justify-between p-2 bg-gray-50 dark:bg-gray-800 rounded">
-                          <span>Item {index + 1}</span>
-                          <span className="font-semibold">
-                            {item.quantity} x {item.price} EGP = {(item.quantity * item.price).toFixed(2)} EGP
+                        <div key={index} className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                          {(item.image || item.gameImage) && (
+                            <img
+                              src={item.image || item.gameImage}
+                              alt={item.title || item.name || `Item ${index + 1}`}
+                              className="w-12 h-12 rounded object-cover"
+                            />
+                          )}
+                          <div className="flex-1">
+                            <p className="font-medium">{item.title || item.name || `Item ${index + 1}`}</p>
+                            <p className="text-sm text-gray-500 dark:text-gray-400">
+                              {item.quantity || 1} x {Number(item.price || 0).toFixed(2)} EGP
+                            </p>
+                          </div>
+                          <span className="font-semibold text-blue-600 dark:text-blue-400">
+                            {((item.quantity || 1) * Number(item.price || 0)).toFixed(2)} EGP
                           </span>
                         </div>
                       ))}

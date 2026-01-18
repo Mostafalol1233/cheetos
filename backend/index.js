@@ -29,6 +29,7 @@ import headerImagesRouter from './routes/header-images.js';
 import packagesRouter from './routes/packages.js';
 import uploadsRouter from './routes/uploads.js';
 import responseTemplatesRouter from './routes/response-templates.js';
+import settingsRouter from './routes/settings.js';
 import { authenticateToken, ensureAdmin } from './middleware/auth.js';
 import { sendEmail, sendRawEmail } from './utils/email.js';
 import { generateSitemap } from './utils/sitemap.js';
@@ -64,8 +65,8 @@ process.on('uncaughtException', (error) => {
 process.on('unhandledRejection', (reason, promise) => {
   // Handle WhatsApp timeout errors gracefully - don't treat as critical errors
   if (reason?.message?.includes('Timed Out') ||
-      reason?.output?.statusCode === 408 ||
-      reason?.data?.stack?.includes('baileys')) {
+    reason?.output?.statusCode === 408 ||
+    reason?.data?.stack?.includes('baileys')) {
     console.warn('⚠️ WhatsApp timeout/network error (handled):', reason?.message || reason);
     return; // Don't log as critical error
   }
@@ -93,29 +94,29 @@ try {
 // Core file cleanup function to prevent disk space issues
 function startCoreFileCleanup() {
   const cleanupInterval = 5 * 60 * 1000; // 5 minutes
-  
+
   setInterval(async () => {
     try {
       const currentDir = process.cwd();
       const backendDir = __dirname;
-      
+
       // Check both current directory and backend directory
       const dirsToCheck = [currentDir, backendDir];
-      
+
       for (const dir of dirsToCheck) {
         try {
           const files = await fs.promises.readdir(dir);
-          
+
           for (const file of files) {
             // Check for core files (core, core.<pid>, or any file starting with core)
             if (file === 'core' || file.startsWith('core.')) {
               const filePath = path.join(dir, file);
-              
+
               try {
                 // Get file stats to check size
                 const stats = await fs.promises.stat(filePath);
                 const fileSizeMB = stats.size / (1024 * 1024);
-                
+
                 // Delete the core file
                 await fs.promises.unlink(filePath);
                 console.log(`🗑️ Deleted core file: ${filePath} (${fileSizeMB.toFixed(2)} MB)`);
@@ -132,7 +133,7 @@ function startCoreFileCleanup() {
       console.warn('⚠️ Error during core file cleanup:', err.message);
     }
   }, cleanupInterval);
-  
+
   console.log('🧹 Core file cleanup monitor started (checks every 5 minutes)');
 }
 
@@ -149,9 +150,9 @@ const baileysModulePath = path.join(nodeModulesPath, '@whiskeysockets', 'baileys
 if (!fs.existsSync(pgModulePath) || !fs.existsSync(baileysModulePath)) {
   console.log('📦 Installing dependencies...');
   try {
-    execSync('npm install', { 
-      cwd: __dirname, 
-      stdio: 'inherit' 
+    execSync('npm install', {
+      cwd: __dirname,
+      stdio: 'inherit'
     });
     console.log('✓ Dependencies installed successfully\n');
   } catch (err) {
@@ -257,7 +258,7 @@ function coerceJsonArray(value) {
     const s = value.trim();
     if (!s) return [];
     if (s === '[object Object]') return [];
-    
+
     // If it's a JSON array string, parse it
     if (s.startsWith('[') && s.endsWith(']')) {
       try {
@@ -267,12 +268,12 @@ function coerceJsonArray(value) {
         return [s];
       }
     }
-    
+
     // If it's a comma-separated string, split it
     if (s.includes(',')) {
       return s.split(',').map(t => t.trim()).filter(Boolean);
     }
-    
+
     return [s];
   }
   if (typeof value === 'object') {
@@ -313,11 +314,11 @@ async function seedGamesFromJsonIfEmpty(force = false) {
     const items = readGamesFile();
     console.log(`ℹ️  Found ${items.length} items to seed`);
     if (!Array.isArray(items) || items.length === 0) return;
-    
+
     for (const g of items) {
       console.log(`   Seeding ${g.name}...`);
       try {
-        const id = String(g.id || `game_${Date.now()}_${Math.random().toString(36).slice(2,9)}`);
+        const id = String(g.id || `game_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`);
         const name = String(g.name || '').trim();
         const slug = String(g.slug || name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''));
         const description = String(g.description || '');
@@ -396,11 +397,11 @@ async function seedCategoriesFromJsonIfEmpty(force = false) {
       const c = countRes.rows?.[0]?.c || 0;
       if (c > 0) return;
     }
-    
+
     const categoriesPath = path.join(__dirname, 'data', 'categories.json');
     if (!fs.existsSync(categoriesPath)) return;
     const items = JSON.parse(fs.readFileSync(categoriesPath, 'utf8'));
-    
+
     for (const c of items) {
       await pool.query(
         `INSERT INTO categories (id, name, slug, description, image, gradient, icon)
@@ -512,7 +513,7 @@ if (!fs.existsSync(publicDir)) {
 }
 
 if (!fs.existsSync(imagesDir)) {
-  try { fs.mkdirSync(imagesDir, { recursive: true }); } catch {}
+  try { fs.mkdirSync(imagesDir, { recursive: true }); } catch { }
 }
 
 function computeDiscountPrice(mainPrice) {
@@ -523,20 +524,20 @@ async function useProvidedImage(req) {
   try {
     const url = (req.body && (req.body.image_url || req.body.imageUrl || req.body.image)) || null;
     const pth = (req.body && (req.body.image_path || req.body.imagePath)) || null;
-    
+
     if (req.file && req.file.filename) {
       const localPath = req.file.path;
       try {
         if (CLOUDINARY_ENABLED) {
           const result = await cloudinary.uploader.upload(localPath, { folder: process.env.CLOUDINARY_FOLDER || 'gamecart/games', resource_type: 'image' });
-          try { fs.unlinkSync(localPath); } catch {}
+          try { fs.unlinkSync(localPath); } catch { }
           if (result?.secure_url) return result.secure_url;
         }
-      } catch {}
+      } catch { }
 
       try {
         const r = await catboxFileUploadFromLocal(localPath, req.file.originalname || req.file.filename);
-        try { fs.unlinkSync(localPath); } catch {}
+        try { fs.unlinkSync(localPath); } catch { }
         if (r.ok) return r.url;
         throw new Error(r.message || 'catbox upload failed');
       } catch (err) {
@@ -544,11 +545,11 @@ async function useProvidedImage(req) {
           const alertId = `al_${Date.now()}`;
           const summary = `Image upload failed for ${req.file?.originalname || req.file?.filename}: ${String(err?.message || err).substring(0, 180)}`;
           await pool.query('INSERT INTO seller_alerts (id, type, summary) VALUES ($1, $2, $3)', [alertId, 'upload_error', summary]);
-        } catch {}
+        } catch { }
         return null;
       }
     }
-    
+
     if (typeof url === 'string' && url.trim()) {
       const u = url.trim();
       if (isCatboxUrl(u)) return u;
@@ -556,27 +557,27 @@ async function useProvidedImage(req) {
         try {
           const result = await cloudinary.uploader.upload(u, { folder: process.env.CLOUDINARY_FOLDER || 'gamecart/games', resource_type: 'image' });
           if (result?.secure_url) return result.secure_url;
-        } catch {}
+        } catch { }
       }
       try {
         const up = await uploadUrlToCatbox(u);
         if (up.ok) return up.url;
-      } catch {}
+      } catch { }
       return null;
     }
-    
+
     if (typeof pth === 'string' && pth.trim()) {
       const src = pth.trim();
       const ext = path.extname(src) || '.jpg';
-      const filename = `image-${Date.now()}-${Math.round(Math.random()*1e9)}${ext}`;
+      const filename = `image-${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`;
       const dest = path.join(uploadDir, filename);
-      try { 
+      try {
         fs.copyFileSync(src, dest);
         const r = await catboxFileUploadFromLocal(dest, path.basename(src));
-        try { fs.unlinkSync(dest); } catch {}
+        try { fs.unlinkSync(dest); } catch { }
         if (r.ok) return r.url;
-        return null; 
-      } catch {}
+        return null;
+      } catch { }
     }
   } catch (err) {
     console.error('Error in useProvidedImage:', err);
@@ -594,8 +595,8 @@ app.use(express.static(publicDir));
 app.use('/media', express.static(publicDir));
 const mediaAssetsDir = path.join(publicDir, 'assets');
 const generatedImagesDir = path.join(publicDir, 'generated_images');
-try { if (!fs.existsSync(mediaAssetsDir)) fs.mkdirSync(mediaAssetsDir, { recursive: true }); } catch {}
-try { if (!fs.existsSync(generatedImagesDir)) fs.mkdirSync(generatedImagesDir, { recursive: true }); } catch {}
+try { if (!fs.existsSync(mediaAssetsDir)) fs.mkdirSync(mediaAssetsDir, { recursive: true }); } catch { }
+try { if (!fs.existsSync(generatedImagesDir)) fs.mkdirSync(generatedImagesDir, { recursive: true }); } catch { }
 app.use('/media/assets', express.static(mediaAssetsDir));
 app.use('/media/generated_images', express.static(generatedImagesDir));
 // Serve payment images
@@ -606,10 +607,10 @@ const rootAttachedAssetsDir = path.join(__dirname, '..', 'attached_assets');
 
 // Create directories if they don't exist
 if (!fs.existsSync(attachedAssetsDir)) {
-  try { fs.mkdirSync(attachedAssetsDir, { recursive: true }); } catch {}
+  try { fs.mkdirSync(attachedAssetsDir, { recursive: true }); } catch { }
 }
 if (!fs.existsSync(rootAttachedAssetsDir)) {
-  try { fs.mkdirSync(rootAttachedAssetsDir, { recursive: true }); } catch {}
+  try { fs.mkdirSync(rootAttachedAssetsDir, { recursive: true }); } catch { }
 }
 
 // Serve attached_assets - try root folder first, then backend/public
@@ -667,6 +668,108 @@ app.get('/api/contact-info', async (req, res) => {
     });
   } catch (err) {
     res.status(500).json({ message: err.message });
+  }
+});
+
+// ===================== SETTINGS (Theme & Branding) =====================
+const defaultSettings = {
+  id: 'default',
+  primaryColor: '#FFCC00',
+  accentColor: '#0066FF',
+  logoUrl: null,
+  headerImageUrl: null,
+  whatsappNumber: '+201011696196',
+  trustBadges: null,
+  footerText: null,
+  bonusPercent: 0
+};
+
+app.get('/api/settings', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM settings LIMIT 1');
+    if (result.rows.length > 0) {
+      const row = result.rows[0];
+      res.json({
+        ...defaultSettings,
+        ...row,
+        primaryColor: row.primary_color || defaultSettings.primaryColor,
+        accentColor: row.accent_color || defaultSettings.accentColor,
+        logoUrl: row.logo_url,
+        headerImageUrl: row.header_image_url,
+        whatsappNumber: row.whatsapp_number || defaultSettings.whatsappNumber,
+        trustBadges: row.trust_badges,
+        footerText: row.footer_text,
+        bonusPercent: row.bonus_percent || 0
+      });
+    } else {
+      res.json(defaultSettings);
+    }
+  } catch (err) {
+    console.error('Error fetching settings:', err.message);
+    if (err.code === '42P01') {
+      return res.json(defaultSettings);
+    }
+    res.status(500).json({ message: "Failed to load settings" });
+  }
+});
+
+app.put('/api/settings', authenticateToken, ensureAdmin, async (req, res) => {
+  try {
+    const {
+      primaryColor, accentColor, logoUrl, headerImageUrl,
+      whatsappNumber, trustBadges, footerText, bonusPercent
+    } = req.body;
+
+    const existing = await pool.query('SELECT id FROM settings LIMIT 1');
+
+    if (existing.rows.length > 0) {
+      await pool.query(`
+        UPDATE settings SET
+          primary_color = COALESCE($1, primary_color),
+          accent_color = COALESCE($2, accent_color),
+          logo_url = COALESCE($3, logo_url),
+          header_image_url = COALESCE($4, header_image_url),
+          whatsapp_number = COALESCE($5, whatsapp_number),
+          trust_badges = COALESCE($6, trust_badges),
+          footer_text = COALESCE($7, footer_text),
+          bonus_percent = COALESCE($8, bonus_percent),
+          updated_at = NOW()
+        WHERE id = $9
+      `, [
+        primaryColor, accentColor, logoUrl, headerImageUrl,
+        whatsappNumber, trustBadges, footerText, bonusPercent,
+        existing.rows[0].id
+      ]);
+    } else {
+      await pool.query(`
+        INSERT INTO settings (
+          id, primary_color, accent_color, logo_url, header_image_url,
+          whatsapp_number, trust_badges, footer_text, bonus_percent
+        ) VALUES ('default', $1, $2, $3, $4, $5, $6, $7, $8)
+      `, [
+        primaryColor || defaultSettings.primaryColor,
+        accentColor || defaultSettings.accentColor,
+        logoUrl, headerImageUrl,
+        whatsappNumber || defaultSettings.whatsappNumber,
+        trustBadges, footerText, bonusPercent || 0
+      ]);
+    }
+
+    const updated = await pool.query('SELECT * FROM settings LIMIT 1');
+    const row = updated.rows[0] || {};
+    res.json({
+      ...defaultSettings,
+      ...row,
+      primaryColor: row.primary_color || defaultSettings.primaryColor,
+      accentColor: row.accent_color || defaultSettings.accentColor,
+      logoUrl: row.logo_url,
+      headerImageUrl: row.header_image_url,
+      whatsappNumber: row.whatsapp_number || defaultSettings.whatsappNumber,
+      message: 'Settings updated'
+    });
+  } catch (err) {
+    console.error('Error updating settings:', err.message);
+    res.status(500).json({ message: "Failed to update settings" });
   }
 });
 
@@ -774,7 +877,7 @@ app.post('/api/admin/games/bulk-update-images', authenticateToken, ensureAdmin, 
           return out;
         });
         if (changed) writeGamesFile(next);
-      } catch {}
+      } catch { }
     }
 
     res.json({ ok: true, updated, applied, skipped });
@@ -797,7 +900,7 @@ app.post('/api/admin/categories/prune', authenticateToken, ensureAdmin, async (r
         const del = await pool.query('DELETE FROM categories WHERE LOWER(slug) = ANY($1) RETURNING id, slug', [slugs]);
         removed.push(...(del.rows || []));
       }
-    } catch {}
+    } catch { }
 
     // Update categories.json + games.json fallback
     try {
@@ -807,7 +910,7 @@ app.post('/api/admin/categories/prune', authenticateToken, ensureAdmin, async (r
         const nextCats = (Array.isArray(cats) ? cats : []).filter((c) => !slugs.includes(String(c?.slug || '').toLowerCase()));
         fs.writeFileSync(categoriesPath, JSON.stringify(nextCats, null, 2), 'utf8');
       }
-    } catch {}
+    } catch { }
 
     try {
       const fileGames = readGamesFile();
@@ -817,7 +920,7 @@ app.post('/api/admin/categories/prune', authenticateToken, ensureAdmin, async (r
         return { ...g, category: keepCategory };
       });
       writeGamesFile(next);
-    } catch {}
+    } catch { }
 
     res.json({ ok: true, removed, reassignedTo: keepCategory });
   } catch (err) {
@@ -841,7 +944,7 @@ app.post('/api/admin/games/randomize-stock', authenticateToken, ensureAdmin, asy
         await pool.query('UPDATE games SET stock = $1 WHERE id = $2', [rand(), r.id]);
         dbUpdated++;
       }
-    } catch {}
+    } catch { }
 
     let jsonUpdated = 0;
     try {
@@ -851,7 +954,7 @@ app.post('/api/admin/games/randomize-stock', authenticateToken, ensureAdmin, asy
         return { ...g, stock: rand() };
       });
       writeGamesFile(next);
-    } catch {}
+    } catch { }
 
     res.json({ ok: true, dbUpdated, jsonUpdated, range: { min: lo, max: hi } });
   } catch (err) {
@@ -937,7 +1040,7 @@ const storage = multer.diskStorage({
   }
 });
 
-const upload = multer({ 
+const upload = multer({
   storage,
   limits: { fileSize: 50 * 1024 * 1024 }
 });
@@ -972,35 +1075,35 @@ app.use('/api/admin/response-templates', responseTemplatesRouter);
 app.post('/api/admin/upload-image', authenticateToken, ensureAdmin, imageUpload.single('file'), async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ message: 'No file provided' });
-    
+
     let url = `/uploads/${req.file.filename}`;
-    
+
     // Try Cloudinary if enabled
     if (CLOUDINARY_ENABLED) {
-       try {
-         const result = await cloudinary.uploader.upload(req.file.path, { 
-           folder: process.env.CLOUDINARY_FOLDER || 'gamecart/packages', 
-           resource_type: 'image' 
-         });
-         url = result.secure_url;
-         try { fs.unlinkSync(req.file.path); } catch {}
-       } catch (e) {
-         console.error('Cloudinary upload failed', e);
-         // Fallback to local file (already there)
-       }
+      try {
+        const result = await cloudinary.uploader.upload(req.file.path, {
+          folder: process.env.CLOUDINARY_FOLDER || 'gamecart/packages',
+          resource_type: 'image'
+        });
+        url = result.secure_url;
+        try { fs.unlinkSync(req.file.path); } catch { }
+      } catch (e) {
+        console.error('Cloudinary upload failed', e);
+        // Fallback to local file (already there)
+      }
     } else {
-       // Try Catbox if not Cloudinary
-       try {
-         const r = await catboxFileUploadFromLocal(req.file.path, req.file.originalname);
-         if (r.ok) {
-           url = r.url;
-           try { fs.unlinkSync(req.file.path); } catch {}
-         }
-       } catch (e) {
-         console.error('Catbox upload failed', e);
-       }
+      // Try Catbox if not Cloudinary
+      try {
+        const r = await catboxFileUploadFromLocal(req.file.path, req.file.originalname);
+        if (r.ok) {
+          url = r.url;
+          try { fs.unlinkSync(req.file.path); } catch { }
+        }
+      } catch (e) {
+        console.error('Catbox upload failed', e);
+      }
     }
-    
+
     res.json({ url: normalizeImageUrl(url) });
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -1040,8 +1143,8 @@ app.get('/api/categories', async (req, res) => {
     );
   } catch (err) {
     console.error('Error fetching categories:', err);
-    res.status(500).json({ 
-      message: 'Failed to fetch categories', 
+    res.status(500).json({
+      message: 'Failed to fetch categories',
       error: err.message
     });
   }
@@ -1078,7 +1181,7 @@ async function initializeDatabase() {
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `);
-    
+
     // Ensure description column has NOT NULL constraint and default
     await pool.query(`
       DO $$ 
@@ -1116,7 +1219,7 @@ async function initializeDatabase() {
     await pool.query(`ALTER TABLE games ADD COLUMN IF NOT EXISTS discount_price DECIMAL(10, 2)`);
     await pool.query(`ALTER TABLE games ADD COLUMN IF NOT EXISTS package_discount_prices JSONB DEFAULT '[]'`);
     await pool.query(`ALTER TABLE games ADD COLUMN IF NOT EXISTS package_thumbnails JSONB DEFAULT '[]'`);
-    
+
     await pool.query(`
       CREATE TABLE IF NOT EXISTS image_assets (
         id VARCHAR(50) PRIMARY KEY,
@@ -1128,7 +1231,7 @@ async function initializeDatabase() {
         uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `);
-    
+
     await pool.query(`
       CREATE TABLE IF NOT EXISTS game_packages (
         id SERIAL PRIMARY KEY,
@@ -1143,7 +1246,7 @@ async function initializeDatabase() {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `);
-    
+
     // Legacy/Unused packages table (renamed/replaced by game_packages)
     // We keep this just in case, but game_packages is the active one.
     await pool.query(`
@@ -1158,7 +1261,7 @@ async function initializeDatabase() {
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `);
-    
+
     // Make email/password nullable for guest users
     try {
       await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS name VARCHAR(255)');
@@ -1206,7 +1309,7 @@ async function initializeDatabase() {
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
-    
+
     // Hero slides configuration
     await pool.query(`
       CREATE TABLE IF NOT EXISTS hero_slides (
@@ -1224,7 +1327,7 @@ async function initializeDatabase() {
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `);
-    
+
     // Insert default slide if empty
     await pool.query(`
       INSERT INTO hero_slides (id, background_image_url, title_en, promo_text_en, button_text, button_link, display_order, is_active)
@@ -1243,7 +1346,7 @@ async function initializeDatabase() {
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `);
-    
+
     // Initialize chat widget config if not exists
     await pool.query(`
       INSERT INTO chat_widget_config (id, enabled, icon_url, welcome_message, position)
@@ -1302,7 +1405,7 @@ async function initializeDatabase() {
       );
     `);
     await pool.query(`INSERT INTO site_settings (id) VALUES ('site') ON CONFLICT (id) DO NOTHING`);
-    
+
     // Add missing columns to site_settings
     await pool.query(`ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS whatsapp_number TEXT`);
     await pool.query(`ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS facebook_url TEXT`);
@@ -1528,7 +1631,7 @@ async function runImageAssetsSeeding() {
   console.log('🔄 runImageAssetsSeeding starting...');
   const client = await pool.connect();
   console.log('🔄 runImageAssetsSeeding connected to DB');
-  const runId = `seed_${Date.now()}_${Math.random().toString(36).slice(2,9)}`;
+  const runId = `seed_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
   const startedAt = new Date();
   let gamesUpdated = 0;
   let categoriesUpdated = 0;
@@ -1581,20 +1684,20 @@ async function runImageAssetsSeeding() {
       );
       const auditId = `aa_${Date.now()}`;
       await pool.query('INSERT INTO admin_audit_logs (id, action, summary) VALUES ($1,$2,$3)', [auditId, 'image_seeding', summary]);
-    } catch {}
+    } catch { }
     return { ok: true, gamesUpdated, categoriesUpdated, errors };
   } catch (err) {
-    try { await client.query('ROLLBACK'); } catch {}
+    try { await client.query('ROLLBACK'); } catch { }
     const finishedAt = new Date();
-    const summary = `seeding failed: ${String(err.message || err).substring(0,180)}`;
+    const summary = `seeding failed: ${String(err.message || err).substring(0, 180)}`;
     try {
       await pool.query(
         'INSERT INTO seeding_runs (id, started_at, finished_at, success, games_updated, categories_updated, errors, summary) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)',
-        [runId, startedAt, finishedAt, false, gamesUpdated, categoriesUpdated, errors+1, summary]
+        [runId, startedAt, finishedAt, false, gamesUpdated, categoriesUpdated, errors + 1, summary]
       );
       const alertId = `al_${Date.now()}`;
       await pool.query('INSERT INTO seller_alerts (id, type, summary) VALUES ($1,$2,$3)', [alertId, 'seeding_error', summary]);
-    } catch {}
+    } catch { }
     return { ok: false, error: err.message || String(err) };
   } finally {
     client.release();
@@ -1605,14 +1708,14 @@ async function runImageAssetsSeeding() {
 async function seedProductImages() {
   try {
     const publicDir = path.join(__dirname, 'public');
-    
+
     if (!fs.existsSync(publicDir)) {
       console.log('⚠️  Public folder not found, skipping image seeding');
       return;
     }
 
     const files = fs.readdirSync(publicDir).filter(f => /\.(jpg|jpeg|png|webp|gif)$/i.test(f));
-    
+
     if (files.length === 0) {
       console.log('⚠️  No images found in public folder');
       return;
@@ -1620,7 +1723,7 @@ async function seedProductImages() {
 
     // Get all games
     const games = await pool.query('SELECT id FROM games');
-    
+
     if (games.rowCount === 0) {
       console.log('ℹ️  No products to seed images for');
       return;
@@ -1632,12 +1735,12 @@ async function seedProductImages() {
     for (const game of games.rows) {
       const imageName = files[imageIndex % files.length];
       const imagePath = `/media/${imageName}`;
-      
+
       await pool.query(
         'UPDATE games SET image = $1 WHERE id = $2',
         [imagePath, game.id]
       );
-      
+
       imageIndex++;
     }
 
@@ -1718,7 +1821,7 @@ app.post('/api/admin/game-cards', authenticateToken, ensureAdmin, async (req, re
     if (dup.rows.length) return res.status(409).json({ message: 'Duplicate card_code' });
     const id = `card_${Date.now()}`;
     await pool.query('INSERT INTO game_cards (id, game_id, card_code) VALUES ($1, $2, $3)', [id, game_id, card_code]);
-    try { const auditId = `aa_${Date.now()}`; await pool.query('INSERT INTO admin_audit_logs (id, action, summary) VALUES ($1, $2, $3)', [auditId, 'create_card', `Card created for ${game_id}`]); } catch {}
+    try { const auditId = `aa_${Date.now()}`; await pool.query('INSERT INTO admin_audit_logs (id, action, summary) VALUES ($1, $2, $3)', [auditId, 'create_card', `Card created for ${game_id}`]); } catch { }
     res.status(201).json({ id, game_id, card_code, is_used: false });
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -1732,7 +1835,7 @@ app.put('/api/admin/game-cards/:id', authenticateToken, ensureAdmin, async (req,
     const card_code = req.body?.card_code ? sanitizeString(req.body.card_code) : undefined;
     const result = await pool.query('UPDATE game_cards SET is_used = COALESCE($1, is_used), card_code = COALESCE($2, card_code) WHERE id = $3 RETURNING *', [is_used, card_code, id]);
     if (result.rows.length === 0) return res.status(404).json({ message: 'Card not found' });
-    try { const auditId = `aa_${Date.now()}`; await pool.query('INSERT INTO admin_audit_logs (id, action, summary) VALUES ($1, $2, $3)', [auditId, 'update_card', `Card ${id} updated`]); } catch {}
+    try { const auditId = `aa_${Date.now()}`; await pool.query('INSERT INTO admin_audit_logs (id, action, summary) VALUES ($1, $2, $3)', [auditId, 'update_card', `Card ${id} updated`]); } catch { }
     res.json(result.rows[0]);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -1744,7 +1847,7 @@ app.delete('/api/admin/game-cards/:id', authenticateToken, ensureAdmin, async (r
     const { id } = req.params;
     const result = await pool.query('DELETE FROM game_cards WHERE id = $1 RETURNING *', [id]);
     if (result.rows.length === 0) return res.status(404).json({ message: 'Card not found' });
-    try { const auditId = `aa_${Date.now()}`; await pool.query('INSERT INTO admin_audit_logs (id, action, summary) VALUES ($1, $2, $3)', [auditId, 'delete_card', `Card ${id} deleted`]); } catch {}
+    try { const auditId = `aa_${Date.now()}`; await pool.query('INSERT INTO admin_audit_logs (id, action, summary) VALUES ($1, $2, $3)', [auditId, 'delete_card', `Card ${id} deleted`]); } catch { }
     res.json({ ok: true });
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -1847,7 +1950,7 @@ app.get('/api/public/payment-details', async (req, res) => {
 app.get('/api/public/payment-methods', async (req, res) => {
   try {
     const methods = [];
-    
+
     // Check each payment method and only include if it has a value
     const paymentConfigs = [
       { name: 'Orange Cash', env: 'ORANGE_CASH_NUMBER' },
@@ -1899,12 +2002,12 @@ app.post('/api/admin/game-cards/bulk', authenticateToken, ensureAdmin, async (re
         if (gameCheck.rows.length === 0) { errors++; continue; }
         const dup = await pool.query('SELECT id FROM game_cards WHERE game_id = $1 AND card_code = $2', [game_id, card_code]);
         if (dup.rows.length) { skipped++; continue; }
-        const id = `card_${Date.now()}_${Math.random().toString(36).slice(2,9)}`;
+        const id = `card_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
         await pool.query('INSERT INTO game_cards (id, game_id, card_code) VALUES ($1, $2, $3)', [id, game_id, card_code]);
         created++;
       } catch { errors++; }
     }
-    try { const auditId = `aa_${Date.now()}`; await pool.query('INSERT INTO admin_audit_logs (id, action, summary) VALUES ($1, $2, $3)', [auditId, 'bulk_cards', `Bulk cards: created=${created}, skipped=${skipped}, errors=${errors}`]); } catch {}
+    try { const auditId = `aa_${Date.now()}`; await pool.query('INSERT INTO admin_audit_logs (id, action, summary) VALUES ($1, $2, $3)', [auditId, 'bulk_cards', `Bulk cards: created=${created}, skipped=${skipped}, errors=${errors}`]); } catch { }
     res.json({ created, skipped, errors });
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -1937,10 +2040,10 @@ app.post('/api/admin/games/wipe', authenticateToken, ensureAdmin, async (req, re
   try {
     try {
       await pool.query('DELETE FROM game_cards');
-    } catch {}
+    } catch { }
     try {
       await pool.query('DELETE FROM games');
-    } catch {}
+    } catch { }
     writeGamesFile([]);
     res.json({ ok: true });
   } catch (err) {
@@ -1963,19 +2066,19 @@ app.post('/api/admin/games/seed', authenticateToken, ensureAdmin, async (req, re
 
 app.post('/api/admin/games/reset-seed', authenticateToken, ensureAdmin, async (req, res) => {
   try {
-    try { await pool.query('DELETE FROM game_cards'); } catch {}
-    try { await pool.query('DELETE FROM games'); } catch {}
+    try { await pool.query('DELETE FROM game_cards'); } catch { }
+    try { await pool.query('DELETE FROM games'); } catch { }
     if (typeof initializeDatabase === 'function') await initializeDatabase();
     await seedGamesFromJsonIfEmpty();
     let count = 0;
     try {
       const r = await pool.query('SELECT COUNT(*)::int AS c FROM games');
       count = r.rows?.[0]?.c || 0;
-    } catch {}
+    } catch { }
     let imageSeeding = null;
     try {
       imageSeeding = await runImageAssetsSeeding();
-    } catch {}
+    } catch { }
     res.json({ ok: true, count, imageSeeding });
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -1999,9 +2102,9 @@ app.post('/api/admin/images/upload-cloudinary', authenticateToken, ensureAdmin, 
       try {
         const r = await catboxFileUploadFromLocal(localPath, req.file.originalname || req.file.filename);
         if (r?.ok) url = r.url;
-      } catch {}
+      } catch { }
     }
-    try { fs.unlinkSync(localPath); } catch {}
+    try { fs.unlinkSync(localPath); } catch { }
     if (!url) return res.status(500).json({ ok: false, message: 'Failed to upload image (configure Cloudinary or Catbox)' });
     res.json({ ok: true, url });
   } catch (err) {
@@ -2017,7 +2120,7 @@ app.get('/api/categories/:id', async (req, res) => {
   const { id } = req.params;
   try {
     const result = await pool.query('SELECT * FROM categories WHERE id = $1', [id]);
-    
+
     if (result.rows.length === 0) {
       // Fallback check before 404
       const cat = localDb.findCategory(id);
@@ -2057,26 +2160,26 @@ app.put('/api/admin/categories/:id', authenticateToken, ensureAdmin, imageUpload
   try {
     const { id } = req.params;
     const { name, slug, description, gradient, icon } = req.body;
-    
+
     // Get current category
     const current = await pool.query('SELECT * FROM categories WHERE id = $1', [id]);
     if (current.rows.length === 0) {
       return res.status(404).json({ message: 'Category not found' });
     }
-    
+
     const currentCat = current.rows[0];
-    
+
     // Build dynamic update query
     const updates = [];
     const values = [];
     let paramIndex = 1;
-    
+
     if (name !== undefined && name !== null) { updates.push(`name = $${paramIndex++}`); values.push(String(name).trim()); }
     if (slug !== undefined && slug !== null) { updates.push(`slug = $${paramIndex++}`); values.push(slug); }
     if (description !== undefined) { updates.push(`description = $${paramIndex++}`); values.push(description !== null ? String(description).trim() : ''); }
     if (gradient !== undefined && gradient !== null) { updates.push(`gradient = $${paramIndex++}`); values.push(gradient); }
     if (icon !== undefined && icon !== null) { updates.push(`icon = $${paramIndex++}`); values.push(icon); }
-    
+
     // Handle image
     const newImage = await useProvidedImage(req);
     if (newImage) {
@@ -2089,13 +2192,13 @@ app.put('/api/admin/categories/:id', authenticateToken, ensureAdmin, imageUpload
         values.push(normalized);
       }
     }
-    
+
     if (updates.length === 0) {
       return res.json(currentCat);
     }
-    
+
     values.push(id);
-    
+
     const query = `UPDATE categories SET ${updates.join(', ')} WHERE id = $${paramIndex} RETURNING *`;
     const result = await pool.query(query, values);
 
@@ -2110,7 +2213,7 @@ app.put('/api/admin/categories/:id', authenticateToken, ensureAdmin, imageUpload
 app.delete('/api/admin/categories/:id', authenticateToken, ensureAdmin, async (req, res) => {
   try {
     const { id } = req.params;
-    
+
     const result = await pool.query('DELETE FROM categories WHERE id = $1 RETURNING *', [id]);
 
     if (result.rows.length === 0) {
@@ -2140,7 +2243,7 @@ app.post('/api/admin/import-cards', authenticateToken, ensureAdmin, async (req, 
 
     const rawData = fs.readFileSync(datasetPath, 'utf8');
     const dataset = JSON.parse(rawData);
-    
+
     if (!Array.isArray(dataset.products)) {
       return res.status(400).json({ message: 'Invalid dataset format' });
     }
@@ -2152,10 +2255,10 @@ app.post('/api/admin/import-cards', authenticateToken, ensureAdmin, async (req, 
     // Map dataset product names to game names/slugs
     // Simple mapping logic: name includes game name
     const games = await pool.query('SELECT * FROM games');
-    
+
     for (const product of dataset.products) {
-      const game = games.rows.find(g => 
-        product.product_name.toLowerCase().includes(g.name.toLowerCase()) || 
+      const game = games.rows.find(g =>
+        product.product_name.toLowerCase().includes(g.name.toLowerCase()) ||
         g.name.toLowerCase().includes(product.product_name.toLowerCase())
       );
 
@@ -2163,7 +2266,7 @@ app.post('/api/admin/import-cards', authenticateToken, ensureAdmin, async (req, 
         // Update packages and prices
         let packages = game.packages || [];
         let prices = game.package_prices || [];
-        
+
         // Ensure arrays
         if (!Array.isArray(packages)) packages = [];
         if (!Array.isArray(prices)) prices = [];
@@ -2171,11 +2274,11 @@ app.post('/api/admin/import-cards', authenticateToken, ensureAdmin, async (req, 
         // Check if package already exists
         const pkgName = product.denomination;
         const pkgPrice = String(product.price_EGP);
-        
+
         if (!packages.includes(pkgName)) {
           packages.push(pkgName);
           prices.push(pkgPrice);
-          
+
           await pool.query(
             'UPDATE games SET packages = $1, package_prices = $2, stock = GREATEST(stock, $3) WHERE id = $4',
             [JSON.stringify(packages), JSON.stringify(prices), product.stock_estimate || 0, game.id]
@@ -2183,7 +2286,7 @@ app.post('/api/admin/import-cards', authenticateToken, ensureAdmin, async (req, 
           updatedCount++;
           logs.push(`Updated ${game.name} with ${pkgName}`);
         } else {
-           skippedCount++;
+          skippedCount++;
         }
       } else {
         skippedCount++;
@@ -2201,7 +2304,7 @@ app.post('/api/admin/import-cards', authenticateToken, ensureAdmin, async (req, 
 app.get('/api/search', async (req, res) => {
   try {
     const { q, category, minPrice, maxPrice } = req.query;
-    
+
     let query = 'SELECT * FROM games WHERE 1=1';
     const params = [];
 
@@ -2296,11 +2399,11 @@ app.put('/api/admin/games/:gameId/category', authenticateToken, ensureAdmin, asy
   try {
     const { gameId } = req.params;
     const { categoryId, category } = req.body;
-    
+
     const updates = [];
     const values = [];
     let paramIndex = 1;
-    
+
     if (categoryId !== undefined) {
       updates.push(`category_id = $${paramIndex++}`);
       values.push(categoryId);
@@ -2309,22 +2412,22 @@ app.put('/api/admin/games/:gameId/category', authenticateToken, ensureAdmin, asy
       updates.push(`category = $${paramIndex++}`);
       values.push(category);
     }
-    
+
     if (updates.length === 0) {
       return res.status(400).json({ message: 'No category provided' });
     }
-    
+
     values.push(gameId);
-    
+
     const result = await pool.query(
       `UPDATE games SET ${updates.join(', ')} WHERE id = $${paramIndex} RETURNING id, name, category, category_id`,
       values
     );
-    
+
     if (result.rows.length === 0) {
       return res.status(404).json({ message: 'Game not found' });
     }
-    
+
     res.json(result.rows[0]);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -2362,7 +2465,7 @@ app.get('/api/admin/chat-widget/config', authenticateToken, ensureAdmin, async (
 app.put('/api/admin/chat-widget/config', authenticateToken, ensureAdmin, async (req, res) => {
   try {
     const { enabled, iconUrl, welcomeMessage, position } = req.body;
-    
+
     const result = await pool.query(
       `UPDATE chat_widget_config 
        SET enabled = COALESCE($1, enabled),
@@ -2374,7 +2477,7 @@ app.put('/api/admin/chat-widget/config', authenticateToken, ensureAdmin, async (
        RETURNING *`,
       [enabled, iconUrl, welcomeMessage, position]
     );
-    
+
     if (result.rows.length === 0) {
       // Create if doesn't exist
       await pool.query(
@@ -2390,7 +2493,7 @@ app.put('/api/admin/chat-widget/config', authenticateToken, ensureAdmin, async (
         position: newResult.rows[0].position
       });
     }
-    
+
     res.json({
       id: result.rows[0].id,
       enabled: result.rows[0].enabled,
@@ -2429,7 +2532,7 @@ app.get('/api/admin/logo/config', authenticateToken, ensureAdmin, async (req, re
 app.put('/api/admin/logo/config', authenticateToken, ensureAdmin, async (req, res) => {
   try {
     const { smallLogoUrl, largeLogoUrl, faviconUrl } = req.body;
-    
+
     const result = await pool.query(
       `UPDATE logo_config 
        SET small_logo_url = $1, large_logo_url = $2, favicon_url = $3, updated_at = NOW()
@@ -2437,7 +2540,7 @@ app.put('/api/admin/logo/config', authenticateToken, ensureAdmin, async (req, re
        RETURNING *`,
       [smallLogoUrl, largeLogoUrl, faviconUrl]
     );
-    
+
     if (result.rows.length === 0) {
       await pool.query(
         'INSERT INTO logo_config (id, small_logo_url, large_logo_url, favicon_url) VALUES ($1, $2, $3, $4)',
@@ -2446,7 +2549,7 @@ app.put('/api/admin/logo/config', authenticateToken, ensureAdmin, async (req, re
       const newResult = await pool.query('SELECT * FROM logo_config WHERE id = $1', ['logo_1']);
       return res.json(newResult.rows[0]);
     }
-    
+
     res.json(result.rows[0]);
   } catch (err) {
     console.error('Error updating logo config:', err);
@@ -2491,7 +2594,7 @@ app.get('/api/logo/config', async (req, res) => {
 (async () => {
   try {
     await pool.query('ALTER TABLE games ADD COLUMN IF NOT EXISTS hot_deal_priority INTEGER DEFAULT 0');
-  } catch {}
+  } catch { }
 })();
 
 // Hot deals endpoints
@@ -2607,16 +2710,16 @@ app.post('/api/admin/upload', authenticateToken, ensureAdmin, upload.single('fil
           console.error('Cloudinary upload failed, falling back to local:', err?.message || err);
           try {
             const alertId = `al_${Date.now()}`;
-            const summary = `Cloudinary upload failed for ${req.file?.originalname || req.file?.filename}: ${String(err?.message || err).substring(0,180)}`;
-            pool.query('INSERT INTO seller_alerts (id, type, summary) VALUES ($1, $2, $3)', [alertId, 'upload_error', summary]).catch(()=>{});
+            const summary = `Cloudinary upload failed for ${req.file?.originalname || req.file?.filename}: ${String(err?.message || err).substring(0, 180)}`;
+            pool.query('INSERT INTO seller_alerts (id, type, summary) VALUES ($1, $2, $3)', [alertId, 'upload_error', summary]).catch(() => { });
             const auditId = `aa_${Date.now()}`;
-            pool.query('INSERT INTO admin_audit_logs (id, action, summary) VALUES ($1, $2, $3)', [auditId, 'upload_error', summary]).catch(()=>{});
+            pool.query('INSERT INTO admin_audit_logs (id, action, summary) VALUES ($1, $2, $3)', [auditId, 'upload_error', summary]).catch(() => { });
             // Notify all admin phones about upload failure
             const adminPhones = (process.env.ADMIN_PHONE || '').split(',').map(p => p.trim()).filter(Boolean);
             for (const adminPhone of adminPhones) {
-              sendWhatsAppMessage(adminPhone, `⚠️ Upload failed: ${summary}`).catch(()=>{});
+              sendWhatsAppMessage(adminPhone, `⚠️ Upload failed: ${summary}`).catch(() => { });
             }
-          } catch {}
+          } catch { }
           res.json({
             filename: req.file.filename,
             originalname: req.file.originalname,
@@ -2634,7 +2737,7 @@ app.post('/api/admin/upload', authenticateToken, ensureAdmin, upload.single('fil
     try {
       fs.accessSync(path.join(uploadDir, req.file.filename), fs.constants.R_OK);
       verified = true;
-    } catch {}
+    } catch { }
 
     res.json({
       filename: req.file.filename,
@@ -2691,12 +2794,12 @@ app.post('/api/admin/settings/site/logo', authenticateToken, ensureAdmin, logoUp
         try {
           const result = await cloudinary.uploader.upload(localPath, { folder: process.env.CLOUDINARY_FOLDER || 'gamecart/site', resource_type: 'image' });
           url = result.secure_url;
-        } catch {}
+        } catch { }
       }
     } else if (typeof bodyPath === 'string' && bodyPath.trim()) {
       const src = bodyPath.trim();
       const ext = path.extname(src) || '.png';
-      const filename = `logo-${Date.now()}-${Math.round(Math.random()*1e9)}${ext}`;
+      const filename = `logo-${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`;
       const dest = path.join(uploadDir, filename);
       try {
         fs.copyFileSync(src, dest);
@@ -2705,10 +2808,10 @@ app.post('/api/admin/settings/site/logo', authenticateToken, ensureAdmin, logoUp
           try {
             const result = await cloudinary.uploader.upload(dest, { folder: process.env.CLOUDINARY_FOLDER || 'gamecart/site', resource_type: 'image' });
             url = result.secure_url;
-            try { fs.unlinkSync(dest); } catch {}
-          } catch {}
+            try { fs.unlinkSync(dest); } catch { }
+          } catch { }
         }
-      } catch {}
+      } catch { }
     }
     if (!url) return res.status(400).json({ message: 'file or image_path required' });
     await pool.query('UPDATE site_settings SET logo_url = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2', [url, 'site']);
@@ -2731,7 +2834,7 @@ app.post('/api/admin/settings/site/header', authenticateToken, ensureAdmin, head
         if (width && height) Object.assign(opts, { transformation: [{ width: Number(width), height: Number(height), crop: String(crop || 'fill') }] });
         const result = await cloudinary.uploader.upload(localPath, opts);
         url = result.secure_url;
-      } catch {}
+      } catch { }
     }
     await pool.query('UPDATE site_settings SET header_bg_url = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2', [url, 'site']);
     res.json({ header_bg_url: normalizeImageUrl(url) });
@@ -2761,7 +2864,7 @@ app.post('/api/transactions/checkout', async (req, res) => {
     if (!customerName || !customerPhone || !Array.isArray(items) || items.length === 0) {
       return res.status(400).json({ message: 'Invalid request' });
     }
-    
+
     // Normalize phone (remove spaces, etc. if needed)
     const normalizedPhone = customerPhone.replace(/\s+/g, '');
     const passwordHash = crypto.createHash('sha256').update(normalizedPhone).digest('hex');
@@ -2769,92 +2872,92 @@ app.post('/api/transactions/checkout', async (req, res) => {
     let userId;
     let isNewUser = false;
     let userObj = null;
-    
+
     // Check if user exists by phone or email
     try {
-        const userCheck = await pool.query(
-            'SELECT * FROM users WHERE phone = $1 OR (email IS NOT NULL AND email = $2)',
-            [normalizedPhone, customerEmail || '']
+      const userCheck = await pool.query(
+        'SELECT * FROM users WHERE phone = $1 OR (email IS NOT NULL AND email = $2)',
+        [normalizedPhone, customerEmail || '']
+      );
+
+      if (userCheck.rows.length > 0) {
+        userObj = userCheck.rows[0];
+        userId = userObj.id;
+        // Update user info if provided
+        await pool.query(
+          'UPDATE users SET name = COALESCE($1, name), email = COALESCE($2, email), password_hash = COALESCE($3, password_hash) WHERE id = $4',
+          [customerName, customerEmail || null, passwordHash, userId]
         );
-        
-        if (userCheck.rows.length > 0) {
-            userObj = userCheck.rows[0];
-            userId = userObj.id;
-            // Update user info if provided
-            await pool.query(
-                'UPDATE users SET name = COALESCE($1, name), email = COALESCE($2, email), password_hash = COALESCE($3, password_hash) WHERE id = $4',
-                [customerName, customerEmail || null, passwordHash, userId]
-            );
-        } else {
-            isNewUser = true;
-            userId = `user_${Date.now()}`;
-            userObj = { id: userId, name: customerName, phone: normalizedPhone, email: customerEmail || null, role: 'user' };
-            await pool.query(
-                'INSERT INTO users (id, name, phone, email, password_hash) VALUES ($1, $2, $3, $4, $5)',
-                [userId, customerName, normalizedPhone, customerEmail || null, passwordHash]
-            );
-        }
+      } else {
+        isNewUser = true;
+        userId = `user_${Date.now()}`;
+        userObj = { id: userId, name: customerName, phone: normalizedPhone, email: customerEmail || null, role: 'user' };
+        await pool.query(
+          'INSERT INTO users (id, name, phone, email, password_hash) VALUES ($1, $2, $3, $4, $5)',
+          [userId, customerName, normalizedPhone, customerEmail || null, passwordHash]
+        );
+      }
     } catch (userErr) {
-        console.error('Error handling user during checkout:', userErr.message);
-        // Fallback ID if DB fails (will likely fail later too, but keep flow)
-        userId = userId || `user_${Date.now()}`; 
+      console.error('Error handling user during checkout:', userErr.message);
+      // Fallback ID if DB fails (will likely fail later too, but keep flow)
+      userId = userId || `user_${Date.now()}`;
     }
 
     const transactionId = `txn_${Date.now()}`;
 
     // Try DB for Transaction & Orders
     try {
-        await pool.query(
-          'INSERT INTO transactions (id, user_id, payment_method, total, status) VALUES ($1, $2, $3, $4, $5)',
-          [transactionId, userId, paymentMethod || 'Unknown', total, 'pending']
-        );
+      await pool.query(
+        'INSERT INTO transactions (id, user_id, payment_method, total, status) VALUES ($1, $2, $3, $4, $5)',
+        [transactionId, userId, paymentMethod || 'Unknown', total, 'pending']
+      );
 
-        await pool.query(
-            `INSERT INTO orders (id, user_id, customer_name, customer_email, customer_phone, items, total_amount, currency, status, payment_method, created_at, updated_at)
+      await pool.query(
+        `INSERT INTO orders (id, user_id, customer_name, customer_email, customer_phone, items, total_amount, currency, status, payment_method, created_at, updated_at)
              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW(), NOW())
              ON CONFLICT (id) DO NOTHING`,
-            [transactionId, userId, customerName, customerEmail || null, customerPhone, JSON.stringify(items), total, 'EGP', 'pending', paymentMethod || 'Unknown']
-        );
+        [transactionId, userId, customerName, customerEmail || null, customerPhone, JSON.stringify(items), total, 'EGP', 'pending', paymentMethod || 'Unknown']
+      );
 
-        for (const it of items) {
-          const baseGameId = it.id.includes('-') ? it.id.split('-')[0] : it.id;
-          const gameCheck = await pool.query('SELECT id FROM games WHERE id = $1', [baseGameId]);
-          if (gameCheck.rows.length > 0) {
-             const itemId = `txi_${Date.now()}_${Math.random().toString(36).slice(2,9)}`;
-             await pool.query(
-                'INSERT INTO transaction_items (id, transaction_id, game_id, quantity, price) VALUES ($1, $2, $3, $4, $5)',
-                [itemId, transactionId, baseGameId, Number(it.quantity), Number(it.price)]
-             );
-             await pool.query('UPDATE games SET stock = GREATEST(stock - $1, 0) WHERE id = $2', [Number(it.quantity), baseGameId]);
-          }
+      for (const it of items) {
+        const baseGameId = it.id.includes('-') ? it.id.split('-')[0] : it.id;
+        const gameCheck = await pool.query('SELECT id FROM games WHERE id = $1', [baseGameId]);
+        if (gameCheck.rows.length > 0) {
+          const itemId = `txi_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+          await pool.query(
+            'INSERT INTO transaction_items (id, transaction_id, game_id, quantity, price) VALUES ($1, $2, $3, $4, $5)',
+            [itemId, transactionId, baseGameId, Number(it.quantity), Number(it.price)]
+          );
+          await pool.query('UPDATE games SET stock = GREATEST(stock - $1, 0) WHERE id = $2', [Number(it.quantity), baseGameId]);
         }
+      }
     } catch (dbErr) {
-        console.error('DB Checkout Failed:', dbErr.message);
-        // Fallback to JSON
-        try {
-            const fallbackFile = path.join(__dirname, 'data', 'orders-fallback.json');
-            const orderData = {
-                id: transactionId,
-                userId,
-                customerName,
-                customerPhone,
-                customerEmail,
-                paymentMethod,
-                items,
-                total,
-                status: 'pending',
-                createdAt: new Date().toISOString()
-            };
-            let orders = [];
-            if (fs.existsSync(fallbackFile)) {
-                orders = JSON.parse(fs.readFileSync(fallbackFile, 'utf8'));
-            }
-            orders.push(orderData);
-            fs.writeFileSync(fallbackFile, JSON.stringify(orders, null, 2));
-            console.log('Saved order to fallback JSON');
-        } catch (fsErr) {
-            console.error('Fallback save failed:', fsErr.message);
+      console.error('DB Checkout Failed:', dbErr.message);
+      // Fallback to JSON
+      try {
+        const fallbackFile = path.join(__dirname, 'data', 'orders-fallback.json');
+        const orderData = {
+          id: transactionId,
+          userId,
+          customerName,
+          customerPhone,
+          customerEmail,
+          paymentMethod,
+          items,
+          total,
+          status: 'pending',
+          createdAt: new Date().toISOString()
+        };
+        let orders = [];
+        if (fs.existsSync(fallbackFile)) {
+          orders = JSON.parse(fs.readFileSync(fallbackFile, 'utf8'));
         }
+        orders.push(orderData);
+        fs.writeFileSync(fallbackFile, JSON.stringify(orders, null, 2));
+        console.log('Saved order to fallback JSON');
+      } catch (fsErr) {
+        console.error('Fallback save failed:', fsErr.message);
+      }
     }
 
     // Send WhatsApp Confirmation
@@ -2878,39 +2981,39 @@ app.post('/api/transactions/checkout', async (req, res) => {
     // Send Email Confirmation (Brevo)
     if (customerEmail) {
       try {
-          await sendEmail(customerEmail, 'orderConfirmation', {
-            id: transactionId,
-            customerName,
-            total,
-            currency: 'EGP',
-            paymentMethod: paymentMethod || 'Unknown',
-            status: 'pending'
-          });
+        await sendEmail(customerEmail, 'orderConfirmation', {
+          id: transactionId,
+          customerName,
+          total,
+          currency: 'EGP',
+          paymentMethod: paymentMethod || 'Unknown',
+          status: 'pending'
+        });
       } catch (emailErr) {
-          console.error('Failed to send email:', emailErr.message);
-          // Log to file if email fails
-          try {
-             const logFile = path.join(__dirname, 'data', 'emails.log');
-             fs.appendFileSync(logFile, `[${new Date().toISOString()}] Failed email to ${customerEmail}: ${emailErr.message}\n`);
-          } catch {}
+        console.error('Failed to send email:', emailErr.message);
+        // Log to file if email fails
+        try {
+          const logFile = path.join(__dirname, 'data', 'emails.log');
+          fs.appendFileSync(logFile, `[${new Date().toISOString()}] Failed email to ${customerEmail}: ${emailErr.message}\n`);
+        } catch { }
       }
     }
 
     let token = null;
     if (isNewUser && userObj) {
-        token = jwt.sign({ 
-            id: userObj.id, 
-            email: userObj.email, 
-            role: userObj.role || 'user' 
-        }, JWT_SECRET, { expiresIn: '30d' });
+      token = jwt.sign({
+        id: userObj.id,
+        email: userObj.email,
+        role: userObj.role || 'user'
+      }, JWT_SECRET, { expiresIn: '30d' });
     }
 
     // Return the response with the token
-    return res.status(201).json({ 
-        id: transactionId, 
-        total, 
-        token, 
-        user: isNewUser ? userObj : undefined 
+    return res.status(201).json({
+      id: transactionId,
+      total,
+      token,
+      user: isNewUser ? userObj : undefined
     });
   } catch (err) {
     console.error('Checkout Error:', err);
@@ -2922,10 +3025,10 @@ app.post('/api/transactions/checkout', async (req, res) => {
 app.post('/api/metrics/interaction', async (req, res) => {
   try {
     const { event_type, element, page, success, error, ua } = req.body || {};
-    const id = `im_${Date.now()}_${Math.random().toString(36).slice(2,9)}`;
+    const id = `im_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
     await pool.query(
       'INSERT INTO interaction_metrics (id, event_type, element, page, success, error, ua) VALUES ($1, $2, $3, $4, $5, $6, $7)',
-      [id, String(event_type||'unknown').slice(0,50), String(element||'').slice(0,120), String(page||'').slice(0,200), Boolean(success!==false), error||null, String(ua||'').slice(0,500)]
+      [id, String(event_type || 'unknown').slice(0, 50), String(element || '').slice(0, 120), String(page || '').slice(0, 200), Boolean(success !== false), error || null, String(ua || '').slice(0, 500)]
     );
     res.status(201).json({ ok: true });
   } catch (err) { res.status(500).json({ message: err.message }); }
@@ -2936,10 +3039,10 @@ app.post('/api/metrics/perf', async (req, res) => {
     const { entries, ua } = req.body || {};
     if (Array.isArray(entries)) {
       for (const e of entries) {
-        const id = `pm_${Date.now()}_${Math.random().toString(36).slice(2,9)}`;
+        const id = `pm_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
         await pool.query(
           'INSERT INTO performance_metrics (id, name, value, page, ua) VALUES ($1, $2, $3, $4, $5)',
-          [id, String(e.name||'').slice(0,60), Number(e.value)||0, String(e.page||'').slice(0,200), String(ua||'').slice(0,500)]
+          [id, String(e.name || '').slice(0, 60), Number(e.value) || 0, String(e.page || '').slice(0, 200), String(ua || '').slice(0, 500)]
         );
       }
     }
@@ -2964,7 +3067,7 @@ app.get('/api/transactions/:id', async (req, res) => {
       return res.status(404).json({ message: 'Not found' });
     }
     const items = await pool.query('SELECT * FROM transaction_items WHERE transaction_id = $1', [id]);
-    
+
     // Get customer info from users table
     let customerInfo = null;
     if (tx.rows[0].user_id) {
@@ -2973,10 +3076,10 @@ app.get('/api/transactions/:id', async (req, res) => {
         customerInfo = userResult.rows[0];
       }
     }
-    
-    res.json({ 
-      transaction: { ...tx.rows[0], ...customerInfo }, 
-      items: items.rows 
+
+    res.json({
+      transaction: { ...tx.rows[0], ...customerInfo },
+      items: items.rows
     });
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -3001,21 +3104,21 @@ app.get('/api/track/:code', async (req, res) => {
               tx = t.rows[0] || null;
               const it = await pool.query('SELECT * FROM transaction_items WHERE transaction_id = $1', [conf.transaction_id]);
               items = it.rows || [];
-            } catch {}
+            } catch { }
           }
           return res.json({ confirmation: conf, transaction: tx, items });
         }
-      } catch (e) {}
+      } catch (e) { }
 
       // Try transactions first
       const tx = await pool.query('SELECT * FROM transactions WHERE id = $1', [code]);
-const items = await pool.query('SELECT * FROM transaction_items WHERE transaction_id = $1', [code]);
+      const items = await pool.query('SELECT * FROM transaction_items WHERE transaction_id = $1', [code]);
       // Try orders table as well
       let order = null;
       try {
         const r = await pool.query('SELECT * FROM orders WHERE id = $1', [code]);
         order = r.rows[0] || null;
-      } catch {}
+      } catch { }
       return res.json({ transaction: tx.rows[0] || null, items: items.rows || [], order });
     }
     if (code.startsWith('pc_')) {
@@ -3031,7 +3134,7 @@ const items = await pool.query('SELECT * FROM transaction_items WHERE transactio
           tx = t.rows[0] || null;
           const it = await pool.query('SELECT * FROM transaction_items WHERE transaction_id = $1', [conf.transaction_id]);
           items = it.rows || [];
-        } catch {}
+        } catch { }
       }
       return res.json({ confirmation: conf, transaction: tx, items });
     }
@@ -3149,7 +3252,7 @@ app.post('/api/transactions/confirm', receiptUpload.single('receipt'), async (re
     const encMsg = message ? encryptMessage(String(message)) : null;
     const relativePath = req.file ? `/uploads/${req.file.filename}` : null;
     const url = relativePath ? (CDN_BASE_URL ? new URL(relativePath, CDN_BASE_URL).toString() : relativePath) : null;
-    const id = `txn_${Date.now()}_${Math.random().toString(36).slice(2,9)}`;
+    const id = `txn_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
     await pool.query(
       'INSERT INTO payment_confirmations (id, transaction_id, message_encrypted, receipt_url) VALUES ($1, $2, $3, $4)',
       [id, transactionId, encMsg, url]
@@ -3213,20 +3316,20 @@ app.get('/api/admin/alerts/mem', authenticateToken, ensureAdmin, async (req, res
   try {
     const { status, type, q } = req.query;
     let alerts = await memStorage.getSellerAlerts();
-    
+
     if (status === 'unread') {
       alerts = alerts.filter(a => !a.read);
     }
-    
+
     if (type) {
       alerts = alerts.filter(a => a.type === type);
     }
-    
+
     if (q) {
       const lowerQ = q.toLowerCase();
       alerts = alerts.filter(a => a.summary.toLowerCase().includes(lowerQ));
     }
-    
+
     res.json(alerts);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -3320,19 +3423,19 @@ app.post('/api/admin/import-cards', authenticateToken, ensureAdmin, async (req, 
   try {
     const { cards } = req.body;
     if (!Array.isArray(cards)) return res.status(400).json({ message: 'cards array required' });
-    
+
     // In a real app, we would process these cards and add them to inventory
     // For now, we'll just log them and return success
     console.log(`Importing ${cards.length} cards...`);
-    
+
     // Example: Update stock for matching games
     // This is a simplified logic
     let updatedCount = 0;
     for (const card of cards) {
-       // logic to find game by card.game_id or slug and update stock
-       updatedCount++;
+      // logic to find game by card.game_id or slug and update stock
+      updatedCount++;
     }
-    
+
     res.json({ message: `Successfully processed ${updatedCount} cards` });
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -3389,13 +3492,13 @@ app.post('/api/admin/images/catbox-url', authenticateToken, ensureAdmin, async (
     if (!type || !id) return res.status(400).json({ message: 'type and id required' });
     const valid = await validateCatboxUrl(urlStr);
     if (!valid.ok) {
-      const alertId = `al_${Date.now()}_${Math.random().toString(36).slice(2,9)}`;
+      const alertId = `al_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
       await pool.query('INSERT INTO seller_alerts (id, type, summary) VALUES ($1, $2, $3)', [
         alertId, 'image_error', `Invalid Catbox URL (${valid.status}): ${urlStr}`
       ]);
       return res.status(400).json({ message: 'Invalid Catbox URL', status: valid.status, details: valid.message });
     }
-    const assetId = `img_${Date.now()}_${Math.random().toString(36).slice(2,9)}`;
+    const assetId = `img_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
     await pool.query(
       'INSERT INTO image_assets (id, url, original_filename, source, related_type, related_id) VALUES ($1, $2, $3, $4, $5, $6)',
       [assetId, urlStr, filename || null, 'catbox', type, id]
@@ -3467,7 +3570,7 @@ app.post('/api/admin/images/migrate-to-catbox', authenticateToken, async (req, r
           const up = await uploadUrlToCatbox(full);
           if (up.ok) {
             await pool.query('UPDATE games SET image = $1, image_url = $1 WHERE id = $2', [up.url, g.id]);
-            const assetId = `img_${Date.now()}_${Math.random().toString(36).slice(2,9)}`;
+            const assetId = `img_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
             await pool.query('INSERT INTO image_assets (id, url, source, related_type, related_id) VALUES ($1, $2, $3, $4, $5)', [assetId, up.url, 'catbox', 'game', g.id]);
             results.updated++;
           } else {
@@ -3488,7 +3591,7 @@ app.post('/api/admin/images/migrate-to-catbox', authenticateToken, async (req, r
           const up = await uploadUrlToCatbox(full);
           if (up.ok) {
             await pool.query('UPDATE categories SET image = $1 WHERE id = $2', [up.url, c.id]);
-            const assetId = `img_${Date.now()}_${Math.random().toString(36).slice(2,9)}`;
+            const assetId = `img_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
             await pool.query('INSERT INTO image_assets (id, url, source, related_type, related_id) VALUES ($1, $2, $3, $4, $5)', [assetId, up.url, 'catbox', 'category', c.id]);
             results.updated++;
           } else {
@@ -3533,11 +3636,11 @@ app.post('/api/admin/images/upload-batch', authenticateToken, (req, res) => {
           {
             const r = await catboxFileUploadFromLocal(f.path, f.originalname);
             finalUrl = r.ok ? r.url : null;
-            try { fs.unlinkSync(f.path); } catch {}
+            try { fs.unlinkSync(f.path); } catch { }
             if (!r.ok) throw new Error(r.message || 'catbox upload failed');
           }
           await pool.query('INSERT INTO image_assets (id, url, original_filename, source, related_type, related_id) VALUES ($1, $2, $3, $4, $5, $6)', [
-            `img_${Date.now()}_${Math.random().toString(36).slice(2,9)}`, finalUrl, f.originalname || null, 'catbox', type || null, relatedId || null
+            `img_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`, finalUrl, f.originalname || null, 'catbox', type || null, relatedId || null
           ]);
           await applyRelated(finalUrl);
           results.push({ filename: f.originalname, url: finalUrl, ok: true });
@@ -3556,7 +3659,7 @@ app.post('/api/admin/images/upload-batch', authenticateToken, (req, res) => {
             finalUrl = up.url;
           }
           await pool.query('INSERT INTO image_assets (id, url, source, related_type, related_id) VALUES ($1, $2, $3, $4, $5)', [
-            `img_${Date.now()}_${Math.random().toString(36).slice(2,9)}`, finalUrl, 'catbox', type || null, relatedId || null
+            `img_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`, finalUrl, 'catbox', type || null, relatedId || null
           ]);
           await applyRelated(finalUrl);
           results.push({ url: finalUrl, ok: true });
@@ -3577,14 +3680,14 @@ app.post('/api/public/confirmations/:id/resend', async (req, res) => {
     const r = await pool.query('SELECT c.id, c.transaction_id, t.user_id, u.phone, u.name FROM payment_confirmations c LEFT JOIN transactions t ON c.transaction_id = t.id LEFT JOIN users u ON t.user_id = u.id WHERE c.id = $1', [id]);
     if (r.rows.length === 0) return res.status(404).json({ message: 'Not found' });
     const row = r.rows[0];
-    const alertId = `al_${Date.now()}_${Math.random().toString(36).slice(2,9)}`;
+    const alertId = `al_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
     const summary = `Resend requested for confirmation ${row.id} (TX ${row.transaction_id})`;
-    try { await pool.query('INSERT INTO seller_alerts (id, type, summary) VALUES ($1, $2, $3)', [alertId, 'resend_request', summary]); } catch {}
+    try { await pool.query('INSERT INTO seller_alerts (id, type, summary) VALUES ($1, $2, $3)', [alertId, 'resend_request', summary]); } catch { }
     const sellerPhones = (process.env.SELLER_PHONES || '').split(',').map(p => p.trim()).filter(p => p);
     if (sellerPhones.length > 0) {
       const forwardMessage = `🔁 Resend requested for confirmation ${row.id}\nTransaction: ${row.transaction_id}\nUser: ${row.name || ''} ${row.phone || ''}`;
       for (const phone of sellerPhones) {
-        try { await sendWhatsAppMessage(phone, forwardMessage); } catch {}
+        try { await sendWhatsAppMessage(phone, forwardMessage); } catch { }
       }
     }
     res.json({ ok: true });
@@ -3657,13 +3760,13 @@ app.post('/api/admin/images/scan-site', authenticateToken, async (req, res) => {
           if (!up.ok) throw new Error(up.message || 'catbox url upload failed');
           finalUrl = up.url;
         } else if (dest === 'local') {
-          const name = `scan-${Date.now()}-${Math.random().toString(36).slice(2,9)}.jpg`;
+          const name = `scan-${Date.now()}-${Math.random().toString(36).slice(2, 9)}.jpg`;
           const destPath = path.join(uploadDir, name);
           const dl = await httpsGetToFile(src, destPath);
           if (!dl.ok) throw new Error(dl.message || 'download failed');
           finalUrl = normalizeImageUrl(`/uploads/${name}`);
         }
-        const aid = `img_${Date.now()}_${Math.random().toString(36).slice(2,9)}`;
+        const aid = `img_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
         await pool.query('INSERT INTO image_assets (id, url, source, related_type, related_id) VALUES ($1, $2, $3, $4, $5)', [
           aid, finalUrl, dest || 'scan', type || null, id || null
         ]);
@@ -3689,15 +3792,15 @@ app.post('/api/admin/transactions/:id/respond', authenticateToken, async (req, r
 
     // Try to find in orders first (as this is what GET /transactions uses)
     let orderRes = await pool.query('SELECT o.*, o.customer_phone as phone, o.customer_email as email FROM orders o WHERE o.id = $1', [id]);
-    
+
     // Fallback to transactions table if not found in orders
     if (orderRes.rows.length === 0) {
-       const txRes = await pool.query('SELECT t.*, u.phone, u.name, u.email FROM transactions t LEFT JOIN users u ON t.user_id = u.id WHERE t.id = $1', [id]);
-       if (txRes.rows.length > 0) {
-         orderRes = txRes;
-       } else {
-         return res.status(404).json({ message: 'Order/Transaction not found' });
-       }
+      const txRes = await pool.query('SELECT t.*, u.phone, u.name, u.email FROM transactions t LEFT JOIN users u ON t.user_id = u.id WHERE t.id = $1', [id]);
+      if (txRes.rows.length > 0) {
+        orderRes = txRes;
+      } else {
+        return res.status(404).json({ message: 'Order/Transaction not found' });
+      }
     }
 
     const order = orderRes.rows[0];
@@ -3710,27 +3813,27 @@ app.post('/api/admin/transactions/:id/respond', authenticateToken, async (req, r
     await pool.query('INSERT INTO payment_audit_logs (id, transaction_id, action, summary) VALUES ($1, $2, $3, $4)', [auditId, id, auditAction, `Seller ${newStatus} order`]);
 
     // Update status in both tables to be safe
-    try { await pool.query(`UPDATE transactions SET status = $1 WHERE id = $2`, [newStatus, id]); } catch {}
-    try { await pool.query(`UPDATE orders SET status = $1, updated_at = NOW() WHERE id = $2`, [newStatus, id]); } catch {}
+    try { await pool.query(`UPDATE transactions SET status = $1 WHERE id = $2`, [newStatus, id]); } catch { }
+    try { await pool.query(`UPDATE orders SET status = $1, updated_at = NOW() WHERE id = $2`, [newStatus, id]); } catch { }
 
     // Notify user via SMS placeholder and WhatsApp to admin/sellers
     const siteUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
     let notifyMsg = '';
-    
+
     if (newStatus === 'rejected') {
-        notifyMsg = `Order ${id} has been rejected. ${message ? 'Reason: ' + String(message).slice(0,200) : 'Please contact support.'}`;
+      notifyMsg = `Order ${id} has been rejected. ${message ? 'Reason: ' + String(message).slice(0, 200) : 'Please contact support.'}`;
     } else {
-        notifyMsg = `Order ${id} has been confirmed. ${message ? 'Message: ' + String(message).slice(0,200) : ''}`;
+      notifyMsg = `Order ${id} has been confirmed. ${message ? 'Message: ' + String(message).slice(0, 200) : ''}`;
     }
 
-    try { sendSMS(phone, `${newStatus === 'rejected' ? 'Order rejected' : 'Order confirmed'}. Check ${siteUrl}/track-order`); } catch {}
-    
+    try { sendSMS(phone, `${newStatus === 'rejected' ? 'Order rejected' : 'Order confirmed'}. Check ${siteUrl}/track-order`); } catch { }
+
     // Send WhatsApp to customer
     if (phone) {
       const emoji = newStatus === 'rejected' ? '❌' : '✅';
       try { await sendWhatsAppMessage(phone, `${emoji} ${notifyMsg}`); } catch (e) { console.error('Customer WhatsApp failed:', e?.message || e); }
     }
-    
+
     // Send email to customer
     if (email) {
       try {
@@ -3739,12 +3842,12 @@ app.post('/api/admin/transactions/:id/respond', authenticateToken, async (req, r
         await sendRawEmail(email, emailSubject, emailText);
       } catch (e) { console.error('Customer email failed:', e?.message || e); }
     }
-    
+
     const adminPhones = (process.env.ADMIN_PHONE || '').split(',').map(p => p.trim()).filter(Boolean);
     const sellerPhones = (process.env.SELLER_PHONES || '').split(',').map(p => p.trim()).filter(Boolean);
     const phonesToNotify = [...adminPhones, ...sellerPhones];
     for (const p of phonesToNotify) {
-      try { await sendWhatsAppMessage(p, `ℹ️ Admin Action: ${notifyMsg}`); } catch {}
+      try { await sendWhatsAppMessage(p, `ℹ️ Admin Action: ${notifyMsg}`); } catch { }
     }
 
     res.json({ ok: true });
@@ -3759,11 +3862,11 @@ app.post('/api/admin/transactions/:id/respond', authenticateToken, async (req, r
 const contentHistoryFile = path.join(__dirname, '..', 'data', 'site-content-history.json');
 const contentFile = path.join(__dirname, '..', 'data', 'site-content.json');
 function loadJson(p) {
-  try { if (fs.existsSync(p)) return JSON.parse(fs.readFileSync(p, 'utf-8')); } catch {}
+  try { if (fs.existsSync(p)) return JSON.parse(fs.readFileSync(p, 'utf-8')); } catch { }
   return null;
 }
 function saveJson(p, data) {
-  try { fs.writeFileSync(p, JSON.stringify(data, null, 2)); } catch {}
+  try { fs.writeFileSync(p, JSON.stringify(data, null, 2)); } catch { }
 }
 app.get('/api/content', async (req, res) => {
   try {
@@ -3913,18 +4016,18 @@ app.post('/api/whatsapp/webhook', async (req, res) => {
         const text = m?.text?.body || '';
         const waId = m?.id || null;
         const sessionId = `wa_${from}`;
-        const id = `wam_${Date.now()}_${Math.random().toString(36).slice(2,9)}`;
+        const id = `wam_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
         await pool.query(
           'INSERT INTO whatsapp_messages (id, wa_message_id, direction, from_phone, to_phone, message_encrypted, session_id, status) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)',
           [id, waId, 'inbound', from, to, encryptMessage(text), sessionId, 'received']
         );
-        const cmId = `cm_${Date.now()}_${Math.random().toString(36).slice(2,9)}`;
+        const cmId = `cm_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
         const cmTimestamp = new Date().toISOString();
         await pool.query(
           'INSERT INTO chat_messages (id, sender, message_encrypted, message, session_id, timestamp) VALUES ($1, $2, $3, $4, $5, $6)',
           [cmId, 'user', encryptMessage(text), text, sessionId, cmTimestamp]
         );
-        const alertId = `al_${Date.now()}_${Math.random().toString(36).slice(2,9)}`;
+        const alertId = `al_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
         const summary = `New WhatsApp message from ${from}: ${text.substring(0, 120)}`;
         await pool.query('INSERT INTO seller_alerts (id, type, summary) VALUES ($1, $2, $3)', [alertId, 'whatsapp_message', summary]);
         // Forward to admin and seller phones
@@ -4206,18 +4309,18 @@ app.post('/api/chat/message', async (req, res) => {
       }
     }
 
-    const id = `cm_${Date.now()}_${Math.random().toString(36).slice(2,9)}`;
+    const id = `cm_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
     const timestamp = new Date().toISOString();
     await pool.query(
       'INSERT INTO chat_messages (id, sender, message_encrypted, message, session_id, timestamp) VALUES ($1, $2, $3, $4, $5, $6)',
       [id, sender, encryptMessage(String(message)), String(message), sessionId, timestamp]
     );
-    
+
     // When admin replies, mark all unread messages in this session as read
     if (sender === 'support') {
       await pool.query('UPDATE chat_messages SET read = true WHERE session_id = $1 AND read = false', [sessionId]);
     }
-    
+
     if (sender === 'user') {
       // Insert a one-time welcome/wait message AFTER the user sends the first message
       try {
@@ -4225,19 +4328,19 @@ app.post('/api/chat/message', async (req, res) => {
         const c = countRes?.rows?.[0]?.c;
         if (Number(c) === 1) {
           const waitMsg = 'Please wait a moment — Diaa or the seller will reply as soon as possible.\nيرجى الانتظار قليلاً، دِيعاء أو البائع سيرد عليك في أسرع وقت ممكن.';
-          const sysId = `cm_${Date.now()}_${Math.random().toString(36).slice(2,9)}`;
+          const sysId = `cm_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
           const sysTimestamp = new Date().toISOString();
           await pool.query(
             'INSERT INTO chat_messages (id, sender, message_encrypted, message, session_id, timestamp) VALUES ($1, $2, $3, $4, $5, $6)',
             [sysId, 'support', encryptMessage(waitMsg), waitMsg, sessionId, sysTimestamp]
           );
         }
-      } catch {}
+      } catch { }
 
-      const alertId = `al_${Date.now()}_${Math.random().toString(36).slice(2,9)}`;
+      const alertId = `al_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
       const summary = `Website message in ${sessionId}: ${String(message).substring(0, 120)}`;
       await pool.query('INSERT INTO seller_alerts (id, type, summary) VALUES ($1, $2, $3)', [alertId, 'website_message', summary]);
-      
+
       // Forward to seller WhatsApp numbers if configured
       const adminPhone = (process.env.ADMIN_PHONE || '').trim();
       const sellerPhones = (process.env.SELLER_PHONES || '').split(',').map(p => p.trim()).filter(p => p);
@@ -4253,14 +4356,14 @@ app.post('/api/chat/message', async (req, res) => {
         }
       }
     }
-    
+
     if (sender === 'support' && sessionId.startsWith('wa_') && WHATSAPP_TOKEN && WHATSAPP_PHONE_NUMBER_ID) {
       const to = sessionId.replace('wa_', '');
       const url = `https://graph.facebook.com/v19.0/${WHATSAPP_PHONE_NUMBER_ID}/messages`;
       const payload = { messaging_product: 'whatsapp', to, type: 'text', text: { body: String(message) } };
-      try { await httpsPostJson(url, { Authorization: `Bearer ${WHATSAPP_TOKEN}` }, payload); } catch {}
+      try { await httpsPostJson(url, { Authorization: `Bearer ${WHATSAPP_TOKEN}` }, payload); } catch { }
     }
-    
+
     res.status(201).json({ id });
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -4285,7 +4388,7 @@ app.post('/api/admin/translations', authenticateToken, async (req, res) => {
     for (const e of entries) {
       await pool.query(
         'INSERT INTO translations (id, lang, key, value) VALUES ($1, $2, $3, $4) ON CONFLICT (lang, key) DO UPDATE SET value = EXCLUDED.value, updated_at = CURRENT_TIMESTAMP',
-        [`tr_${Date.now()}_${Math.random().toString(36).slice(2,9)}`, lang, String(e.key), String(e.value || '')]
+        [`tr_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`, lang, String(e.key), String(e.value || '')]
       );
     }
     res.json({ ok: true });
@@ -4455,7 +4558,7 @@ app.put('/api/admin/checkout/templates', authenticateToken, async (req, res) => 
 app.get('/api/admin/alerts', authenticateToken, async (req, res) => {
   try {
     const { status, type, q } = req.query;
-    
+
     let query = 'SELECT * FROM seller_alerts WHERE 1=1';
     const params = [];
 
@@ -4464,12 +4567,12 @@ app.get('/api/admin/alerts', authenticateToken, async (req, res) => {
     } else if (status === 'read') {
       query += ' AND read = true';
     }
-    
+
     if (type && type !== 'all') {
       query += ' AND type = $' + (params.length + 1);
       params.push(type);
     }
-    
+
     if (q) {
       query += ' AND summary ILIKE $' + (params.length + 1);
       params.push(`%${q}%`);
@@ -4483,7 +4586,7 @@ app.get('/api/admin/alerts', authenticateToken, async (req, res) => {
     }
 
     query += ' ORDER BY created_at DESC LIMIT 200';
-    
+
     const result = await pool.query(query, params);
     res.json(result.rows);
   } catch (err) {
@@ -4608,7 +4711,7 @@ app.get('/api/admin/transactions', authenticateToken, async (req, res) => {
       ORDER BY o.created_at DESC
       LIMIT 200
     `);
-    
+
     const results = tx.rows.map(row => {
       let items = [];
       try {
@@ -4644,7 +4747,7 @@ app.put('/api/admin/transactions/:id/status', authenticateToken, async (req, res
   try {
     const { status } = req.body;
     const { id } = req.params;
-    
+
     await pool.query('UPDATE orders SET status = $1, updated_at = NOW() WHERE id = $2', [status, id]);
     res.json({ success: true });
   } catch (err) {
@@ -4799,10 +4902,10 @@ const startServer = async () => {
       console.log(`║     Environment: ${process.env.NODE_ENV || "development"}         ║`);
       console.log(`║     Database: ${isConnected ? "Connected ✅" : "Disconnected ❌"}       ║`);
       console.log(`╚════════════════════════════════════════╝`);
-      
+
       // Start core file cleanup monitor
       startCoreFileCleanup();
-      
+
       try {
         startWhatsApp().catch((err) => {
           console.error('❌ WhatsApp initialization failed:', err?.message || err);

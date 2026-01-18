@@ -282,11 +282,11 @@ export default function GamePage() {
                     onClick={() => !isOutOfStock && handlePackageClick(index)}
                     className={`relative cursor-pointer ${isOutOfStock ? 'opacity-50 cursor-not-allowed' : ''}`}
                   >
-                    <div className="relative p-6 rounded-2xl glass border border-white/10 hover:border-cyber-blue/50 transition-all duration-300 h-full flex flex-col group overflow-hidden">
+                    <div className="relative rounded-2xl glass border border-white/10 hover:border-cyber-blue/50 transition-all duration-300 h-full flex flex-col group overflow-hidden">
                       {/* Discount Badge */}
                       {hasDiscount && (
                         <div className="absolute top-0 right-0 z-20">
-                          <div className="bg-gradient-to-r from-neon-pink to-plasma-orange text-white text-xs font-bold px-3 py-1.5 rounded-bl-xl rounded-tr-2xl">
+                          <div className="bg-gradient-to-r from-neon-pink to-plasma-orange text-white text-xs font-bold px-3 py-1.5 rounded-bl-xl rounded-tr-2xl shadow-lg">
                             -{discountPercent}%
                           </div>
                         </div>
@@ -302,32 +302,36 @@ export default function GamePage() {
                         </div>
                       )}
 
-                      {/* Package Content */}
-                      <div className="flex-1 flex flex-col items-center text-center pt-4">
-                        {/* Package Image or Icon */}
-                        <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-cyber-blue/20 to-neon-purple/20 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform overflow-hidden relative shadow-lg">
-                          {image ? (
+                      {/* Package Image Area - Full Width */}
+                      <div className="relative w-full aspect-[16/9] bg-black/20 overflow-hidden border-b border-white/5 group-hover:border-cyber-blue/30 transition-colors">
+                        {image ? (
+                          <div className="w-full h-full p-2">
                             <ImageWithFallback
                               src={image}
                               alt={name}
-                              className="w-full h-full object-cover"
+                              className="w-full h-full object-contain drop-shadow-xl transition-transform duration-500 group-hover:scale-105"
                             />
-                          ) : (
-                            <Sparkles className="w-10 h-10 text-cyber-blue" />
-                          )}
-                          {/* Glow overlay */}
-                          <div className="absolute inset-0 bg-cyber-blue/20 opacity-0 group-hover:opacity-100 transition-opacity" />
-                        </div>
+                          </div>
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <Sparkles className="w-12 h-12 text-cyber-blue/50" />
+                          </div>
+                        )}
+                        {/* Glow overlay */}
+                        <div className="absolute inset-0 bg-cyber-blue/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                      </div>
 
-                        {/* Package Name/Amount */}
-                        <h3 className="text-xl font-bold text-foreground mb-2 line-clamp-2group-hover:text-cyber-blue transition-colors">
+                      {/* Package Content */}
+                      <div className="flex-1 flex flex-col p-5 text-center relative z-10">
+                        {/* Package Name */}
+                        <h3 className="text-lg font-bold text-foreground mb-1 line-clamp-2 group-hover:text-cyber-blue transition-colors leading-tight">
                           {name}
                         </h3>
 
                         {/* Price */}
-                        <div className="mt-auto pt-4 relative z-10">
+                        <div className="mt-auto pt-3">
                           {hasDiscount && (
-                            <p className="text-sm text-muted-foreground line-through mb-1">
+                            <p className="text-sm text-muted-foreground line-through mb-0.5">
                               {formatPrice(pricing.original!, pricing.currency)}
                             </p>
                           )}
@@ -346,8 +350,8 @@ export default function GamePage() {
                         </Button>
                       </div>
 
-                      {/* Hover Glow Effect */}
-                      <div className="absolute inset-0 bg-gradient-to-br from-cyber-blue/5 to-neon-purple/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-2xl -z-10" />
+                      {/* Hover Glow Effect for Card */}
+                      <div className="absolute inset-0 bg-gradient-to-br from-cyber-blue/5 to-neon-purple/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none -z-10" />
                     </div>
                   </motion.div>
                 );
