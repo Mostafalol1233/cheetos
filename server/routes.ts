@@ -2,7 +2,8 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertChatMessageSchema, orders as ordersTable } from "../shared/schema";
-import { heroSlides, type InsertHeroSlide } from "@shared/hero-slides-schema";
+import { heroSlides, type InsertHeroSlide } from "../shared/hero-slides-schema";
+import { eq } from "drizzle-orm";
 import crypto from "crypto";
 import { getQRCode, getConnectionStatus, sendWhatsAppMessage } from "./whatsapp";
 import { setupAuth, hashPassword } from "./auth";
@@ -98,8 +99,10 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  app.post("/api/uploads/receipt", upload.single("image"), (req, res) => {
-    if (!req.file) return res.status(400).json({ message: "No file uploaded" });
+  app.post("/api/uploads/receipt", upload.single("image"), (req: any, res) => {
+    if (!req.file) {
+      return res.status(400).json({ message: "No file uploaded" });
+    }
     // Assuming static serving is set up for attached_assets
     const url = `/attached_assets/receipts/${req.file.filename}`;
     res.json({ url });
@@ -150,7 +153,7 @@ export function registerRoutes(app: Express): Server {
       if (!method) {
         return res.status(400).json({ message: "method is required" });
       }
-      const info = PAYMENT_DETAILS[method] || null;
+      const info = (PAYMENT_DETAILS as any)[method as string] || null;
       if (!info) {
         return res.json(null);
       }
@@ -286,7 +289,7 @@ export function registerRoutes(app: Express): Server {
   // Get games by category
   app.get("/api/games/category/:category", async (req, res) => {
     try {
-      const { category } = req.params;
+      const category = req.params.category; // Fixed: Changed to direct access
       const games = await storage.getGamesByCategory(category);
       res.json(games);
     } catch (error) {
@@ -426,8 +429,8 @@ export function registerRoutes(app: Express): Server {
 
   app.post("/api/orders", async (req, res) => {
     try {
-      const { items, payment_method, player_id, server_id, customer_email, customer_name, customer_phone, receipt_url, payment_details, delivery_method } = req.body || {};
-      let userId = (req.user as any)?.id || null;
+      const { items, total_amount, payment_method, player_id, server_id, customer_email, customer_name, customer_phone, receipt_url, payment_details, delivery_method } = req.body || {};
+      let userId: string | null = (req.user as any)?.id || null;
       let newUserCreated = false;
       let generatedPassword = "";
 
@@ -439,7 +442,7 @@ export function registerRoutes(app: Express): Server {
       }
 
       // Automatic account creation
-      let user = null;
+      let user: any = null;
       if (!userId && customer_email) {
         user = await storage.getUserByEmail(customer_email);
 
@@ -519,7 +522,7 @@ export function registerRoutes(app: Express): Server {
   app.get("/api/hero-slides", async (_req, res) => {
     try {
       const { db } = await import("./db");
-      const rows = await db.select().from(heroSlides).where(heroSlides.isActive.eq(true)).orderBy(heroSlides.displayOrder);
+      const rows = await db.select().from(heroSlides).where(eq(heroSlides.isActive, true)).orderBy(heroSlides.displayOrder);
       res.json(rows);
     } catch (err: any) {
       res.status(500).json({ message: err.message || "Failed to load slides" });
@@ -543,7 +546,7 @@ export function registerRoutes(app: Express): Server {
       const { db } = await import("./db");
       const id = Number(req.params.id);
       const payload = req.body as Partial<InsertHeroSlide>;
-      const rows = await db.update(heroSlides).set(payload as any).where(heroSlides.id.eq(id)).returning();
+      const rows = await db.update(heroSlides).set(payload as any).where(eq(heroSlides.id, id)).returning();
       res.json(rows[0]);
     } catch (err: any) {
       res.status(500).json({ message: err.message || "Failed to update slide" });
@@ -554,7 +557,7 @@ export function registerRoutes(app: Express): Server {
     try {
       const { db } = await import("./db");
       const id = Number(req.params.id);
-      await db.delete(heroSlides).where(heroSlides.id.eq(id));
+      await db.delete(heroSlides).where(eq(heroSlides.id, id));
       res.json({ ok: true });
     } catch (err: any) {
       res.status(500).json({ message: err.message || "Failed to delete slide" });

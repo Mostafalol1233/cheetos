@@ -1,7 +1,7 @@
-import { 
-  type Game, 
-  type InsertGame, 
-  type Category, 
+import {
+  type Game,
+  type InsertGame,
+  type Category,
   type InsertCategory,
   type ChatMessage,
   type InsertChatMessage,
@@ -9,7 +9,7 @@ import {
   type InsertUser,
   type InsertTransaction,
   type InsertChatMessageTable
-} from "@shared/schema";
+} from "../shared/schema";
 
 // Helper types for manual management since we aren't using Drizzle types fully for in-memory
 export type Transaction = {
@@ -57,7 +57,7 @@ export interface IStorage {
   getCategories(): Promise<Category[]>;
   getCategoryById(id: string): Promise<Category | undefined>;
   createCategory(category: InsertCategory): Promise<Category>;
-  
+
   // Chat
   getChatMessages(sessionId: string): Promise<ChatMessage[]>;
   createChatMessage(message: InsertChatMessage): Promise<ChatMessage>;
@@ -73,10 +73,10 @@ export interface IStorage {
   createTransaction(tx: InsertTransaction & { id: string }): Promise<Transaction>;
   getTransaction(id: string): Promise<Transaction | undefined>;
   updateTransaction(id: string, updates: Partial<Transaction>): Promise<Transaction | undefined>;
-  
+
   // WhatsApp
   createWhatsAppMessage(msg: WhatsAppMessage): Promise<WhatsAppMessage>;
-  
+
   // Alerts
   createSellerAlert(alert: SellerAlert): Promise<SellerAlert>;
   getSellerAlerts(): Promise<SellerAlert[]>;
@@ -195,8 +195,8 @@ export class MemStorage implements IStorage {
   }
 
   async createChatMessage(message: InsertChatMessage): Promise<ChatMessage> {
-    const msg: ChatMessage = { 
-      ...message, 
+    const msg: ChatMessage = {
+      ...message,
       id: `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       timestamp: Date.now()
     };
@@ -217,9 +217,13 @@ export class MemStorage implements IStorage {
     return Array.from(this.users.values()).find(u => u.username === username);
   }
 
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    return Array.from(this.users.values()).find(u => u.email === email);
+  }
+
   async createUser(user: InsertUser): Promise<User> {
-    const newUser: User = { 
-      ...user, 
+    const newUser: User = {
+      ...user,
       id: user.id || `user_${Date.now()}`,
       role: user.role || 'user',
       createdAt: Date.now()
