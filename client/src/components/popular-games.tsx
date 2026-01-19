@@ -29,8 +29,8 @@ export function PopularGames() {
   return (
     <section className="py-12 relative overflow-hidden">
       {/* Dynamic Background */}
-      <div className="absolute inset-0 bg-gradient-to-b from-background to-muted/20 z-0"></div>
-      <div className="absolute inset-0 opacity-30 dark:opacity-20 pointer-events-none bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-gold-primary/10 via-transparent to-transparent"></div>
+      <div className="absolute inset-0 bg-gradient-to-b from-white to-muted/30 dark:from-background dark:to-muted/20 z-0"></div>
+      <div className="absolute inset-0 opacity-40 dark:opacity-20 pointer-events-none bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-gold-primary/18 via-transparent to-transparent"></div>
 
       <div className="container relative z-10 mx-auto px-4">
         <div className="flex items-center mb-8">

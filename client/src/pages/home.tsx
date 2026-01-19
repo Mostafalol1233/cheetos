@@ -159,7 +159,7 @@ export default function Home() {
         <section className="container mx-auto px-4 py-20">
           <div className="relative rounded-3xl overflow-hidden">
             {/* Background */}
-            <div className="absolute inset-0 bg-gradient-to-br from-card via-card to-muted/20" />
+            <div className="absolute inset-0 bg-gradient-to-br from-gold-primary/10 via-amber-100/60 to-gold-secondary/20 dark:from-card dark:via-card dark:to-muted/20" />
             <div className="absolute top-0 right-0 w-96 h-96 bg-cyber-blue/10 rounded-full blur-3xl" />
             <div className="absolute bottom-0 left-0 w-80 h-80 bg-neon-purple/10 rounded-full blur-3xl" />
 
