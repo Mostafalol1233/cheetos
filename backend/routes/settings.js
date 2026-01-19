@@ -28,7 +28,7 @@ router.get('/', async (req, res) => {
             res.json(defaultSettings);
         }
     } catch (err) {
-        console.error('Error fetching settings:', err.message);
+        // console.error('Error fetching settings:', err.message);
         // If table doesn't exist, return defaults
         if (err.code === '42P01') {
             return res.json(defaultSettings);
@@ -87,7 +87,7 @@ router.put('/', authenticateToken, ensureAdmin, async (req, res) => {
         const updated = await pool.query('SELECT * FROM settings LIMIT 1');
         res.json({ ...defaultSettings, ...updated.rows[0], message: 'Settings updated' });
     } catch (err) {
-        console.error('Error updating settings:', err.message);
+        // console.error('Error updating settings:', err.message);
 
         // If table doesn't exist, try to create it
         if (err.code === '42P01') {

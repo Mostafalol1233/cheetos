@@ -68,7 +68,7 @@ export default function UserProfilePage() {
         setOrders(Array.isArray(data) ? data : (data.orders || []));
       }
     } catch (error) {
-      console.error('Failed to fetch orders:', error);
+      // console.error('Failed to fetch orders:', error);
     } finally {
       setLoading(false);
     }

@@ -44,7 +44,7 @@ export function CheckoutContent({ isEmbedded = false }: { isEmbedded?: boolean }
           gameId: pkg.gameId
         }]);
       } catch (e) {
-        console.error("Failed to parse checkout package", e);
+        // console.error("Failed to parse checkout package", e);
       }
     } else if (globalCart.length > 0) {
       // Sync checkout cart with global cart

@@ -59,7 +59,7 @@ export const UserAuthProvider: FC<{ children: ReactNode }> = ({ children }: { ch
           }
         }
       } catch (err) {
-        console.error('Auth check failed:', err);
+        // console.error('Auth check failed:', err);
         setIsAuthenticated(false);
       } finally {
         setIsLoading(false);

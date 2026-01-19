@@ -75,7 +75,7 @@ export function LocalizationProvider({ children }: LocalizationProviderProps) {
         setCurrency("EGP");
       }
     } catch (error) {
-      console.warn("Failed to detect user location:", error);
+      // console.warn("Failed to detect user location:", error);
     } finally {
       setIsLoading(false);
     }

@@ -35,7 +35,7 @@ export function StepPayment() {
       setPaymentData({ receiptUrl: data.url });
       toast({ title: "Receipt uploaded successfully" });
     } catch (error) {
-      console.error(error);
+      // console.error(error);
       toast({ title: "Upload failed", variant: "destructive" });
     } finally {
       setIsUploading(false);

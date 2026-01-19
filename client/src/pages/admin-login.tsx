@@ -16,7 +16,7 @@ export default function AdminLoginPage() {
       await login(email, password);
       window.location.href = "/admin";
     } catch (err) {
-      console.error('Login error:', err);
+      // console.error('Login error:', err);
     }
   };
 

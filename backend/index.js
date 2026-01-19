@@ -121,9 +121,9 @@ function startCoreFileCleanup() {
 
                 // Delete the core file
                 await fs.promises.unlink(filePath);
-                console.log(`🗑️ Deleted core file: ${filePath} (${fileSizeMB.toFixed(2)} MB)`);
+                // console.log(`🗑️ Deleted core file: ${filePath} (${fileSizeMB.toFixed(2)} MB)`);
               } catch (deleteErr) {
-                console.warn(`⚠️ Failed to delete core file ${filePath}:`, deleteErr.message);
+                // console.warn(`⚠️ Failed to delete core file ${filePath}:`, deleteErr.message);
               }
             }
           }
@@ -132,11 +132,11 @@ function startCoreFileCleanup() {
         }
       }
     } catch (err) {
-      console.warn('⚠️ Error during core file cleanup:', err.message);
+      // console.warn('⚠️ Error during core file cleanup:', err.message);
     }
   }, cleanupInterval);
 
-  console.log('🧹 Core file cleanup monitor started (checks every 5 minutes)');
+  // console.log('🧹 Core file cleanup monitor started (checks every 5 minutes)');
 }
 
 const __filename = fileURLToPath(import.meta.url);
@@ -151,13 +151,13 @@ const baileysModulePath = path.join(nodeModulesPath, '@whiskeysockets', 'baileys
 const socketIoModulePath = path.join(nodeModulesPath, 'socket.io');
 
 if (!fs.existsSync(pgModulePath) || !fs.existsSync(baileysModulePath) || !fs.existsSync(socketIoModulePath)) {
-  console.log('📦 Installing dependencies...');
+  // console.log('📦 Installing dependencies...');
   try {
     execSync('npm install', {
       cwd: __dirname,
       stdio: 'inherit'
     });
-    console.log('✓ Dependencies installed successfully\n');
+    // console.log('✓ Dependencies installed successfully\n');
   } catch (err) {
     console.error('✗ Failed to install dependencies:', err.message);
     process.exit(1);
@@ -319,7 +319,7 @@ async function seedGamesFromJsonIfEmpty(force = false) {
     if (!Array.isArray(items) || items.length === 0) return;
 
     for (const g of items) {
-      console.log(`   Seeding ${g.name}...`);
+      // console.log(`   Seeding ${g.name}...`);
       try {
         const id = String(g.id || `game_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`);
         const name = String(g.name || '').trim();
@@ -479,17 +479,15 @@ function csrfProtection(req, res, next) {
 // Middleware
 app.use(cors({
   origin: [
-    'http://localhost:5173',
-    'http://localhost:5000',
-    'http://diaasadek.com',
+    process.env.FRONTEND_URL,
+    // Development origins - commented out for production safety or kept if needed for dev
+    // 'http://localhost:5173',
+    // 'http://localhost:5000',
     'https://diaasadek.com',
     'https://www.diaasadek.com',
-    'https://1-backendzip--yeogav.replit.app',
-    'http://localhost:3000',
     'https://diaaa.vercel.app',
-    'https://*.vercel.app',
-    process.env.FRONTEND_URL || '*'
-  ],
+    'https://*.vercel.app'
+  ].filter(Boolean),
   credentials: true
 }));
 

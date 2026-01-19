@@ -27,7 +27,7 @@ const writeUserData = (userId, data) => {
     const dir = path.dirname(filePath);
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
     fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
-  } catch (err) { console.error('Error writing user data file:', err); }
+  } catch (err) { /* console.error('Error writing user data file:', err); */ }
 };
 
 // Middleware to get user from token
@@ -84,7 +84,7 @@ router.get('/orders', getUserFromToken, async (req, res) => {
         items: order.items || []
       }));
     } catch (dbError) {
-      console.error('DB query failed, using JSON fallback:', dbError.message);
+      // console.error('DB query failed, using JSON fallback:', dbError.message);
       // Fallback to JSON
       const userData = readUserData(userId);
       orders = userData.orders || [];
@@ -92,7 +92,7 @@ router.get('/orders', getUserFromToken, async (req, res) => {
 
     res.json({ orders });
   } catch (err) {
-    console.error('Error fetching orders:', err);
+    // console.error('Error fetching orders:', err);
     res.status(500).json({ message: 'Failed to fetch orders' });
   }
 });

@@ -68,7 +68,7 @@ router.post('/save', authenticateToken, ensureAdmin, async (req, res) => {
 
     res.json(result.rows[0]);
   } catch (err) {
-    console.error('Error saving header image edit:', err);
+    // console.error('Error saving header image edit:', err);
     res.status(500).json({ message: err.message });
   }
 });
@@ -81,7 +81,7 @@ router.get('/history', authenticateToken, ensureAdmin, async (req, res) => {
     );
     res.json(result.rows);
   } catch (err) {
-    console.error('Error fetching header image history:', err);
+    // console.error('Error fetching header image history:', err);
     res.status(500).json({ message: err.message });
   }
 });

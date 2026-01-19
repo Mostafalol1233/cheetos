@@ -50,7 +50,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
         quill.insertEmbed(range?.index ?? 0, 'image', imageUrl, 'user');
         quill.setSelection((range?.index ?? 0) + 1, 0, 'user');
       } catch (err) {
-        console.error('Image upload failed:', err);
+        // console.error('Image upload failed:', err);
         alert('Image upload failed. Please try again.');
       }
     };

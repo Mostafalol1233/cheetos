@@ -73,7 +73,7 @@ export function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
         setMessages(formattedMessages);
       }
     } catch (error) {
-      console.error('Failed to load chat history:', error);
+      // console.error('Failed to load chat history:', error);
     }
   };
 

@@ -30,7 +30,7 @@ const writeOrders = (orders) => {
     const dir = path.dirname(filePath);
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
     fs.writeFileSync(filePath, JSON.stringify(orders, null, 2));
-  } catch (err) { console.error('Error writing orders file:', err); }
+  } catch (err) { /* console.error('Error writing orders file:', err); */ }
 };
 
 // Create Order
@@ -83,7 +83,7 @@ router.post('/', async (req, res) => {
         userData = { ...userObj, name: userObj.username };
       }
     } catch (err) {
-      console.error('Error handling user creation:', err);
+      // console.error('Error handling user creation:', err);
     }
   }
 

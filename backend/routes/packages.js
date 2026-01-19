@@ -38,7 +38,7 @@ router.get('/:slug', async (req, res) => {
     throw new Error('Package not found in DB');
   } catch (error) {
     // Fallback to localDb
-    console.warn('DB Package fetch failed, trying localDb:', error.message);
+    // console.warn('DB Package fetch failed, trying localDb:', error.message);
     const games = localDb.getGames();
 
     for (const game of games) {

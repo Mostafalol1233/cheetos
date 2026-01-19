@@ -124,7 +124,7 @@ export function HeaderImageEditor({ currentImageUrl, onSave }: HeaderImageEditor
       });
       setSelectedFile(null);
     } catch (error: any) {
-      console.error(error);
+      // console.error(error);
       toast({
         title: "Error",
         description: error.message || "Failed to upload image",

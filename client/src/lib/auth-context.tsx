@@ -45,7 +45,7 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }: { childr
           }
         }
       } catch (err) {
-        console.error('Auth check failed:', err);
+        // console.error('Auth check failed:', err);
       } finally {
         setIsLoading(false);
       }

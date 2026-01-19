@@ -94,7 +94,7 @@ export const initSocket = (httpServer) => {
         });
 
       } catch (err) {
-        console.error('Socket message error:', err);
+        // console.error('Socket message error:', err);
         socket.emit('error', { message: 'Failed to send message' });
       }
     });

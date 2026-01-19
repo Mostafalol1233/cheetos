@@ -23,7 +23,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       try {
         setCart(JSON.parse(savedCart));
       } catch (error) {
-        console.error("Failed to load purchase from localStorage:", error);
+        // console.error("Failed to load purchase from localStorage:", error);
       }
     }
   }, []);

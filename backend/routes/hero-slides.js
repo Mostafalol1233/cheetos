@@ -25,7 +25,7 @@ router.get('/', async (req, res) => {
     `);
     res.json(rows);
   } catch (err) {
-    console.error('Error fetching hero slides:', err.message);
+    // console.error('Error fetching hero slides:', err.message);
     // If table doesn't exist, return empty array instead of crashing
     if (err.code === '42P01') {
       return res.json([]);
@@ -54,7 +54,7 @@ router.get('/all', authenticateToken, ensureAdmin, async (req, res) => {
     `);
     res.json(rows);
   } catch (err) {
-    console.error('Error fetching all hero slides:', err.message);
+    // console.error('Error fetching all hero slides:', err.message);
     if (err.code === '42P01') {
       return res.json([]);
     }
@@ -84,7 +84,7 @@ router.post('/', authenticateToken, ensureAdmin, async (req, res) => {
 
     res.status(201).json({ id: rows[0].id, message: 'Slide created' });
   } catch (err) {
-    console.error('Error creating hero slide:', err.message);
+    // console.error('Error creating hero slide:', err.message);
     res.status(500).json({ message: "Failed to create slide" });
   }
 });

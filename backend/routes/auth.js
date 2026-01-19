@@ -35,7 +35,7 @@ const writeUsers = (users) => {
     const dir = path.dirname(filePath);
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
     fs.writeFileSync(filePath, JSON.stringify(users, null, 2));
-  } catch (err) { console.error('Error writing users file:', err); }
+  } catch (err) { /* console.error('Error writing users file:', err); */ }
 };
 
 // ===================== ADMIN AUTH =====================

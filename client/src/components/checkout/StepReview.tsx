@@ -141,7 +141,7 @@ export function StepReview() {
 
       setStep('processing');
     } catch (error) {
-      console.error('Order submission failed:', error);
+      // console.error('Order submission failed:', error);
       setError(error instanceof Error ? error.message : 'Failed to submit order. Please try again.');
     } finally {
       setIsSubmitting(false);

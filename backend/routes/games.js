@@ -94,7 +94,7 @@ const formatGame = (game, packages = []) => {
       }))
     };
   } catch (error) {
-    console.error('Error formatting game:', error);
+    // console.error('Error formatting game:', error);
     // Return a safe minimal object instead of crashing
     return {
       ...game,
@@ -162,7 +162,7 @@ router.get('/', async (req, res) => {
       totalPages: Math.ceil(total / limit)
     });
   } catch (error) {
-    console.error('DB Error in GET /api/games, falling back to local DB:', error.message);
+    // console.error('DB Error in GET /api/games, falling back to local DB:', error.message);
     try {
       const allGames = localDb.getGames();
       const total = allGames.length;
@@ -178,7 +178,7 @@ router.get('/', async (req, res) => {
         totalPages: Math.ceil(total / limit)
       });
     } catch (fallbackError) {
-      console.error('Fallback LocalDB Error in GET /api/games:', fallbackError);
+      // console.error('Fallback LocalDB Error in GET /api/games:', fallbackError);
       res.status(500).json({
         message: 'Failed to fetch games (DB and Fallback failed)',
         error: error.message,
