@@ -3,6 +3,7 @@ import pool from '../db.js';
 import { authenticateToken, ensureAdmin } from '../middleware/auth.js';
 import { logAudit } from '../utils/audit.js';
 import localDb from '../utils/localDb.js';
+import { getIO } from '../socket.js';
 
 const router = express.Router();
 
@@ -414,6 +415,13 @@ router.post('/', authenticateToken, ensureAdmin, async (req, res) => {
 
       const created = formatGame(gameData, pkgsToInsert);
       invalidatePopularCache();
+
+      const io = getIO();
+      if (io) {
+        io.emit('games_updated');
+        io.emit('packages_updated');
+      }
+
       res.status(201).json(created);
 
     } catch (error) {
@@ -558,6 +566,12 @@ router.put('/:id', authenticateToken, ensureAdmin, async (req, res) => {
         console.error('Failed to sync packages to local JSON:', e && e.message);
       }
 
+      const io = getIO();
+      if (io) {
+        io.emit('games_updated');
+        io.emit('packages_updated', { gameId: realId });
+      }
+
       invalidatePopularCache();
       res.json(formatGame(game, packages_data));
 
@@ -583,6 +597,12 @@ router.delete('/:id', authenticateToken, ensureAdmin, async (req, res) => {
     }
     await logAudit('delete_game_soft', `Soft-deleted game: ${id}`, req.user);
     invalidatePopularCache();
+
+    const io = getIO();
+    if (io) {
+      io.emit('games_updated');
+    }
+
     res.json({ message: 'Game marked as deleted' });
   } catch (error) {
     console.error('DB Error (delete), falling back to local DB:', error.message);

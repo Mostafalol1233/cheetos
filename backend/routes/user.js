@@ -334,6 +334,31 @@ router.post('/admin/reply/:userId', authenticateToken, async (req, res) => {
       writeUserData(userId, userData);
     }
 
+    try {
+      const io = getIO();
+      if (io) {
+        const msgPayload = {
+          id: messageId,
+          sessionId: userId,
+          sender: 'admin',
+          message: message.trim(),
+          timestamp: Date.now(),
+          read: false
+        };
+        // Emit to user's room
+        io.to(userId).emit('new_message', msgPayload);
+        // Emit to admin room (for other admins)
+        io.to('admin_room').emit('new_message', msgPayload);
+        io.to('admin_room').emit('session_updated', {
+            sessionId: userId,
+            lastMessage: msgPayload,
+            unreadCount: 0 
+        });
+      }
+    } catch (e) {
+      console.error('Socket emit error:', e);
+    }
+
     res.json({
       message: 'Reply sent successfully',
       messageId

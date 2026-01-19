@@ -1,6 +1,7 @@
 import express from 'express';
 import pool from '../db.js';
 import { authenticateToken, ensureAdmin } from '../middleware/auth.js';
+import { getIO } from '../socket.js';
 
 const router = express.Router();
 
@@ -85,6 +86,12 @@ router.put('/', authenticateToken, ensureAdmin, async (req, res) => {
 
         // Return updated settings
         const updated = await pool.query('SELECT * FROM settings LIMIT 1');
+
+        const io = getIO();
+        if (io) {
+            io.emit('settings_updated', { ...defaultSettings, ...updated.rows[0] });
+        }
+
         res.json({ ...defaultSettings, ...updated.rows[0], message: 'Settings updated' });
     } catch (err) {
         // console.error('Error updating settings:', err.message);

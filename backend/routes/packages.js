@@ -3,6 +3,7 @@ import express from 'express';
 import pool from '../db.js';
 import { authenticateToken, ensureAdmin } from '../middleware/auth.js';
 import localDb from '../utils/localDb.js';
+import { getIO } from '../socket.js';
 
 const router = express.Router();
 
@@ -120,6 +121,13 @@ router.put('/:id', authenticateToken, ensureAdmin, async (req, res) => {
     }
 
     const pkg = result.rows[0];
+
+    const io = getIO();
+    if (io) {
+      io.emit('packages_updated', { gameId: pkg.game_id });
+      io.emit('games_updated');
+    }
+
     res.json({
       id: pkg.id,
       gameId: pkg.game_id,
@@ -146,6 +154,12 @@ router.delete('/:id', authenticateToken, ensureAdmin, async (req, res) => {
 
     if (result.rows.length === 0) {
       return res.status(404).json({ message: 'Package not found' });
+    }
+
+    const io = getIO();
+    if (io) {
+      io.emit('packages_updated');
+      io.emit('games_updated');
     }
 
     res.json({ ok: true, deletedId: id });

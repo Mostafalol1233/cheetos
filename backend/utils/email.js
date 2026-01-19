@@ -17,7 +17,7 @@ const transporter = nodemailer.createTransport({
 const templates = {
   orderConfirmation: (order) => ({
     subject: `Order Confirmation #${order.id} | تأكيد الطلب`,
-    text: `Thank you for your order! Order ID: ${order.id}. Total: ${order.total} ${order.currency || 'EGP'}. Track here: ${process.env.FRONTEND_URL}/track-order/${order.id}`,
+    text: `Thank you for your order! Order ID: ${order.id}. Total: ${order.total} ${order.currency || 'EGP'}. View here: ${process.env.FRONTEND_URL}/profile`,
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden; direction: ltr;">
         <div style="background-color: #4CAF50; padding: 20px; text-align: center;">
@@ -38,9 +38,8 @@ const templates = {
           </div>
 
           <div style="text-align: center; margin-top: 25px;">
-            <a href="${process.env.FRONTEND_URL || 'http://localhost:5173'}/track-order" style="background-color: #2196F3; color: white; padding: 12px 25px; text-decoration: none; border-radius: 4px; font-weight: bold;">Track Your Order / تتبع طلبك</a>
+            <a href="${process.env.FRONTEND_URL || 'http://localhost:5173'}/profile" style="background-color: #2196F3; color: white; padding: 12px 25px; text-decoration: none; border-radius: 4px; font-weight: bold;">View Order / عرض الطلب</a>
           </div>
-          <p style="text-align: center; font-size: 12px; color: #999; margin-top: 20px;">Or use this ID on the tracking page: <strong>${order.id}</strong></p>
         </div>
         <div style="background-color: #f1f1f1; padding: 15px; text-align: center; font-size: 12px; color: #888;">
           &copy; ${new Date().getFullYear()} GameCart. All rights reserved.
@@ -68,7 +67,7 @@ const templates = {
           </div>
 
           <div style="text-align: center; margin-top: 25px;">
-            <a href="${process.env.FRONTEND_URL || 'http://localhost:5173'}/track-order" style="background-color: #2196F3; color: white; padding: 12px 25px; text-decoration: none; border-radius: 4px; font-weight: bold;">View Order / عرض الطلب</a>
+            <a href="${process.env.FRONTEND_URL || 'http://localhost:5173'}/profile" style="background-color: #2196F3; color: white; padding: 12px 25px; text-decoration: none; border-radius: 4px; font-weight: bold;">View Order / عرض الطلب</a>
           </div>
         </div>
         <div style="background-color: #f1f1f1; padding: 15px; text-align: center; font-size: 12px; color: #888;">

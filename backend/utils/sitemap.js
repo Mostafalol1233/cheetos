@@ -104,8 +104,7 @@ export async function generateSitemap() {
       { path: '/support', priority: 0.6, changefreq: 'monthly' },
       { path: '/faq', priority: 0.6, changefreq: 'monthly' },
       { path: '/terms', priority: 0.4, changefreq: 'yearly' },
-      { path: '/privacy', priority: 0.4, changefreq: 'yearly' },
-      { path: '/track-order', priority: 0.5, changefreq: 'monthly' }
+      { path: '/privacy', priority: 0.4, changefreq: 'yearly' }
     ];
 
     staticPages.forEach(page => {

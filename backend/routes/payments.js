@@ -6,6 +6,100 @@ import crypto from 'crypto';
 
 const router = express.Router();
 
+// Get payment configuration
+router.get('/config', (req, res) => {
+  try {
+    const validatePhone = (phone) => /^01[0125][0-9]{8}$/.test(phone);
+    const validateEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    // InstaPay address can be username@instapay or a phone number
+    const validateInstapay = (addr) => (addr && addr.includes('@')) || validatePhone(addr);
+
+    const config = [
+      {
+        id: 'vodafone_cash',
+        name: 'Vodafone Cash',
+        type: 'wallet',
+        enabled: !!process.env.PAYMENT_VODAFONE_NUMBER,
+        details: {
+          number: process.env.PAYMENT_VODAFONE_NUMBER || '',
+          instructions: 'Send the total amount to this Vodafone Cash wallet and upload the transfer receipt.'
+        },
+        validator: (d) => validatePhone(d.number)
+      },
+      {
+        id: 'instapay',
+        name: 'InstaPay',
+        type: 'instapay',
+        enabled: !!process.env.PAYMENT_INSTAPAY_ADDRESS,
+        details: {
+          address: process.env.PAYMENT_INSTAPAY_ADDRESS || '',
+          instructions: 'Send via InstaPay to this address and upload your transfer confirmation.'
+        },
+        validator: (d) => validateInstapay(d.address)
+      },
+      {
+        id: 'orange_cash',
+        name: 'Orange Cash',
+        type: 'wallet',
+        enabled: !!process.env.PAYMENT_ORANGE_NUMBER,
+        details: {
+          number: process.env.PAYMENT_ORANGE_NUMBER || '',
+          instructions: 'Send the total amount to this Orange Cash wallet and upload the receipt.'
+        },
+        validator: (d) => validatePhone(d.number)
+      },
+      {
+        id: 'etisalat_cash',
+        name: 'Etisalat Cash',
+        type: 'wallet',
+        enabled: !!process.env.PAYMENT_ETISALAT_NUMBER,
+        details: {
+          number: process.env.PAYMENT_ETISALAT_NUMBER || '',
+          instructions: 'Send the total amount to this Etisalat Cash wallet and upload the receipt.'
+        },
+        validator: (d) => validatePhone(d.number)
+      },
+      {
+        id: 'we_pay',
+        name: 'WePay',
+        type: 'wallet',
+        enabled: !!process.env.PAYMENT_WEPAY_NUMBER,
+        details: {
+          number: process.env.PAYMENT_WEPAY_NUMBER || '',
+          instructions: 'Send the total amount to this WePay wallet and upload the receipt.'
+        },
+        validator: (d) => validatePhone(d.number)
+      },
+      {
+        id: 'credit_card', // Keeping ID for compatibility, but this is effectively PayPal or CC
+        name: 'PayPal / Credit Card',
+        type: 'card',
+        enabled: !!process.env.PAYMENT_PAYPAL_EMAIL,
+        details: {
+          email: process.env.PAYMENT_PAYPAL_EMAIL || '',
+          instructions: 'Send payment via PayPal and upload the confirmation screenshot.'
+        },
+        validator: (d) => validateEmail(d.email)
+      }
+    ];
+
+    // Filter out disabled methods AND methods that fail validation
+    const activeMethods = config.filter(m => {
+      if (!m.enabled) return false;
+      if (m.validator && !m.validator(m.details)) {
+        console.warn(`Payment method ${m.id} is enabled but has invalid configuration details. Disabling.`);
+        return false;
+      }
+      return true;
+    }).map(({ validator, ...rest }) => rest); // Remove validator function from response
+
+    res.json(activeMethods);
+  } catch (error) {
+    console.error('Error fetching payment config:', error);
+    res.status(500).json({ message: 'Failed to fetch payment configuration' });
+  }
+});
+
 // Create a mock payment session (future-proof for real gateway)
 router.post('/session', async (req, res) => {
   try {

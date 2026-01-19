@@ -1160,6 +1160,53 @@ app.use(errorHandler);
 async function initializeDatabase() {
   try {
     await pool.query(`
+      CREATE TABLE IF NOT EXISTS header_versions (
+        id VARCHAR(50) PRIMARY KEY DEFAULT gen_random_uuid()::text,
+        image_url TEXT,
+        heading_text TEXT,
+        button_text TEXT,
+        button_url TEXT,
+        created_at TIMESTAMP DEFAULT NOW(),
+        is_active BOOLEAN DEFAULT false,
+        archived BOOLEAN DEFAULT false
+      );
+    `);
+
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS settings (
+        id VARCHAR(50) PRIMARY KEY DEFAULT 'default',
+        primary_color VARCHAR(50),
+        accent_color VARCHAR(50),
+        logo_url TEXT,
+        header_image_url TEXT,
+        header_heading_text TEXT,
+        header_button_text TEXT,
+        header_button_url TEXT,
+        whatsapp_number VARCHAR(50),
+        trust_badges JSONB,
+        footer_text TEXT,
+        bonus_percent DECIMAL(5,2) DEFAULT 0,
+        updated_at TIMESTAMP DEFAULT NOW()
+      );
+    `);
+    
+    // Add missing columns to settings if they exist but lack columns
+    try {
+      await pool.query('ALTER TABLE settings ADD COLUMN IF NOT EXISTS header_heading_text TEXT');
+      await pool.query('ALTER TABLE settings ADD COLUMN IF NOT EXISTS header_button_text TEXT');
+      await pool.query('ALTER TABLE settings ADD COLUMN IF NOT EXISTS header_button_url TEXT');
+    } catch (e) { }
+
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS header_image_edits (
+        id TEXT PRIMARY KEY,
+        image_url TEXT NOT NULL,
+        metadata JSONB,
+        created_at TIMESTAMP DEFAULT NOW()
+      );
+    `);
+
+    await pool.query(`
       CREATE TABLE IF NOT EXISTS games (
         id VARCHAR(50) PRIMARY KEY,
         name VARCHAR(255) NOT NULL,
@@ -1414,6 +1461,11 @@ async function initializeDatabase() {
     await pool.query(`ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS primary_color VARCHAR(20)`);
     await pool.query(`ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS accent_color VARCHAR(20)`);
     await pool.query(`ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS trust_badges JSONB DEFAULT '[]'`);
+    
+    // Header text/button configuration
+    await pool.query(`ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS header_heading_text TEXT`);
+    await pool.query(`ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS header_button_text TEXT`);
+    await pool.query(`ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS header_button_url TEXT`);
 
     // Translations
     await pool.query(`
@@ -3827,7 +3879,7 @@ app.post('/api/admin/transactions/:id/respond', authenticateToken, async (req, r
       notifyMsg = `Order ${id} has been confirmed. ${message ? 'Message: ' + String(message).slice(0, 200) : ''}`;
     }
 
-    try { sendSMS(phone, `${newStatus === 'rejected' ? 'Order rejected' : 'Order confirmed'}. Check ${siteUrl}/track-order`); } catch { }
+    try { sendSMS(phone, `${newStatus === 'rejected' ? 'Order rejected' : 'Order confirmed'}. Check ${siteUrl}/profile`); } catch { }
 
     // Send WhatsApp to customer
     if (phone) {
@@ -3839,7 +3891,7 @@ app.post('/api/admin/transactions/:id/respond', authenticateToken, async (req, r
     if (email) {
       try {
         const emailSubject = `Order ${newStatus === 'rejected' ? 'Rejected' : 'Confirmed'} - GameCart`;
-        const emailText = `Your order ${id} has been ${newStatus}.\n\n${message ? 'Message from seller: ' + message : ''}\n\nTrack your order: ${siteUrl}/track-order\n\nThank you for shopping with us!`;
+        const emailText = `Your order ${id} has been ${newStatus}.\n\n${message ? 'Message from seller: ' + message : ''}\n\nView your order: ${siteUrl}/profile\n\nThank you for shopping with us!`;
         await sendRawEmail(email, emailSubject, emailText);
       } catch (e) { console.error('Customer email failed:', e?.message || e); }
     }

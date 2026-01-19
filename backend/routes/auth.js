@@ -7,6 +7,7 @@ import dotenv from 'dotenv';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { getIO } from '../socket.js';
 
 dotenv.config();
 
@@ -160,6 +161,7 @@ router.post('/login', async (req, res) => {
                 if (name !== user.name) {
                     await pool.query('UPDATE users SET name = $1 WHERE id = $2', [name, userId]);
                     user.name = name;
+                    try { getIO()?.emit('users_updated'); } catch (e) {}
                 }
             }
         } catch (dbError) {
@@ -171,11 +173,13 @@ router.post('/login', async (req, res) => {
                  user = { id: userId, name, phone, email: email || '', role: 'user' };
                  users.push(user);
                  writeUsers(users);
+                 try { getIO()?.emit('users_updated'); } catch (e) {}
              } else {
                  userId = user.id;
                  if (name !== user.name) {
                      user.name = name;
                      writeUsers(users);
+                     try { getIO()?.emit('users_updated'); } catch (e) {}
                  }
              }
         }

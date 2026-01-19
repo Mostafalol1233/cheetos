@@ -9,6 +9,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
+import { getIO } from '../socket.js';
 
 const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret_key_change_this_in_production';
@@ -122,6 +123,13 @@ router.post('/', async (req, res) => {
     writeOrders(orders);
   }
 
+  // Notify clients via Socket
+  const io = getIO();
+  if (io) {
+    io.emit('orders_updated');
+    io.emit('admin_notification', { type: 'new_order', message: `New Order #${orderId} from ${customer_name}` });
+  }
+
   // Send notifications (customer + admin/connected numbers)
   try {
     const itemsList = items.map(i => `- ${i.title || i.name || i.id} (x${i.quantity})`).join('\n');
@@ -212,6 +220,10 @@ router.put('/:id/status', authenticateToken, ensureAdmin, async (req, res) => {
     return res.status(404).json({ message: 'Order not found' });
   }
 
+  // Notify clients
+  const io = getIO();
+  if (io) io.emit('orders_updated');
+
   // Notify user via WhatsApp
   try {
     if (order.customer_phone) {
@@ -264,6 +276,10 @@ router.post('/:id/respond', authenticateToken, ensureAdmin, async (req, res) => 
   }
 
   if (!order) return res.status(404).json({ message: 'Order not found' });
+
+  // Notify clients
+  const io = getIO();
+  if (io) io.emit('orders_updated');
 
   // Send Message
   if (message) {

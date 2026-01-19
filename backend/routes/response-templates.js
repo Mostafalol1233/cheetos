@@ -1,6 +1,7 @@
 import express from 'express';
 import pool from '../db.js';
 import { authenticateToken, ensureAdmin } from '../middleware/auth.js';
+import { getIO } from '../socket.js';
 
 const router = express.Router();
 
@@ -26,6 +27,12 @@ router.post('/', authenticateToken, ensureAdmin, async (req, res) => {
       'INSERT INTO admin_response_templates (id, title, message, type) VALUES ($1, $2, $3, $4) RETURNING *',
       [id, title, message, type]
     );
+
+    const io = getIO();
+    if (io) {
+      io.emit('response_templates_updated');
+    }
+
     res.status(201).json(result.rows[0]);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -44,6 +51,12 @@ router.put('/:id', authenticateToken, ensureAdmin, async (req, res) => {
     if (result.rows.length === 0) {
       return res.status(404).json({ message: 'Template not found' });
     }
+
+    const io = getIO();
+    if (io) {
+      io.emit('response_templates_updated');
+    }
+
     res.json(result.rows[0]);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -58,6 +71,12 @@ router.delete('/:id', authenticateToken, ensureAdmin, async (req, res) => {
     if (result.rows.length === 0) {
       return res.status(404).json({ message: 'Template not found' });
     }
+
+    const io = getIO();
+    if (io) {
+      io.emit('response_templates_updated');
+    }
+
     res.json({ message: 'Template deleted' });
   } catch (err) {
     res.status(500).json({ message: err.message });
