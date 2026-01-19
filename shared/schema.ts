@@ -194,3 +194,67 @@ export const orders = pgTable("orders", {
   paymentDetails: text("payment_details"), // JSON string for extra details
   deliveryMethod: text("delivery_method").default("whatsapp"),
 });
+
+// Support Chats (Conversations)
+export const supportChats = pgTable("support_chats", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id", { length: 50 }).references(() => users.id),
+  agentId: varchar("agent_id", { length: 50 }).references(() => users.id),
+  status: text("status").notNull().default("open"), // open, closed, archived
+  priority: text("priority").notNull().default("normal"), // low, normal, high, urgent
+  lastMessageAt: integer("last_message_at").default(Date.now()),
+  createdAt: integer("created_at").default(Date.now()),
+  updatedAt: integer("updated_at").default(Date.now()),
+});
+
+export const supportMessages = pgTable("support_messages", {
+  id: serial("id").primaryKey(),
+  chatId: integer("chat_id").references(() => supportChats.id, { onDelete: 'cascade' }),
+  senderId: varchar("sender_id", { length: 50 }).notNull(), // User ID
+  senderRole: text("sender_role").notNull(), // 'user', 'admin', 'system'
+  content: text("content"), // Text content
+  type: text("type").notNull().default("text"), // text, image, file, one_time_image, one_time_text
+  mediaUrl: text("media_url"), // URL for images/files
+  fileName: text("file_name"),
+  fileSize: integer("file_size"),
+  isRead: boolean("is_read").default(false),
+  readAt: integer("read_at"),
+  
+  // One-time view specific
+  isOneTimeView: boolean("is_one_time_view").default(false),
+  isViewed: boolean("is_viewed").default(false),
+  viewedAt: integer("viewed_at"),
+  
+  createdAt: integer("created_at").default(Date.now()),
+});
+
+export const supportChatsRelations = relations(supportChats, ({ one, many }) => ({
+  user: one(users, {
+    fields: [supportChats.userId],
+    references: [users.id],
+    relationName: "chatUser",
+  }),
+  agent: one(users, {
+    fields: [supportChats.agentId],
+    references: [users.id],
+    relationName: "chatAgent",
+  }),
+  messages: many(supportMessages),
+}));
+
+export const supportMessagesRelations = relations(supportMessages, ({ one }) => ({
+  chat: one(supportChats, {
+    fields: [supportMessages.chatId],
+    references: [supportChats.id],
+  }),
+}));
+
+export const insertSupportChatSchema = createInsertSchema(supportChats);
+export const selectSupportChatSchema = createSelectSchema(supportChats);
+export const insertSupportMessageSchema = createInsertSchema(supportMessages);
+export const selectSupportMessageSchema = createSelectSchema(supportMessages);
+
+export type SupportChat = z.infer<typeof selectSupportChatSchema>;
+export type SupportMessage = z.infer<typeof selectSupportMessageSchema>;
+export type InsertSupportChat = z.infer<typeof insertSupportChatSchema>;
+export type InsertSupportMessage = z.infer<typeof insertSupportMessageSchema>;

@@ -308,20 +308,16 @@ export default function GamePage() {
                           </p>
                         </div>
 
-                        <div className="flex items-center justify-center gap-2 mb-4">
-                          <div
-                            className={`w-3.5 h-3.5 rounded-full ${
-                              isOutOfStock ? 'bg-red-500' : 'bg-green-500'
-                            } shadow-[0_0_12px_rgba(34,197,94,0.8)]`}
-                          />
-                          <span
-                            className={`text-base md:text-lg font-extrabold uppercase tracking-wide ${
-                              isOutOfStock ? 'text-red-400' : 'text-green-400'
-                            }`}
-                          >
-                            {isOutOfStock ? 'Out of stock' : 'In stock'}
-                          </span>
-                        </div>
+                        {isOutOfStock && (
+                          <div className="flex items-center justify-center gap-2 mb-4">
+                            <div
+                              className="w-3.5 h-3.5 rounded-full bg-red-500 shadow-[0_0_12px_rgba(34,197,94,0.8)]"
+                            />
+                            <span className="text-base md:text-lg font-extrabold uppercase tracking-wide text-red-400">
+                              Out of stock
+                            </span>
+                          </div>
+                        )}
 
                         <Button
                           className="w-full h-9 text-xs font-bold uppercase tracking-wider bg-gradient-to-r from-gold-primary to-orange-500 text-black border-none hover:opacity-90 hover:scale-[1.02] transition-all rounded shadow-lg shadow-gold-primary/20"

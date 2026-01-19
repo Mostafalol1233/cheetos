@@ -7,7 +7,9 @@ import { ensureIdempotencyKey } from '@/state/checkout';
 import { API_BASE_URL } from '@/lib/queryClient';
 import { Loader2 } from 'lucide-react';
 import { useSettings } from '@/lib/settings-context';
-import { FaPaypal } from 'react-icons/fa';
+import { FaPaypal, FaMobileAlt, FaMoneyBillWave, FaWallet } from 'react-icons/fa';
+import { useUserAuth } from '@/lib/user-auth-context';
+import type { PaymentMethod } from '@/state/checkout';
 
 export function StepReview() {
   const { cart, contact, paymentMethod, paymentData, subtotal, total, setOrderMeta, setError, setStep } = useCheckout();
@@ -15,8 +17,35 @@ export function StepReview() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { settings } = useSettings();
   const [logoError, setLogoError] = useState(false);
+  const { user } = useUserAuth();
 
   const selectedPayment = PAYMENT_METHODS.find(m => m.key === paymentMethod);
+
+  const PAYMENT_ICONS: Record<PaymentMethod, { Icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>; color: string }> = {
+    vodafone_cash: { Icon: FaMobileAlt, color: '#e60000' },
+    instapay: { Icon: FaWallet, color: '#0a66c2' },
+    orange_cash: { Icon: FaMobileAlt, color: '#ff7900' },
+    etisalat_cash: { Icon: FaMobileAlt, color: '#006e3c' },
+    we_pay: { Icon: FaMobileAlt, color: '#6a1b9a' },
+    credit_card: { Icon: FaPaypal, color: '#003087' },
+    other: { Icon: FaMoneyBillWave, color: '#16a34a' },
+  };
+
+  const saveUserCheckoutPreferences = (response: any) => {
+    try {
+      const effectiveUser = response?.user || user;
+      if (!effectiveUser || !effectiveUser.id) return;
+
+      const prefsKey = `user_checkout_prefs_${effectiveUser.id}`;
+      const prefs = {
+        lastPaymentMethod: paymentMethod || null,
+        lastDeliveryMethod: deliverVia,
+      };
+      localStorage.setItem(prefsKey, JSON.stringify(prefs));
+      localStorage.setItem(`user_has_completed_checkout_${effectiveUser.id}`, '1');
+    } catch {
+    }
+  };
 
   const handleSubmit = async () => {
     if (isSubmitting) return;
@@ -67,6 +96,10 @@ export function StepReview() {
       }
 
       const response = await res.json();
+
+      if (response?.id) {
+        saveUserCheckoutPreferences(response);
+      }
 
       if (response.token) {
         localStorage.setItem('userToken', response.token);
@@ -137,15 +170,14 @@ export function StepReview() {
             {selectedPayment && (
               <div className="flex items-center space-x-3">
                 <div className="w-8 h-8 flex items-center justify-center">
-                  {logoError || !selectedPayment.logo ? (
-                    <FaPaypal className="w-8 h-8 text-[#003087]" />
+                  {paymentMethod && PAYMENT_ICONS[paymentMethod as PaymentMethod] ? (
+                    (() => {
+                      const IconDef = PAYMENT_ICONS[paymentMethod as PaymentMethod].Icon;
+                      const color = PAYMENT_ICONS[paymentMethod as PaymentMethod].color;
+                      return <IconDef className="w-7 h-7" style={{ color }} />;
+                    })()
                   ) : (
-                    <img
-                      src={selectedPayment.logo}
-                      alt={selectedPayment.label}
-                      className="w-8 h-8 object-contain"
-                      onError={() => setLogoError(true)}
-                    />
+                    <FaPaypal className="w-7 h-7 text-[#003087]" />
                   )}
                 </div>
                 <div>

@@ -1,13 +1,11 @@
 import { useEffect, useState } from "react";
+import { PAYMENT_METHODS } from "../state/checkout";
 
-const paymentMethods = [
-  { id: "pm1", name: "Payment 1", image: "https://i.postimg.cc/wRzp9C8N/image-29-1754874736252.png" },
-  { id: "pm2", name: "Payment 2", image: "https://i.postimg.cc/tnbj9KQY/image-32-1754945434846.png" },
-  { id: "pm3", name: "Payment 3", image: "https://i.postimg.cc/RJmBvk57/image-33-1754945434846.png" },
-  { id: "pm4", name: "Payment 4", image: "https://i.postimg.cc/5QJVfhdk/image-34-1754945434846.png" },
-  { id: "pm5", name: "Payment 5", image: "https://i.postimg.cc/JHQW0pM3/image-35-1754945434846.png" },
-  { id: "pm6", name: "Payment 6", image: "https://i.postimg.cc/XBg0qs4h/image-36-1754945434846.png" },
-];
+const paymentMethods = PAYMENT_METHODS.map((method) => ({
+  id: method.key,
+  name: method.label,
+  image: method.logo,
+}));
 
 export default function PaymentMethods() {
   const [reduceMotion, setReduceMotion] = useState(false);

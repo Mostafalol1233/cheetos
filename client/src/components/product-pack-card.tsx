@@ -82,7 +82,7 @@ export function ProductPackCard({
                 {originalPrice} {currency}
               </span>
             )}
-            <span className="text-destructive font-extrabold text-xl">
+            <span className="text-destructive font-extrabold text-2xl sm:text-3xl leading-tight">
               {finalPrice} {currency}
             </span>
             {bonus && (
