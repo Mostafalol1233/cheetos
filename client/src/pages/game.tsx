@@ -52,7 +52,6 @@ export default function GamePage() {
 
   const packagesList = Array.isArray((game as any).packagesList) ? (game as any).packagesList : [];
 
-  // Prioritize rich package objects if available, otherwise fallback to simple strings mapped to objects
   const packages = packagesList.length > 0
     ? packagesList
     : (Array.isArray((game as any).packages) ? (game as any).packages : []).map((p: any) => ({
@@ -61,7 +60,6 @@ export default function GamePage() {
       bonus: null
     })).filter((p: any) => p.name);
 
-  // Helper to safely get package data regardless of source
   const getPackageData = (index: number) => {
     if (packagesList.length > 0 && packagesList[index]) {
       return packagesList[index];
@@ -88,12 +86,12 @@ export default function GamePage() {
   const getHeroImage = () => {
     const direct = (game as any).image_url || game.image;
     if (direct) return direct;
-    const slug = (game as any).slug || (game as any).id || '';
-    if (!slug) return '';
-    if (slug === 'crossfire') {
+    const gameSlug = (game as any).slug || (game as any).id || '';
+    if (!gameSlug) return '';
+    if (gameSlug === 'crossfire') {
       return '/images/crossfire-icon.webp';
     }
-    return `/images/${slug}.webp`;
+    return `/images/${gameSlug}.webp`;
   };
 
   const getPackagePricing = (index: number) => {
@@ -128,17 +126,14 @@ export default function GamePage() {
         description={`اشحن عملات ${game.name} بسهولة في متجر ضياء. خدمة شحن آمنة وسريعة في مصر.`}
         keywords={[`شحن ${game.name}`, game.name, 'ضياء', 'Diaa', 'شحن ألعاب']}
         image={getHeroImage() || `/images/${game.slug}.webp`}
-        url={`${window.location.origin}/game/${game.slug}`}
+        url={window.location.origin + "/game/" + game.slug}
       />
 
       <div className="min-h-screen bg-background">
-        {/* Hero Section with Game Image */}
         <div className="relative">
-          {/* Background Gradient */}
           <div className="absolute inset-0 bg-gradient-to-b from-cyber-blue/10 via-background to-background" />
 
           <div className="container mx-auto px-4 pt-8 pb-12 relative z-10">
-            {/* Back Button */}
             <motion.div
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
@@ -155,7 +150,6 @@ export default function GamePage() {
             </motion.div>
 
             <div className="grid lg:grid-cols-2 gap-8 items-start">
-              {/* Game Image */}
               <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
@@ -169,7 +163,6 @@ export default function GamePage() {
                     className="w-full h-auto object-contain bg-black/10"
                   />
 
-                  {/* Badges */}
                   <div className="absolute top-4 left-4 flex flex-col gap-2">
                     {game.isPopular && (
                       <span className="px-3 py-1.5 rounded-full bg-gradient-to-r from-cyber-gold to-plasma-orange text-black text-sm font-bold flex items-center gap-1.5 shadow-lg">
@@ -186,14 +179,12 @@ export default function GamePage() {
                 </div>
               </motion.div>
 
-              {/* Game Info */}
               <motion.div
                 initial={{ opacity: 0, x: 30 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.5, delay: 0.2 }}
                 className="space-y-6"
               >
-                {/* Category */}
                 {category && (
                   <Link href={`/category/${category.slug}`}>
                     <span className="inline-flex items-center gap-2 text-sm text-cyber-blue font-medium bg-cyber-blue/10 px-4 py-2 rounded-full hover:bg-cyber-blue/20 transition-colors border border-cyber-blue/20 cursor-pointer">
@@ -221,7 +212,6 @@ export default function GamePage() {
           </div>
         </div>
 
-        {/* Packages Section */}
         {packages.length > 0 && (
           <section className="container mx-auto px-4 py-12">
             <motion.div
@@ -250,7 +240,6 @@ export default function GamePage() {
                 const image = pkgData.image || getHeroImage();
 
                 const pricing = getPackagePricing(index);
-                // Prefer bonus from rich object, then array
                 const bonus = pkgData.bonus || packageBonuses[index];
                 const hasDiscount = pricing.original !== null;
                 const discountPercent = hasDiscount
@@ -270,8 +259,6 @@ export default function GamePage() {
                     className={`relative cursor-pointer ${isOutOfStock ? 'opacity-50 cursor-not-allowed' : ''}`}
                   >
                     <div className="relative rounded-xl glass border border-white/10 hover:border-gold-primary/50 transition-all duration-300 h-full flex flex-col group overflow-hidden bg-[#1a1a1a]">
-
-                      {/* Sale Badge (Top Left) */}
                       {hasDiscount && (
                         <div className="absolute top-3 left-3 z-20">
                           <div className="bg-[#8b5cf6] text-white text-[10px] font-bold px-2 py-1 rounded shadow-lg">
@@ -280,7 +267,6 @@ export default function GamePage() {
                         </div>
                       )}
 
-                      {/* Bonus Badge (Top Right) */}
                       {bonus && (
                         <div className="absolute top-3 right-3 z-20">
                           <div className="bg-[#fbbf24] text-black text-[10px] font-black px-3 py-1.5 rounded-full flex items-center justify-center shadow-lg leading-tight uppercase tracking-wider transform rotate-3 group-hover:rotate-0 transition-transform">
@@ -289,7 +275,6 @@ export default function GamePage() {
                         </div>
                       )}
 
-                      {/* Package Image Area - Square for full visibility */}
                       <div className="relative w-full aspect-square bg-gradient-to-b from-transparent to-black/20 p-4 flex items-center justify-center">
                         {image ? (
                           <ImageWithFallback
@@ -302,21 +287,17 @@ export default function GamePage() {
                         )}
                       </div>
 
-                      {/* Package Content */}
                       <div className="flex-1 flex flex-col px-4 pb-4 pt-0 text-center relative z-10">
-                        {/* Name */}
                         <h3 className="text-sm font-bold text-white mb-2 line-clamp-2 leading-snug min-h-[2.5rem] flex items-center justify-center">
                           {name}
                         </h3>
 
-                        {/* Bonus in Details (New) */}
                         {bonus && (
                           <div className="text-xs font-bold text-[#fbbf24] mt-1 mb-1 uppercase tracking-wide">
                             {bonus} Bonus
                           </div>
                         )}
 
-                        {/* Prices */}
                         <div className="mt-auto mb-2 space-y-0.5">
                           {hasDiscount && (
                             <p className="text-xs text-muted-foreground line-through decoration-red-500/50">
@@ -328,7 +309,6 @@ export default function GamePage() {
                           </p>
                         </div>
 
-                        {/* In Stock Indicator - BIGGER FONT */}
                         <div className="flex items-center justify-center gap-2 mb-4">
                           <div className={`w-2.5 h-2.5 rounded-full ${isOutOfStock ? 'bg-red-500' : 'bg-green-500'} shadow-[0_0_8px_rgba(34,197,94,0.6)]`} />
                           <span className={`text-sm font-extrabold uppercase tracking-wide ${isOutOfStock ? 'text-red-400' : 'text-green-400'}`}>
@@ -336,7 +316,6 @@ export default function GamePage() {
                           </span>
                         </div>
 
-                        {/* CTA */}
                         <Button
                           className="w-full h-9 text-xs font-bold uppercase tracking-wider bg-gradient-to-r from-gold-primary to-orange-500 text-black border-none hover:opacity-90 hover:scale-[1.02] transition-all rounded shadow-lg shadow-gold-primary/20"
                           disabled={isOutOfStock}
