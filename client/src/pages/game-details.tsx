@@ -167,7 +167,7 @@ export default function GameDetails() {
               alt={`${game.name} | Diaa Eldeen`}
               className="w-full h-64 md:h-80 object-contain bg-white dark:bg-gray-900 rounded-2xl shadow-lg p-4"
             />
-            <div className="absolute top-4 right-4 bg-gold-primary text-background px-3 py-1 rounded-full text-sm font-bold">
+            <div className="absolute top-4 right-4 bg-gold-primary text-black px-3 py-1 rounded-full text-sm font-bold">
               Popular ⭐
             </div>
           </div>
@@ -188,9 +188,6 @@ export default function GameDetails() {
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <h3 className="text-xl font-semibold">Select Package</h3>
-                <span className="bg-green-500/20 text-green-400 px-2 py-1 rounded-full text-xs font-medium">
-                  ✓ In Stock
-                </span>
               </div>
 
               {/* Amount Selection */}
@@ -335,10 +332,6 @@ export default function GameDetails() {
                 <div>
                   <span className="text-muted-foreground">Delivery:</span>
                   <div className="font-medium text-green-500">Instant</div>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">Stock:</span>
-                  <div className="font-medium">In Stock</div>
                 </div>
                 <div>
                   <span className="text-muted-foreground">Support:</span>

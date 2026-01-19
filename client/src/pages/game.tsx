@@ -269,7 +269,7 @@ export default function GamePage() {
                       {bonus && (
                         <div className="absolute top-3 right-3 z-20">
                           <div className="bg-[#fbbf24] text-black text-[11px] font-black px-3 py-1.5 rounded-full flex items-center justify-center shadow-lg leading-tight uppercase tracking-wider transform rotate-3 group-hover:rotate-0 transition-transform">
-                            {bonus}
+                            {bonus} BONUS
                           </div>
                         </div>
                       )}

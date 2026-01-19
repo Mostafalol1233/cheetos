@@ -40,7 +40,7 @@ export function Footer() {
 
       {/* Back to Top */}
       <motion.button
-        className="absolute bottom-8 right-8 p-3 rounded-full bg-gold-primary/10 text-gold-primary border border-gold-primary/30 hover:bg-gold-primary/20 transition-all z-10"
+        className="absolute bottom-8 left-8 p-3 rounded-full bg-gold-primary/10 text-gold-primary border border-gold-primary/30 hover:bg-gold-primary/20 transition-all z-10"
         whileHover={{ scale: 1.1, y: -5 }}
         whileTap={{ scale: 0.9 }}
         onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}

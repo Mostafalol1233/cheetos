@@ -117,7 +117,7 @@ export default function PackageCheckoutPage() {
 
 📦 *Game:* ${game.name}
 💎 *Package:* ${selectedPackage}
-${bonus ? `🎁 *Bonus:* +${bonus}` : ''}
+120→${bonus ? `🎁 *Bonus:* +${bonus} BONUS` : ''}
 💰 *Price:* ${formatPrice(pricing.final, pricing.currency)}
 ${hasDiscount ? `~~${formatPrice(pricing.original!, pricing.currency)}~~ (-${discountPercent}%)` : ''}
 
