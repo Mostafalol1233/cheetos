@@ -75,6 +75,14 @@ export function CheckoutContent({ isEmbedded = false }: { isEmbedded?: boolean }
     }
   }, [step, setStep]);
 
+  // Reset stale 'processing' or 'result' steps on mount
+  useEffect(() => {
+    if (step === 'processing' || step === 'result') {
+      setStep('details');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const canGoNext = () => {
     switch (step) {
       case 'details':

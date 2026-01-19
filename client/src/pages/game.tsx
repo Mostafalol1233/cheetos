@@ -97,7 +97,7 @@ export default function GamePage() {
   const getPackagePricing = (index: number) => {
     const basePrice = Number(packagePrices[index] ?? game.price ?? 0);
     const discountPrice = packageDiscountPrices[index];
-    const hasDiscount = discountPrice && discountPrice > 0 && discountPrice < basePrice;
+    const hasDiscount = discountPrice != null && discountPrice >= 0 && discountPrice < basePrice;
 
     return {
       base: basePrice,
@@ -260,8 +260,8 @@ export default function GamePage() {
                     <div className="relative rounded-xl glass border border-white/10 hover:border-gold-primary/50 transition-all duration-300 h-full flex flex-col group overflow-hidden bg-[#1a1a1a]">
                       {hasDiscount && (
                         <div className="absolute top-3 left-3 z-20">
-                          <div className="bg-[#8b5cf6] text-white text-[10px] font-bold px-2 py-1 rounded shadow-lg">
-                            -{discountPercent}% Sale
+                          <div className="bg-gradient-to-r from-red-600 to-red-500 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg animate-pulse uppercase tracking-wider">
+                            {discountPercent}% OFF
                           </div>
                         </div>
                       )}

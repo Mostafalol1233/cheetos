@@ -15,6 +15,8 @@ import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Link } from "wouter";
 
+import { useCheckout } from '@/state/checkout';
+
 export default function PackageCheckoutPage() {
     const { gameSlug, packageIndex } = useParams();
     const pkgIndex = parseInt(packageIndex || "0", 10);

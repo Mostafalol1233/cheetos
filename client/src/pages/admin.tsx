@@ -1568,7 +1568,7 @@ export default function AdminDashboard() {
               <TabsTrigger value="chat-widget" data-testid="tab-chat-widget" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Chat Widget</TabsTrigger>
               <TabsTrigger value="logo" data-testid="tab-logo" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Logo</TabsTrigger>
               <TabsTrigger value="whatsapp" data-testid="tab-whatsapp" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">WhatsApp</TabsTrigger>
-              <TabsTrigger value="checkout-templates" data-testid="tab-checkout-templates" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Checkout Templates</TabsTrigger>
+
               <TabsTrigger value="preview-home" data-testid="tab-preview-home" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Home Preview</TabsTrigger>
               <TabsTrigger value="main-content" data-testid="tab-main-content" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Main Page Content</TabsTrigger>
               <TabsTrigger value="alerts" data-testid="tab-alerts" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">
@@ -2550,12 +2550,7 @@ export default function AdminDashboard() {
             <ChatWidgetConfigPanel />
           </TabsContent>
 
-          <TabsContent value="checkout-templates" className="space-y-6">
-            <div className="flex justify-between items-center">
-              <h2 className="text-2xl font-bold text-foreground">Checkout Templates</h2>
-            </div>
-            <CheckoutTemplatesPanel />
-          </TabsContent>
+
 
           {/* Logo Management Tab */}
           <TabsContent value="logo" className="space-y-6">
@@ -3050,7 +3045,7 @@ function CatboxUploadPanel({ allGames, categories }: { allGames: Game[]; categor
 function UsersPanel() {
   const [q, setQ] = useState('');
   const [page, setPage] = useState(1);
-  const { data } = useQuery<{ items: Array<{ id: string; name: string; phone: string; created_at: string }>; page: number; limit: number; total: number }>({
+  const { data } = useQuery<{ items: Array<{ id: string; name: string; phone: string; email?: string | null; email_verified?: boolean | null; created_at: string }>; page: number; limit: number; total: number }>({
     queryKey: ['/api/admin/users', q, page],
     enabled: true,
     queryFn: async () => {
@@ -3065,7 +3060,7 @@ function UsersPanel() {
   const exportMutation = useMutation({
     mutationFn: async () => {
       const token = localStorage.getItem('adminToken');
-      const res = await fetch(apiPath('/api/admin/users/export'), { headers: token ? { Authorization: `Bearer ${token}` } : {} });
+      const res = await fetch(apiPath(`/api/admin/users/export?q=${encodeURIComponent(q)}`), { headers: token ? { Authorization: `Bearer ${token}` } : {} });
       const csv = await res.text();
       const blob = new Blob([csv], { type: 'text/csv' });
       const url = URL.createObjectURL(blob);
@@ -3075,6 +3070,11 @@ function UsersPanel() {
     }
   });
   const items = data?.items || [];
+  const total = data?.total || 0;
+  const limit = data?.limit || 20;
+  const totalPages = Math.max(1, Math.ceil(total / limit));
+  const start = total === 0 ? 0 : (page - 1) * limit + 1;
+  const end = Math.min(total, page * limit);
   return (
     <Card className="bg-card/50 border-gold-primary/30">
       <CardHeader>
@@ -3082,7 +3082,7 @@ function UsersPanel() {
       </CardHeader>
       <CardContent className="space-y-3">
         <div className="flex gap-2">
-          <Input placeholder="Search by name or phone" value={q} onChange={(e) => setQ(e.target.value)} className="max-w-md" />
+          <Input placeholder="Search by name, phone, or email" value={q} onChange={(e) => setQ(e.target.value)} className="max-w-md" />
           <Button onClick={() => exportMutation.mutate()} variant="outline">Export CSV</Button>
         </div>
         <div className="overflow-x-auto">
@@ -3092,6 +3092,8 @@ function UsersPanel() {
                 <th className="p-2">ID</th>
                 <th className="p-2">Name</th>
                 <th className="p-2">Phone</th>
+                <th className="p-2">Email</th>
+                <th className="p-2">Verified</th>
                 <th className="p-2">Created</th>
               </tr>
             </thead>
@@ -3101,14 +3103,39 @@ function UsersPanel() {
                   <td className="p-2 font-mono">{u.id}</td>
                   <td className="p-2">{u.name}</td>
                   <td className="p-2">{u.phone}</td>
+                  <td className="p-2">{u.email || '-'}</td>
+                  <td className="p-2">{u.email ? (u.email_verified ? 'Verified' : 'Unverified') : '-'}</td>
                   <td className="p-2">{u.created_at ? new Date(u.created_at).toLocaleString() : '-'}</td>
                 </tr>
               ))}
               {items.length === 0 && (
-                <tr><td className="p-2 text-muted-foreground" colSpan={4}>No users</td></tr>
+                <tr><td className="p-2 text-muted-foreground" colSpan={6}>No users</td></tr>
               )}
             </tbody>
           </table>
+        </div>
+        <div className="flex items-center justify-between text-xs text-muted-foreground">
+          <div>
+            {total > 0 ? `Showing ${start}-${end} of ${total} users` : 'No users to display'}
+          </div>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={page <= 1}
+              onClick={() => setPage(p => Math.max(1, p - 1))}
+            >
+              Previous
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={page >= totalPages}
+              onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+            >
+              Next
+            </Button>
+          </div>
         </div>
       </CardContent>
     </Card>

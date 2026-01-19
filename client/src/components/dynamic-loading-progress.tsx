@@ -100,8 +100,12 @@ export function DynamicLoadingProgress({
         <div className="relative bg-card border border-gold-primary/20 rounded-2xl p-8 shadow-2xl">
           {/* Gaming-themed Header */}
           <div className="text-center mb-8">
-            <div className="w-16 h-16 bg-gradient-to-r from-gold-primary to-neon-pink rounded-full flex items-center justify-center mx-auto mb-4 animate-spin">
-              <Gamepad2 className="w-8 h-8 text-white" />
+            <div className="w-24 h-24 mx-auto mb-4 flex items-center justify-center">
+              <img 
+                src="/logo.png" 
+                alt="GameCart Logo" 
+                className="w-full h-full object-contain animate-pulse"
+              />
             </div>
             <h2 className="text-2xl font-bold text-gold-primary mb-2">Diaa Eldeen</h2>
             <p className="text-muted-foreground">Loading your gaming experience</p>

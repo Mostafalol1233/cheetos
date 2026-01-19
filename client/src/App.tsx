@@ -22,7 +22,6 @@ import CategoryPage from "./pages/category";
 import GamesPage from "./pages/games";
 import PacksPage from "./pages/packs";
 import SupportPage from "./pages/support";
-import CheckoutSecurityPage from "./pages/checkout-security";
 import UserLoginPage from "./pages/user-login";
 import UserProfilePage from "./pages/user-profile";
 import NotFound from "@/pages/not-found";
@@ -38,7 +37,6 @@ import { LiveChatWidget } from "@/components/live-chat-widget";
 import { FloatingWhatsAppButton } from "@/components/floating-whatsapp-button";
 import { Header } from "@/components/header";
 import { CartSidebar } from "@/components/cart-sidebar";
-import { CheckoutModal } from "@/components/checkout-modal";
 import GameDescriptionEditor from "./pages/game-description-editor";
 
 import PackageDetailsPage from "./pages/package-details";
@@ -76,7 +74,7 @@ function Router() {
         <Route path="/packs" component={PacksPage} />
         <Route path="/support" component={SupportPage} />
         <Route path="/checkout" component={Checkout} />
-        <Route path="/checkout/security/:id" component={CheckoutSecurityPage} />
+        {/* <Route path="/checkout/security/:id" component={CheckoutSecurityPage} /> Legacy */}
         <Route path="/login" component={UserLoginPage} />
         <Route path="/profile" component={UserProfilePage} />
         <Route path="/admin/login" component={AdminLoginPage} />
@@ -173,6 +171,7 @@ function AppShell() {
         <Router />
       </div>
 
+      {!isAdminRoute && <LiveChatWidget />}
       {!isAdminRoute && <FloatingWhatsAppButton />}
     </>
   );

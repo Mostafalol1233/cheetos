@@ -144,12 +144,13 @@ const __dirname = path.dirname(__filename);
 
 dotenv.config({ path: path.join(__dirname, '.env') });
 
-// Auto-install dependencies if node_modules is missing
+// Auto-install dependencies if required modules are missing
 const nodeModulesPath = path.join(__dirname, 'node_modules');
 const pgModulePath = path.join(nodeModulesPath, 'pg');
 const baileysModulePath = path.join(nodeModulesPath, '@whiskeysockets', 'baileys');
+const socketIoModulePath = path.join(nodeModulesPath, 'socket.io');
 
-if (!fs.existsSync(pgModulePath) || !fs.existsSync(baileysModulePath)) {
+if (!fs.existsSync(pgModulePath) || !fs.existsSync(baileysModulePath) || !fs.existsSync(socketIoModulePath)) {
   console.log('📦 Installing dependencies...');
   try {
     execSync('npm install', {
@@ -1264,12 +1265,12 @@ async function initializeDatabase() {
       );
     `);
 
-    // Make email/password nullable for guest users
     try {
       await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS name VARCHAR(255)');
       await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS phone VARCHAR(50)');
       await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS email TEXT');
       await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS password_hash TEXT');
+      await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verified BOOLEAN DEFAULT false');
       await pool.query('ALTER TABLE users ALTER COLUMN email DROP NOT NULL');
       await pool.query('ALTER TABLE users ALTER COLUMN password_hash DROP NOT NULL');
     } catch (e) { /* ignore if fails */ }
@@ -4099,13 +4100,17 @@ app.get('/api/admin/users', authenticateToken, async (req, res) => {
     const pg = Math.max(1, parseInt(String(page))) || 1;
     const lm = Math.min(200, Math.max(1, parseInt(String(limit)))) || 20;
     const offset = (pg - 1) * lm;
-    let sql = 'SELECT id, name, phone, created_at FROM users WHERE 1=1';
+    let whereSql = 'FROM users WHERE 1=1';
     const params = [];
-    if (q) { params.push(`%${String(q)}%`); sql += ` AND (name ILIKE $${params.length} OR phone ILIKE $${params.length})`; }
-    sql += ` ORDER BY created_at DESC LIMIT $${params.length + 1} OFFSET $${params.length + 2}`;
-    params.push(lm, offset);
-    const rows = await pool.query(sql, params);
-    const countRes = await pool.query('SELECT COUNT(*) AS count FROM users');
+    if (q) {
+      params.push(`%${String(q)}%`);
+      whereSql += ` AND (name ILIKE $${params.length} OR phone ILIKE $${params.length} OR email ILIKE $${params.length})`;
+    }
+    const rows = await pool.query(
+      `SELECT id, name, phone, email, COALESCE(email_verified, false) AS email_verified, created_at ${whereSql} ORDER BY created_at DESC LIMIT $${params.length + 1} OFFSET $${params.length + 2}`,
+      [...params, lm, offset]
+    );
+    const countRes = await pool.query(`SELECT COUNT(*) AS count ${whereSql}`, params);
     res.json({ items: rows.rows, page: pg, limit: lm, total: parseInt(countRes.rows[0].count) });
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -4114,9 +4119,24 @@ app.get('/api/admin/users', authenticateToken, async (req, res) => {
 
 app.get('/api/admin/users/export', authenticateToken, async (req, res) => {
   try {
-    const rows = await pool.query('SELECT id, name, phone, created_at FROM users ORDER BY created_at DESC');
-    const header = 'id,name,phone,created_at';
-    const csv = [header, ...rows.rows.map(r => `${r.id},${JSON.stringify(r.name)},${JSON.stringify(r.phone)},${new Date(r.created_at).toISOString()}`)].join('\n');
+    const { q } = req.query;
+    let whereSql = 'FROM users WHERE 1=1';
+    const params = [];
+    if (q) {
+      params.push(`%${String(q)}%`);
+      whereSql += ` AND (name ILIKE $${params.length} OR phone ILIKE $${params.length} OR email ILIKE $${params.length})`;
+    }
+    const rows = await pool.query(
+      `SELECT id, name, phone, email, COALESCE(email_verified, false) AS email_verified, created_at ${whereSql} ORDER BY created_at DESC`,
+      params
+    );
+    const header = 'id,name,phone,email,email_verified,created_at';
+    const csv = [
+      header,
+      ...rows.rows.map(r =>
+        `${r.id},${JSON.stringify(r.name)},${JSON.stringify(r.phone)},${JSON.stringify(r.email || '')},${r.email_verified ? 'true' : 'false'},${new Date(r.created_at).toISOString()}`
+      )
+    ].join('\n');
     res.type('text/csv');
     res.send(csv);
   } catch (err) {
@@ -4567,31 +4587,7 @@ app.get('/api/admin/confirmations', authenticateToken, async (req, res) => {
   }
 });
 
-const checkoutTemplatesFile = path.join(__dirname, '..', 'data', 'checkout-templates.json');
-app.get('/api/admin/checkout/templates', authenticateToken, async (req, res) => {
-  try {
-    const t = loadJson(checkoutTemplatesFile) || {
-      customerMessage: 'Thank you for your order #{id}! We are processing it.',
-      adminMessage: 'New Order #{id}\nTotal: {total} EGP\nCustomer: {name} ({phone})\nItems:\n{items}',
-    };
-    res.json(t);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-});
-app.put('/api/admin/checkout/templates', authenticateToken, async (req, res) => {
-  try {
-    const { customerMessage, adminMessage } = req.body || {};
-    const t = {
-      customerMessage: String(customerMessage || '').slice(0, 500),
-      adminMessage: String(adminMessage || '').slice(0, 2000),
-    };
-    saveJson(checkoutTemplatesFile, t);
-    res.json(t);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-});
+
 
 // ===================== SELLER ALERTS =====================
 

@@ -12,7 +12,7 @@ import { useUserAuth } from '@/lib/user-auth-context';
 import type { PaymentMethod } from '@/state/checkout';
 
 export function StepReview() {
-  const { cart, contact, paymentMethod, paymentData, subtotal, total, setOrderMeta, setError, setStep } = useCheckout();
+  const { cart, contact, paymentMethod, paymentData, subtotal, total, setOrderMeta, setError, setStep, reset } = useCheckout();
   const [deliverVia, setDeliverVia] = useState<'email' | 'whatsapp'>('email');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { settings } = useSettings();
@@ -108,6 +108,7 @@ export function StepReview() {
         }
         localStorage.removeItem('cart');
         localStorage.setItem('order_notification', JSON.stringify({ id: response.id, unread: true }));
+        reset(); // Reset checkout state (preserves contact)
         window.location.href = '/track-order?id=' + response.id;
         return;
       }
@@ -126,12 +127,14 @@ export function StepReview() {
 
       if (localStorage.getItem('userToken') && response.id) {
         localStorage.setItem('order_notification', JSON.stringify({ id: response.id, unread: true }));
+        reset(); // Reset checkout state
         window.location.href = '/track-order?id=' + response.id;
         return;
       }
 
       if (response.id) {
         localStorage.setItem('order_notification', JSON.stringify({ id: response.id, unread: true }));
+        reset(); // Reset checkout state
         window.location.href = '/track-order?id=' + response.id;
         return;
       }

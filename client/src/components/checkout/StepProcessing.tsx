@@ -8,9 +8,12 @@ export function StepProcessing() {
 
   useEffect(() => {
     // Immediate transition to result for better UX
-    if (orderStatus === 'processing' || !orderStatus) {
+    // Handle 'idle' status too, in case we arrive here without a specific status set
+    if (orderStatus === 'processing' || orderStatus === 'idle' || !orderStatus) {
       const timer = setTimeout(() => {
-        setOrderMeta(orderId, 'paid');
+        // If we're still processing/idle after timeout, assume success or move to result
+        // But if we don't have an orderId, maybe we should error? 
+        // For now, let's just move to result so it's not stuck.
         setStep('result');
       }, 1500); // 1.5s delay for visual feedback only
 

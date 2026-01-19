@@ -143,9 +143,28 @@ export function ensureIdempotencyKey() {
   return newKey;
 }
 
+let hasClearedLegacyCheckoutStorage = false;
+
+function clearLegacyCheckoutStorageOnce() {
+  if (hasClearedLegacyCheckoutStorage) return;
+  hasClearedLegacyCheckoutStorage = true;
+  try {
+    if (typeof window === 'undefined' || !window.localStorage) return;
+    const raw = window.localStorage.getItem('checkout-storage');
+    if (!raw) return;
+    const data = JSON.parse(raw);
+    if (data && typeof data === 'object' && ('step' in data || 'orderStatus' in data || 'orderId' in data)) {
+      window.localStorage.removeItem('checkout-storage');
+    }
+  } catch {
+  }
+}
+
 export const useCheckout = create<CheckoutState>()(
   persist(
-    (set, get) => ({
+    (set, get) => {
+      clearLegacyCheckoutStorageOnce();
+      return {
       step: 'cart',
       cart: [],
       contact: initialContact,
@@ -184,7 +203,7 @@ export const useCheckout = create<CheckoutState>()(
       reset: () => set((state) => ({
         step: 'cart',
         cart: [],
-        contact: state.contact, // Preserve contact details for convenience
+        contact: state.contact,
         paymentMethod: undefined,
         paymentData: {},
         idempotencyKey: generateIdempotencyKey(),
@@ -192,10 +211,18 @@ export const useCheckout = create<CheckoutState>()(
         orderStatus: 'idle',
         error: undefined
       }))
-    }),
+      };
+    },
     {
       name: 'checkout-storage',
       skipHydration: false,
+      partialize: (state) => ({
+        cart: state.cart,
+        contact: state.contact,
+        paymentMethod: state.paymentMethod,
+        paymentData: state.paymentData,
+        idempotencyKey: state.idempotencyKey
+      })
     }
   )
 );

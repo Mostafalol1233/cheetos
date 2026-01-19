@@ -33,6 +33,7 @@ const createTables = async () => {
         name TEXT,
         phone TEXT,
         role TEXT DEFAULT 'user',
+        email_verified BOOLEAN DEFAULT FALSE,
         created_at TIMESTAMP DEFAULT NOW()
       );
 
@@ -93,7 +94,11 @@ const createTables = async () => {
       ALTER TABLE games 
       ADD COLUMN IF NOT EXISTS package_thumbnails JSONB,
       ADD COLUMN IF NOT EXISTS multi_currency_prices JSONB,
-      ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT NOW()
+      ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT NOW();
+
+    await pool.query(`
+      ALTER TABLE users
+      ADD COLUMN IF NOT EXISTS email_verified BOOLEAN DEFAULT FALSE
     `);
     
     console.log('Tables created successfully');

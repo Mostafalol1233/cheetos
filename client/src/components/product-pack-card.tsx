@@ -32,6 +32,20 @@ export function ProductPackCard({
 }: ProductPackCardProps) {
   const showStrike = originalPrice != null && originalPrice !== "";
 
+  // Calculate discount percentage
+  let displayBadge = badgeLabel;
+  const finalPriceNum = Number(finalPrice);
+  if (showStrike && originalPrice && (finalPrice || finalPriceNum === 0)) {
+    const original = parseFloat(String(originalPrice));
+    const final = parseFloat(String(finalPrice));
+    if (!isNaN(original) && !isNaN(final) && original > final) {
+      const percent = Math.round(((original - final) / original) * 100);
+      if (percent > 0) {
+        displayBadge = `${percent}% OFF`;
+      }
+    }
+  }
+
   const Content = (
       <div className={cn(
         "group relative flex flex-col rounded-3xl border bg-card/90 p-4 sm:p-6 text-left shadow-lg outline-none transition-all duration-300",
@@ -46,9 +60,9 @@ export function ProductPackCard({
       <div className="absolute inset-0 bg-gradient-to-b from-transparent to-background/50 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
 
       {/* Badge */}
-      {badgeLabel && (
+      {displayBadge && (
         <div className="absolute left-4 top-4 z-10 inline-flex items-center rounded-full bg-gradient-to-r from-red-600 to-red-500 px-3 py-1 text-xs font-bold uppercase tracking-wider text-white shadow-lg animate-pulse">
-          {badgeLabel}
+          {displayBadge}
         </div>
       )}
 
