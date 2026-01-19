@@ -15,6 +15,7 @@ export interface ProductPackCardProps {
   highlight?: boolean;
   onClick?: () => void;
   href?: string;
+  bonus?: string | null;
 }
 
 export function ProductPackCard({
@@ -27,6 +28,7 @@ export function ProductPackCard({
   highlight,
   onClick,
   href,
+  bonus,
 }: ProductPackCardProps) {
   const showStrike = originalPrice != null && originalPrice !== "";
 
@@ -81,9 +83,14 @@ export function ProductPackCard({
                 {originalPrice} {currency}
               </span>
             )}
-            <span className="text-destructive font-extrabold text-lg">
+            <span className="text-destructive font-extrabold text-xl">
               {finalPrice} {currency}
             </span>
+            {bonus && (
+              <span className="text-xs font-bold text-amber-400 mt-1">
+                +{bonus} Bonus
+              </span>
+            )}
           </div>
 
           <span className="inline-flex items-center justify-center rounded-lg bg-primary text-primary-foreground px-4 py-2 text-sm font-bold uppercase tracking-wide shadow-md hover:scale-105 transition-transform min-w-[100px]">
@@ -123,6 +130,7 @@ export interface ProductPackGridProps {
     currency?: string;
     image?: string | null;
     highlight?: boolean;
+    bonus?: string | null;
   }>;
   onSelectPack?: (id: string) => void;
 }
@@ -147,6 +155,7 @@ export function ProductPackGrid({ packs, onSelectPack }: ProductPackGridProps) {
           currency={pack.currency}
           image={pack.image}
           highlight={pack.highlight}
+          bonus={pack.bonus}
           onClick={() => onSelectPack?.(pack.id)}
         />
       ))}

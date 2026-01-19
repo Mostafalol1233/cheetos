@@ -226,7 +226,6 @@ export default function GamePage() {
                   <Package className="w-8 h-8 text-cyber-blue" />
                   Select Package
                 </h2>
-                <p className="text-muted-foreground mt-1">Choose your preferred amount</p>
               </div>
               <span className="px-4 py-2 rounded-full glass border border-white/10 text-sm font-medium text-muted-foreground">
                 {packages.length} {packages.length === 1 ? "package" : "packages"} available
@@ -269,7 +268,7 @@ export default function GamePage() {
 
                       {bonus && (
                         <div className="absolute top-3 right-3 z-20">
-                          <div className="bg-[#fbbf24] text-black text-[10px] font-black px-3 py-1.5 rounded-full flex items-center justify-center shadow-lg leading-tight uppercase tracking-wider transform rotate-3 group-hover:rotate-0 transition-transform">
+                          <div className="bg-[#fbbf24] text-black text-[11px] font-black px-3 py-1.5 rounded-full flex items-center justify-center shadow-lg leading-tight uppercase tracking-wider transform rotate-3 group-hover:rotate-0 transition-transform">
                             {bonus}
                           </div>
                         </div>
@@ -293,7 +292,7 @@ export default function GamePage() {
                         </h3>
 
                         {bonus && (
-                          <div className="text-xs font-bold text-[#fbbf24] mt-1 mb-1 uppercase tracking-wide">
+                          <div className="text-sm font-black text-[#fbbf24] mt-1 mb-1 uppercase tracking-wide">
                             {bonus} Bonus
                           </div>
                         )}
@@ -310,8 +309,16 @@ export default function GamePage() {
                         </div>
 
                         <div className="flex items-center justify-center gap-2 mb-4">
-                          <div className={`w-2.5 h-2.5 rounded-full ${isOutOfStock ? 'bg-red-500' : 'bg-green-500'} shadow-[0_0_8px_rgba(34,197,94,0.6)]`} />
-                          <span className={`text-sm font-extrabold uppercase tracking-wide ${isOutOfStock ? 'text-red-400' : 'text-green-400'}`}>
+                          <div
+                            className={`w-3.5 h-3.5 rounded-full ${
+                              isOutOfStock ? 'bg-red-500' : 'bg-green-500'
+                            } shadow-[0_0_12px_rgba(34,197,94,0.8)]`}
+                          />
+                          <span
+                            className={`text-base md:text-lg font-extrabold uppercase tracking-wide ${
+                              isOutOfStock ? 'text-red-400' : 'text-green-400'
+                            }`}
+                          >
                             {isOutOfStock ? 'Out of stock' : 'In stock'}
                           </span>
                         </div>

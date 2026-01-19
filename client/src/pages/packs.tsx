@@ -23,23 +23,26 @@ export default function PacksPage() {
   const packs = React.useMemo(() => {
     const out: any[] = [];
     (games || ([] as any[])).forEach((g: any) => {
-      // Handle both legacy packages and new packagesList
       const packages = Array.isArray(g.packages) ? g.packages : [];
       const packagesList = Array.isArray(g.packagesList) ? g.packagesList : [];
-      
+
       if (packages.length > 0 || packagesList.length > 0) {
-        const items = packagesList.length > 0 ? packagesList : packages.map((pkg: string, idx: number) => ({
-          name: pkg,
-          price: Number((g.packagePrices && g.packagePrices[idx]) || g.price || 0),
-          discountPrice: Array.isArray(g.packageDiscountPrices) ? g.packageDiscountPrices[idx] : null,
-          image: (g.packageThumbnails && g.packageThumbnails[idx]) || g.image,
-        }));
-        
+        const items =
+          packagesList.length > 0
+            ? packagesList
+            : packages.map((pkg: string, idx: number) => ({
+                name: pkg,
+                price: Number((g.packagePrices && g.packagePrices[idx]) || g.price || 0),
+                discountPrice: Array.isArray(g.packageDiscountPrices) ? g.packageDiscountPrices[idx] : null,
+                image: (g.packageThumbnails && g.packageThumbnails[idx]) || g.image,
+                bonus: null,
+              }));
+
         items.forEach((pkg: any, idx: number) => {
           const base = Number(pkg.price || 0);
           const discount = pkg.discountPrice != null ? Number(pkg.discountPrice) : null;
-          // Treat discountPrice as final price (big font); price as original/strikethrough
-          const final = (discount != null && Number.isFinite(discount) && discount > 0 && discount < base) ? discount : base;
+          const final =
+            discount != null && Number.isFinite(discount) && discount > 0 && discount < base ? discount : base;
           const hasDiscount = final !== base;
           out.push({
             id: `${g.id}-pkg-${idx}`,
@@ -48,7 +51,8 @@ export default function PacksPage() {
             finalPrice: final,
             currency: "EGP",
             image: pkg.image || g.image,
-            href: `/packages/${pkg.slug || (pkg.name || pkg).toLowerCase().replace(/[^a-z0-9]+/g, '-')}`
+            bonus: pkg.bonus || null,
+            href: `/packages/${pkg.slug || (pkg.name || pkg).toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
           });
         });
       }
@@ -68,7 +72,6 @@ export default function PacksPage() {
       <div className="container mx-auto px-4">
         <header className="mb-6">
           <h1 className="text-3xl font-bold text-foreground">Packages & Gift Cards</h1>
-          <p className="text-muted-foreground mt-2">Browse available packs — responsive grid with sticky CTA.</p>
         </header>
 
         {isLoading ? (

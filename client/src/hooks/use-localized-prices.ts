@@ -24,6 +24,13 @@ export function useLocalizedPrices(gameId: string): UseLocalizedPricesResult {
   const fetchPrices = async () => {
     if (!gameId) return;
 
+    // Frontend currently uses EGP only. Keep admin-set prices exactly as stored
+    // and skip remote localization to avoid mismatches between dashboard and user view.
+    if (currency === "EGP") {
+      setPrices(null);
+      return;
+    }
+
     setIsLoading(true);
     setError(null);
 
