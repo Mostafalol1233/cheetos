@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
-import { Trash2, Edit, Plus, MessageSquare, Bell, Check, AlertCircle, Info, Search, Package, Shield, ShoppingCart, User, Bot } from 'lucide-react';
+import { Trash2, Edit, Plus, MessageSquare, Bell, Check, AlertCircle, Info, Search, Package, Shield, ShoppingCart, User, Bot, Paperclip } from 'lucide-react';
 import { API_BASE_URL, queryClient } from '@/lib/queryClient';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Label } from '@/components/ui/label';
@@ -20,6 +20,7 @@ import { normalizeNumericString } from '@/lib/quantity';
 import { AdminThemePanel } from '@/components/admin-theme-panel';
 import { ResponseTemplatesPanel } from '@/components/response-templates-panel';
 const RichTextEditor = React.lazy(() => import('@/components/rich-text-editor'));
+import { io, Socket } from 'socket.io-client';
 
 class ErrorBoundary extends React.Component<{ fallback?: React.ReactNode; children?: React.ReactNode }, { hasError: boolean }> {
   constructor(props: any) {
@@ -104,12 +105,14 @@ export default function AdminDashboard() {
   const [cardsPage, setCardsPage] = useState(1);
   const [cardsLimit, setCardsLimit] = useState(20);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [newCardGameId, setNewCardGameId] = useState<string>('');
   const [newCardCode, setNewCardCode] = useState('');
   const [alertStatus, setAlertStatus] = useState<string>('all');
   const [alertType, setAlertType] = useState<string>('all');
   const [alertSearch, setAlertSearch] = useState('');
   const [selectedGames, setSelectedGames] = useState<string[]>([]);
+  const chatSocketRef = useRef<Socket | null>(null);
 
   // Fetch games
   const { data: allGames = [] } = useQuery<Game[]>({
@@ -308,7 +311,6 @@ export default function AdminDashboard() {
   const { data: chatSessions = [] } = useQuery<Array<{ id: string; startedAt: number; lastActivity: number; unreadCount: number }>>({
     queryKey: ['/api/admin/chat/sessions'],
     enabled: true,
-    refetchInterval: 10000, // Refresh every 10 seconds
     queryFn: async () => {
       const token = localStorage.getItem('adminToken');
       const res = await fetch(`${API_BASE_URL}/api/admin/chat/sessions`, {
@@ -321,10 +323,9 @@ export default function AdminDashboard() {
   });
 
   // Fetch messages for selected session
-  const { data: sessionMessages = [] } = useQuery<Array<{ id: string; sender: string; message: string; timestamp: number; read: boolean }>>({
+  const { data: sessionMessages = [] } = useQuery<Array<{ id: string; sender: string; message: string; timestamp: number; read: boolean; attachmentUrl?: string | null; attachmentType?: string | null }>>({
     queryKey: [`/api/admin/chat/${selectedUser}`],
     enabled: !!selectedUser,
-    refetchInterval: 3000, // Refresh every 3 seconds
     queryFn: async () => {
       const token = localStorage.getItem('adminToken');
       const res = await fetch(`${API_BASE_URL}/api/admin/chat/${selectedUser}`, {
@@ -335,6 +336,87 @@ export default function AdminDashboard() {
       return Array.isArray(data) ? data : [];
     }
   });
+
+  const [replyAttachment, setReplyAttachment] = useState<{ url: string; type: string } | null>(null);
+
+  const uploadChatAttachment = useMutation({
+    mutationFn: async (file: File) => {
+      const token = localStorage.getItem('adminToken');
+      const formData = new FormData();
+      formData.append('file', file);
+      const res = await fetch(apiPath('/api/admin/upload'), {
+        method: 'POST',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        body: formData
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error((data as any)?.message || 'Failed to upload attachment');
+      }
+      return data;
+    },
+    onSuccess: (data: any) => {
+      const url: string = data?.absoluteUrl || data?.url;
+      if (!url) return;
+      const mime = (data?.mimeType as string | undefined) || '';
+      const lowerUrl = url.toLowerCase();
+      const isImage = mime.startsWith('image/') || /\.(png|jpe?g|gif|webp|svg)$/.test(lowerUrl);
+      setReplyAttachment({ url, type: isImage ? 'image' : 'file' });
+    }
+  });
+
+  useEffect(() => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('adminToken') : null;
+    if (!token) return;
+
+    const socket = io();
+    chatSocketRef.current = socket;
+
+    socket.on('connect', () => {
+      socket.emit('admin_join', token);
+      if (selectedUser) {
+        socket.emit('join_session', { sessionId: selectedUser });
+      }
+    });
+
+    socket.on('session_updated', () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/chat/sessions'] });
+    });
+
+    socket.on('session_read', () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/chat/sessions'] });
+    });
+
+    socket.on('new_message', (msg: any) => {
+      if (!msg || !msg.sessionId) return;
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/chat/sessions'] });
+      queryClient.invalidateQueries({ queryKey: [`/api/admin/chat/${msg.sessionId}`] });
+    });
+
+    return () => {
+      socket.off('session_updated');
+      socket.off('session_read');
+      socket.off('new_message');
+      socket.disconnect();
+      chatSocketRef.current = null;
+    };
+  }, [selectedUser]);
+
+  useEffect(() => {
+    if (!selectedUser || !chatSocketRef.current) return;
+    chatSocketRef.current.emit('join_session', { sessionId: selectedUser });
+
+    const token = localStorage.getItem('adminToken');
+    if (!token) return;
+
+    fetch(`${API_BASE_URL}/api/admin/chat/${selectedUser}/read`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`
+      }
+    }).catch(() => { });
+  }, [selectedUser]);
 
   const { data: confirmations = [] } = useQuery<Array<{ id: string; transactionId: string; message: string; receiptUrl: string; createdAt: number }>>({
     queryKey: ['/api/admin/confirmations'],
@@ -932,7 +1014,7 @@ export default function AdminDashboard() {
   // Send reply mutation for live chat
   const replyMutation = useMutation({
     mutationFn: async () => {
-      if (!selectedUser || !replyMessage.trim()) throw new Error('No session selected or message empty');
+      if (!selectedUser || (!replyMessage.trim() && !replyAttachment)) throw new Error('No session selected or message/attachment empty');
 
       const token = localStorage.getItem('adminToken');
       const res = await fetch(`${API_BASE_URL}/api/chat/message`, {
@@ -944,7 +1026,9 @@ export default function AdminDashboard() {
         body: JSON.stringify({
           sender: 'support',
           message: replyMessage.trim(),
-          sessionId: selectedUser
+          sessionId: selectedUser,
+          attachmentUrl: replyAttachment?.url,
+          attachmentType: replyAttachment?.type
         })
       });
       const data = await res.json().catch(() => ({}));
@@ -953,6 +1037,7 @@ export default function AdminDashboard() {
     },
     onSuccess: () => {
       setReplyMessage('');
+      setReplyAttachment(null);
       queryClient.invalidateQueries({ queryKey: [`/api/admin/chat/${selectedUser}`] });
       queryClient.invalidateQueries({ queryKey: ['/api/admin/chat/sessions'] });
       toast({ title: 'Reply sent', description: 'Your message has been sent to the visitor.' });
@@ -2351,7 +2436,29 @@ export default function AdminDashboard() {
                                       {msg.sender === 'user' ? 'Visitor' : 'Support'}
                                     </span>
                                   </div>
-                                  <p>{msg.message}</p>
+                                  {msg.message && (
+                                    <p className="break-words">{msg.message}</p>
+                                  )}
+                                  {msg.attachmentUrl && (
+                                    <div className="mt-1">
+                                      {msg.attachmentType === 'image' ? (
+                                        <img
+                                          src={msg.attachmentUrl}
+                                          alt="Attachment"
+                                          className="max-w-full max-h-64 rounded border border-black/10"
+                                        />
+                                      ) : (
+                                        <a
+                                          href={msg.attachmentUrl}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="text-xs underline break-all"
+                                        >
+                                          Open attachment
+                                        </a>
+                                      )}
+                                    </div>
+                                  )}
                                   <p className="text-xs opacity-50 mt-1">
                                     {new Date(msg.timestamp).toLocaleTimeString([], {
                                       hour: '2-digit',
@@ -2366,21 +2473,59 @@ export default function AdminDashboard() {
                       </ScrollArea>
 
                       {/* Reply Input */}
-                      <div className="flex gap-2">
-                        <Input
-                          value={replyMessage}
-                          onChange={(e) => setReplyMessage(e.target.value)}
-                          onKeyPress={(e) => e.key === 'Enter' && replyMutation.mutate()}
-                          placeholder="Type your reply..."
-                          className="flex-1"
-                        />
-                        <Button
-                          onClick={() => replyMutation.mutate()}
-                          disabled={!replyMessage.trim() || replyMutation.isPending}
-                          className="bg-gradient-to-r from-gold-primary to-neon-pink hover:from-gold-secondary hover:to-neon-pink text-black"
-                        >
-                          {replyMutation.isPending ? 'Sending...' : 'Send'}
-                        </Button>
+                      <div className="flex flex-col gap-2">
+                        {replyAttachment && (
+                          <div className="flex items-center justify-between text-xs bg-muted/40 px-2 py-1 rounded">
+                            <span className="truncate max-w-[70%]">{replyAttachment.url}</span>
+                            <Button
+                              variant="ghost"
+                              onClick={() => setReplyAttachment(null)}
+                            >
+                              Remove
+                            </Button>
+                          </div>
+                        )}
+                        <div className="flex gap-2">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="icon"
+                            onClick={() => fileInputRef.current?.click()}
+                            disabled={uploadChatAttachment.isPending}
+                          >
+                            <Paperclip className="w-4 h-4" />
+                          </Button>
+                          <Input
+                            value={replyMessage}
+                            onChange={(e) => setReplyMessage(e.target.value)}
+                            onKeyPress={(e) => e.key === 'Enter' && replyMutation.mutate()}
+                            placeholder="Type your reply..."
+                            className="flex-1"
+                          />
+                          <Button
+                            onClick={() => replyMutation.mutate()}
+                            disabled={(!replyMessage.trim() && !replyAttachment) || replyMutation.isPending}
+                            className="bg-gradient-to-r from-gold-primary to-neon-pink hover:from-gold-secondary hover:to-neon-pink text-black"
+                          >
+                            {replyMutation.isPending ? 'Sending...' : 'Send'}
+                          </Button>
+                          <input
+                            ref={fileInputRef}
+                            type="file"
+                            className="hidden"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (!file) return;
+                              if (file.size > 5 * 1024 * 1024) {
+                                alert('File too large. Maximum size is 5MB.');
+                                e.target.value = '';
+                                return;
+                              }
+                              uploadChatAttachment.mutate(file);
+                              e.target.value = '';
+                            }}
+                          />
+                        </div>
                       </div>
                     </CardContent>
                   </Card>

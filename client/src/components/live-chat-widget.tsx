@@ -1,17 +1,20 @@
 import { useState, useEffect, useRef } from 'react';
-import { MessageCircle, Send, X, Minimize2, Maximize2, Phone, Facebook } from 'lucide-react';
+import { MessageCircle, Send, X, Minimize2, Maximize2, Phone, Facebook, Paperclip } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { queryClient, apiRequest } from '@/lib/queryClient';
 import { useSettings } from '@/lib/settings-context';
+import { io, Socket } from 'socket.io-client';
 
 interface ChatMessage {
   id: string;
   sender: 'user' | 'support';
   message: string;
   timestamp: number;
+  attachmentUrl?: string;
+  attachmentType?: string;
 }
 
 interface ChatWidgetConfig {
@@ -40,6 +43,7 @@ export function LiveChatWidget() {
     }
   });
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const socketRef = useRef<Socket | null>(null);
   const [isUserTyping, setIsUserTyping] = useState(false);
   const [isSupportTyping, setIsSupportTyping] = useState(false);
   const [search, setSearch] = useState('');
@@ -61,11 +65,9 @@ export function LiveChatWidget() {
     position: 'bottom-right'
   };
 
-  // Fetch chat messages
   const { data: messages = [] } = useQuery<ChatMessage[]>({
     queryKey: [`/api/chat/${sessionId}`],
-    enabled: isOpen,
-    refetchInterval: 2000
+    enabled: isOpen
   });
 
   // Auto-reply mutation
@@ -99,7 +101,6 @@ export function LiveChatWidget() {
     }
   });
 
-  // Send message mutation
   const sendMutation = useMutation({
     mutationFn: async (msg: string) => {
       const response = await apiRequest('POST', '/api/chat/message', {
@@ -110,10 +111,7 @@ export function LiveChatWidget() {
       return response.json();
     },
     onSuccess: (_data, msg) => {
-      queryClient.invalidateQueries({ queryKey: [`/api/chat/${sessionId}`] });
       setInputMessage('');
-      // Trigger auto-reply
-      autoReplyMutation.mutate(String(msg || ''));
     }
   });
 
@@ -125,11 +123,27 @@ export function LiveChatWidget() {
   };
 
   useEffect(() => {
-    if (!inputMessage) { setIsUserTyping(false); return; }
+    if (!isOpen || !socketRef.current) {
+      if (!inputMessage) setIsUserTyping(false);
+      return;
+    }
+
+    if (!inputMessage) {
+      setIsUserTyping(false);
+      socketRef.current.emit('typing', { sessionId, sender: 'user', isTyping: false });
+      return;
+    }
+
     setIsUserTyping(true);
-    const t = setTimeout(() => setIsUserTyping(false), 1000);
+    socketRef.current.emit('typing', { sessionId, sender: 'user', isTyping: true });
+
+    const t = setTimeout(() => {
+      setIsUserTyping(false);
+      socketRef.current?.emit('typing', { sessionId, sender: 'user', isTyping: false });
+    }, 1000);
+
     return () => clearTimeout(t);
-  }, [inputMessage]);
+  }, [inputMessage, isOpen, sessionId]);
 
   // Auto-scroll to bottom
   useEffect(() => {
@@ -146,6 +160,52 @@ export function LiveChatWidget() {
     window.addEventListener('open-live-chat', handler);
     return () => window.removeEventListener('open-live-chat', handler);
   }, []);
+
+  useEffect(() => {
+    if (!isOpen) {
+      if (socketRef.current) {
+        socketRef.current.off('new_message');
+        socketRef.current.off('typing');
+        socketRef.current.disconnect();
+        socketRef.current = null;
+      }
+      return;
+    }
+
+    if (!socketRef.current) {
+      const socket = io();
+      socketRef.current = socket;
+
+      socket.on('connect', () => {
+        socket.emit('join_session', { sessionId });
+      });
+
+      socket.on('new_message', (msg: ChatMessage) => {
+        queryClient.setQueryData<ChatMessage[]>([`/api/chat/${sessionId}`], (old) => {
+          const current = old || [];
+          if (current.some(m => m.id === msg.id)) return current;
+          return [...current, msg];
+        });
+      });
+
+      socket.on('typing', ({ sender, isTyping }: { sender: string; isTyping: boolean }) => {
+        if (sender === 'support' || sender === 'admin') {
+          setIsSupportTyping(Boolean(isTyping));
+        }
+      });
+    } else {
+      socketRef.current.emit('join_session', { sessionId });
+    }
+
+    return () => {
+      if (socketRef.current) {
+        socketRef.current.off('new_message');
+        socketRef.current.off('typing');
+        socketRef.current.disconnect();
+        socketRef.current = null;
+      }
+    };
+  }, [isOpen, sessionId]);
 
   if (!widgetConfig.enabled) {
     return null;
@@ -277,7 +337,29 @@ export function LiveChatWidget() {
                         : 'bg-muted/50 text-muted-foreground rounded-bl-none'
                     }`}
                   >
-                    <p className="text-sm">{msg.message}</p>
+                    {msg.message && (
+                      <p className="text-sm break-words">{msg.message}</p>
+                    )}
+                    {msg.attachmentUrl && (
+                      <div className="mt-1">
+                        {msg.attachmentType === 'image' ? (
+                          <img
+                            src={msg.attachmentUrl}
+                            alt="Attachment"
+                            className="max-w-full max-h-64 rounded"
+                          />
+                        ) : (
+                          <a
+                            href={msg.attachmentUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs underline break-all"
+                          >
+                            Open attachment
+                          </a>
+                        )}
+                      </div>
+                    )}
                     <span className="text-xs opacity-60 mt-1 block">
                       {new Date(msg.timestamp).toLocaleTimeString([], {
                         hour: '2-digit',

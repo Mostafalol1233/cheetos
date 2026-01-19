@@ -11,6 +11,7 @@ import { execSync } from 'child_process';
 import pkg from 'pg';
 import * as https from 'https';
 import dns from 'dns';
+import { createServer } from 'http';
 import cloudinaryModule from 'cloudinary';
 const cloudinary = cloudinaryModule.v2 || cloudinaryModule;
 import { storage as memStorage } from './storage.js';
@@ -34,6 +35,7 @@ import { authenticateToken, ensureAdmin } from './middleware/auth.js';
 import { sendEmail, sendRawEmail } from './utils/email.js';
 import { generateSitemap } from './utils/sitemap.js';
 import localDb from './utils/localDb.js';
+import { initSocket, getIO } from './socket.js';
 import {
   detectCountryFromIP,
   getCurrencyForCountry,
@@ -4056,7 +4058,7 @@ app.post('/api/whatsapp/webhook', async (req, res) => {
 app.get('/api/chat/:sessionId', async (req, res) => {
   try {
     const { sessionId } = req.params;
-    const result = await pool.query('SELECT id, sender, message_encrypted, message, session_id, timestamp FROM chat_messages WHERE session_id = $1 ORDER BY timestamp ASC', [sessionId]);
+    const result = await pool.query('SELECT id, sender, message_encrypted, message, session_id, timestamp, attachment_url, attachment_type FROM chat_messages WHERE session_id = $1 ORDER BY timestamp ASC', [sessionId]);
     const safeDecrypt = (enc, plain) => {
       if (plain) return String(plain);
       if (!enc) return '';
@@ -4079,6 +4081,8 @@ app.get('/api/chat/:sessionId', async (req, res) => {
       message: safeDecrypt(r.message_encrypted, r.message),
       sessionId: r.session_id,
       timestamp: toMs(r.timestamp),
+      attachmentUrl: r.attachment_url || null,
+      attachmentType: r.attachment_type || null,
       delivered: true,
       status: 'delivered'
     }));
@@ -4223,7 +4227,7 @@ app.get('/api/admin/chat/all', authenticateToken, async (req, res) => {
 
 app.get('/api/chat/all', async (req, res) => {
   try {
-    const result = await pool.query('SELECT id, sender, message_encrypted, message, session_id, timestamp FROM chat_messages ORDER BY timestamp DESC LIMIT 500');
+    const result = await pool.query('SELECT id, sender, message_encrypted, message, session_id, timestamp, attachment_url, attachment_type FROM chat_messages ORDER BY timestamp DESC LIMIT 500');
     const safeDecrypt = (enc, plain) => {
       if (plain) return String(plain);
       if (!enc) return '';
@@ -4245,7 +4249,9 @@ app.get('/api/chat/all', async (req, res) => {
       sender: r.sender,
       message: safeDecrypt(r.message_encrypted, r.message),
       sessionId: r.session_id,
-      timestamp: toMs(r.timestamp)
+      timestamp: toMs(r.timestamp),
+      attachmentUrl: r.attachment_url || null,
+      attachmentType: r.attachment_type || null
     }));
     res.json(messages || []);
   } catch (err) {
@@ -4258,7 +4264,7 @@ app.get('/api/admin/chat/:sessionId', authenticateToken, async (req, res) => {
   try {
     const { sessionId } = req.params;
     const result = await pool.query(
-      'SELECT id, sender, message_encrypted, message, session_id, timestamp, read FROM chat_messages WHERE session_id = $1 ORDER BY timestamp ASC',
+      'SELECT id, sender, message_encrypted, message, session_id, timestamp, read, attachment_url, attachment_type FROM chat_messages WHERE session_id = $1 ORDER BY timestamp ASC',
       [sessionId]
     );
     const safeDecrypt = (enc, plain) => {
@@ -4284,6 +4290,8 @@ app.get('/api/admin/chat/:sessionId', authenticateToken, async (req, res) => {
       sessionId: r.session_id,
       timestamp: toMs(r.timestamp),
       read: Boolean(r.read),
+      attachmentUrl: r.attachment_url || null,
+      attachmentType: r.attachment_type || null,
       delivered: true,
       status: Boolean(r.read) ? 'read' : 'delivered'
     }));
@@ -4295,8 +4303,8 @@ app.get('/api/admin/chat/:sessionId', authenticateToken, async (req, res) => {
 
 app.post('/api/chat/message', async (req, res) => {
   try {
-    const { sender, message, sessionId } = req.body;
-    if (!sender || !message || !sessionId) return res.status(400).json({ message: 'sender, message, sessionId required' });
+    const { sender, message, sessionId, attachmentUrl, attachmentType } = req.body;
+    if (!sender || (!message && !attachmentUrl) || !sessionId) return res.status(400).json({ message: 'sender, message or attachment, sessionId required' });
 
     if (sender === 'support') {
       const authHeader = req.headers['authorization'];
@@ -4311,9 +4319,10 @@ app.post('/api/chat/message', async (req, res) => {
 
     const id = `cm_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
     const timestamp = new Date().toISOString();
+    const plainMessage = message != null ? String(message) : '';
     await pool.query(
-      'INSERT INTO chat_messages (id, sender, message_encrypted, message, session_id, timestamp) VALUES ($1, $2, $3, $4, $5, $6)',
-      [id, sender, encryptMessage(String(message)), String(message), sessionId, timestamp]
+      'INSERT INTO chat_messages (id, sender, message_encrypted, message, session_id, timestamp, attachment_url, attachment_type) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)',
+      [id, sender, plainMessage ? encryptMessage(plainMessage) : null, plainMessage || null, sessionId, timestamp, attachmentUrl || null, attachmentType || null]
     );
 
     // When admin replies, mark all unread messages in this session as read
@@ -4357,11 +4366,35 @@ app.post('/api/chat/message', async (req, res) => {
       }
     }
 
-    if (sender === 'support' && sessionId.startsWith('wa_') && WHATSAPP_TOKEN && WHATSAPP_PHONE_NUMBER_ID) {
+    if (sender === 'support' && sessionId.startsWith('wa_') && WHATSAPP_TOKEN && WHATSAPP_PHONE_NUMBER_ID && message) {
       const to = sessionId.replace('wa_', '');
       const url = `https://graph.facebook.com/v19.0/${WHATSAPP_PHONE_NUMBER_ID}/messages`;
       const payload = { messaging_product: 'whatsapp', to, type: 'text', text: { body: String(message) } };
       try { await httpsPostJson(url, { Authorization: `Bearer ${WHATSAPP_TOKEN}` }, payload); } catch { }
+    }
+
+    const io = getIO && getIO();
+    if (io) {
+      const payload = {
+        id,
+        sessionId,
+        sender,
+        message: plainMessage,
+        attachmentUrl: attachmentUrl || null,
+        attachmentType: attachmentType || null,
+        replyTo: null,
+        timestamp: new Date(timestamp).getTime(),
+        read: sender === 'support'
+      };
+
+      io.to(sessionId).emit('new_message', payload);
+
+      const isUser = sender !== 'support' && sender !== 'admin';
+      io.to('admin_room').emit('session_updated', {
+        sessionId,
+        lastMessage: payload,
+        unreadCount: isUser ? 1 : 0
+      });
     }
 
     res.status(201).json({ id });
@@ -4451,6 +4484,13 @@ app.put('/api/admin/chat/:sessionId/read', authenticateToken, async (req, res) =
   try {
     const { sessionId } = req.params;
     await pool.query('UPDATE chat_messages SET read = true WHERE session_id = $1', [sessionId]);
+
+    const io = getIO && getIO();
+    if (io) {
+      io.to(sessionId).emit('messages_read', { sessionId });
+      io.to('admin_room').emit('session_read', { sessionId });
+    }
+
     res.json({ ok: true });
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -4895,7 +4935,10 @@ const startServer = async () => {
       }
     });
 
-    app.listen(PORT, () => {
+    const httpServer = createServer(app);
+    initSocket(httpServer);
+
+    httpServer.listen(PORT, () => {
       console.log(`╔════════════════════════════════════════╗`);
       console.log(`║     GameCart Backend Server             ║`);
       console.log(`║     Running on port ${PORT}              ║`);
