@@ -63,15 +63,15 @@ export function HeroCarousel() {
                     <Gamepad2 className="w-3 h-3" />
                     Premium Gaming
                   </span>
-                  <h2 className="text-3xl md:text-5xl font-black text-white mb-2 drop-shadow-lg tracking-tight">
+                  <h2 className="text-2xl sm:text-3xl md:text-5xl font-black text-white mb-2 drop-shadow-lg tracking-tight">
                     {slide.title}
                   </h2>
-                  <p className="text-gray-200 text-sm md:text-lg max-w-lg mb-6 drop-shadow-md line-clamp-2">
+                  <p className="text-gray-200 text-xs sm:text-sm md:text-lg max-w-lg mb-6 drop-shadow-md line-clamp-2">
                     {slide.description}
                   </p>
 
                   <Link href={slide.link}>
-                    <Button size="lg" className="rounded-xl px-8 font-bold text-base btn-gaming group shadow-glow-blue hover:scale-105 transition-all">
+                    <Button size="lg" className="rounded-xl px-5 sm:px-7 md:px-8 py-2.5 sm:py-3 md:py-3.5 font-bold text-sm sm:text-base btn-gaming group shadow-glow-blue hover:scale-105 transition-all">
                       {slide.cta}
                       <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
                     </Button>

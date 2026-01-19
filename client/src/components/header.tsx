@@ -26,6 +26,19 @@ export function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [location] = useLocation();
   const { settings } = useSettings();
+  const [hasOrderNotification, setHasOrderNotification] = useState(false);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("order_notification");
+      if (!raw) return;
+      const parsed = JSON.parse(raw);
+      if (parsed && parsed.unread) {
+        setHasOrderNotification(true);
+      }
+    } catch {
+    }
+  }, []);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -110,7 +123,12 @@ export function Header() {
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
                     >
-                      {link.label}
+                      <span className="relative inline-flex items-center">
+                        {link.label}
+                        {link.href === "/track-order" && hasOrderNotification && (
+                          <span className="ml-2 inline-flex h-2.5 w-2.5 rounded-full bg-red-500 shadow-[0_0_0_3px_rgba(248,113,113,0.4)]" />
+                        )}
+                      </span>
                       {isActive && (
                         <motion.div
                           layoutId="activeTab"
@@ -338,7 +356,12 @@ export function Header() {
                             )}
                           >
                             <Icon className="w-5 h-5" />
-                            <span className="font-medium">{link.label}</span>
+                            <span className="font-medium flex items-center">
+                              {link.label}
+                              {link.href === "/track-order" && hasOrderNotification && (
+                                <span className="ml-2 inline-flex h-2.5 w-2.5 rounded-full bg-red-500 shadow-[0_0_0_3px_rgba(248,113,113,0.4)]" />
+                              )}
+                            </span>
                           </div>
                         </Link>
                       </motion.div>

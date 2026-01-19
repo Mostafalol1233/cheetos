@@ -22,8 +22,28 @@ export default function TrackOrderPage() {
     if (urlOrderId) {
       setOrderId(urlOrderId);
       fetchOrder(urlOrderId);
+      try {
+        const raw = localStorage.getItem("order_notification");
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (parsed && parsed.id === urlOrderId) {
+            localStorage.setItem("order_notification", JSON.stringify({ ...parsed, unread: false }));
+          }
+        }
+      } catch {
+      }
     }
   }, []);
+
+  useEffect(() => {
+    if (!orderId || !orderStatus?.transaction?.status) return;
+    const status = String(orderStatus.transaction.status).toLowerCase();
+    if (status === "completed" || status === "cancelled") return;
+    const interval = setInterval(() => {
+      fetchOrder(orderId);
+    }, 10000);
+    return () => clearInterval(interval);
+  }, [orderId, orderStatus?.transaction?.status]);
 
   const fetchOrder = async (id: string) => {
     if (!id.trim()) {

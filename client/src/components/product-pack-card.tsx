@@ -33,14 +33,13 @@ export function ProductPackCard({
   const showStrike = originalPrice != null && originalPrice !== "";
 
   const Content = (
-    <div
-      className={cn(
-        "group relative flex flex-col rounded-3xl border bg-card/90 p-6 text-left shadow-lg outline-none transition-all duration-300",
+      <div className={cn(
+        "group relative flex flex-col rounded-3xl border bg-card/90 p-4 sm:p-6 text-left shadow-lg outline-none transition-all duration-300",
         "hover:-translate-y-2 hover:shadow-2xl hover:border-primary/50",
         "focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background",
         highlight &&
           "border-primary bg-gradient-to-br from-primary/10 via-card to-secondary/10 shadow-xl",
-        "min-h-[320px] cursor-pointer w-full overflow-hidden"
+        "min-h-[280px] sm:min-h-[320px] cursor-pointer w-full overflow-hidden"
       )}
     >
       {/* Dynamic Background Effect */}
@@ -55,8 +54,8 @@ export function ProductPackCard({
 
       {/* Product image */}
       {image && (
-        <div className="mb-6 flex w-full items-center justify-center">
-          <div className="relative flex h-40 w-40 items-center justify-center overflow-hidden rounded-2xl bg-muted/20 ring-4 ring-background shadow-inner">
+        <div className="mb-4 sm:mb-6 flex w-full items-center justify-center">
+          <div className="relative flex h-32 w-32 sm:h-40 sm:w-40 items-center justify-center overflow-hidden rounded-2xl bg-muted/20 ring-4 ring-background shadow-inner">
             <ImageWithFallback
               src={image}
               alt={name}

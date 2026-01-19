@@ -68,22 +68,18 @@ export function StepReview() {
 
       const response = await res.json();
 
-      // Handle Auto-Login / User Session
       if (response.token) {
         localStorage.setItem('userToken', response.token);
         if (response.user) {
           localStorage.setItem('userData', JSON.stringify(response.user));
         }
-        // Clear cart after successful order
         localStorage.removeItem('cart');
-        // Force reload to pick up auth state and redirect to orders
+        localStorage.setItem('order_notification', JSON.stringify({ id: response.id, unread: true }));
         window.location.href = '/track-order?id=' + response.id;
         return;
       }
 
-      // If user already exists (no new token generated), still redirect to track order
       if (response.id) {
-        // Clear cart after successful order
         localStorage.removeItem('cart');
         setOrderMeta(response.id, response.status || 'pending_approval');
       }
@@ -95,14 +91,14 @@ export function StepReview() {
         window.open(`https://wa.me/${waNumber}?text=${encodeURIComponent(message)}`, '_blank');
       }
 
-      // If we have existing token, redirect to track order
       if (localStorage.getItem('userToken') && response.id) {
+        localStorage.setItem('order_notification', JSON.stringify({ id: response.id, unread: true }));
         window.location.href = '/track-order?id=' + response.id;
         return;
       }
 
-      // Redirect to track order page with order ID
       if (response.id) {
+        localStorage.setItem('order_notification', JSON.stringify({ id: response.id, unread: true }));
         window.location.href = '/track-order?id=' + response.id;
         return;
       }
