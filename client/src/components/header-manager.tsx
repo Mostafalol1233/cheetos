@@ -483,9 +483,9 @@ export function HeaderManager() {
                                 className="h-5 w-5 rounded-full"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  handleDeactivate(version.id);
+                                  handleDelete(version.id);
                                 }}
-                                title="Deactivate"
+                                title="Delete (Archive)"
                               >
                                 <Trash2 className="h-3 w-3" />
                               </Button>

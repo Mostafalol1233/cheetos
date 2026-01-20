@@ -63,33 +63,33 @@ export function HeroCarousel() {
               <img
                 src={slide.image_url}
                 alt={slide.heading_text}
-                className="absolute inset-0 w-full h-full object-cover z-10"
+                className="absolute inset-0 w-full h-full object-fill z-10"
               />
 
               {/* Gradient Overlay for Text Readability */}
               <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent z-20" />
 
               {/* Content Overlay */}
-              <div className="absolute bottom-0 left-0 w-full p-4 md:p-8 z-30 flex flex-col items-start gap-2">
+              <div className="absolute bottom-0 left-0 w-full p-4 md:p-6 z-30 flex flex-col items-start gap-2">
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.2 }}
-                  className="bg-black/60 backdrop-blur-md p-3 rounded-lg border border-white/10 shadow-xl max-w-xl"
+                  className="bg-black/60 backdrop-blur-sm p-2 rounded-lg border border-white/10 shadow-xl max-w-sm md:max-w-md"
                 >
-                  <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-cyber-blue/20 text-cyber-blue text-[8px] sm:text-[10px] font-bold uppercase tracking-wider mb-1 border border-cyber-blue/30">
+                  <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-cyber-blue/20 text-cyber-blue text-[8px] sm:text-[9px] font-bold uppercase tracking-wider mb-1 border border-cyber-blue/30">
                     <Gamepad2 className="w-2.5 h-2.5" />
                     Premium Gaming
                   </span>
-                  <h2 className="text-base sm:text-lg md:text-3xl font-black text-white mb-1 drop-shadow-md tracking-tight leading-tight">
+                  <h2 className="text-base sm:text-lg md:text-xl font-black text-white mb-1 drop-shadow-md tracking-tight leading-tight">
                     {slide.heading_text}
                   </h2>
-                  <p className="text-gray-300 text-[10px] sm:text-xs md:text-sm max-w-md mb-3 line-clamp-2">
+                  <p className="text-gray-300 text-[10px] sm:text-xs max-w-xs mb-2 line-clamp-2">
                     Get the best deals on game currencies and gift cards.
                   </p>
 
                   <Link href={slide.button_url}>
-                    <Button size="sm" className="rounded-md px-3 py-1 h-7 md:h-9 md:px-5 font-bold text-[10px] md:text-xs btn-gaming group shadow-glow-blue hover:scale-105 transition-all">
+                    <Button size="sm" className="rounded-md px-3 py-1 h-6 md:h-8 md:px-4 font-bold text-[10px] md:text-xs btn-gaming group shadow-glow-blue hover:scale-105 transition-all">
                       {slide.button_text}
                       <ArrowRight className="ml-1.5 w-3 h-3 group-hover:translate-x-1 transition-transform" />
                     </Button>

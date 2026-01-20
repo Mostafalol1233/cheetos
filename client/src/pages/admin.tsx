@@ -1064,7 +1064,7 @@ export default function AdminDashboard() {
                             // I will verify this scope access.
                             if ((o as any).user_id) {
                               setSelectedUser((o as any).user_id);
-                              setActiveTab('messages');
+                              setActiveTab('chats');
                             } else {
                               toast({ title: 'No user linked', description: 'This order has no registered user account.', variant: 'destructive' });
                             }
@@ -1876,7 +1876,7 @@ export default function AdminDashboard() {
               <TabsTrigger value="orders" data-testid="tab-orders" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Orders</TabsTrigger>
               <TabsTrigger value="arrangement" data-testid="tab-arrangement" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Arrangement</TabsTrigger>
               <TabsTrigger value="chats" data-testid="tab-chats" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Support Chat</TabsTrigger>
-              <TabsTrigger value="checkout-confirmations" data-testid="tab-checkout-confirmations" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Checkout Confirmations</TabsTrigger>
+
               <TabsTrigger value="interactions" data-testid="tab-interactions" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Interactions</TabsTrigger>
               <TabsTrigger value="chat-widget" data-testid="tab-chat-widget" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Chat Widget</TabsTrigger>
               <TabsTrigger value="logo" data-testid="tab-logo" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Logo</TabsTrigger>
@@ -2026,50 +2026,7 @@ export default function AdminDashboard() {
             <ArrangementPanel />
           </TabsContent>
 
-          <TabsContent value="checkout-confirmations" className="space-y-6">
-            <h2 className="text-2xl font-bold text-foreground">Checkout Confirmations</h2>
-            <Card className="bg-card/50 border-gold-primary/30">
-              <CardHeader>
-                <CardTitle className="text-lg">Recent Submissions</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {confirmations
-                    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-                    .map((c) => (
-                      <div key={c.id} className="rounded-lg border p-3 flex flex-col gap-2 hover:bg-muted/40">
-                        <div className="text-xs text-muted-foreground">#{c.id}</div>
-                        <div className="text-sm">Order: <span className="font-mono">{c.transactionId}</span></div>
-                        <div className="text-sm">Message: <span>{c.message || '—'}</span></div>
-                        {c.receiptUrl ? (
-                          <Dialog>
-                            <DialogTrigger asChild>
-                              <div className="cursor-pointer">
-                                <img src={c.receiptUrl} alt="" className="w-full h-32 object-contain rounded border bg-background" />
-                              </div>
-                            </DialogTrigger>
-                            <DialogContent className="max-w-3xl max-h-[90vh] overflow-auto">
-                              <img src={c.receiptUrl} alt="" className="w-full h-auto" />
-                            </DialogContent>
-                          </Dialog>
-                        ) : null}
-                        <div className="text-xs text-muted-foreground" dir="ltr">
-                          {(() => {
-                            try {
-                              const d = new Date(c.createdAt);
-                              return d.toLocaleDateString('en-GB').replace(/\//g, '-') + ' ' + d.toLocaleTimeString();
-                            } catch { return '-'; }
-                          })()}
-                        </div>
-                      </div>
-                    ))}
-                  {confirmations.length === 0 && (
-                    <div className="text-muted-foreground">No confirmations found.</div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
+
 
           {/* Interactions Tab */}
           <TabsContent value="interactions" className="space-y-6">
@@ -2740,26 +2697,24 @@ export default function AdminDashboard() {
                                     })}
                                   </p>
                                 </div>
-                                {msg.sender === 'user' && ( // Delete button on right for user msgs
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-6 w-6 absolute top-0 -right-8 opacity-0 group-hover:opacity-100 transition-opacity text-destructive"
-                                    onClick={async () => {
-                                      if (!confirm('Delete this message?')) return;
-                                      try {
-                                        const token = localStorage.getItem('adminToken');
-                                        await fetch(`${API_BASE_URL}/api/admin/chat/${selectedUser}/messages/${msg.id}`, {
-                                          method: 'DELETE',
-                                          headers: token ? { Authorization: `Bearer ${token}` } : {}
-                                        });
-                                        queryClient.setQueryData<any[]>(['/api/admin/chat', selectedUser], (old) => (old || []).filter(m => m.id !== msg.id));
-                                      } catch (e) { console.error(e); }
-                                    }}
-                                  >
-                                    <Trash2 className="w-3 h-3" />
-                                  </Button>
-                                )}
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className={`h-6 w-6 absolute top-0 opacity-0 group-hover:opacity-100 transition-opacity text-destructive ${msg.sender === 'admin' ? '-left-8' : '-right-8'}`}
+                                  onClick={async () => {
+                                    if (!confirm('Delete this message?')) return;
+                                    try {
+                                      const token = localStorage.getItem('adminToken');
+                                      await fetch(`${API_BASE_URL}/api/admin/chat/${selectedUser}/messages/${msg.id}`, {
+                                        method: 'DELETE',
+                                        headers: token ? { Authorization: `Bearer ${token}` } : {}
+                                      });
+                                      queryClient.setQueryData<any[]>(['/api/admin/chat', selectedUser], (old) => (old || []).filter(m => m.id !== msg.id));
+                                    } catch (e) { console.error(e); }
+                                  }}
+                                >
+                                  <Trash2 className="w-3 h-3" />
+                                </Button>
                               </div>
                             ))}
                           <div ref={messagesEndRef} />
