@@ -12,18 +12,18 @@ router.get('/', authenticateToken, ensureAdmin, async (req, res) => {
     const q = req.query.q ? String(req.query.q).trim() : '';
     const offset = (page - 1) * limit;
 
-    let queryText = 'SELECT id, username as name, email, email_verified, phone, role, created_at FROM users';
+    let queryText = 'SELECT id, name, email, email_verified, phone, role, created_at FROM users';
     let countQuery = 'SELECT COUNT(*) FROM users';
     let params = [];
 
     if (q) {
-      queryText += ' WHERE username ILIKE $1 OR email ILIKE $1 OR phone ILIKE $1';
-      countQuery += ' WHERE username ILIKE $1 OR email ILIKE $1 OR phone ILIKE $1';
+      queryText += ' WHERE name ILIKE $1 OR email ILIKE $1 OR phone ILIKE $1';
+      countQuery += ' WHERE name ILIKE $1 OR email ILIKE $1 OR phone ILIKE $1';
       params.push(`%${q}%`);
     }
 
     queryText += ` ORDER BY created_at DESC LIMIT $${params.length + 1} OFFSET $${params.length + 2}`;
-    
+
     const countResult = await pool.query(countQuery, params);
     const total = parseInt(countResult.rows[0].count);
 
@@ -45,19 +45,19 @@ router.get('/', authenticateToken, ensureAdmin, async (req, res) => {
 router.get('/export', authenticateToken, ensureAdmin, async (req, res) => {
   try {
     const q = req.query.q ? String(req.query.q).trim() : '';
-    
-    let queryText = 'SELECT id, username, email, phone, role, created_at FROM users';
+
+    let queryText = 'SELECT id, name, email, phone, role, created_at FROM users';
     let params = [];
 
     if (q) {
-      queryText += ' WHERE username ILIKE $1 OR email ILIKE $1 OR phone ILIKE $1';
+      queryText += ' WHERE name ILIKE $1 OR email ILIKE $1 OR phone ILIKE $1';
       params.push(`%${q}%`);
     }
 
     queryText += ' ORDER BY created_at DESC';
 
     const result = await pool.query(queryText, params);
-    
+
     // Generate CSV
     const fields = ['id', 'username', 'email', 'phone', 'role', 'created_at'];
     const csv = [

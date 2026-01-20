@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
-import { apiRequest } from "./queryClient";
+import { apiRequest, API_BASE_URL } from "./queryClient";
 import { io } from "socket.io-client";
 
 export interface Settings {
@@ -56,7 +56,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     load();
 
-    const socket = io();
+    const socket = io(API_BASE_URL);
     socket.on('settings_updated', (newSettings: any) => {
       // Normalize data similar to load()
       const normalized: Settings = {

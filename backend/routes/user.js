@@ -142,14 +142,14 @@ router.get('/chat/history', getUserFromToken, async (req, res) => {
     // Try database first
     try {
       const result = await pool.query(
-        'SELECT id, text, sender, created_at FROM messages WHERE user_id = $1 ORDER BY created_at ASC',
+        'SELECT id, message_encrypted as text, sender, timestamp FROM chat_messages WHERE session_id = $1 ORDER BY timestamp ASC',
         [userId]
       );
       messages = result.rows.map(msg => ({
         id: msg.id,
         text: msg.text,
         sender: msg.sender,
-        timestamp: msg.created_at
+        timestamp: msg.timestamp
       }));
     } catch (dbError) {
       console.error('DB query failed, using JSON fallback:', dbError.message);
@@ -175,7 +175,7 @@ router.post('/chat/send', getUserFromToken, async (req, res) => {
       return res.status(400).json({ message: 'Message is required' });
     }
 
-    const messageId = `msg_${Date.now()}_${Math.random().toString(36).slice(2,9)}`;
+    const messageId = `msg_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
     const newMessage = {
       id: messageId,
       text: message.trim(),
@@ -187,8 +187,8 @@ router.post('/chat/send', getUserFromToken, async (req, res) => {
     // Try database first
     try {
       await pool.query(
-        'INSERT INTO messages (id, user_id, text, sender) VALUES ($1, $2, $3, $4)',
-        [messageId, userId, message.trim(), 'user']
+        'INSERT INTO chat_messages (id, session_id, message_encrypted, sender, read) VALUES ($1, $2, $3, $4, $5)',
+        [messageId, userId, message.trim(), 'user', false]
       );
     } catch (dbError) {
       console.error('DB insert failed, using JSON fallback:', dbError.message);
@@ -204,8 +204,23 @@ router.post('/chat/send', getUserFromToken, async (req, res) => {
       writeUserData(userId, userData);
     }
 
-    // TODO: Notify admin/support about new message
-    // This could be done via WebSocket, email, or other notification system
+    // Notify admin via socket
+    try {
+      const io = getIO();
+      if (io) {
+        const payload = {
+          id: messageId,
+          sessionId: userId,
+          sender: 'user',
+          text: message.trim(),
+          timestamp: new Date().toISOString(),
+          read: false
+        };
+        io.to('admin_room').emit('chat_message', payload);
+        // Also ensure session list updates
+        io.emit('admin_chat_update', { sessionId: userId, lastMessage: payload });
+      }
+    } catch (e) { }
 
     res.json({
       message: 'Message sent successfully',
@@ -270,7 +285,7 @@ router.get('/admin/messages', authenticateToken, async (req, res) => {
           try {
             const users = JSON.parse(fs.readFileSync(path.join(__dirname, '../data/users.json'), 'utf8') || '[]');
             userInfo = users.find(u => u.id === userId) || {};
-          } catch {}
+          } catch { }
 
           allMessages.push(...userMessages.map(msg => ({
             ...msg,
@@ -305,7 +320,7 @@ router.post('/admin/reply/:userId', authenticateToken, async (req, res) => {
       return res.status(400).json({ message: 'Message is required' });
     }
 
-    const messageId = `msg_${Date.now()}_${Math.random().toString(36).slice(2,9)}`;
+    const messageId = `msg_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
     const newMessage = {
       id: messageId,
       text: message.trim(),
@@ -350,9 +365,9 @@ router.post('/admin/reply/:userId', authenticateToken, async (req, res) => {
         // Emit to admin room (for other admins)
         io.to('admin_room').emit('new_message', msgPayload);
         io.to('admin_room').emit('session_updated', {
-            sessionId: userId,
-            lastMessage: msgPayload,
-            unreadCount: 0 
+          sessionId: userId,
+          lastMessage: msgPayload,
+          unreadCount: 0
         });
       }
     } catch (e) {

@@ -31,8 +31,8 @@ export function ResponseTemplatesPanel() {
   const [type, setType] = useState<'approve' | 'reject' | 'other'>('other');
 
   useEffect(() => {
-    const socket = io();
-    
+    const socket = io(API_BASE_URL);
+
     socket.on('response_templates_updated', () => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/response-templates'] });
     });
@@ -227,10 +227,9 @@ export function ResponseTemplatesPanel() {
               <div className="space-y-1">
                 <CardTitle className="text-base font-semibold">{template.title}</CardTitle>
                 <CardDescription className="capitalize flex items-center gap-2">
-                  <span className={`w-2 h-2 rounded-full ${
-                    template.type === 'approve' ? 'bg-green-500' : 
-                    template.type === 'reject' ? 'bg-red-500' : 'bg-blue-500'
-                  }`} />
+                  <span className={`w-2 h-2 rounded-full ${template.type === 'approve' ? 'bg-green-500' :
+                      template.type === 'reject' ? 'bg-red-500' : 'bg-blue-500'
+                    }`} />
                   {template.type}
                 </CardDescription>
               </div>

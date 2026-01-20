@@ -999,26 +999,34 @@ export default function AdminDashboard() {
                   {orders.map((o) => (
                     <tr key={o.id} className="border-t">
                       <td className="p-2 font-mono">{o.id}</td>
-                      <td className="p-2">{o.customerName || '-'}</td>
-                      <td className="p-2">{o.customerPhone || '-'}</td>
+                      <td className="p-2">{(o as any).customer_name || o.customerName || '-'}</td>
+                      <td className="p-2">{(o as any).customer_phone || o.customerPhone || '-'}</td>
                       <td className="p-2">
                         <span className={`font-medium ${getStatusColor(o.status)}`}>
                           {o.status || 'pending'}
                         </span>
                       </td>
-                      <td className="p-2">{new Date(o.timestamp).toLocaleString()}</td>
-                      <td className="p-2">{o.paymentMethod}</td>
-                      <td className="p-2">{o.total} EGP</td>
+                      <td className="p-2" dir="ltr">
+                        {(() => {
+                          try {
+                            const d = new Date((o as any).created_at || (o as any).timestamp);
+                            if (isNaN(d.getTime())) return '-';
+                            return d.toLocaleDateString('en-GB').replace(/\//g, '-') + ' ' + d.toLocaleTimeString();
+                          } catch { return '-'; }
+                        })()}
+                      </td>
+                      <td className="p-2">{(o as any).payment_method || o.paymentMethod}</td>
+                      <td className="p-2">{(o as any).total_amount || o.total} EGP</td>
                       <td className="p-2">
-                        {o.items.length
+                        {o.items && o.items.length
                           ? o.items
-                            .map(it => `${it.gameName || it.gameId} x${it.quantity}`)
+                            .map((it: any) => `${it.title || it.name || it.gameName || it.gameId} x${it.quantity}`)
                             .join(', ')
                           : '-'}
                       </td>
-                      <td className="p-2 capitalize">{(o as any).deliveryMethod || 'whatsapp'}</td>
+                      <td className="p-2 capitalize">{(o as any).delivery_method || (o as any).deliveryMethod || 'whatsapp'}</td>
                       <td className="p-2">
-                        {(o as any).receiptUrl ? (
+                        {((o as any).receipt_url || (o as any).receiptUrl) ? (
                           <Dialog>
                             <DialogTrigger asChild>
                               <Button variant="outline" size="sm" className="h-7 text-xs">
@@ -1032,7 +1040,7 @@ export default function AdminDashboard() {
                               </DialogHeader>
                               <div className="flex justify-center">
                                 <img
-                                  src={(o as any).receiptUrl}
+                                  src={(o as any).receipt_url || (o as any).receiptUrl}
                                   alt="Receipt"
                                   className="max-w-full h-auto rounded-lg border"
                                 />
@@ -1342,16 +1350,14 @@ export default function AdminDashboard() {
       if (!selectedUser || (!replyMessage.trim() && !replyAttachment)) throw new Error('No session selected or message/attachment empty');
 
       const token = localStorage.getItem('adminToken');
-      const res = await fetch(`${API_BASE_URL}/api/chat/message`, {
+      const res = await fetch(apiPath(`/api/admin/chat/${selectedUser}`), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           ...(token ? { Authorization: `Bearer ${token}` } : {})
         },
         body: JSON.stringify({
-          sender: 'support',
           message: replyMessage.trim(),
-          sessionId: selectedUser,
           attachmentUrl: replyAttachment?.url,
           attachmentType: replyAttachment?.type
         })
@@ -2006,26 +2012,35 @@ export default function AdminDashboard() {
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {confirmations.map((c) => (
-                    <div key={c.id} className="rounded-lg border p-3 flex flex-col gap-2 hover:bg-muted/40">
-                      <div className="text-xs text-muted-foreground">#{c.id}</div>
-                      <div className="text-sm">Order: <span className="font-mono">{c.transactionId}</span></div>
-                      <div className="text-sm">Message: <span>{c.message || '—'}</span></div>
-                      {c.receiptUrl ? (
-                        <Dialog>
-                          <DialogTrigger asChild>
-                            <div className="cursor-pointer">
-                              <img src={c.receiptUrl} alt="" className="w-full h-32 object-contain rounded border bg-background" />
-                            </div>
-                          </DialogTrigger>
-                          <DialogContent className="max-w-3xl max-h-[90vh] overflow-auto">
-                            <img src={c.receiptUrl} alt="" className="w-full h-auto" />
-                          </DialogContent>
-                        </Dialog>
-                      ) : null}
-                      <div className="text-xs text-muted-foreground">{new Date(c.createdAt).toLocaleString()}</div>
-                    </div>
-                  ))}
+                  {confirmations
+                    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+                    .map((c) => (
+                      <div key={c.id} className="rounded-lg border p-3 flex flex-col gap-2 hover:bg-muted/40">
+                        <div className="text-xs text-muted-foreground">#{c.id}</div>
+                        <div className="text-sm">Order: <span className="font-mono">{c.transactionId}</span></div>
+                        <div className="text-sm">Message: <span>{c.message || '—'}</span></div>
+                        {c.receiptUrl ? (
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <div className="cursor-pointer">
+                                <img src={c.receiptUrl} alt="" className="w-full h-32 object-contain rounded border bg-background" />
+                              </div>
+                            </DialogTrigger>
+                            <DialogContent className="max-w-3xl max-h-[90vh] overflow-auto">
+                              <img src={c.receiptUrl} alt="" className="w-full h-auto" />
+                            </DialogContent>
+                          </Dialog>
+                        ) : null}
+                        <div className="text-xs text-muted-foreground" dir="ltr">
+                          {(() => {
+                            try {
+                              const d = new Date(c.createdAt);
+                              return d.toLocaleDateString('en-GB').replace(/\//g, '-') + ' ' + d.toLocaleTimeString();
+                            } catch { return '-'; }
+                          })()}
+                        </div>
+                      </div>
+                    ))}
                   {confirmations.length === 0 && (
                     <div className="text-muted-foreground">No confirmations found.</div>
                   )}

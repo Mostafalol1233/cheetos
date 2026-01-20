@@ -1075,11 +1075,14 @@ app.use('/uploads', express.static(path.join(__dirname, 'public', 'uploads')));
 // API ENDPOINTS (Added as requested)
 // ===============================================
 
+import adminChatRouter from './routes/admin-chat.js';
+
 // Mount Games Router
 app.use('/api/games', gamesRouter);
 app.use('/api/hero-slides', heroSlidesRouter);
 app.use('/api/orders', ordersRouter);
 app.use('/api/admin/ai', adminAiRouter);
+app.use('/api/admin/chat', adminChatRouter);
 app.use('/api/auth', authRouter);
 app.use('/api', authRouter); // Expose auth routes at root api level as well (e.g. /api/admin/login)
 app.use('/api/user', userRouter);
@@ -1208,7 +1211,7 @@ async function initializeDatabase() {
         updated_at TIMESTAMP DEFAULT NOW()
       );
     `);
-    
+
     // Add missing columns to settings if they exist but lack columns
     try {
       await pool.query('ALTER TABLE settings ADD COLUMN IF NOT EXISTS header_heading_text TEXT');
@@ -1480,7 +1483,7 @@ async function initializeDatabase() {
     await pool.query(`ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS primary_color VARCHAR(20)`);
     await pool.query(`ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS accent_color VARCHAR(20)`);
     await pool.query(`ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS trust_badges JSONB DEFAULT '[]'`);
-    
+
     // Header text/button configuration
     await pool.query(`ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS header_heading_text TEXT`);
     await pool.query(`ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS header_button_text TEXT`);
@@ -1691,6 +1694,8 @@ async function initializeDatabase() {
     `);
 
     await pool.query(`ALTER TABLE chat_messages ADD COLUMN IF NOT EXISTS read BOOLEAN DEFAULT false`);
+    await pool.query(`ALTER TABLE chat_messages ADD COLUMN IF NOT EXISTS attachment_url TEXT`);
+    await pool.query(`ALTER TABLE chat_messages ADD COLUMN IF NOT EXISTS attachment_type VARCHAR(20)`);
     await pool.query(`ALTER TABLE seller_alerts ADD COLUMN IF NOT EXISTS archived BOOLEAN DEFAULT false`);
 
     console.log('✓ Database tables initialized');
