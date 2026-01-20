@@ -82,6 +82,9 @@ router.post('/', async (req, res) => {
         // Generate Token
         userToken = jwt.sign({ id: userObj.id, email: userObj.email, role: userObj.role }, JWT_SECRET, { expiresIn: '30d' });
         userData = { ...userObj, name: userObj.username };
+        
+        // Log audit event
+        logAudit('guest_user_created', `Guest user created during order: ${customer_email}`, { id: userId, email: customer_email });
       }
     } catch (err) {
       // console.error('Error handling user creation:', err);

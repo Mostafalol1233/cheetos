@@ -30,6 +30,8 @@ import headerImagesRouter from './routes/header-images.js';
 import packagesRouter from './routes/packages.js';
 import uploadsRouter from './routes/uploads.js';
 import responseTemplatesRouter from './routes/response-templates.js';
+import adminUsersRouter from './routes/admin-users.js';
+import cleanupRouter, { startCleanupSchedule } from './routes/cleanup.js';
 import settingsRouter from './routes/settings.js';
 import { authenticateToken, ensureAdmin } from './middleware/auth.js';
 import { sendEmail, sendRawEmail } from './utils/email.js';
@@ -92,6 +94,9 @@ try {
     console.warn('⚠️ Could not disable core dumps:', e.message);
   }
 }
+
+// Start automated cleanup schedule for old orders
+startCleanupSchedule();
 
 // Core file cleanup function to prevent disk space issues
 function startCoreFileCleanup() {
@@ -1063,6 +1068,10 @@ const imageUpload = multer({
     if (allowed.includes(ext)) cb(null, true); else cb(new Error('Unsupported image type'));
   }
 });
+// Serve static files
+app.use('/uploads/headers', express.static(path.join(__dirname, 'uploads', 'headers')));
+app.use('/uploads', express.static(path.join(__dirname, 'public', 'uploads')));
+
 // API ENDPOINTS (Added as requested)
 // ===============================================
 
@@ -1078,6 +1087,8 @@ app.use('/api/payments', paymentsRouter);
 app.use('/api/header-images', headerImagesRouter);
 app.use('/api/packages', packagesRouter);
 app.use('/api/uploads', uploadsRouter);
+app.use('/api/admin/users', adminUsersRouter);
+app.use('/api/admin/cleanup', cleanupRouter);
 app.use('/api/admin/response-templates', responseTemplatesRouter);
 
 // Admin Image Upload Endpoint

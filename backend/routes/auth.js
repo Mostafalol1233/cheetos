@@ -128,6 +128,10 @@ router.post('/register', async (req, res) => {
     }
 
     const token = jwt.sign({ id: userId, name, email, role: 'user' }, JWT_SECRET, { expiresIn: '30d' });
+
+    // Log audit event
+    logAudit('user_register', `New user registered: ${email}`, { id: userId, email, name });
+
     res.status(201).json({ token, user: { id: userId, name, email, role: 'user' } });
   } catch (err) {
     if (err.code === '23505') { // Unique violation

@@ -19,10 +19,10 @@ router.get('/config', (req, res) => {
         id: 'vodafone_cash',
         name: 'Vodafone Cash',
         type: 'wallet',
-        enabled: !!process.env.PAYMENT_VODAFONE_NUMBER,
+        enabled: !!(process.env.VODAFONE_CASH_NUMBER || process.env.PAYMENT_VODAFONE_NUMBER),
         details: {
-          number: process.env.PAYMENT_VODAFONE_NUMBER || '',
-          instructions: 'Send the total amount to this Vodafone Cash wallet and upload the transfer receipt.'
+          number: process.env.VODAFONE_CASH_NUMBER || process.env.PAYMENT_VODAFONE_NUMBER || '',
+          instructions: process.env.VODAFONE_CASH_INSTRUCTIONS || 'Send the total amount to this Vodafone Cash wallet and upload the transfer receipt.'
         },
         validator: (d) => validatePhone(d.number)
       },
@@ -30,10 +30,10 @@ router.get('/config', (req, res) => {
         id: 'instapay',
         name: 'InstaPay',
         type: 'instapay',
-        enabled: !!process.env.PAYMENT_INSTAPAY_ADDRESS,
+        enabled: !!(process.env.INSTAPAY_ACCOUNT || process.env.instapay || process.env.PAYMENT_INSTAPAY_ADDRESS),
         details: {
-          address: process.env.PAYMENT_INSTAPAY_ADDRESS || '',
-          instructions: 'Send via InstaPay to this address and upload your transfer confirmation.'
+          address: process.env.INSTAPAY_ACCOUNT || process.env.instapay || process.env.PAYMENT_INSTAPAY_ADDRESS || '',
+          instructions: process.env.INSTAPAY_INSTRUCTIONS || 'Send via InstaPay to this address and upload your transfer confirmation.'
         },
         validator: (d) => validateInstapay(d.address)
       },
@@ -41,10 +41,10 @@ router.get('/config', (req, res) => {
         id: 'orange_cash',
         name: 'Orange Cash',
         type: 'wallet',
-        enabled: !!process.env.PAYMENT_ORANGE_NUMBER,
+        enabled: !!(process.env.ORANGE_CASH_NUMBER || process.env.PAYMENT_ORANGE_NUMBER),
         details: {
-          number: process.env.PAYMENT_ORANGE_NUMBER || '',
-          instructions: 'Send the total amount to this Orange Cash wallet and upload the receipt.'
+          number: process.env.ORANGE_CASH_NUMBER || process.env.PAYMENT_ORANGE_NUMBER || '',
+          instructions: process.env.ORANGE_CASH_INSTRUCTIONS || 'Send the total amount to this Orange Cash wallet and upload the receipt.'
         },
         validator: (d) => validatePhone(d.number)
       },
@@ -52,10 +52,10 @@ router.get('/config', (req, res) => {
         id: 'etisalat_cash',
         name: 'Etisalat Cash',
         type: 'wallet',
-        enabled: !!process.env.PAYMENT_ETISALAT_NUMBER,
+        enabled: !!(process.env.ETISALAT_CASH_NUMBER || process.env.etisalat_cash || process.env.PAYMENT_ETISALAT_NUMBER),
         details: {
-          number: process.env.PAYMENT_ETISALAT_NUMBER || '',
-          instructions: 'Send the total amount to this Etisalat Cash wallet and upload the receipt.'
+          number: process.env.ETISALAT_CASH_NUMBER || process.env.etisalat_cash || process.env.PAYMENT_ETISALAT_NUMBER || '',
+          instructions: process.env.ETISALAT_CASH_INSTRUCTIONS || 'Send the total amount to this Etisalat Cash wallet and upload the receipt.'
         },
         validator: (d) => validatePhone(d.number)
       },
@@ -63,21 +63,22 @@ router.get('/config', (req, res) => {
         id: 'we_pay',
         name: 'WePay',
         type: 'wallet',
-        enabled: !!process.env.PAYMENT_WEPAY_NUMBER,
+        enabled: !!(process.env.WE_PAY_NUMBERS || process.env.PAYMENT_WEPAY_NUMBER),
         details: {
-          number: process.env.PAYMENT_WEPAY_NUMBER || '',
-          instructions: 'Send the total amount to this WePay wallet and upload the receipt.'
+          number: process.env.WE_PAY_NUMBERS || process.env.PAYMENT_WEPAY_NUMBER || '',
+          instructions: process.env.WE_PAY_INSTRUCTIONS || 'Send the total amount to this WePay wallet and upload the receipt.'
         },
-        validator: (d) => validatePhone(d.number)
+        // WePay might have multiple numbers, so we relax validation to allow non-empty string if it's not a single phone
+        validator: (d) => d.number && d.number.length > 5
       },
       {
         id: 'credit_card', // Keeping ID for compatibility, but this is effectively PayPal or CC
         name: 'PayPal / Credit Card',
         type: 'card',
-        enabled: !!process.env.PAYMENT_PAYPAL_EMAIL,
+        enabled: !!(process.env.PAYPAL_EMAIL || process.env.paypal || process.env.PAYMENT_PAYPAL_EMAIL),
         details: {
-          email: process.env.PAYMENT_PAYPAL_EMAIL || '',
-          instructions: 'Send payment via PayPal and upload the confirmation screenshot.'
+          email: process.env.PAYPAL_EMAIL || process.env.paypal || process.env.PAYMENT_PAYPAL_EMAIL || '',
+          instructions: process.env.PAYPAL_INSTRUCTIONS || 'Send payment via PayPal and upload the confirmation screenshot.'
         },
         validator: (d) => validateEmail(d.email)
       }
