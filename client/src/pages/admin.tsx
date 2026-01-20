@@ -21,6 +21,7 @@ import { AdminThemePanel } from '@/components/admin-theme-panel';
 import { ResponseTemplatesPanel } from '@/components/response-templates-panel';
 const RichTextEditor = React.lazy(() => import('@/components/rich-text-editor'));
 import { io, Socket } from 'socket.io-client';
+import { HeaderManager } from '@/components/header-manager';
 
 class ErrorBoundary extends React.Component<{ fallback?: React.ReactNode; children?: React.ReactNode }, { hasError: boolean }> {
   constructor(props: any) {
