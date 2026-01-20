@@ -551,6 +551,11 @@ export default function AdminDashboard() {
     queryKey: ['/api/games'],
   });
 
+  // Fetch categories
+  const { data: categories = [] } = useQuery<Category[]>({
+    queryKey: ['/api/categories'],
+  });
+
   const { data: adminPackagesData = [], isFetching: isFetchingAdminPackages } = useQuery<Array<{ amount: string; price: number; discountPrice: number | null; image?: string | null; bonus?: string | null }>>({
     queryKey: packagesGameId ? [`/api/games/${packagesGameId}/packages`] : ['_disabled_admin_packages'],
     enabled: !!packagesGameId,
