@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Upload, X, ImageIcon, Loader2, Save, Trash2, History, RotateCcw, Check, Clock } from "lucide-react";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, API_BASE_URL } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -31,21 +31,21 @@ export function HeaderManager() {
   const [headingText, setHeadingText] = useState("Level up your game");
   const [buttonText, setButtonText] = useState("Shop Now");
   const [buttonUrl, setButtonUrl] = useState("/games");
-  
+
   const [versions, setVersions] = useState<HeaderVersion[]>([]);
   const [isLoadingVersions, setIsLoadingVersions] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
-  
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
   useEffect(() => {
     fetchVersions();
-    
+
     // Socket listener for real-time updates
-    const socket = io();
-    
+    const socket = io(API_BASE_URL);
+
     socket.on('header_updated', () => {
       fetchVersions();
       toast({
@@ -100,20 +100,38 @@ export function HeaderManager() {
         });
         return;
       }
-      
-      const validTypes = ['image/jpeg', 'image/png', 'image/webp'];
-      if (!validTypes.includes(file.type)) {
+
+      if (!file.type.startsWith('image/')) {
         toast({
-          title: "Invalid File Type",
-          description: "Please upload a JPG, PNG, or WEBP image.",
+          title: "Invalid file type",
+          description: "Please upload an image file",
           variant: "destructive",
         });
         return;
       }
 
-      setSelectedFile(file);
-      const url = URL.createObjectURL(file);
-      setImageUrl(url); // Preview immediately
+      const img = new Image();
+      img.onload = () => {
+        if (img.width < 800 || img.height < 400) {
+          toast({
+            title: "Image too small",
+            description: "Image should be at least 800x400 pixels for best quality",
+            variant: "destructive", // Warning but allow? Or block. Let's block for now as "Validation"
+          });
+          // return; // Uncomment to strictly enforce
+        }
+        const url = URL.createObjectURL(file);
+        setSelectedFile(file);
+        setImageUrl(url);
+      };
+      img.onerror = () => {
+        toast({
+          title: "Invalid image",
+          description: "Could not load image",
+          variant: "destructive",
+        });
+      };
+      img.src = URL.createObjectURL(file);
     }
   };
 
@@ -192,7 +210,7 @@ export function HeaderManager() {
       if (!res.ok) throw new Error("Failed to save version");
 
       const newVersion = await res.json();
-      
+
       toast({
         title: "Success",
         description: "Header updated successfully",
@@ -201,7 +219,7 @@ export function HeaderManager() {
       // Refresh versions
       fetchVersions();
       setSelectedFile(null);
-      
+
     } catch (error: any) {
       toast({
         title: "Error",
@@ -215,7 +233,7 @@ export function HeaderManager() {
 
   const handleDelete = async (id: string) => {
     if (!confirm("Are you sure you want to delete this version? It can be recovered from the archive.")) return;
-    
+
     try {
       const token = localStorage.getItem("adminToken");
       const headers: Record<string, string> = {};
@@ -279,17 +297,17 @@ export function HeaderManager() {
               <div className="relative w-full h-[300px] bg-muted flex items-center justify-center overflow-hidden">
                 {imageUrl ? (
                   <>
-                    <img 
-                      src={imageUrl} 
-                      alt="Header Preview" 
+                    <img
+                      src={imageUrl}
+                      alt="Header Preview"
                       className="w-full h-full object-cover transition-transform hover:scale-105 duration-700"
                     />
                     <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center text-white p-4 text-center">
                       <h1 className="text-4xl md:text-5xl font-bold mb-4 drop-shadow-lg max-w-2xl">
                         {headingText}
                       </h1>
-                      <Button 
-                        size="lg" 
+                      <Button
+                        size="lg"
                         className="bg-gold-primary text-black hover:bg-gold-secondary font-bold text-lg px-8 py-6 rounded-full transition-all hover:scale-105"
                       >
                         {buttonText}
@@ -314,8 +332,8 @@ export function HeaderManager() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex flex-col gap-4">
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     onClick={() => fileInputRef.current?.click()}
                     className="w-full h-24 border-dashed"
                   >
@@ -325,10 +343,10 @@ export function HeaderManager() {
                       <span className="text-xs text-muted-foreground">1920x300px recommended</span>
                     </div>
                   </Button>
-                  <Input 
+                  <Input
                     ref={fileInputRef}
-                    type="file" 
-                    accept="image/png, image/jpeg, image/webp" 
+                    type="file"
+                    accept="image/png, image/jpeg, image/webp"
                     className="hidden"
                     onChange={handleFileSelect}
                   />
@@ -338,8 +356,8 @@ export function HeaderManager() {
                       <AlertTitle>Selected File</AlertTitle>
                       <AlertDescription className="flex justify-between items-center">
                         {selectedFile.name}
-                        <Button 
-                          variant="ghost" 
+                        <Button
+                          variant="ghost"
                           size="sm"
                           onClick={() => {
                             setSelectedFile(null);
@@ -364,7 +382,7 @@ export function HeaderManager() {
               <CardContent className="space-y-4">
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Heading Text</label>
-                  <Textarea 
+                  <Textarea
                     value={headingText}
                     onChange={(e) => setHeadingText(e.target.value)}
                     placeholder="Level up your game"
@@ -374,7 +392,7 @@ export function HeaderManager() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <label className="text-sm font-medium">Button Text</label>
-                    <Input 
+                    <Input
                       value={buttonText}
                       onChange={(e) => setButtonText(e.target.value)}
                       placeholder="Shop Now"
@@ -382,7 +400,7 @@ export function HeaderManager() {
                   </div>
                   <div className="space-y-2">
                     <label className="text-sm font-medium">Button URL</label>
-                    <Input 
+                    <Input
                       value={buttonUrl}
                       onChange={(e) => setButtonUrl(e.target.value)}
                       placeholder="/games"
@@ -391,9 +409,9 @@ export function HeaderManager() {
                 </div>
               </CardContent>
               <CardFooter>
-                <Button 
-                  onClick={handleSaveVersion} 
-                  disabled={isSaving || isUploading} 
+                <Button
+                  onClick={handleSaveVersion}
+                  disabled={isSaving || isUploading}
                   className="w-full bg-primary"
                 >
                   {(isSaving || isUploading) ? (
@@ -427,21 +445,21 @@ export function HeaderManager() {
                     </div>
                   ) : (
                     versions.map((version) => (
-                      <div 
-                        key={version.id} 
+                      <div
+                        key={version.id}
                         className={`flex flex-col md:flex-row gap-4 p-4 rounded-lg border ${version.is_active ? 'border-primary bg-primary/5' : 'border-border'}`}
                       >
                         <div className="w-full md:w-48 h-24 bg-muted rounded-md overflow-hidden flex-shrink-0 relative">
-                           <img 
-                              src={version.image_url} 
-                              alt="Version preview" 
-                              className="w-full h-full object-cover"
-                            />
-                            {version.is_active && (
-                              <div className="absolute top-2 left-2">
-                                <Badge variant="default" className="bg-green-600">Active</Badge>
-                              </div>
-                            )}
+                          <img
+                            src={version.image_url}
+                            alt="Version preview"
+                            className="w-full h-full object-cover"
+                          />
+                          {version.is_active && (
+                            <div className="absolute top-2 left-2">
+                              <Badge variant="default" className="bg-green-600">Active</Badge>
+                            </div>
+                          )}
                         </div>
                         <div className="flex-1 space-y-1">
                           <div className="flex items-center gap-2">
@@ -456,8 +474,8 @@ export function HeaderManager() {
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
-                          <Button 
-                            variant="outline" 
+                          <Button
+                            variant="outline"
                             size="sm"
                             onClick={() => loadVersionIntoEditor(version)}
                             title="Edit this version"
@@ -466,16 +484,16 @@ export function HeaderManager() {
                           </Button>
                           {!version.is_active && (
                             <>
-                              <Button 
-                                variant="outline" 
+                              <Button
+                                variant="outline"
                                 size="sm"
                                 onClick={() => handleActivate(version.id)}
                                 title="Activate this version"
                               >
                                 <Check className="h-4 w-4" />
                               </Button>
-                              <Button 
-                                variant="destructive" 
+                              <Button
+                                variant="destructive"
                                 size="sm"
                                 onClick={() => handleDelete(version.id)}
                                 title="Archive version"

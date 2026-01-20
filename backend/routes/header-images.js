@@ -8,6 +8,37 @@ import { getIO } from '../socket.js';
 
 const router = express.Router();
 
+// Public endpoint - Get active header version for hero carousel (no auth required)
+router.get('/active', async (req, res) => {
+  try {
+    const result = await pool.query(
+      'SELECT * FROM header_versions WHERE is_active = true AND archived = false LIMIT 1'
+    );
+    if (result.rows.length > 0) {
+      res.json(result.rows[0]);
+    } else {
+      // Return default header data if none active
+      res.json({
+        id: 'default',
+        image_url: 'https://files.catbox.moe/ciy961.webp',
+        heading_text: 'Level Up Your Game',
+        button_text: 'Explore Now',
+        button_url: '/games'
+      });
+    }
+  } catch (err) {
+    // Return default on error
+    res.json({
+      id: 'default',
+      image_url: 'https://files.catbox.moe/ciy961.webp',
+      heading_text: 'Level Up Your Game',
+      button_text: 'Explore Now',
+      button_url: '/games'
+    });
+  }
+});
+
+
 // Configure multer for header image uploads
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
@@ -23,7 +54,7 @@ const storage = multer.diskStorage({
   }
 });
 
-const upload = multer({ 
+const upload = multer({
   storage: storage,
   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
   fileFilter: (req, file, cb) => {
@@ -50,7 +81,7 @@ router.post('/upload', authenticateToken, ensureAdmin, upload.single('image'), (
 router.post('/save-version', authenticateToken, ensureAdmin, async (req, res) => {
   try {
     const { imageUrl, headingText, buttonText, buttonUrl, isActive } = req.body;
-    
+
     // Validate required fields if necessary, or provide defaults
     // User requirement: "Default to '/games' when left empty" -> handled in frontend or here
     const finalButtonUrl = buttonUrl || '/games';
@@ -71,7 +102,7 @@ router.post('/save-version', authenticateToken, ensureAdmin, async (req, res) =>
     // If active, update site_settings and other versions
     if (isActive) {
       await pool.query('UPDATE header_versions SET is_active = false WHERE id != $1', [version.id]);
-      
+
       // Update site_settings
       // Use the existing settings ID or 'default' if strictly enforced, but better to target the single row
       await pool.query(`
@@ -119,7 +150,7 @@ router.delete('/versions/:id', authenticateToken, ensureAdmin, async (req, res) 
 router.post('/versions/:id/activate', authenticateToken, ensureAdmin, async (req, res) => {
   try {
     const { id } = req.params;
-    
+
     // Get the version details
     const vRes = await pool.query('SELECT * FROM header_versions WHERE id = $1', [id]);
     if (vRes.rows.length === 0) return res.status(404).json({ message: 'Version not found' });
@@ -127,7 +158,7 @@ router.post('/versions/:id/activate', authenticateToken, ensureAdmin, async (req
 
     // Deactivate others
     await pool.query('UPDATE header_versions SET is_active = false');
-    
+
     // Activate this one
     await pool.query('UPDATE header_versions SET is_active = true WHERE id = $1', [id]);
 
@@ -182,7 +213,7 @@ router.post('/save', authenticateToken, ensureAdmin, async (req, res) => {
     const { imageUrl, cropData } = req.body;
     // Just forward to save-version with defaults
     // We assume this is just image update
-    
+
     const headingText = 'Level up your game'; // Default
     const buttonText = 'Shop Now';
     const buttonUrl = '/games';
@@ -221,8 +252,8 @@ router.post('/save', authenticateToken, ensureAdmin, async (req, res) => {
 
 // Legacy history
 router.get('/history', authenticateToken, ensureAdmin, async (req, res) => {
-   // Redirect to versions
-   try {
+  // Redirect to versions
+  try {
     const result = await pool.query(
       'SELECT * FROM header_versions WHERE archived = false ORDER BY created_at DESC LIMIT 20'
     );

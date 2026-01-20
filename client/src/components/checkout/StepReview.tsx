@@ -99,17 +99,25 @@ export function StepReview() {
           localStorage.setItem('userData', JSON.stringify(response.user));
         }
       }
-      
+
       localStorage.removeItem('cart');
       if (response.id) {
         localStorage.setItem('order_notification', JSON.stringify({ id: response.id, unread: true }));
       }
-      
+
+      // Auto-login if token is returned (e.g. guest checkout created account)
+      if (response.token) {
+        localStorage.setItem('userToken', response.token);
+        if (response.user) {
+          localStorage.setItem('userData', JSON.stringify(response.user));
+        }
+      }
+
       localStorage.removeItem('checkout-storage');
       reset(); // Reset checkout state (preserves contact)
-      
-      // Redirect to profile immediately
-      window.location.href = 'https://diaasadek.com/profile';
+
+      // Redirect to profile using relative path (works in dev and production)
+      window.location.href = '/profile';
       return;
 
     } catch (error) {

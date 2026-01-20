@@ -7,10 +7,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { LogIn, UserPlus, Mail, Lock, Phone, User, ArrowLeft } from "lucide-react";
+import { LogIn, UserPlus, Mail, Lock, User, ArrowLeft } from "lucide-react";
 
 export default function UserLoginPage() {
-  const { login, register, loginWithPhone } = useUserAuth();
+  const { login, register } = useUserAuth();
   const { toast } = useToast();
   const [location, setLocation] = useLocation();
   const searchParams = new URLSearchParams(window.location.search);
@@ -20,9 +20,7 @@ export default function UserLoginPage() {
   const [emailLogin, setEmailLogin] = useState({ email: '', password: '' });
   const [emailLoading, setEmailLoading] = useState(false);
 
-  // Phone login
-  const [phoneLogin, setPhoneLogin] = useState({ name: '', phone: '' });
-  const [phoneLoading, setPhoneLoading] = useState(false);
+
 
   // Registration
   const [registerData, setRegisterData] = useState({
@@ -51,23 +49,7 @@ export default function UserLoginPage() {
     }
   };
 
-  const handlePhoneLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setPhoneLoading(true);
-    try {
-      await loginWithPhone(phoneLogin.name, phoneLogin.phone);
-      toast({ title: "Welcome!", description: "Login successful" });
-      setLocation(redirectUrl);
-    } catch (err) {
-      toast({
-        title: "Login failed",
-        description: err instanceof Error ? err.message : "Please try again",
-        variant: "destructive"
-      });
-    } finally {
-      setPhoneLoading(false);
-    }
-  };
+
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -175,67 +157,6 @@ export default function UserLoginPage() {
                       <>
                         <LogIn className="w-4 h-4 mr-2" />
                         Sign In
-                      </>
-                    )}
-                  </Button>
-                </form>
-
-                <div className="relative">
-                  <div className="absolute inset-0 flex items-center">
-                    <span className="w-full border-t border-gray-600" />
-                  </div>
-                  <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-card-bg px-2 text-gray-400">Or</span>
-                  </div>
-                </div>
-
-                {/* Phone Login */}
-                <form onSubmit={handlePhoneLogin} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="phone-name" className="text-white flex items-center gap-2">
-                      <User className="w-4 h-4 text-gold-primary" />
-                      Name
-                    </Label>
-                    <Input
-                      id="phone-name"
-                      type="text"
-                      value={phoneLogin.name}
-                      onChange={(e) => setPhoneLogin(prev => ({ ...prev, name: e.target.value }))}
-                      placeholder="Enter your name"
-                      required
-                      className="bg-gray-800/50 border-gray-600 text-white placeholder-gray-400 focus:border-gold-primary"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="phone" className="text-white flex items-center gap-2">
-                      <Phone className="w-4 h-4 text-gold-primary" />
-                      Phone Number
-                    </Label>
-                    <Input
-                      id="phone"
-                      type="tel"
-                      value={phoneLogin.phone}
-                      onChange={(e) => setPhoneLogin(prev => ({ ...prev, phone: e.target.value }))}
-                      placeholder="Enter your phone number"
-                      required
-                      className="bg-gray-800/50 border-gray-600 text-white placeholder-gray-400 focus:border-gold-primary"
-                    />
-                  </div>
-                  <Button
-                    type="submit"
-                    disabled={phoneLoading}
-                    variant="outline"
-                    className="w-full border-gold-primary/50 text-gold-primary hover:bg-gold-primary/10"
-                  >
-                    {phoneLoading ? (
-                      <>
-                        <div className="animate-spin w-4 h-4 border-2 border-gold-primary border-t-transparent rounded-full mr-2"></div>
-                        Signing In...
-                      </>
-                    ) : (
-                      <>
-                        <Phone className="w-4 h-4 mr-2" />
-                        Quick Sign In
                       </>
                     )}
                   </Button>

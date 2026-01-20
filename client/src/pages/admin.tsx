@@ -86,7 +86,7 @@ const apiPath = (path: string) => (path.startsWith('http') ? path : `${API_BASE_
 
 function ConsistencyCheck() {
   const { toast } = useToast();
-  
+
   useQuery({
     queryKey: ['/api/health'],
     refetchInterval: 60000, // Check every minute
@@ -107,7 +107,7 @@ function ConsistencyCheck() {
     },
     retry: 3
   });
-  
+
   return null;
 }
 
@@ -121,7 +121,7 @@ function ConsistencyCheck() {
 
 function CategoriesPanel() {
   const { toast } = useToast();
-  
+
   const { data: categories = [], isLoading, isError, refetch } = useQuery<Category[]>({
     queryKey: ['/api/categories'],
     refetchInterval: 30000, // Consistency check
@@ -140,7 +140,7 @@ function CategoriesPanel() {
       // Generate slug from name
       const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
       formData.append('slug', slug);
-      
+
       const res = await fetch(apiPath('/api/admin/categories'), {
         method: 'POST',
         headers: token ? { Authorization: `Bearer ${token}` } : {},
@@ -210,7 +210,7 @@ function CategoriesPanel() {
       </div>
     );
   }
-  
+
   if (isError) {
     return (
       <div className="p-8 text-center text-red-500 space-y-2">
@@ -225,7 +225,7 @@ function CategoriesPanel() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold text-foreground">Manage Categories</h2>
-        <Button 
+        <Button
           className="bg-gold-primary hover:bg-gold-primary/80"
           onClick={() => {
             const name = prompt('New category name:');
@@ -316,7 +316,7 @@ function ArrangementPanel() {
     }
   });
   const [arrangementDraft, setArrangementDraft] = useState<Record<string, { showOnMainPage?: boolean; displayOrder?: number }>>({});
-  
+
   useEffect(() => {
     const next: Record<string, { showOnMainPage?: boolean; displayOrder?: number }> = {};
     (Array.isArray(arrangementGames) ? arrangementGames : []).forEach((g: any) => {
@@ -363,7 +363,7 @@ function ArrangementPanel() {
       </div>
     );
   }
-  
+
   if (isError) {
     return (
       <div className="p-8 text-center text-red-500 space-y-2">
@@ -482,8 +482,8 @@ export default function AdminDashboard() {
 
   // Global socket listeners for real-time data sync
   useEffect(() => {
-    const socket = io();
-    
+    const socket = io(API_BASE_URL);
+
     const handleOrdersUpdate = () => {
       queryClient.invalidateQueries({ queryKey: ['/api/orders'] });
       toast({ title: 'Orders Updated', description: 'New order data received.' });
@@ -513,16 +513,16 @@ export default function AdminDashboard() {
 
     const handleAdminNotification = (data: any) => {
       if (data && data.message) {
-         toast({
-           title: data.type === 'new_order' ? "New Order" : "Notification",
-           description: data.message,
-         });
-         
-         if (data.type === 'new_order') {
-           queryClient.invalidateQueries({ queryKey: ['/api/orders'] });
-           queryClient.invalidateQueries({ queryKey: ['/api/admin/users'] });
-           queryClient.invalidateQueries({ queryKey: ['/api/admin/alerts'] });
-         }
+        toast({
+          title: data.type === 'new_order' ? "New Order" : "Notification",
+          description: data.message,
+        });
+
+        if (data.type === 'new_order') {
+          queryClient.invalidateQueries({ queryKey: ['/api/orders'] });
+          queryClient.invalidateQueries({ queryKey: ['/api/admin/users'] });
+          queryClient.invalidateQueries({ queryKey: ['/api/admin/alerts'] });
+        }
       }
     };
 
@@ -803,7 +803,7 @@ export default function AdminDashboard() {
     const token = typeof window !== 'undefined' ? localStorage.getItem('adminToken') : null;
     if (!token) return;
 
-    const socket = io();
+    const socket = io(API_BASE_URL);
     chatSocketRef.current = socket;
 
     socket.on('connect', () => {
@@ -958,7 +958,7 @@ export default function AdminDashboard() {
         </div>
       );
     }
-    
+
     if (isError) {
       return (
         <div className="p-8 text-center text-red-500 space-y-2">
@@ -1862,6 +1862,7 @@ export default function AdminDashboard() {
                 )}
               </TabsTrigger>
               <TabsTrigger value="catbox-upload" data-testid="tab-catbox-upload" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Catbox Image Upload</TabsTrigger>
+              <TabsTrigger value="header-images" data-testid="tab-header-images" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Header Images</TabsTrigger>
               <TabsTrigger value="image-manager" data-testid="tab-image-manager" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Image Manager</TabsTrigger>
               <TabsTrigger value="advanced-editor" data-testid="tab-advanced-editor" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Advanced Editor</TabsTrigger>
               <TabsTrigger value="content" data-testid="tab-content" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Content</TabsTrigger>
@@ -1921,8 +1922,8 @@ export default function AdminDashboard() {
                       <CardContent className="p-6 flex items-start justify-between gap-4">
                         <div className="flex gap-4">
                           <div className={`p-2 rounded-full ${alert.priority === 'high' ? 'bg-red-500/20 text-red-500' :
-                              alert.priority === 'medium' ? 'bg-yellow-500/20 text-yellow-500' :
-                                'bg-blue-500/20 text-blue-500'
+                            alert.priority === 'medium' ? 'bg-yellow-500/20 text-yellow-500' :
+                              'bg-blue-500/20 text-blue-500'
                             }`}>
                             {alert.type === 'stock' ? <Package className="w-5 h-5" /> :
                               alert.type === 'security' ? <Shield className="w-5 h-5" /> :
@@ -2049,6 +2050,13 @@ export default function AdminDashboard() {
                 <CatboxUploadPanel allGames={allGames} categories={categories} />
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="header-images" className="space-y-6">
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-bold text-foreground">Header Images</h2>
+            </div>
+            <HeaderManager />
           </TabsContent>
 
           {/* Image Manager */}
@@ -2627,8 +2635,8 @@ export default function AdminDashboard() {
                               >
                                 <div
                                   className={`max-w-[80%] rounded-lg px-3 py-2 text-sm ${msg.sender === 'user'
-                                      ? 'bg-gray-700 text-white'
-                                      : 'bg-gradient-to-r from-gold-primary to-neon-pink text-black'
+                                    ? 'bg-gray-700 text-white'
+                                    : 'bg-gradient-to-r from-gold-primary to-neon-pink text-black'
                                     }`}
                                 >
                                   <div className="flex items-center gap-2 mb-1">
@@ -3245,8 +3253,8 @@ function CatboxUploadPanel({ allGames, categories }: { allGames: Game[]; categor
         </div>
       )}
       <div className="flex gap-2">
-        <Button 
-          onClick={() => uploadMutation.mutate()} 
+        <Button
+          onClick={() => uploadMutation.mutate()}
           className="bg-gold-primary"
           disabled={uploadMutation.isPending || !url || !targetId}
         >
@@ -3308,16 +3316,16 @@ function UsersPanel() {
         </div>
 
         {isLoading ? (
-           <div className="p-8 text-center space-y-4">
-             <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto"></div>
-             <p className="text-muted-foreground">Loading users...</p>
-           </div>
+          <div className="p-8 text-center space-y-4">
+            <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto"></div>
+            <p className="text-muted-foreground">Loading users...</p>
+          </div>
         ) : isError ? (
-           <div className="p-8 text-center text-red-500 space-y-2">
-             <AlertCircle className="h-8 w-8 mx-auto" />
-             <p>Failed to load users.</p>
-             <Button onClick={() => refetch()} variant="outline" size="sm">Retry Connection</Button>
-           </div>
+          <div className="p-8 text-center text-red-500 space-y-2">
+            <AlertCircle className="h-8 w-8 mx-auto" />
+            <p>Failed to load users.</p>
+            <Button onClick={() => refetch()} variant="outline" size="sm">Retry Connection</Button>
+          </div>
         ) : (
           <>
             <div className="overflow-x-auto">
@@ -3339,7 +3347,7 @@ function UsersPanel() {
                       <td className="p-2">{u.name}</td>
                       <td className="p-2">{u.phone}</td>
                       <td className="p-2">{u.email || '-'}</td>
-                      <td className="p-2">{u.email ? (u.email_verified ? <span className="text-green-500 flex items-center gap-1"><Check className="w-3 h-3"/> Verified</span> : <span className="text-yellow-500">Unverified</span>) : '-'}</td>
+                      <td className="p-2">{u.email ? (u.email_verified ? <span className="text-green-500 flex items-center gap-1"><Check className="w-3 h-3" /> Verified</span> : <span className="text-yellow-500">Unverified</span>) : '-'}</td>
                       <td className="p-2">{u.created_at ? new Date(u.created_at).toLocaleString() : '-'}</td>
                     </tr>
                   ))}
@@ -3432,16 +3440,16 @@ function InteractionsPanel() {
         </div>
 
         {isLoading ? (
-           <div className="p-8 text-center space-y-4">
-             <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto"></div>
-             <p className="text-muted-foreground">Loading interactions...</p>
-           </div>
+          <div className="p-8 text-center space-y-4">
+            <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto"></div>
+            <p className="text-muted-foreground">Loading interactions...</p>
+          </div>
         ) : isError ? (
-           <div className="p-8 text-center text-red-500 space-y-2">
-             <AlertCircle className="h-8 w-8 mx-auto" />
-             <p>Failed to load interactions.</p>
-             <Button onClick={() => refetch()} variant="outline" size="sm">Retry Connection</Button>
-           </div>
+          <div className="p-8 text-center text-red-500 space-y-2">
+            <AlertCircle className="h-8 w-8 mx-auto" />
+            <p>Failed to load interactions.</p>
+            <Button onClick={() => refetch()} variant="outline" size="sm">Retry Connection</Button>
+          </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -3507,7 +3515,7 @@ function ImageManagerPanel() {
     if (f.length) setFiles(prev => [...prev, ...f]);
   };
   const onDragOver = (e: React.DragEvent) => e.preventDefault();
-  
+
   const chooseFiles = () => {
     const input = document.createElement('input');
     input.type = 'file';
@@ -3520,7 +3528,7 @@ function ImageManagerPanel() {
     };
     input.click();
   };
-  
+
   const chooseFolder = () => {
     const input = document.createElement('input');
     input.type = 'file';
@@ -3625,8 +3633,8 @@ function ImageManagerPanel() {
         <Input value={urlsText} onChange={(e) => setUrlsText(e.target.value)} placeholder="https://example.com/a.jpg" />
       </div>
       <div className="flex gap-2">
-        <Button 
-          onClick={() => uploadBatchMutation.mutate()} 
+        <Button
+          onClick={() => uploadBatchMutation.mutate()}
           className="bg-blue-600"
           disabled={uploadBatchMutation.isPending || (!files.length && !urlsText)}
         >
@@ -3637,8 +3645,8 @@ function ImageManagerPanel() {
         <Label>Scan Website</Label>
         <div className="flex gap-2">
           <Input value={scanUrl} onChange={(e) => setScanUrl(e.target.value)} placeholder="https://example.com" />
-          <Button 
-            onClick={() => scanSiteMutation.mutate()} 
+          <Button
+            onClick={() => scanSiteMutation.mutate()}
             className="bg-gold-primary"
             disabled={scanSiteMutation.isPending || !scanUrl}
           >

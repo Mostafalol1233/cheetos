@@ -95,6 +95,7 @@ function AppShell() {
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
 
   const isAdminRoute = location === "/admin" || location.startsWith("/admin/") || location === "/admin/login";
+  const isProfileRoute = location === "/profile";
   const isHomeRoute = location === "/" || location.startsWith("/#");
 
   useEffect(() => {
@@ -161,8 +162,7 @@ function AppShell() {
         <Router />
       </div>
 
-      {!isAdminRoute && <LiveChatWidget />}
-      {!isAdminRoute && <FloatingWhatsAppButton />}
+
     </>
   );
 }

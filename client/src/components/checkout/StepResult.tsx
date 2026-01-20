@@ -15,7 +15,7 @@ export function StepResult() {
       // Clear state and redirect after a short delay to show success message
       const timer = setTimeout(() => {
         reset();
-        window.location.href = 'https://diaasadek.com/profile';
+        window.location.href = '/profile';
       }, 2000);
       return () => clearTimeout(timer);
     }

@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
+import { useQuery } from "@tanstack/react-query";
 import { useUserAuth } from "@/lib/user-auth-context";
 import { API_BASE_URL } from "@/lib/queryClient";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -24,6 +25,7 @@ import {
   Download
 } from "lucide-react";
 import { io } from "socket.io-client";
+import { LiveChatWidget } from "@/components/live-chat-widget";
 
 interface Order {
   id: string;
@@ -44,44 +46,43 @@ export default function UserProfilePage() {
   const { user, logout, isAuthenticated } = useUserAuth();
   const { toast } = useToast();
   const [, setLocation] = useLocation();
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [loading, setLoading] = useState(true);
+
+  const { data: orders = [], isLoading: loading, refetch } = useQuery<Order[]>({
+    queryKey: ['/api/orders/my-orders'],
+    enabled: !!isAuthenticated,
+    queryFn: async () => {
+      const token = localStorage.getItem('userToken');
+      if (!token) return [];
+
+      const response = await fetch(`${API_BASE_URL}/api/orders/my-orders`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        if (response.status === 401 || response.status === 403) {
+          // Token invalid, let auth context handle it or just return empty
+          return [];
+        }
+        throw new Error('Failed to fetch orders');
+      }
+
+      const data = await response.json();
+      return Array.isArray(data) ? data : (data.orders || []);
+    }
+  });
 
   useEffect(() => {
     if (!isAuthenticated) {
       setLocation("/login");
       return;
     }
-
-    fetchOrders();
   }, [isAuthenticated, setLocation]);
 
-  const fetchOrders = async () => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/orders/my-orders`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('userToken')}`
-        }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setOrders(Array.isArray(data) ? data : (data.orders || []));
-      }
-    } catch (error) {
-      // console.error('Failed to fetch orders:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
   useEffect(() => {
-    // Initial fetch
-    if (isAuthenticated) {
-      fetchOrders();
-    }
-
     // Socket.io connection for real-time updates
-    const socket = io();
+    const socket = io(API_BASE_URL);
 
     socket.on('connect', () => {
       // console.log('Connected to socket for order updates');
@@ -89,7 +90,7 @@ export default function UserProfilePage() {
 
     socket.on('orders_updated', () => {
       if (isAuthenticated) {
-        fetchOrders();
+        refetch();
         toast({
           title: "Update",
           description: "Order status updated",
@@ -227,7 +228,7 @@ export default function UserProfilePage() {
                 <div className="flex items-center justify-between">
                   <h2 className="text-2xl font-bold text-white">Order History</h2>
                   <Button
-                    onClick={() => fetchOrders()}
+                    onClick={() => refetch()}
                     variant="outline"
                     className="border-gold-primary/50 text-gold-primary hover:bg-gold-primary/10"
                   >
@@ -306,32 +307,11 @@ export default function UserProfilePage() {
 
               {/* Messages Tab */}
               <TabsContent value="messages" className="space-y-6">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between mb-4">
                   <h2 className="text-2xl font-bold text-white">Messages & Support</h2>
-                  <Button
-                    onClick={() => window.dispatchEvent(new Event('open-live-chat'))}
-                    className="bg-gradient-to-r from-gold-primary to-neon-pink hover:from-gold-secondary hover:to-neon-pink text-black"
-                  >
-                    <MessageSquare className="w-4 h-4 mr-2" />
-                    Start Chat
-                  </Button>
                 </div>
 
-                <Card className="bg-gradient-to-br from-card-bg/80 to-card-bg/60 border-gold-primary/20">
-                  <CardContent className="p-8 text-center">
-                    <MessageSquare className="w-16 h-16 text-gray-600 mx-auto mb-4" />
-                    <h3 className="text-xl font-semibold text-white mb-2">Chat Support</h3>
-                    <p className="text-gray-400 mb-4">
-                      Need help with an order? Have questions about our games? Chat with our support team.
-                    </p>
-                    <Button
-                      onClick={() => window.dispatchEvent(new Event('open-live-chat'))}
-                      className="bg-gradient-to-r from-gold-primary to-neon-pink hover:from-gold-secondary hover:to-neon-pink text-black"
-                    >
-                      Start Chat
-                    </Button>
-                  </CardContent>
-                </Card>
+                <LiveChatWidget embedded={true} />
               </TabsContent>
 
               {/* Settings Tab */}

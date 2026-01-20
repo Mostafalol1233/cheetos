@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useQuery, useMutation } from '@tanstack/react-query';
-import { queryClient, apiRequest } from '@/lib/queryClient';
+import { queryClient, apiRequest, API_BASE_URL } from '@/lib/queryClient';
 import { useSettings } from '@/lib/settings-context';
 import { io, Socket } from 'socket.io-client';
 
@@ -24,13 +24,17 @@ interface ChatWidgetConfig {
   position: string;
 }
 
-export function LiveChatWidget() {
-  const [isOpen, setIsOpen] = useState(false);
+interface LiveChatWidgetProps {
+  embedded?: boolean;
+}
+
+export function LiveChatWidget({ embedded = false }: LiveChatWidgetProps) {
+  const [isOpen, setIsOpen] = useState(embedded);
   const [isMinimized, setIsMinimized] = useState(false);
   const [inputMessage, setInputMessage] = useState('');
   const [showOptions, setShowOptions] = useState(true);
   const { settings: siteSettings } = useSettings();
-  
+
   const [sessionId] = useState(() => {
     try {
       const existing = localStorage.getItem('chat_session_id');
@@ -52,7 +56,7 @@ export function LiveChatWidget() {
   const { data: config } = useQuery<ChatWidgetConfig>({
     queryKey: ['/api/chat-widget/config'],
     queryFn: async () => {
-      const res = await fetch('/api/chat-widget/config');
+      const res = await fetch(`${API_BASE_URL}/api/chat-widget/config`);
       return res.json();
     },
     staleTime: 60000, // Cache for 1 minute
@@ -156,10 +160,11 @@ export function LiveChatWidget() {
   }, [messages]);
 
   useEffect(() => {
+    if (embedded) return;
     const handler = () => setIsOpen(true);
     window.addEventListener('open-live-chat', handler);
     return () => window.removeEventListener('open-live-chat', handler);
-  }, []);
+  }, [embedded]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -173,7 +178,7 @@ export function LiveChatWidget() {
     }
 
     if (!socketRef.current) {
-      const socket = io();
+      const socket = io(API_BASE_URL);
       socketRef.current = socket;
 
       socket.on('connect', () => {
@@ -207,7 +212,7 @@ export function LiveChatWidget() {
     };
   }, [isOpen, sessionId]);
 
-  if (!widgetConfig.enabled) {
+  if (!widgetConfig.enabled && !embedded) {
     return null;
   }
 
@@ -229,7 +234,7 @@ export function LiveChatWidget() {
 
   // Check if we have social links
   const hasSocialLinks = !!(siteSettings?.whatsappNumber || siteSettings?.facebookUrl);
-  
+
   if (showOptions && hasSocialLinks) {
     return (
       <div className="fixed bottom-24 right-6 z-50 flex flex-col gap-4 animate-in slide-in-from-bottom-5 duration-300">
@@ -244,7 +249,7 @@ export function LiveChatWidget() {
             <span className="font-bold">WhatsApp</span>
           </a>
         )}
-        
+
         {siteSettings?.facebookUrl && (
           <a
             href={siteSettings.facebookUrl}
@@ -276,7 +281,10 @@ export function LiveChatWidget() {
   }
 
   return (
-    <div className="fixed bottom-6 right-6 w-96 bg-card border border-gold-primary/30 rounded-2xl shadow-2xl z-50 flex flex-col h-[600px] overflow-hidden animate-in slide-in-from-bottom-5 duration-300">
+    <div className={embedded
+      ? "w-full h-[600px] bg-card border border-gold-primary/30 rounded-2xl shadow-sm flex flex-col overflow-hidden"
+      : "fixed bottom-6 right-6 w-96 bg-card border border-gold-primary/30 rounded-2xl shadow-2xl z-50 flex flex-col h-[600px] overflow-hidden animate-in slide-in-from-bottom-5 duration-300"
+    }>
       {/* Header */}
       <div className="bg-gradient-to-r from-gold-primary/20 to-neon-pink/20 border-b border-gold-primary/30 p-4 flex items-center justify-between">
         <div>
@@ -284,7 +292,7 @@ export function LiveChatWidget() {
           <p className="text-xs text-muted-foreground">{widgetConfig.welcomeMessage || 'We typically reply in minutes'}</p>
         </div>
         <div className="flex gap-2">
-          {hasSocialLinks && (
+          {hasSocialLinks && !embedded && (
             <Button
               variant="ghost"
               size="sm"
@@ -295,117 +303,120 @@ export function LiveChatWidget() {
               <X className="w-4 h-4 rotate-45" /> {/* Using X rotated as a 'back' or 'close' to options */}
             </Button>
           )}
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setIsMinimized(!isMinimized)}
-            className="hover:bg-gold-primary/10"
-          >
-            {isMinimized ? <Maximize2 className="w-4 h-4" /> : <Minimize2 className="w-4 h-4" />}
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setIsOpen(false)}
-            className="hover:bg-red-500/10"
-          >
-            <X className="w-4 h-4" />
-          </Button>
+          {!embedded && (
+            <>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsMinimized(!isMinimized)}
+                className="hover:bg-gold-primary/10"
+              >
+                {isMinimized ? <Maximize2 className="w-4 h-4" /> : <Minimize2 className="w-4 h-4" />}
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsOpen(false)}
+                className="hover:bg-red-500/10"
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            </>
+          )}
         </div>
       </div>
 
       {!isMinimized && (
         <>
           {/* Messages Area */}
-        <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
-          <div className="space-y-4">
-            {(messages.filter(m => !search || m.message.toLowerCase().includes(search.toLowerCase()))).length === 0 ? (
-              <div className="text-center text-muted-foreground py-8">
-                <MessageCircle className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                <p>Start a conversation with our support team!</p>
-              </div>
-            ) : (
-              messages.filter(m => !search || m.message.toLowerCase().includes(search.toLowerCase())).map((msg: ChatMessage) => (
-                <div
-                  key={msg.id}
-                  className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
-                >
+          <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
+            <div className="space-y-4">
+              {(messages.filter(m => !search || m.message.toLowerCase().includes(search.toLowerCase()))).length === 0 ? (
+                <div className="text-center text-muted-foreground py-8">
+                  <MessageCircle className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                  <p>Start a conversation with our support team!</p>
+                </div>
+              ) : (
+                messages.filter(m => !search || m.message.toLowerCase().includes(search.toLowerCase())).map((msg: ChatMessage) => (
                   <div
-                    className={`max-w-xs px-4 py-2 rounded-lg ${
-                      msg.sender === 'user'
+                    key={msg.id}
+                    className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+                  >
+                    <div
+                      className={`max-w-xs px-4 py-2 rounded-lg ${msg.sender === 'user'
                         ? 'bg-gold-primary/30 text-foreground rounded-br-none'
                         : 'bg-muted/50 text-muted-foreground rounded-bl-none'
-                    }`}
-                  >
-                    {msg.message && (
-                      <p className="text-sm break-words">{msg.message}</p>
-                    )}
-                    {msg.attachmentUrl && (
-                      <div className="mt-1">
-                        {msg.attachmentType === 'image' ? (
-                          <img
-                            src={msg.attachmentUrl}
-                            alt="Attachment"
-                            className="max-w-full max-h-64 rounded"
-                          />
-                        ) : (
-                          <a
-                            href={msg.attachmentUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-xs underline break-all"
-                          >
-                            Open attachment
-                          </a>
-                        )}
-                      </div>
-                    )}
-                    <span className="text-xs opacity-60 mt-1 block">
-                      {new Date(msg.timestamp).toLocaleTimeString([], {
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      })}
+                        }`}
+                    >
+                      {msg.message && (
+                        <p className="text-sm break-words">{msg.message}</p>
+                      )}
+                      {msg.attachmentUrl && (
+                        <div className="mt-1">
+                          {msg.attachmentType === 'image' ? (
+                            <img
+                              src={msg.attachmentUrl}
+                              alt="Attachment"
+                              className="max-w-full max-h-64 rounded"
+                            />
+                          ) : (
+                            <a
+                              href={msg.attachmentUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-xs underline break-all"
+                            >
+                              Open attachment
+                            </a>
+                          )}
+                        </div>
+                      )}
+                      <span className="text-xs opacity-60 mt-1 block">
+                        {new Date(msg.timestamp).toLocaleTimeString([], {
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </span>
+                    </div>
+                  </div>
+                ))
+              )}
+              {(isUserTyping || isSupportTyping) && (
+                <div className="flex justify-start">
+                  <div className="px-4 py-2 rounded-lg bg-muted/50 text-muted-foreground rounded-bl-none">
+                    <span className="inline-flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 bg-current rounded-full animate-bounce" />
+                      <span className="w-1.5 h-1.5 bg-current rounded-full animate-bounce [animation-delay:0.15s]" />
+                      <span className="w-1.5 h-1.5 bg-current rounded-full animate-bounce [animation-delay:0.3s]" />
+                      <span className="text-xs ml-2">{isSupportTyping ? 'Support is typing...' : 'Typing...'}</span>
                     </span>
                   </div>
                 </div>
-              ))
-            )}
-            {(isUserTyping || isSupportTyping) && (
-              <div className="flex justify-start">
-                <div className="px-4 py-2 rounded-lg bg-muted/50 text-muted-foreground rounded-bl-none">
-                  <span className="inline-flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 bg-current rounded-full animate-bounce" />
-                    <span className="w-1.5 h-1.5 bg-current rounded-full animate-bounce [animation-delay:0.15s]" />
-                    <span className="w-1.5 h-1.5 bg-current rounded-full animate-bounce [animation-delay:0.3s]" />
-                    <span className="text-xs ml-2">{isSupportTyping ? 'Support is typing...' : 'Typing...'}</span>
-                  </span>
-                </div>
-              </div>
-            )}
-          </div>
-        </ScrollArea>
+              )}
+            </div>
+          </ScrollArea>
 
-        {/* Input Area */}
-        <div className="border-t border-gold-primary/30 p-4 bg-muted/20">
-          <form onSubmit={handleSendMessage} className="flex gap-2">
-            <Input
-              value={inputMessage}
-              onChange={(e) => setInputMessage(e.target.value)}
-              placeholder="Type your message..."
-              className="border-gold-primary/30 focus:border-gold-primary"
-              disabled={sendMutation.isPending}
-            />
-            <Button
-              type="submit"
-              disabled={sendMutation.isPending || !inputMessage.trim()}
-              className="bg-gradient-to-r from-gold-primary to-neon-pink hover:opacity-90"
-            >
-              <Send className="w-4 h-4" />
-            </Button>
-          </form>
-        </div>
-      </>
-    )}
-  </div>
+          {/* Input Area */}
+          <div className="border-t border-gold-primary/30 p-4 bg-muted/20">
+            <form onSubmit={handleSendMessage} className="flex gap-2">
+              <Input
+                value={inputMessage}
+                onChange={(e) => setInputMessage(e.target.value)}
+                placeholder="Type your message..."
+                className="border-gold-primary/30 focus:border-gold-primary"
+                disabled={sendMutation.isPending}
+              />
+              <Button
+                type="submit"
+                disabled={sendMutation.isPending || !inputMessage.trim()}
+                className="bg-gradient-to-r from-gold-primary to-neon-pink hover:opacity-90"
+              >
+                <Send className="w-4 h-4" />
+              </Button>
+            </form>
+          </div>
+        </>
+      )}
+    </div>
   );
 }
