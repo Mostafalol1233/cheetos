@@ -82,7 +82,7 @@ router.post('/', async (req, res) => {
         // Generate Token
         userToken = jwt.sign({ id: userObj.id, email: userObj.email, role: userObj.role }, JWT_SECRET, { expiresIn: '30d' });
         userData = { ...userObj, name: userObj.username };
-        
+
         // Log audit event
         logAudit('guest_user_created', `Guest user created during order: ${customer_email}`, { id: userId, email: customer_email });
       }
@@ -182,14 +182,30 @@ router.post('/', async (req, res) => {
 
 // Get Orders (Admin)
 router.get('/', authenticateToken, ensureAdmin, async (req, res) => {
+  let orders = [];
   try {
     const result = await pool.query('SELECT * FROM orders ORDER BY created_at DESC');
-    res.json(result.rows);
+    orders = result.rows;
   } catch (err) {
     console.error('DB fetch failed, using JSON fallback');
-    const orders = readOrders();
-    res.json(orders.sort((a, b) => new Date(b.created_at) - new Date(a.created_at)));
   }
+
+  // Always merge JSON fallback to ensure no data loss (e.g. if insert failed but JSON succeeded)
+  try {
+    const jsonOrders = readOrders();
+    const dbIds = new Set(orders.map(o => o.id));
+    const newJsonOrders = jsonOrders.filter(o => !dbIds.has(o.id));
+
+    if (newJsonOrders.length > 0) {
+      orders = [...orders, ...newJsonOrders];
+      // Re-sort
+      orders.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    }
+  } catch (e) {
+    console.error('Error reading orders.json:', e);
+  }
+
+  res.json(orders);
 });
 
 // Update Status
@@ -312,15 +328,28 @@ router.post('/:id/respond', authenticateToken, ensureAdmin, async (req, res) => 
 // Get User's Orders
 router.get('/my-orders', authenticateToken, async (req, res) => {
   const userId = req.user.id;
+  let userOrders = [];
+
   try {
     const result = await pool.query('SELECT * FROM orders WHERE user_id = $1 ORDER BY created_at DESC', [userId]);
-    res.json(result.rows);
+    userOrders = result.rows;
   } catch (err) {
     console.error('DB fetch failed, using JSON fallback');
-    const orders = readOrders();
-    const userOrders = orders.filter(o => o.user_id === userId);
-    res.json(userOrders.sort((a, b) => new Date(b.created_at) - new Date(a.created_at)));
   }
+
+  // Merge JSON
+  try {
+    const jsonOrders = readOrders();
+    const dbIds = new Set(userOrders.map(o => o.id));
+    const myJsonOrders = jsonOrders.filter(o => o.user_id === userId && !dbIds.has(o.id));
+
+    if (myJsonOrders.length > 0) {
+      userOrders = [...userOrders, ...myJsonOrders];
+      userOrders.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    }
+  } catch (e) { }
+
+  res.json(userOrders);
 });
 
 // Track Order (Public)

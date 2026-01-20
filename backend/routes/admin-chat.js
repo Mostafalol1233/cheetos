@@ -14,9 +14,9 @@ router.get('/sessions', authenticateToken, ensureAdmin, async (req, res) => {
         u.name,
         u.email,
         u.phone,
-        (SELECT COUNT(*) FROM chat_messages WHERE session_id = m.session_id AND read = false AND sender = 'user') as unread_count,
-        m.message_encrypted as last_message,
-        m.timestamp as last_message_time
+        (SELECT COUNT(*) FROM chat_messages WHERE session_id = m.session_id AND read = false AND sender = 'user') as "unreadCount",
+        COALESCE(m.message, m.message_encrypted) as "lastMessage",
+        m.timestamp as "lastActivity"
       FROM chat_messages m
       LEFT JOIN users u ON m.session_id = u.id
       ORDER BY m.session_id, m.timestamp DESC
@@ -25,8 +25,8 @@ router.get('/sessions', authenticateToken, ensureAdmin, async (req, res) => {
         // Fallback if users table join fails (e.g. anonymous sessions if valid)
         const result = await pool.query(query);
 
-        // Sort by last_message_time descending in JS since DISTINCT ON requires sorting by distinct key first
-        const sessions = result.rows.sort((a, b) => new Date(b.last_message_time).getTime() - new Date(a.last_message_time).getTime());
+        // Sort by lastActivity descending in JS
+        const sessions = result.rows.sort((a, b) => new Date(b.lastActivity).getTime() - new Date(a.lastActivity).getTime());
 
         res.json(sessions);
     } catch (err) {
@@ -73,7 +73,7 @@ router.post('/:id', authenticateToken, ensureAdmin, async (req, res) => {
             return res.status(400).json({ message: 'Message or attachment required' });
         }
 
-        const msgId = `msg_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+        const msgId = `msg_${Date.now()}_${Math.random().toString(36).slice(2, 9)} `;
         const text = message ? String(message).trim() : '';
 
         await pool.query(

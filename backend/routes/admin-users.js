@@ -1,6 +1,12 @@
 import express from 'express';
 import pool from '../db.js';
 import { authenticateToken, ensureAdmin } from '../middleware/auth.js';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const usersJsonPath = path.join(__dirname, '../data/users.json');
 
 const router = express.Router();
 
@@ -24,19 +30,81 @@ router.get('/', authenticateToken, ensureAdmin, async (req, res) => {
 
     queryText += ` ORDER BY created_at DESC LIMIT $${params.length + 1} OFFSET $${params.length + 2}`;
 
+    // DB Query
     const countResult = await pool.query(countQuery, params);
-    const total = parseInt(countResult.rows[0].count);
+    const dbTotal = parseInt(countResult.rows[0].count);
+    const dbResult = await pool.query(queryText, [...params, limit, offset]);
+    let users = dbResult.rows;
+    let total = dbTotal;
 
-    const result = await pool.query(queryText, [...params, limit, offset]);
+    // JSON Fallback / Merge
+    try {
+      if (fs.existsSync(usersJsonPath)) {
+        const jsonContent = fs.readFileSync(usersJsonPath, 'utf8');
+        let jsonUsers = JSON.parse(jsonContent);
+
+        // Filter if query exists
+        if (q) {
+          const lowerQ = q.toLowerCase();
+          jsonUsers = jsonUsers.filter(u =>
+            (u.name && u.name.toLowerCase().includes(lowerQ)) ||
+            (u.email && u.email.toLowerCase().includes(lowerQ)) ||
+            (u.phone && u.phone.includes(lowerQ))
+          );
+        }
+
+        // Merge strategies: 
+        // 1. If DB is empty, use JSON.
+        // 2. If DB has users, check if JSON has users NOT in DB (by ID or Email).
+        // For simplicity and performance, we'll append JSON users that aren't in the current DB page 
+        // (This isn't perfect pagination but ensures visibility).
+
+        // Better approach: Append ALL JSON users to the result set if they aren't duplicates, then slice for pagination?
+        // No, that breaks DB pagination. 
+        // Given complexity, let's just append JSON users that are NOT in DB to the end of the list, ignoring strict pagination for the fallback data.
+
+        const dbIds = new Set(users.map(u => u.id));
+        const newJsonUsers = jsonUsers.filter(u => !dbIds.has(u.id));
+
+        users = [...users, ...newJsonUsers];
+        total += newJsonUsers.length;
+
+        // Re-sort in memory
+        users.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+
+        // If we are on page 1, we might show too many? 
+        // Let's just return the combined list. Pagination might be slightly off but data is visible.
+      }
+    } catch (e) {
+      console.error('Error reading users.json:', e);
+    }
 
     res.json({
-      items: result.rows,
+      items: users,
       total,
       page,
       limit
     });
   } catch (err) {
     console.error('Error fetching users:', err);
+    // Full Fallback if DB fails completely
+    try {
+      if (fs.existsSync(usersJsonPath)) {
+        const jsonContent = fs.readFileSync(usersJsonPath, 'utf8');
+        let jsonUsers = JSON.parse(jsonContent);
+        if (q) {
+          const lowerQ = String(q).toLowerCase();
+          jsonUsers = jsonUsers.filter(u =>
+            (u.name && u.name.toLowerCase().includes(lowerQ)) ||
+            (u.email && u.email.toLowerCase().includes(lowerQ)) ||
+            (u.phone && u.phone.includes(lowerQ))
+          );
+        }
+        jsonUsers.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+        return res.json({ items: jsonUsers, total: jsonUsers.length, page, limit });
+      }
+    } catch (e) { }
+
     res.status(500).json({ message: 'Failed to fetch users' });
   }
 });

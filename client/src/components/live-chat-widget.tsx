@@ -114,8 +114,20 @@ export function LiveChatWidget({ embedded = false }: LiveChatWidgetProps) {
       });
       return response.json();
     },
-    onSuccess: (_data, msg) => {
+    onSuccess: (data, msg) => {
+      // Optimistic update
+      queryClient.setQueryData<ChatMessage[]>([`/api/chat/${sessionId}`], (old) => {
+        const current = old || [];
+        const optimisticMsg: ChatMessage = {
+          id: `temp_${Date.now()}`,
+          sender: 'user',
+          message: msg,
+          timestamp: Date.now()
+        };
+        return [...current, optimisticMsg];
+      });
       setInputMessage('');
+      queryClient.invalidateQueries({ queryKey: [`/api/chat/${sessionId}`] });
     }
   });
 
