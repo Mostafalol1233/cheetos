@@ -10,7 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { LogIn, UserPlus, Mail, Lock, User, ArrowLeft, Phone } from "lucide-react";
 
 export default function UserLoginPage() {
-  const { login, register } = useUserAuth();
+  const { login, register, isAuthenticated } = useUserAuth();
   const { toast } = useToast();
   const [location, setLocation] = useLocation();
   const searchParams = new URLSearchParams(window.location.search);
