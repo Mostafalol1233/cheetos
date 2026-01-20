@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { LogIn, UserPlus, Mail, Lock, User, ArrowLeft } from "lucide-react";
+import { LogIn, UserPlus, Mail, Lock, User, ArrowLeft, Phone } from "lucide-react";
 
 export default function UserLoginPage() {
   const { login, register } = useUserAuth();
