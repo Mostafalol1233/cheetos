@@ -10,6 +10,17 @@ export function StepResult() {
   const isSuccess = orderStatus === 'paid';
   const isFailed = orderStatus === 'failed';
 
+  React.useEffect(() => {
+    if (isSuccess) {
+      // Clear state and redirect after a short delay to show success message
+      const timer = setTimeout(() => {
+        reset();
+        window.location.href = 'https://diaasadek.com/profile';
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [isSuccess, reset]);
+
   return (
     <div className="flex items-center justify-center min-h-[400px]">
       <Card className="w-full max-w-md">
@@ -21,14 +32,11 @@ export function StepResult() {
                 Order Successful!
               </h2>
               <p className="text-muted-foreground mb-4">
-                Your order has been placed successfully. We'll contact you soon with the next steps.
+                Your order has been placed successfully. Redirecting to your profile...
               </p>
               {orderId && (
                 <div className="flex items-center justify-center gap-2 mb-4">
                   <p className="text-sm text-muted-foreground">Order ID: {orderId}</p>
-                  <Button size="sm" variant="ghost" onClick={async () => { try { await navigator.clipboard.writeText(orderId); } catch {} }}>
-                    Copy
-                  </Button>
                 </div>
               )}
             </>

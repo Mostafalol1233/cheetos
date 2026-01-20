@@ -84,12 +84,378 @@ interface Alert {
 
 const apiPath = (path: string) => (path.startsWith('http') ? path : `${API_BASE_URL}${path}`);
 
+function ConsistencyCheck() {
+  const { toast } = useToast();
+  
+  useQuery({
+    queryKey: ['/api/health'],
+    refetchInterval: 60000, // Check every minute
+    queryFn: async () => {
+      try {
+        const res = await fetch('/api/health');
+        if (!res.ok) throw new Error('Health check failed');
+        const data = await res.json();
+        return data;
+      } catch (err) {
+        toast({
+          title: "Connection Issue",
+          description: "Cannot reach backend. Please check your connection.",
+          variant: "destructive"
+        });
+        throw err;
+      }
+    },
+    retry: 3
+  });
+  
+  return null;
+}
+
 // const parseNumberSafe = (v: string | number | null | undefined) => {
 //   const s = normalizeNumericString(v);
 //   if (!s) return 0;
 //   const n = Number(s);
 //   return Number.isFinite(n) ? n : 0;
 // };
+
+
+function CategoriesPanel() {
+  const { toast } = useToast();
+  
+  const { data: categories = [], isLoading, isError, refetch } = useQuery<Category[]>({
+    queryKey: ['/api/categories'],
+    refetchInterval: 30000, // Consistency check
+    queryFn: async () => {
+      const res = await fetch(apiPath('/api/categories'));
+      if (!res.ok) throw new Error('Failed to fetch categories');
+      return res.json();
+    }
+  });
+
+  const createCategoryMutation = useMutation({
+    mutationFn: async (name: string) => {
+      const token = localStorage.getItem('adminToken');
+      const formData = new FormData();
+      formData.append('name', name);
+      // Generate slug from name
+      const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+      formData.append('slug', slug);
+      
+      const res = await fetch(apiPath('/api/admin/categories'), {
+        method: 'POST',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        body: formData
+      });
+      if (!res.ok) throw new Error('Failed to create category');
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/categories'] });
+      toast({ title: 'Success', description: 'Category created' });
+    },
+    onError: (err: any) => {
+      toast({ title: 'Error', description: err.message, variant: 'destructive' });
+    }
+  });
+
+  const deleteCategoryMutation = useMutation({
+    mutationFn: async (categoryId: string) => {
+      const token = localStorage.getItem('adminToken');
+      const res = await fetch(apiPath(`/api/admin/categories/${categoryId}`), {
+        method: 'DELETE',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (!res.ok) throw new Error('Failed to delete category');
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/categories'] });
+      toast({ title: 'Success', description: 'Category deleted' });
+    },
+    onError: (err: any) => {
+      toast({ title: 'Error', description: err.message, variant: 'destructive' });
+    }
+  });
+
+  const updateCategoryMutation = useMutation({
+    mutationFn: async (data: { id: string; name?: string; slug?: string; image?: string }) => {
+      const token = localStorage.getItem('adminToken');
+      const formData = new FormData();
+      if (data.name) formData.append('name', data.name);
+      if (data.slug) formData.append('slug', data.slug);
+      if (data.image) formData.append('image', data.image);
+
+      const res = await fetch(apiPath(`/api/admin/categories/${data.id}`), {
+        method: 'PUT',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        body: formData
+      });
+      if (!res.ok) throw new Error('Failed to update category');
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/categories'] });
+      toast({ title: 'Success', description: 'Category updated' });
+    },
+    onError: (err: any) => {
+      toast({ title: 'Error', description: err.message, variant: 'destructive' });
+    }
+  });
+
+  if (isLoading) {
+    return (
+      <div className="p-8 text-center space-y-4">
+        <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto"></div>
+        <p className="text-muted-foreground">Loading categories...</p>
+      </div>
+    );
+  }
+  
+  if (isError) {
+    return (
+      <div className="p-8 text-center text-red-500 space-y-2">
+        <AlertCircle className="h-8 w-8 mx-auto" />
+        <p>Failed to load categories.</p>
+        <Button onClick={() => refetch()} variant="outline" size="sm">Retry Connection</Button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-bold text-foreground">Manage Categories</h2>
+        <Button 
+          className="bg-gold-primary hover:bg-gold-primary/80"
+          onClick={() => {
+            const name = prompt('New category name:');
+            if (name) createCategoryMutation.mutate(name);
+          }}
+        >
+          <Plus className="w-4 h-4 mr-2" />
+          Add Category
+        </Button>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {categories.map((cat) => (
+          <Card key={cat.id} className="bg-card/50 border-gold-primary/30">
+            <CardHeader>
+              <CardTitle>{cat.name}</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {(cat as any).image && (
+                <div className="flex items-center gap-3">
+                  <img src={String((cat as any).image)} alt={cat.name} className="w-12 h-12 rounded object-cover border border-gold-primary/20" />
+                  <div className="text-xs text-muted-foreground break-all">{String((cat as any).image)}</div>
+                </div>
+              )}
+              <p className="text-sm text-muted-foreground">ID: {cat.id}</p>
+              <p className="text-sm text-muted-foreground">Slug: {cat.slug}</p>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex-1"
+                  onClick={() => {
+                    const name = prompt('Category name:', cat.name);
+                    if (name) updateCategoryMutation.mutate({ id: cat.id, name });
+                  }}
+                >
+                  <Edit className="w-4 h-4 mr-2" />
+                  Edit
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex-1"
+                  onClick={() => {
+                    const image = prompt('Category image URL:', String((cat as any).image || ''));
+                    if (image && image.trim()) updateCategoryMutation.mutate({ id: cat.id, image: image.trim() });
+                  }}
+                >
+                  <Edit className="w-4 h-4 mr-2" />
+                  Image
+                </Button>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  className="flex-1"
+                  onClick={() => {
+                    if (confirm(`Are you sure you want to delete "${cat.name}"?`)) {
+                      deleteCategoryMutation.mutate(cat.id);
+                    }
+                  }}
+                >
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+        {categories.length === 0 && <div className="col-span-2 text-center text-muted-foreground">No categories found.</div>}
+      </div>
+    </div>
+  );
+}
+
+function ArrangementPanel() {
+  const { toast } = useToast();
+  const [arrangementFilter, setArrangementFilter] = useState<'active' | 'deleted' | 'all'>('active');
+  const { data: arrangementGames = [], isFetching: isFetchingArrangement, isLoading, isError, refetch } = useQuery<any[]>({
+    queryKey: ['/api/games/admin/arrangement', arrangementFilter],
+    refetchInterval: 30000, // Consistency check
+    queryFn: async () => {
+      const token = localStorage.getItem('adminToken');
+      const res = await fetch(apiPath(`/api/games/admin/arrangement?filter=${arrangementFilter}`), {
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+      });
+      const data = await res.json().catch(() => ([]));
+      if (!res.ok) throw new Error((data as any)?.message || 'Failed to fetch arrangement');
+      return data;
+    }
+  });
+  const [arrangementDraft, setArrangementDraft] = useState<Record<string, { showOnMainPage?: boolean; displayOrder?: number }>>({});
+  
+  useEffect(() => {
+    const next: Record<string, { showOnMainPage?: boolean; displayOrder?: number }> = {};
+    (Array.isArray(arrangementGames) ? arrangementGames : []).forEach((g: any) => {
+      next[g.id] = {
+        showOnMainPage: !!g.show_on_main_page,
+        displayOrder: Number(g.display_order ?? 999)
+      };
+    });
+    setArrangementDraft(next);
+  }, [arrangementGames]);
+
+  const bulkArrangementMutation = useMutation({
+    mutationFn: async () => {
+      const token = localStorage.getItem('adminToken');
+      const updates = Object.entries(arrangementDraft).map(([id, v]) => ({
+        id,
+        showOnMainPage: v.showOnMainPage,
+        displayOrder: v.displayOrder
+      }));
+      const res = await fetch(apiPath('/api/games/admin/arrangement/bulk'), {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: JSON.stringify({ updates })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error((data as any)?.message || 'Failed to update arrangement');
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/games/admin/arrangement'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/games/popular'] });
+      toast({ title: 'Success', description: 'Arrangement updated successfully' });
+    },
+    onError: (err: any) => {
+      toast({ title: 'Error', description: err.message, variant: 'destructive' });
+    }
+  });
+
+  if (isLoading) {
+    return (
+      <div className="p-8 text-center space-y-4">
+        <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto"></div>
+        <p className="text-muted-foreground">Loading arrangement...</p>
+      </div>
+    );
+  }
+  
+  if (isError) {
+    return (
+      <div className="p-8 text-center text-red-500 space-y-2">
+        <AlertCircle className="h-8 w-8 mx-auto" />
+        <p>Failed to load arrangement.</p>
+        <Button onClick={() => refetch()} variant="outline" size="sm">Retry Connection</Button>
+      </div>
+    );
+  }
+
+  return (
+    <Card className="bg-card/50 border-gold-primary/30">
+      <CardHeader>
+        <CardTitle className="text-lg">Game Arrangement</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="flex items-center gap-3 mb-3">
+          <Select value={arrangementFilter} onValueChange={(v: any) => setArrangementFilter(v)}>
+            <SelectTrigger className="w-[220px]">
+              <SelectValue placeholder="Filter" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="active">Active</SelectItem>
+              <SelectItem value="deleted">Deleted</SelectItem>
+              <SelectItem value="all">All</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button
+            variant="default"
+            disabled={bulkArrangementMutation.isPending}
+            onClick={() => bulkArrangementMutation.mutate()}
+            className="bg-cyan-600 hover:bg-cyan-500 text-white"
+          >
+            Apply Changes
+          </Button>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-left">
+                <th className="p-2">Name</th>
+                <th className="p-2">Slug</th>
+                <th className="p-2">Visible on Main</th>
+                <th className="p-2">Display Order</th>
+                <th className="p-2">Deleted</th>
+              </tr>
+            </thead>
+            <tbody>
+              {(Array.isArray(arrangementGames) ? arrangementGames : []).map((g: any) => {
+                const draft = arrangementDraft[g.id] || {};
+                return (
+                  <tr key={g.id} className="border-t">
+                    <td className="p-2">{g.name}</td>
+                    <td className="p-2">{g.slug}</td>
+                    <td className="p-2">
+                      <Checkbox
+                        checked={!!draft.showOnMainPage}
+                        onCheckedChange={(val: any) => {
+                          setArrangementDraft(prev => ({ ...prev, [g.id]: { ...prev[g.id], showOnMainPage: !!val } }));
+                        }}
+                      />
+                    </td>
+                    <td className="p-2">
+                      <Input
+                        type="number"
+                        min={0}
+                        value={Number(draft.displayOrder ?? 999)}
+                        onChange={(e) => {
+                          const n = Number(e.target.value);
+                          setArrangementDraft(prev => ({ ...prev, [g.id]: { ...prev[g.id], displayOrder: Number.isFinite(n) ? n : 999 } }));
+                        }}
+                        className="w-24"
+                      />
+                    </td>
+                    <td className="p-2">{g.deleted ? 'Yes' : 'No'}</td>
+                  </tr>
+                );
+              })}
+              {(!isFetchingArrangement && (!arrangementGames || arrangementGames.length === 0)) && (
+                <tr>
+                  <td colSpan={5} className="p-4 text-center text-muted-foreground">No games</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('games');
@@ -113,6 +479,72 @@ export default function AdminDashboard() {
   const [alertSearch, setAlertSearch] = useState('');
   const [selectedGames, setSelectedGames] = useState<string[]>([]);
   const chatSocketRef = useRef<Socket | null>(null);
+
+  // Global socket listeners for real-time data sync
+  useEffect(() => {
+    const socket = io();
+    
+    const handleOrdersUpdate = () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/orders'] });
+      toast({ title: 'Orders Updated', description: 'New order data received.' });
+    };
+
+    const handleGamesUpdate = () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/games'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/categories'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/games/admin/arrangement'] });
+    };
+
+    const handleCategoriesUpdate = () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/categories'] });
+    };
+
+    const handleUsersUpdate = () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/users'] });
+    };
+
+    const handleInteractionsUpdate = () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/interactions'] });
+    };
+
+    const handleConfirmationsUpdate = () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/confirmations'] });
+    };
+
+    const handleAdminNotification = (data: any) => {
+      if (data && data.message) {
+         toast({
+           title: data.type === 'new_order' ? "New Order" : "Notification",
+           description: data.message,
+         });
+         
+         if (data.type === 'new_order') {
+           queryClient.invalidateQueries({ queryKey: ['/api/orders'] });
+           queryClient.invalidateQueries({ queryKey: ['/api/admin/users'] });
+           queryClient.invalidateQueries({ queryKey: ['/api/admin/alerts'] });
+         }
+      }
+    };
+
+    socket.on('orders_updated', handleOrdersUpdate);
+    socket.on('games_updated', handleGamesUpdate);
+    socket.on('categories_updated', handleCategoriesUpdate);
+    socket.on('users_updated', handleUsersUpdate);
+    socket.on('interactions_updated', handleInteractionsUpdate);
+    socket.on('confirmations_updated', handleConfirmationsUpdate);
+    socket.on('admin_notification', handleAdminNotification);
+
+    return () => {
+      socket.off('orders_updated', handleOrdersUpdate);
+      socket.off('games_updated', handleGamesUpdate);
+      socket.off('categories_updated', handleCategoriesUpdate);
+      socket.off('users_updated', handleUsersUpdate);
+      socket.off('interactions_updated', handleInteractionsUpdate);
+      socket.off('confirmations_updated', handleConfirmationsUpdate);
+      socket.off('admin_notification', handleAdminNotification);
+      socket.disconnect();
+    };
+  }, []);
 
   // Fetch games
   const { data: allGames = [] } = useQuery<Game[]>({
@@ -246,10 +678,7 @@ export default function AdminDashboard() {
     game.slug?.toLowerCase().includes(searchGameTerm.toLowerCase())
   );
 
-  // Fetch categories
-  const { data: categories = [] } = useQuery<Category[]>({
-    queryKey: ['/api/categories'],
-  });
+
 
   // Fetch alerts
   const { data: alerts = [] } = useQuery<Alert[]>({
@@ -436,10 +865,10 @@ export default function AdminDashboard() {
     const [responseMessage, setResponseMessage] = useState('');
     const [showResponseModal, setShowResponseModal] = useState(false);
 
-    const { data: orders = [] } = useQuery<Array<{ id: string; paymentMethod: string; total: number; status: string; timestamp: number; customerName: string; customerPhone: string; items: Array<{ gameId: string; gameName?: string; quantity: number; price: number }> }>>({
+    const { data: orders = [], isLoading, isError, refetch } = useQuery<Array<{ id: string; paymentMethod: string; total: number; status: string; timestamp: number; customerName: string; customerPhone: string; items: Array<{ gameId: string; gameName?: string; quantity: number; price: number }> }>>({
       queryKey: ['/api/orders'],
       enabled: true,
-      refetchInterval: 3000,
+      refetchInterval: 30000, // Consistency check
       queryFn: async () => {
         const token = typeof window !== 'undefined' ? localStorage.getItem('adminToken') : null;
         const res = await fetch(`${API_BASE_URL}/api/orders`, { headers: token ? { Authorization: `Bearer ${token}` } : undefined });
@@ -515,6 +944,25 @@ export default function AdminDashboard() {
         default: return 'text-gray-400';
       }
     };
+
+    if (isLoading) {
+      return (
+        <div className="p-8 text-center space-y-4">
+          <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto"></div>
+          <p className="text-muted-foreground">Loading orders...</p>
+        </div>
+      );
+    }
+    
+    if (isError) {
+      return (
+        <div className="p-8 text-center text-red-500 space-y-2">
+          <AlertCircle className="h-8 w-8 mx-auto" />
+          <p>Failed to load orders.</p>
+          <Button onClick={() => refetch()} variant="outline" size="sm">Retry Connection</Button>
+        </div>
+      );
+    }
 
     return (
       <>
@@ -851,135 +1299,6 @@ export default function AdminDashboard() {
     }
   });
 
-  // Arrangement management
-  const [arrangementFilter, setArrangementFilter] = useState<'active' | 'deleted' | 'all'>('active');
-  const { data: arrangementGames = [], isFetching: isFetchingArrangement } = useQuery<any[]>({
-    queryKey: ['/api/games/admin/arrangement', arrangementFilter],
-    queryFn: async () => {
-      const token = localStorage.getItem('adminToken');
-      const res = await fetch(apiPath(`/api/games/admin/arrangement?filter=${arrangementFilter}`), {
-        headers: token ? { Authorization: `Bearer ${token}` } : {}
-      });
-      const data = await res.json().catch(() => ([]));
-      if (!res.ok) throw new Error((data as any)?.message || 'Failed to fetch arrangement');
-      return data;
-    }
-  });
-  const [arrangementDraft, setArrangementDraft] = useState<Record<string, { showOnMainPage?: boolean; displayOrder?: number }>>({});
-  useEffect(() => {
-    const next: Record<string, { showOnMainPage?: boolean; displayOrder?: number }> = {};
-    (Array.isArray(arrangementGames) ? arrangementGames : []).forEach((g: any) => {
-      next[g.id] = {
-        showOnMainPage: !!g.show_on_main_page,
-        displayOrder: Number(g.display_order ?? 999)
-      };
-    });
-    setArrangementDraft(next);
-  }, [arrangementGames]);
-  const bulkArrangementMutation = useMutation({
-    mutationFn: async () => {
-      const token = localStorage.getItem('adminToken');
-      const updates = Object.entries(arrangementDraft).map(([id, v]) => ({
-        id,
-        showOnMainPage: v.showOnMainPage,
-        displayOrder: v.displayOrder
-      }));
-      const res = await fetch(apiPath('/api/games/admin/arrangement/bulk'), {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-        body: JSON.stringify({ updates })
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error((data as any)?.message || 'Failed to update arrangement');
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/games/admin/arrangement'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/games/popular'] });
-    }
-  });
-  function ArrangementPanel() {
-    return (
-      <Card className="bg-card/50 border-gold-primary/30">
-        <CardHeader>
-          <CardTitle className="text-lg">Game Arrangement</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center gap-3 mb-3">
-            <Select value={arrangementFilter} onValueChange={(v: any) => setArrangementFilter(v)}>
-              <SelectTrigger className="w-[220px]">
-                <SelectValue placeholder="Filter" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="deleted">Deleted</SelectItem>
-                <SelectItem value="all">All</SelectItem>
-              </SelectContent>
-            </Select>
-            <Button
-              variant="default"
-              disabled={bulkArrangementMutation.isPending}
-              onClick={() => bulkArrangementMutation.mutate()}
-              className="bg-cyan-600 hover:bg-cyan-500 text-white"
-            >
-              Apply Changes
-            </Button>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="text-left">
-                  <th className="p-2">Name</th>
-                  <th className="p-2">Slug</th>
-                  <th className="p-2">Visible on Main</th>
-                  <th className="p-2">Display Order</th>
-                  <th className="p-2">Deleted</th>
-                </tr>
-              </thead>
-              <tbody>
-                {(Array.isArray(arrangementGames) ? arrangementGames : []).map((g: any) => {
-                  const draft = arrangementDraft[g.id] || {};
-                  return (
-                    <tr key={g.id} className="border-t">
-                      <td className="p-2">{g.name}</td>
-                      <td className="p-2">{g.slug}</td>
-                      <td className="p-2">
-                        <Checkbox
-                          checked={!!draft.showOnMainPage}
-                          onCheckedChange={(val: any) => {
-                            setArrangementDraft(prev => ({ ...prev, [g.id]: { ...prev[g.id], showOnMainPage: !!val } }));
-                          }}
-                        />
-                      </td>
-                      <td className="p-2">
-                        <Input
-                          type="number"
-                          min={0}
-                          value={Number(draft.displayOrder ?? 999)}
-                          onChange={(e) => {
-                            const n = Number(e.target.value);
-                            setArrangementDraft(prev => ({ ...prev, [g.id]: { ...prev[g.id], displayOrder: Number.isFinite(n) ? n : 999 } }));
-                          }}
-                          className="w-24"
-                        />
-                      </td>
-                      <td className="p-2">{g.deleted ? 'Yes' : 'No'}</td>
-                    </tr>
-                  );
-                })}
-                {(!isFetchingArrangement && (!arrangementGames || arrangementGames.length === 0)) && (
-                  <tr>
-                    <td colSpan={5} className="p-4 text-center text-muted-foreground">No games</td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
   // Update game card mutation (mark used / update code)
   const updateCardMutation = useMutation({
     mutationFn: async (payload: { id: string; is_used?: boolean; card_code?: string }) => {
@@ -1051,48 +1370,7 @@ export default function AdminDashboard() {
     }
   });
 
-  // Delete category mutation
-  const deleteCategoryMutation = useMutation({
-    mutationFn: async (categoryId: string) => {
-      const token = localStorage.getItem('adminToken');
-      const res = await fetch(apiPath(`/api/admin/categories/${categoryId}`), {
-        method: 'DELETE',
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-        credentials: 'include'
-      });
-      if (!res.ok) throw new Error('Failed to delete category');
-      return res.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/categories'] });
-    }
-  });
 
-  // Update category mutation
-  const updateCategoryMutation = useMutation({
-    mutationFn: async (data: { id: string; name?: string; slug?: string; description?: string; gradient?: string; icon?: string; image?: string }) => {
-      const token = localStorage.getItem('adminToken');
-      const formData = new FormData();
-      if (data.name) formData.append('name', data.name);
-      if (data.slug) formData.append('slug', data.slug);
-      if (data.description) formData.append('description', data.description);
-      if (data.gradient) formData.append('gradient', data.gradient);
-      if (data.icon) formData.append('icon', data.icon);
-      if (data.image) formData.append('image', data.image);
-
-      const res = await fetch(apiPath(`/api/admin/categories/${data.id}`), {
-        method: 'PUT',
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-        body: formData,
-        credentials: 'include'
-      });
-      if (!res.ok) throw new Error('Failed to update category');
-      return res.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/categories'] });
-    }
-  });
 
   const handleSelectGame = (id: string, checked: boolean) => {
     if (checked) {
@@ -1549,6 +1827,7 @@ export default function AdminDashboard() {
     <div className="min-h-screen bg-background p-8">
       <div className="max-w-7xl mx-auto">
         <h1 className="text-3xl font-bold text-gold-primary mb-8">Diaa Eldeen Admin Dashboard</h1>
+        <ConsistencyCheck />
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <ScrollArea className="w-full whitespace-nowrap rounded-md border">
@@ -1721,19 +2000,24 @@ export default function AdminDashboard() {
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {confirmations.map((c) => (
-                    <Link href={`/admin/confirmation/${c.id}`}>
-                      <div key={c.id} className="rounded-lg border p-3 flex flex-col gap-2 hover:bg-muted/40 cursor-pointer">
-                        <div className="text-xs text-muted-foreground">#{c.id}</div>
-                        <div className="text-sm">Order: <span className="font-mono">{c.transactionId}</span></div>
-                        <div className="text-sm">Message: <span>{c.message || '—'}</span></div>
-                        {c.receiptUrl ? (
-                          <a href={c.receiptUrl} target="_blank" rel="noopener noreferrer" className="block">
-                            <img src={c.receiptUrl} alt="" className="w-full h-32 object-contain rounded" />
-                          </a>
-                        ) : null}
-                        <div className="text-xs text-muted-foreground">{new Date(c.createdAt).toLocaleString()}</div>
-                      </div>
-                    </Link>
+                    <div key={c.id} className="rounded-lg border p-3 flex flex-col gap-2 hover:bg-muted/40">
+                      <div className="text-xs text-muted-foreground">#{c.id}</div>
+                      <div className="text-sm">Order: <span className="font-mono">{c.transactionId}</span></div>
+                      <div className="text-sm">Message: <span>{c.message || '—'}</span></div>
+                      {c.receiptUrl ? (
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <div className="cursor-pointer">
+                              <img src={c.receiptUrl} alt="" className="w-full h-32 object-contain rounded border bg-background" />
+                            </div>
+                          </DialogTrigger>
+                          <DialogContent className="max-w-3xl max-h-[90vh] overflow-auto">
+                            <img src={c.receiptUrl} alt="" className="w-full h-auto" />
+                          </DialogContent>
+                        </Dialog>
+                      ) : null}
+                      <div className="text-xs text-muted-foreground">{new Date(c.createdAt).toLocaleString()}</div>
+                    </div>
                   ))}
                   {confirmations.length === 0 && (
                     <div className="text-muted-foreground">No confirmations found.</div>
@@ -1876,22 +2160,6 @@ export default function AdminDashboard() {
                       >
                         <Edit className="w-4 h-4" />
                       </Button>
-                      <Link href={`/admin/games/${game.id}/description`}>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="flex-1 bg-blue-500/10 border-blue-500/30 hover:bg-blue-500/20"
-                            >
-                              <MessageSquare className="w-4 h-4 text-white" />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Advanced Game Description Editor</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </Link>
                       <Button
                         variant="destructive"
                         size="sm"
@@ -2157,75 +2425,7 @@ export default function AdminDashboard() {
 
           {/* Categories Tab */}
           <TabsContent value="categories" className="space-y-6">
-            <div className="flex justify-between items-center">
-              <h2 className="text-2xl font-bold text-foreground">Manage Categories</h2>
-              <Button className="bg-gold-primary hover:bg-gold-primary/80">
-                <Plus className="w-4 h-4 mr-2" />
-                Add Category
-              </Button>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {categories.map((cat: Category) => (
-                <Card key={cat.id} className="bg-card/50 border-gold-primary/30">
-                  <CardHeader>
-                    <CardTitle>{cat.name}</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    {(cat as any).image && (
-                      <div className="flex items-center gap-3">
-                        <img src={String((cat as any).image)} alt={cat.name} className="w-12 h-12 rounded object-cover border border-gold-primary/20" />
-                        <div className="text-xs text-muted-foreground break-all">{String((cat as any).image)}</div>
-                      </div>
-                    )}
-                    <p className="text-sm text-muted-foreground">ID: {cat.id}</p>
-                    <p className="text-sm text-muted-foreground">Slug: {cat.slug}</p>
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="flex-1"
-                        onClick={() => {
-                          const name = prompt('Category name:', cat.name);
-                          if (name) {
-                            updateCategoryMutation.mutate({ id: cat.id, name });
-                          }
-                        }}
-                      >
-                        <Edit className="w-4 h-4 mr-2" />
-                        Edit
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="flex-1"
-                        onClick={() => {
-                          const image = prompt('Category image URL:', String((cat as any).image || ''));
-                          if (image && image.trim()) {
-                            updateCategoryMutation.mutate({ id: cat.id, image: image.trim() });
-                          }
-                        }}
-                      >
-                        <Edit className="w-4 h-4 mr-2" />
-                        Image
-                      </Button>
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        className="flex-1"
-                        onClick={() => {
-                          if (confirm(`Are you sure you want to delete "${cat.name}"?`)) {
-                            deleteCategoryMutation.mutate(cat.id);
-                          }
-                        }}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+            <CategoriesPanel />
           </TabsContent>
 
           {/* Game Cards Tab */}
@@ -2972,32 +3172,38 @@ function CatboxUploadPanel({ allGames, categories }: { allGames: Game[]; categor
   const [type, setType] = useState<'game' | 'category'>('game');
   const [targetId, setTargetId] = useState<string>('');
   const [resultUrl, setResultUrl] = useState<string>('');
-  const [error, setError] = useState<string>('');
   const [preview, setPreview] = useState<string>('');
+  const { toast } = useToast();
+
   useEffect(() => { setPreview(url); }, [url]);
   useEffect(() => {
     if (type === 'game' && allGames.length && !targetId) setTargetId(allGames[0]?.id || '');
     if (type === 'category' && categories.length && !targetId) setTargetId(categories[0]?.id || '');
   }, [type, allGames, categories]);
-  const submit = async () => {
-    setError(''); setResultUrl('');
-    const token = typeof window !== 'undefined' ? localStorage.getItem('adminToken') : null;
-    try {
+
+  const uploadMutation = useMutation({
+    mutationFn: async () => {
+      const token = localStorage.getItem('adminToken');
       const res = await fetch(apiPath('/api/admin/images/catbox-url'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-        body: JSON.stringify({ url, type, id: targetId, filename: undefined })
+        body: JSON.stringify({ url, type, id: targetId })
       });
       const data = await res.json();
-      if (!res.ok) {
-        setError(data?.message || 'Submission failed');
-        return;
-      }
+      if (!res.ok) throw new Error(data?.message || 'Submission failed');
+      return data;
+    },
+    onSuccess: (data) => {
       setResultUrl(data?.url || '');
-    } catch (err: any) {
-      setError(err?.message || 'Network error');
+      queryClient.invalidateQueries({ queryKey: ['/api/games'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/categories'] });
+      toast({ title: 'Success', description: 'Image uploaded and applied successfully.' });
+    },
+    onError: (err: any) => {
+      toast({ title: 'Error', description: err.message, variant: 'destructive' });
     }
-  };
+  });
+
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -3034,10 +3240,16 @@ function CatboxUploadPanel({ allGames, categories }: { allGames: Game[]; categor
         </div>
       )}
       <div className="flex gap-2">
-        <Button onClick={submit} className="bg-gold-primary">Submit</Button>
-        {resultUrl && <span className="text-sm text-muted-foreground">Applied URL: {resultUrl}</span>}
+        <Button 
+          onClick={() => uploadMutation.mutate()} 
+          className="bg-gold-primary"
+          disabled={uploadMutation.isPending || !url || !targetId}
+        >
+          {uploadMutation.isPending ? 'Uploading...' : 'Submit'}
+        </Button>
+        {resultUrl && <span className="text-sm text-muted-foreground flex items-center">Applied URL: {resultUrl}</span>}
       </div>
-      {error && <div className="text-red-500 text-sm">{error}</div>}
+      {uploadMutation.isError && <div className="text-red-500 text-sm">{uploadMutation.error.message}</div>}
     </div>
   );
 }
@@ -3045,9 +3257,10 @@ function CatboxUploadPanel({ allGames, categories }: { allGames: Game[]; categor
 function UsersPanel() {
   const [q, setQ] = useState('');
   const [page, setPage] = useState(1);
-  const { data } = useQuery<{ items: Array<{ id: string; name: string; phone: string; email?: string | null; email_verified?: boolean | null; created_at: string }>; page: number; limit: number; total: number }>({
+  const { data, isLoading, isError, refetch } = useQuery<{ items: Array<{ id: string; name: string; phone: string; email?: string | null; email_verified?: boolean | null; created_at: string }>; page: number; limit: number; total: number }>({
     queryKey: ['/api/admin/users', q, page],
     enabled: true,
+    refetchInterval: 30000, // Consistency check
     queryFn: async () => {
       const token = localStorage.getItem('adminToken');
       const res = await fetch(apiPath(`/api/admin/users?q=${encodeURIComponent(q)}&page=${page}&limit=20`), {
@@ -3057,6 +3270,7 @@ function UsersPanel() {
       return res.json();
     }
   });
+
   const exportMutation = useMutation({
     mutationFn: async () => {
       const token = localStorage.getItem('adminToken');
@@ -3069,12 +3283,14 @@ function UsersPanel() {
       URL.revokeObjectURL(url);
     }
   });
+
   const items = data?.items || [];
   const total = data?.total || 0;
   const limit = data?.limit || 20;
   const totalPages = Math.max(1, Math.ceil(total / limit));
   const start = total === 0 ? 0 : (page - 1) * limit + 1;
   const end = Math.min(total, page * limit);
+
   return (
     <Card className="bg-card/50 border-gold-primary/30">
       <CardHeader>
@@ -3085,58 +3301,74 @@ function UsersPanel() {
           <Input placeholder="Search by name, phone, or email" value={q} onChange={(e) => setQ(e.target.value)} className="max-w-md" />
           <Button onClick={() => exportMutation.mutate()} variant="outline">Export CSV</Button>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-left">
-                <th className="p-2">ID</th>
-                <th className="p-2">Name</th>
-                <th className="p-2">Phone</th>
-                <th className="p-2">Email</th>
-                <th className="p-2">Verified</th>
-                <th className="p-2">Created</th>
-              </tr>
-            </thead>
-            <tbody>
-              {items.map(u => (
-                <tr key={u.id} className="border-t">
-                  <td className="p-2 font-mono">{u.id}</td>
-                  <td className="p-2">{u.name}</td>
-                  <td className="p-2">{u.phone}</td>
-                  <td className="p-2">{u.email || '-'}</td>
-                  <td className="p-2">{u.email ? (u.email_verified ? 'Verified' : 'Unverified') : '-'}</td>
-                  <td className="p-2">{u.created_at ? new Date(u.created_at).toLocaleString() : '-'}</td>
-                </tr>
-              ))}
-              {items.length === 0 && (
-                <tr><td className="p-2 text-muted-foreground" colSpan={6}>No users</td></tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-        <div className="flex items-center justify-between text-xs text-muted-foreground">
-          <div>
-            {total > 0 ? `Showing ${start}-${end} of ${total} users` : 'No users to display'}
-          </div>
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={page <= 1}
-              onClick={() => setPage(p => Math.max(1, p - 1))}
-            >
-              Previous
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={page >= totalPages}
-              onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-            >
-              Next
-            </Button>
-          </div>
-        </div>
+
+        {isLoading ? (
+           <div className="p-8 text-center space-y-4">
+             <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto"></div>
+             <p className="text-muted-foreground">Loading users...</p>
+           </div>
+        ) : isError ? (
+           <div className="p-8 text-center text-red-500 space-y-2">
+             <AlertCircle className="h-8 w-8 mx-auto" />
+             <p>Failed to load users.</p>
+             <Button onClick={() => refetch()} variant="outline" size="sm">Retry Connection</Button>
+           </div>
+        ) : (
+          <>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-left">
+                    <th className="p-2">ID</th>
+                    <th className="p-2">Name</th>
+                    <th className="p-2">Phone</th>
+                    <th className="p-2">Email</th>
+                    <th className="p-2">Verified</th>
+                    <th className="p-2">Created</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {items.map(u => (
+                    <tr key={u.id} className="border-t hover:bg-muted/50 transition-colors">
+                      <td className="p-2 font-mono text-xs">{u.id}</td>
+                      <td className="p-2">{u.name}</td>
+                      <td className="p-2">{u.phone}</td>
+                      <td className="p-2">{u.email || '-'}</td>
+                      <td className="p-2">{u.email ? (u.email_verified ? <span className="text-green-500 flex items-center gap-1"><Check className="w-3 h-3"/> Verified</span> : <span className="text-yellow-500">Unverified</span>) : '-'}</td>
+                      <td className="p-2">{u.created_at ? new Date(u.created_at).toLocaleString() : '-'}</td>
+                    </tr>
+                  ))}
+                  {items.length === 0 && (
+                    <tr><td className="p-8 text-center text-muted-foreground" colSpan={6}>No users found matching your search.</td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+            <div className="flex items-center justify-between text-xs text-muted-foreground pt-4 border-t">
+              <div>
+                {total > 0 ? `Showing ${start}-${end} of ${total} users` : 'No users to display'}
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={page <= 1}
+                  onClick={() => setPage(p => Math.max(1, p - 1))}
+                >
+                  Previous
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={page >= totalPages}
+                  onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                >
+                  Next
+                </Button>
+              </div>
+            </div>
+          </>
+        )}
       </CardContent>
     </Card>
   );
@@ -3145,9 +3377,11 @@ function UsersPanel() {
 function InteractionsPanel() {
   const [q, setQ] = useState('');
   const [eventType, setEventType] = useState<string>('all');
-  const { data, refetch } = useQuery<{ items: Array<{ id: string; event_type: string; element?: string; page?: string; success: boolean; error?: string; ua?: string; ts: string }> }>({
+
+  const { data, refetch, isLoading, isError } = useQuery<{ items: Array<{ id: string; event_type: string; element?: string; page?: string; success: boolean; error?: string; ua?: string; ts: string }> }>({
     queryKey: ['/api/admin/interactions', q, eventType],
     enabled: true,
+    refetchInterval: 30000, // Consistency check
     queryFn: async () => {
       const token = localStorage.getItem('adminToken');
       const params = new URLSearchParams();
@@ -3171,6 +3405,7 @@ function InteractionsPanel() {
     }
   });
   const items = data?.items || [];
+
   return (
     <Card className="bg-card/50 border-gold-primary/30">
       <CardHeader>
@@ -3190,33 +3425,47 @@ function InteractionsPanel() {
           </Select>
           <Button variant="outline" onClick={() => exportMutation.mutate()}>Export CSV</Button>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-left">
-                <th className="p-2">Event</th>
-                <th className="p-2">Element</th>
-                <th className="p-2">Page</th>
-                <th className="p-2">Success</th>
-                <th className="p-2">Time</th>
-              </tr>
-            </thead>
-            <tbody>
-              {items.map(it => (
-                <tr key={it.id} className="border-t">
-                  <td className="p-2">{it.event_type}</td>
-                  <td className="p-2">{it.element || '-'}</td>
-                  <td className="p-2">{it.page || '-'}</td>
-                  <td className="p-2">{it.success ? 'Yes' : 'No'}</td>
-                  <td className="p-2">{it.ts ? new Date(it.ts).toLocaleString() : '-'}</td>
+
+        {isLoading ? (
+           <div className="p-8 text-center space-y-4">
+             <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto"></div>
+             <p className="text-muted-foreground">Loading interactions...</p>
+           </div>
+        ) : isError ? (
+           <div className="p-8 text-center text-red-500 space-y-2">
+             <AlertCircle className="h-8 w-8 mx-auto" />
+             <p>Failed to load interactions.</p>
+             <Button onClick={() => refetch()} variant="outline" size="sm">Retry Connection</Button>
+           </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-left">
+                  <th className="p-2">Event</th>
+                  <th className="p-2">Element</th>
+                  <th className="p-2">Page</th>
+                  <th className="p-2">Success</th>
+                  <th className="p-2">Time</th>
                 </tr>
-              ))}
-              {items.length === 0 && (
-                <tr><td className="p-2 text-muted-foreground" colSpan={5}>No interactions</td></tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {items.map(it => (
+                  <tr key={it.id} className="border-t hover:bg-muted/50 transition-colors">
+                    <td className="p-2">{it.event_type}</td>
+                    <td className="p-2">{it.element || '-'}</td>
+                    <td className="p-2">{it.page || '-'}</td>
+                    <td className="p-2">{it.success ? <Check className="w-4 h-4 text-green-500" /> : <AlertCircle className="w-4 h-4 text-red-500" />}</td>
+                    <td className="p-2 whitespace-nowrap">{it.ts ? new Date(it.ts).toLocaleString() : '-'}</td>
+                  </tr>
+                ))}
+                {items.length === 0 && (
+                  <tr><td className="p-8 text-center text-muted-foreground" colSpan={5}>No interactions found.</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
@@ -3226,9 +3475,10 @@ function ImageManagerPanel() {
   const [files, setFiles] = useState<File[]>([]);
   const [urlsText, setUrlsText] = useState('');
   const [storage, setStorage] = useState<'cloudinary' | 'local' | 'catbox'>('local');
-  const [progress, setProgress] = useState<number>(0);
   const [results, setResults] = useState<Array<{ name?: string; url?: string; error?: string; ok: boolean }>>([]);
   const [scanUrl, setScanUrl] = useState('');
+  const { toast } = useToast();
+
   useEffect(() => {
     const onPaste = (e: ClipboardEvent) => {
       const items = e.clipboardData?.items || [];
@@ -3244,6 +3494,7 @@ function ImageManagerPanel() {
     window.addEventListener('paste', onPaste as any);
     return () => { window.removeEventListener('paste', onPaste as any); };
   }, []);
+
   const onDrop = (e: React.DragEvent) => {
     e.preventDefault();
     const dt = e.dataTransfer;
@@ -3251,6 +3502,7 @@ function ImageManagerPanel() {
     if (f.length) setFiles(prev => [...prev, ...f]);
   };
   const onDragOver = (e: React.DragEvent) => e.preventDefault();
+  
   const chooseFiles = () => {
     const input = document.createElement('input');
     input.type = 'file';
@@ -3263,6 +3515,7 @@ function ImageManagerPanel() {
     };
     input.click();
   };
+  
   const chooseFolder = () => {
     const input = document.createElement('input');
     input.type = 'file';
@@ -3275,48 +3528,68 @@ function ImageManagerPanel() {
     };
     input.click();
   };
-  const uploadBatch = async () => {
-    setResults([]); setProgress(0);
-    const token = typeof window !== 'undefined' ? localStorage.getItem('adminToken') : null;
-    if (files.length) {
-      const form = new FormData();
-      files.forEach(f => form.append('files', f));
-      form.append('storage', storage);
-      const res = await fetch(apiPath('/api/admin/images/upload-batch'), {
-        method: 'POST',
-        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-        body: form
-      });
-      const data = await res.json();
+
+  const uploadBatchMutation = useMutation({
+    mutationFn: async () => {
+      const token = localStorage.getItem('adminToken');
+      if (files.length) {
+        const form = new FormData();
+        files.forEach(f => form.append('files', f));
+        form.append('storage', storage);
+        const res = await fetch(apiPath('/api/admin/images/upload-batch'), {
+          method: 'POST',
+          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+          body: form
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || 'Upload failed');
+        return data;
+      } else {
+        const urls = urlsText.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+        const res = await fetch(apiPath('/api/admin/images/upload-batch'), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+          body: JSON.stringify({ storage, urls })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || 'Upload failed');
+        return data;
+      }
+    },
+    onSuccess: (data) => {
       const items = Array.isArray(data?.results) ? data.results : [];
       setResults(items);
-      setProgress(100);
-    } else {
-      const urls = urlsText.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
-      const res = await fetch(apiPath('/api/admin/images/upload-batch'), {
+      setFiles([]);
+      setUrlsText('');
+      toast({ title: 'Success', description: 'Batch upload completed.' });
+    },
+    onError: (err: any) => {
+      toast({ title: 'Error', description: err.message, variant: 'destructive' });
+    }
+  });
+
+  const scanSiteMutation = useMutation({
+    mutationFn: async () => {
+      const token = localStorage.getItem('adminToken');
+      const res = await fetch(apiPath('/api/admin/images/scan-site'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-        body: JSON.stringify({ storage, urls })
+        body: JSON.stringify({ url: scanUrl, storage })
       });
       const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Scan failed');
+      return data;
+    },
+    onSuccess: (data) => {
       const items = Array.isArray(data?.results) ? data.results : [];
       setResults(items);
-      setProgress(100);
+      toast({ title: 'Success', description: 'Site scan completed.' });
+    },
+    onError: (err: any) => {
+      toast({ title: 'Error', description: err.message, variant: 'destructive' });
     }
-  };
-  const scanSite = async () => {
-    setResults([]); setProgress(0);
-    const token = typeof window !== 'undefined' ? localStorage.getItem('adminToken') : null;
-    const res = await fetch(apiPath('/api/admin/images/scan-site'), {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-      body: JSON.stringify({ url: scanUrl, storage })
-    });
-    const data = await res.json();
-    const items = Array.isArray(data?.results) ? data.results : [];
-    setResults(items);
-    setProgress(100);
-  };
+  });
+
   return (
     <div className="space-y-4">
       <div className="flex gap-3 items-center">
@@ -3340,20 +3613,32 @@ function ImageManagerPanel() {
           <Button variant="outline" onClick={chooseFiles}>Select Files</Button>
           <Button variant="outline" onClick={chooseFolder}>Upload Folder</Button>
         </div>
+        {files.length > 0 && <div className="mt-2 text-sm text-muted-foreground">{files.length} files selected</div>}
       </div>
       <div>
         <Label>Paste URLs (one per line)</Label>
         <Input value={urlsText} onChange={(e) => setUrlsText(e.target.value)} placeholder="https://example.com/a.jpg" />
       </div>
       <div className="flex gap-2">
-        <Button onClick={uploadBatch} className="bg-blue-600">Upload</Button>
-        <div className="text-sm text-muted-foreground">Progress {progress}%</div>
+        <Button 
+          onClick={() => uploadBatchMutation.mutate()} 
+          className="bg-blue-600"
+          disabled={uploadBatchMutation.isPending || (!files.length && !urlsText)}
+        >
+          {uploadBatchMutation.isPending ? 'Uploading...' : 'Upload'}
+        </Button>
       </div>
       <div>
         <Label>Scan Website</Label>
         <div className="flex gap-2">
           <Input value={scanUrl} onChange={(e) => setScanUrl(e.target.value)} placeholder="https://example.com" />
-          <Button onClick={scanSite} className="bg-gold-primary">Scan & Save</Button>
+          <Button 
+            onClick={() => scanSiteMutation.mutate()} 
+            className="bg-gold-primary"
+            disabled={scanSiteMutation.isPending || !scanUrl}
+          >
+            {scanSiteMutation.isPending ? 'Scanning...' : 'Scan & Save'}
+          </Button>
         </div>
       </div>
       <div className="space-y-2">

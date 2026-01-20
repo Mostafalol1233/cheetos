@@ -24,75 +24,18 @@ export type PaymentMethod = 'vodafone_cash' | 'instapay' | 'orange_cash' | 'etis
 export type PaymentConfig = {
   key: PaymentMethod;
   label: string;
-  logo: string; // path or url
+  type?: string; // 'wallet', 'instapay', 'card'
   info?: {
     accountNumber?: string;
     instructions?: string;
+    address?: string;
+    email?: string;
   }
 };
 
-export const PAYMENT_METHODS: PaymentConfig[] = [
-  {
-    key: 'vodafone_cash',
-    label: 'Vodafone Cash',
-    logo: '/payments/vodafone-logo.png',
-    info: {
-      accountNumber: '01068586636',
-      instructions: 'Send the total amount to this Vodafone Cash wallet and upload the transfer receipt.'
-    }
-  },
-  {
-    key: 'instapay',
-    label: 'InstaPay',
-    logo: '/payments/instapay-logo.png',
-    info: {
-      accountNumber: 'diaaeldeen@instapay',
-      instructions: 'Send via InstaPay to this address and upload your transfer confirmation.'
-    }
-  },
-  {
-    key: 'orange_cash',
-    label: 'Orange Cash',
-    logo: '/payments/orange-logo-new.png',
-    info: {
-      accountNumber: '01068586636',
-      instructions: 'Send the total amount to this Orange Cash wallet and upload the receipt.'
-    }
-  },
-  {
-    key: 'etisalat_cash',
-    label: 'Etisalat Cash',
-    logo: '/payments/etisalat-logo.png',
-    info: {
-      accountNumber: '01068586636',
-      instructions: 'Send the total amount to this Etisalat Cash wallet and upload the receipt.'
-    }
-  },
-  {
-    key: 'we_pay',
-    label: 'WePay',
-    logo: '/payments/we-pay-logo.png',
-    info: {
-      accountNumber: '01068586636',
-      instructions: 'Send the total amount to this WePay wallet and upload the receipt.'
-    }
-  },
-  {
-    key: 'credit_card',
-    label: 'PayPal',
-    logo: '/payments/paypal-logo.png',
-    info: {
-      accountNumber: 'diaaeldeen@paypal.com',
-      instructions: 'Send payment via PayPal and upload the confirmation screenshot.'
-    }
-  },
-  {
-    key: 'other',
-    label: 'Other Methods',
-    logo: '/logo.png',
-    info: { instructions: 'Contact support on WhatsApp for other payment options.' }
-  }
-];
+// Deprecated: Use availablePaymentMethods from state instead
+// PAYMENT_METHODS removed to prevent static data usage
+export const PAYMENT_METHODS: PaymentConfig[] = [];
 
 export type CheckoutStep = 'cart' | 'details' | 'payment' | 'review' | 'processing' | 'result';
 
@@ -108,6 +51,7 @@ export interface CheckoutState {
   orderId?: string;
   orderStatus: OrderStatus;
   error?: string;
+  availablePaymentMethods: PaymentConfig[];
 
   // derived helpers
   subtotal: () => number;
@@ -126,6 +70,7 @@ export interface CheckoutState {
   setOrderMeta: (id?: string, status?: OrderStatus) => void;
   setError: (e?: string) => void;
   reset: () => void;
+  fetchPaymentMethods: () => Promise<void>;
 }
 
 const initialContact: ContactDetails = { fullName: '', email: '', phone: '', countryCode: '+20', notes: '' };
@@ -160,6 +105,16 @@ function clearLegacyCheckoutStorageOnce() {
   }
 }
 
+export function clearCheckoutStorage() {
+  try {
+    if (typeof window !== 'undefined') {
+      window.localStorage.removeItem('checkout-storage');
+    }
+  } catch (e) {
+    console.error('Failed to clear checkout storage', e);
+  }
+}
+
 export const useCheckout = create<CheckoutState>()(
   persist(
     (set, get) => {
@@ -174,6 +129,7 @@ export const useCheckout = create<CheckoutState>()(
       orderId: undefined,
       orderStatus: 'idle',
       error: undefined,
+      availablePaymentMethods: [],
 
       subtotal: () => {
         return get().cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
@@ -200,29 +156,52 @@ export const useCheckout = create<CheckoutState>()(
         orderStatus: status !== undefined ? status : state.orderStatus
       })),
       setError: (e) => set({ error: e }),
-      reset: () => set((state) => ({
+      reset: () => {
+        clearCheckoutStorage();
+        set({
         step: 'cart',
         cart: [],
-        contact: state.contact,
+        contact: initialContact,
         paymentMethod: undefined,
         paymentData: {},
         idempotencyKey: generateIdempotencyKey(),
         orderId: undefined,
         orderStatus: 'idle',
         error: undefined
-      }))
-      };
-    },
+      })
+      },
+      fetchPaymentMethods: async () => {
+        try {
+          const res = await fetch('/api/payments/config');
+          if (!res.ok) throw new Error('Failed to fetch payment methods');
+          const data = await res.json();
+          const methods: PaymentConfig[] = data.map((m: any) => ({
+            key: m.id,
+            label: m.name,
+            type: m.type,
+            info: {
+              accountNumber: m.details?.number,
+              address: m.details?.address,
+              email: m.details?.email,
+              instructions: m.details?.instructions
+            }
+          }));
+          set({ availablePaymentMethods: methods });
+        } catch (error) {
+          console.error('Error loading payment methods:', error);
+          // Fallback to empty or error state
+          set({ availablePaymentMethods: [] });
+        }
+      }
+    };
+  },
     {
       name: 'checkout-storage',
-      skipHydration: false,
-      partialize: (state) => ({
-        cart: state.cart,
+      partialize: (state) => ({ 
+        cart: state.cart, 
         contact: state.contact,
-        paymentMethod: state.paymentMethod,
-        paymentData: state.paymentData,
-        idempotencyKey: state.idempotencyKey
-      })
+        step: state.step === 'result' ? 'cart' : state.step // Don't persist result step
+      }) 
     }
   )
 );

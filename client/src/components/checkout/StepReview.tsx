@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useCheckout, PAYMENT_METHODS } from '@/state/checkout';
+import { useCheckout } from '@/state/checkout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
@@ -7,29 +7,20 @@ import { ensureIdempotencyKey } from '@/state/checkout';
 import { API_BASE_URL } from '@/lib/queryClient';
 import { Loader2 } from 'lucide-react';
 import { useSettings } from '@/lib/settings-context';
-import { FaPaypal, FaMobileAlt, FaMoneyBillWave, FaWallet } from 'react-icons/fa';
+import { PaymentIcon } from '../payment-icon';
 import { useUserAuth } from '@/lib/user-auth-context';
 import type { PaymentMethod } from '@/state/checkout';
 
 export function StepReview() {
-  const { cart, contact, paymentMethod, paymentData, subtotal, total, setOrderMeta, setError, setStep, reset } = useCheckout();
+  const { cart, contact, paymentMethod, paymentData, subtotal, total, setOrderMeta, setError, setStep, reset, availablePaymentMethods } = useCheckout();
   const [deliverVia, setDeliverVia] = useState<'email' | 'whatsapp'>('email');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { settings } = useSettings();
   const [logoError, setLogoError] = useState(false);
   const { user } = useUserAuth();
 
-  const selectedPayment = PAYMENT_METHODS.find(m => m.key === paymentMethod);
+  const selectedPayment = availablePaymentMethods.find(m => m.key === paymentMethod);
 
-  const PAYMENT_ICONS: Record<PaymentMethod, { Icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>; color: string }> = {
-    vodafone_cash: { Icon: FaMobileAlt, color: '#e60000' },
-    instapay: { Icon: FaWallet, color: '#0a66c2' },
-    orange_cash: { Icon: FaMobileAlt, color: '#ff7900' },
-    etisalat_cash: { Icon: FaMobileAlt, color: '#006e3c' },
-    we_pay: { Icon: FaMobileAlt, color: '#6a1b9a' },
-    credit_card: { Icon: FaPaypal, color: '#003087' },
-    other: { Icon: FaMoneyBillWave, color: '#16a34a' },
-  };
 
   const saveUserCheckoutPreferences = (response: any) => {
     try {
@@ -101,45 +92,26 @@ export function StepReview() {
         saveUserCheckoutPreferences(response);
       }
 
+      // Handle successful order - clear storage and redirect
       if (response.token) {
         localStorage.setItem('userToken', response.token);
         if (response.user) {
           localStorage.setItem('userData', JSON.stringify(response.user));
         }
-        localStorage.removeItem('cart');
-        localStorage.setItem('order_notification', JSON.stringify({ id: response.id, unread: true }));
-        reset(); // Reset checkout state (preserves contact)
-        window.location.href = '/track-order?id=' + response.id;
-        return;
       }
-
-      if (response.id) {
-        localStorage.removeItem('cart');
-        setOrderMeta(response.id, response.status || 'pending_approval');
-      }
-
-      if (deliverVia === 'whatsapp') {
-        const waNumber = settings?.whatsappNumber?.replace(/\D/g, '') || '201011696196';
-        const message = `*New Order #${response.id}*\nName: ${contact.fullName}\nTotal: ${total()} EGP\nItems:\n${cart.map(i => `- ${i.name} x${i.quantity}`).join('\n')}\n\nPayment: WhatsApp Order`;
-
-        window.open(`https://wa.me/${waNumber}?text=${encodeURIComponent(message)}`, '_blank');
-      }
-
-      if (localStorage.getItem('userToken') && response.id) {
-        localStorage.setItem('order_notification', JSON.stringify({ id: response.id, unread: true }));
-        reset(); // Reset checkout state
-        window.location.href = '/track-order?id=' + response.id;
-        return;
-      }
-
+      
+      localStorage.removeItem('cart');
       if (response.id) {
         localStorage.setItem('order_notification', JSON.stringify({ id: response.id, unread: true }));
-        reset(); // Reset checkout state
-        window.location.href = '/track-order?id=' + response.id;
-        return;
       }
+      
+      localStorage.removeItem('checkout-storage');
+      reset(); // Reset checkout state (preserves contact)
+      
+      // Redirect to profile immediately
+      window.location.href = 'https://diaasadek.com/profile';
+      return;
 
-      setStep('processing');
     } catch (error) {
       // console.error('Order submission failed:', error);
       setError(error instanceof Error ? error.message : 'Failed to submit order. Please try again.');
@@ -173,14 +145,8 @@ export function StepReview() {
             {selectedPayment && (
               <div className="flex items-center space-x-3">
                 <div className="w-8 h-8 flex items-center justify-center">
-                  {paymentMethod && PAYMENT_ICONS[paymentMethod as PaymentMethod] ? (
-                    (() => {
-                      const IconDef = PAYMENT_ICONS[paymentMethod as PaymentMethod].Icon;
-                      const color = PAYMENT_ICONS[paymentMethod as PaymentMethod].color;
-                      return <IconDef className="w-7 h-7" style={{ color }} />;
-                    })()
-                  ) : (
-                    <FaPaypal className="w-7 h-7 text-[#003087]" />
+                  {paymentMethod && (
+                    <PaymentIcon methodKey={paymentMethod} className="w-8 h-8" />
                   )}
                 </div>
                 <div>

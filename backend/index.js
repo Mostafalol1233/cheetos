@@ -644,6 +644,14 @@ app.get('/manifest.webmanifest', (req, res) => {
   res.sendFile(file);
 });
 
+app.get('/api/health', (req, res) => {
+  res.json({
+    status: 'ok',
+    version: '1.0.0',
+    timestamp: new Date().toISOString()
+  });
+});
+
 // ===================== CONTACT INFO (ENV) =====================
 app.get('/api/contact-info', async (req, res) => {
   try {

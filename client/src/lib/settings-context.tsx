@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { apiRequest } from "./queryClient";
+import { io } from "socket.io-client";
 
 export interface Settings {
   id: string;
@@ -54,6 +55,28 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     load();
+
+    const socket = io();
+    socket.on('settings_updated', (newSettings: any) => {
+      // Normalize data similar to load()
+      const normalized: Settings = {
+        id: newSettings.id,
+        primaryColor: newSettings.primaryColor || "#0066FF",
+        accentColor: newSettings.accentColor || "#FFCC00",
+        logoUrl: newSettings.logoUrl ?? null,
+        headerImageUrl: newSettings.headerImageUrl ?? null,
+        whatsappNumber: newSettings.whatsappNumber ?? null,
+        facebookUrl: newSettings.facebookUrl ?? null,
+        trustBadges: Array.isArray(newSettings.trustBadges) ? newSettings.trustBadges : null,
+        footerText: newSettings.footerText ?? null
+      };
+      setSettings(normalized);
+    });
+
+    return () => {
+      socket.off('settings_updated');
+      socket.disconnect();
+    };
   }, []);
 
   useEffect(() => {

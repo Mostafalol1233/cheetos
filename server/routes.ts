@@ -163,6 +163,115 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Dynamic Payment Configuration Route
+  app.get("/api/payments/config", (req, res) => {
+    try {
+      const methods = [];
+
+      // Vodafone Cash
+      if (process.env.VODAFONE_CASH_NUMBER) {
+        methods.push({
+          id: "vodafone_cash",
+          name: "Vodafone Cash",
+          type: "wallet",
+          details: {
+            number: process.env.VODAFONE_CASH_NUMBER,
+            instructions: process.env.VODAFONE_CASH_INSTRUCTIONS || "Send the exact amount and upload receipt."
+          }
+        });
+      }
+
+      // Orange Cash
+      if (process.env.ORANGE_CASH_NUMBER) {
+        methods.push({
+          id: "orange_cash",
+          name: "Orange Cash",
+          type: "wallet",
+          details: {
+            number: process.env.ORANGE_CASH_NUMBER,
+            instructions: process.env.ORANGE_CASH_INSTRUCTIONS || "Send the exact amount and upload receipt."
+          }
+        });
+      }
+
+      // Etisalat Cash
+      if (process.env.ETISALAT_CASH_NUMBER) {
+        methods.push({
+          id: "etisalat_cash",
+          name: "Etisalat Cash",
+          type: "wallet",
+          details: {
+            number: process.env.ETISALAT_CASH_NUMBER,
+            instructions: process.env.ETISALAT_CASH_INSTRUCTIONS || "Send the exact amount and upload receipt."
+          }
+        });
+      }
+
+      // WE Pay
+      if (process.env.WE_PAY_NUMBERS) {
+        methods.push({
+          id: "we_pay",
+          name: "WE Pay",
+          type: "wallet",
+          details: {
+            number: process.env.WE_PAY_NUMBERS,
+            instructions: process.env.WE_PAY_INSTRUCTIONS || "Send the exact amount and upload receipt."
+          }
+        });
+      }
+
+      // InstaPay
+      if (process.env.INSTAPAY_ACCOUNT) {
+        methods.push({
+          id: "instapay",
+          name: "InstaPay",
+          type: "instapay",
+          details: {
+            address: process.env.INSTAPAY_ACCOUNT,
+            instructions: process.env.INSTAPAY_INSTRUCTIONS || "Send to this address and upload receipt."
+          }
+        });
+      }
+
+      // PayPal
+      if (process.env.PAYPAL_EMAIL) {
+        methods.push({
+          id: "credit_card", // Mapping 'credit_card' to PayPal as per frontend expectation or vice versa? 
+                             // Checkout.ts uses: 'vodafone_cash' | 'instapay' | 'orange_cash' | 'etisalat_cash' | 'we_pay' | 'credit_card' | 'other'
+                             // Let's use 'credit_card' for PayPal if that's the intent, or add 'paypal'. 
+                             // The PaymentIcon component has 'paypal' case.
+                             // But CheckoutState type has 'credit_card'.
+                             // Let's stick to 'credit_card' for now or check if I should add 'paypal'.
+                             // The user said "Replace all existing PayPal icons...". 
+                             // Let's assume 'credit_card' covers PayPal/Cards.
+          name: "Credit Card / PayPal",
+          type: "card",
+          details: {
+            email: process.env.PAYPAL_EMAIL,
+            instructions: process.env.PAYPAL_INSTRUCTIONS || "Pay via PayPal."
+          }
+        });
+      }
+
+      // WhatsApp (Manual)
+      if (process.env.WHATSAPP_NUMBER) {
+        methods.push({
+          id: "other",
+          name: "WhatsApp / Other",
+          type: "manual",
+          details: {
+            number: process.env.WHATSAPP_NUMBER,
+            instructions: process.env.WHATSAPP_INSTRUCTIONS || "Contact us on WhatsApp to complete payment."
+          }
+        });
+      }
+
+      res.json(methods);
+    } catch (err: any) {
+      res.status(500).json({ message: "Failed to load payment configuration" });
+    }
+  });
+
   app.get("/api/settings", async (_req, res) => {
     try {
       const s = await getSingleSettings();

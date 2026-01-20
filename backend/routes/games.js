@@ -983,6 +983,11 @@ router.put('/:id/image-url', authenticateToken, ensureAdmin, async (req, res) =>
       await client.query('COMMIT');
       await logAudit('update_game_image_url', `Updated game image_url for ${gameId}`, req.user);
 
+      const io = getIO();
+      if (io) {
+        io.emit('games_updated');
+      }
+
       res.json({ id: gameId, image_url });
     } catch (error) {
       await client.query('ROLLBACK');

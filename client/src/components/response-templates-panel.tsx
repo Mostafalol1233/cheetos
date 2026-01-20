@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Edit, Trash2, Plus, MessageSquare } from 'lucide-react';
 import { API_BASE_URL, queryClient } from '@/lib/queryClient';
+import { io } from 'socket.io-client';
 
 interface ResponseTemplate {
   id: string;
@@ -28,6 +29,19 @@ export function ResponseTemplatesPanel() {
   const [title, setTitle] = useState('');
   const [message, setMessage] = useState('');
   const [type, setType] = useState<'approve' | 'reject' | 'other'>('other');
+
+  useEffect(() => {
+    const socket = io();
+    
+    socket.on('response_templates_updated', () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/response-templates'] });
+    });
+
+    return () => {
+      socket.off('response_templates_updated');
+      socket.disconnect();
+    };
+  }, []);
 
   // Fetch templates
   const { data: templates = [], isLoading } = useQuery<ResponseTemplate[]>({

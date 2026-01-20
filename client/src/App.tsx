@@ -15,9 +15,7 @@ import { useState, useEffect } from "react";
 import Home from "./pages/home";
 import GamePage from "./pages/game";
 import AdminDashboard from "./pages/admin";
-import AdminConfirmationPage from "./pages/admin-confirmation";
 import AdminLoginPage from "./pages/admin-login";
-import AdminPackagesPage from "./pages/admin-packages";
 import CategoryPage from "./pages/category";
 import GamesPage from "./pages/games";
 import PacksPage from "./pages/packs";
@@ -25,19 +23,15 @@ import SupportPage from "./pages/support";
 import UserLoginPage from "./pages/user-login";
 import UserProfilePage from "./pages/user-profile";
 import NotFound from "@/pages/not-found";
-import QrLoginPage from "./pages/qr-login";
-import QrConfirmPage from "./pages/qr-confirm";
 import FAQPage from "./pages/faq";
 import TermsPage from "./pages/terms";
 import PrivacyPage from "./pages/privacy";
 import RefundsPage from "./pages/refunds";
-import TrackOrderPage from "./pages/track-order";
 import Checkout from "./pages/Checkout";
 import { LiveChatWidget } from "@/components/live-chat-widget";
 import { FloatingWhatsAppButton } from "@/components/floating-whatsapp-button";
 import { Header } from "@/components/header";
 import { CartSidebar } from "@/components/cart-sidebar";
-import GameDescriptionEditor from "./pages/game-description-editor";
 
 import PackageDetailsPage from "./pages/package-details";
 import PackageCheckoutPage from "./pages/package-checkout";
@@ -78,11 +72,8 @@ function Router() {
         <Route path="/login" component={UserLoginPage} />
         <Route path="/profile" component={UserProfilePage} />
         <Route path="/admin/login" component={AdminLoginPage} />
-        <Route path="/admin/packages/:gameId" component={AdminPackagesPage} />
-        <Route path="/admin/games/:id/description" component={GameDescriptionEditor} />
         {/* QR login removed */}
         <Route path="/admin" component={ProtectedAdminRoute} />
-        <Route path="/admin/confirmation/:id" component={AdminConfirmationPage} />
         <Route path="/category/:slug" component={CategoryPage} />
         <Route path="/game/:slug" component={GamePage} />
         <Route path="/package/:gameSlug/:packageIndex" component={PackageCheckoutPage} />
@@ -91,7 +82,6 @@ function Router() {
         <Route path="/terms" component={TermsPage} />
         <Route path="/privacy" component={PrivacyPage} />
         <Route path="/refunds" component={RefundsPage} />
-        <Route path="/track-order" component={TrackOrderPage} />
 
         <Route component={NotFound} />
       </Switch>

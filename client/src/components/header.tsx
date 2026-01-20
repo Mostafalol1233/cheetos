@@ -29,18 +29,6 @@ export function Header() {
   const [hasOrderNotification, setHasOrderNotification] = useState(false);
 
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem("order_notification");
-      if (!raw) return;
-      const parsed = JSON.parse(raw);
-      if (parsed && parsed.unread) {
-        setHasOrderNotification(true);
-      }
-    } catch {
-    }
-  }, []);
-
-  useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 20);
     };
@@ -61,7 +49,6 @@ export function Header() {
     { href: "/", label: t('home'), icon: Home },
     { href: "/games", label: t('games') || "Games", icon: Gamepad2 },
     { href: "/support", label: t('support'), icon: MessageCircle },
-    { href: "/track-order", label: t('track_order') || "Track Order", icon: Package },
   ];
 
   return (

@@ -38,7 +38,8 @@ export default defineConfig({
       "/media": { target: "http://localhost:3001", changeOrigin: true },
       "/images": { target: "http://localhost:3001", changeOrigin: true },
       "/payments-images": { target: "http://localhost:3001", changeOrigin: true },
-      "/attached_assets": { target: "http://localhost:3001", changeOrigin: true }
+      "/attached_assets": { target: "http://localhost:3001", changeOrigin: true },
+      "/socket.io": { target: "http://localhost:3001", changeOrigin: true, ws: true }
     }
   },
 });

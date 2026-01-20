@@ -11,7 +11,6 @@ export function Footer() {
     { href: "/", label: "Home" },
     { href: "/games", label: "Browse Games" },
     { href: "/support", label: "Support Center" },
-    { href: "/track-order", label: "Track Order" },
   ];
 
   const supportLinks = [

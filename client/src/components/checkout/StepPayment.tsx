@@ -1,5 +1,5 @@
 import React from 'react';
-import { useCheckout, PAYMENT_METHODS } from '@/state/checkout';
+import { useCheckout } from '@/state/checkout';
 import { PaymentMethods } from './PaymentMethods';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,7 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import { ReceiptUpload } from './receipt-upload';
 
 export function StepPayment() {
-  const { paymentMethod, paymentData, setPaymentData, setStep } = useCheckout();
+  const { paymentMethod, paymentData, setPaymentData, setStep, availablePaymentMethods } = useCheckout();
   const { toast } = useToast();
   const [isUploading, setIsUploading] = React.useState(false);
 
@@ -42,8 +42,10 @@ export function StepPayment() {
     }
   };
 
-  const isManualPayment = ['vodafone_cash', 'instapay', 'orange_cash', 'etisalat_cash', 'we_pay', 'credit_card', 'other'].includes(paymentMethod || '');
-  const selectedConfig = PAYMENT_METHODS.find((m) => m.key === paymentMethod);
+  const selectedConfig = availablePaymentMethods.find((m) => m.key === paymentMethod);
+  
+  // Assume all configured methods require manual verification/receipt unless explicitly automated
+  const isManualPayment = !!selectedConfig;
 
   return (
     <div className="space-y-6">

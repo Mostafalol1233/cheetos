@@ -23,6 +23,7 @@ import {
   Eye,
   Download
 } from "lucide-react";
+import { io } from "socket.io-client";
 
 interface Order {
   id: string;
@@ -74,9 +75,35 @@ export default function UserProfilePage() {
     }
   };
   useEffect(() => {
-    const id = setInterval(() => { fetchOrders(); }, 5000);
-    return () => clearInterval(id);
-  }, []);
+    // Initial fetch
+    if (isAuthenticated) {
+      fetchOrders();
+    }
+
+    // Socket.io connection for real-time updates
+    const socket = io();
+
+    socket.on('connect', () => {
+      // console.log('Connected to socket for order updates');
+    });
+
+    socket.on('orders_updated', () => {
+      if (isAuthenticated) {
+        fetchOrders();
+        toast({
+          title: "Update",
+          description: "Order status updated",
+          duration: 3000
+        });
+      }
+    });
+
+    return () => {
+      socket.off('orders_updated');
+      socket.off('connect');
+      socket.disconnect();
+    };
+  }, [isAuthenticated, setLocation]);
 
   const handleLogout = () => {
     logout();
@@ -200,7 +227,7 @@ export default function UserProfilePage() {
                 <div className="flex items-center justify-between">
                   <h2 className="text-2xl font-bold text-white">Order History</h2>
                   <Button
-                    onClick={fetchOrders}
+                    onClick={() => fetchOrders()}
                     variant="outline"
                     className="border-gold-primary/50 text-gold-primary hover:bg-gold-primary/10"
                   >

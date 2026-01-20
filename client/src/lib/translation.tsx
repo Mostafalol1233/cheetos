@@ -266,16 +266,8 @@ const translations: Record<Language, Record<string, string>> = {
     "faq_q8": "هل الأسعار تنافسية؟",
     "faq_a8": "بالتأكيد! نقدم أفضل الأسعار مع خصومات وعروض خاصة.",
     
-    // Track Order
-    "track_order_title": "تتبع طلبك",
-    "enter_order_id": "أدخل معرف الطلب للتحقق من حالة الشراء.",
-    "order_id": "معرف الطلب",
-    "status": "الحالة",
-    "total_amount": "المبلغ الإجمالي",
-    "order_date": "تاريخ الطلب",
-    "items": "العناصر",
-    "track_order": "تتبع الطلب",
-    "tracking": "جاري التتبع...",
+    // Track Order removed
+
     
     // Common actions
     "back_to_home": "العودة إلى الرئيسية",
