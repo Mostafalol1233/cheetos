@@ -7,10 +7,10 @@ interface DynamicLoadingProgressProps {
   onComplete?: () => void;
 }
 
-export function DynamicLoadingProgress({ 
-  isLoading, 
+export function DynamicLoadingProgress({
+  isLoading,
   loadingText = "Loading games...",
-  onComplete 
+  onComplete
 }: DynamicLoadingProgressProps) {
   const [progress, setProgress] = useState(0);
   const [currentPhase, setCurrentPhase] = useState(0);
@@ -46,8 +46,10 @@ export function DynamicLoadingProgress({
 
     const updateProgress = () => {
       setProgress(prev => {
-        const newProgress = Math.min(prev + Math.random() * 8 + 2, 100);
-        
+        // Boosted increment to ensure completion within ~5 seconds
+        // Avg interval 350ms, need ~10% per step
+        const newProgress = Math.min(prev + Math.random() * 10 + 5, 100);
+
         // Update phase based on progress
         const newPhase = Math.floor((newProgress / 100) * loadingPhases.length);
         if (newPhase !== currentPhase && newPhase < loadingPhases.length) {
@@ -58,7 +60,7 @@ export function DynamicLoadingProgress({
           setTimeout(() => onComplete?.(), 500);
           return 100;
         }
-        
+
         return newProgress;
       });
     };
@@ -81,7 +83,7 @@ export function DynamicLoadingProgress({
       <div className="relative max-w-md w-full mx-4">
         {/* Animated Background */}
         <div className="absolute inset-0 bg-gradient-to-br from-gold-primary/10 via-neon-pink/10 to-blue-500/10 rounded-2xl blur-xl"></div>
-        
+
         {/* Floating Particles */}
         {particles.map((particle) => (
           <div
@@ -101,9 +103,9 @@ export function DynamicLoadingProgress({
           {/* Gaming-themed Header */}
           <div className="text-center mb-8">
             <div className="w-24 h-24 mx-auto mb-4 flex items-center justify-center">
-              <img 
-                src="/logo.png" 
-                alt="GameCart Logo" 
+              <img
+                src="https://files.catbox.moe/brmkrj.png"
+                alt="GameCart Logo"
                 className="w-full h-full object-contain animate-pulse"
               />
             </div>
@@ -126,7 +128,7 @@ export function DynamicLoadingProgress({
           <div className="space-y-4">
             <div className="relative">
               <div className="w-full bg-muted rounded-full h-3 overflow-hidden">
-                <div 
+                <div
                   className="h-full bg-gradient-to-r from-gold-primary via-neon-pink to-gold-primary transition-all duration-300 ease-out relative"
                   style={{ width: `${progress}%` }}
                 >
@@ -134,15 +136,14 @@ export function DynamicLoadingProgress({
                   <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-pulse"></div>
                 </div>
               </div>
-              
+
               {/* Progress Milestones */}
               <div className="flex justify-between text-xs text-muted-foreground mt-2">
                 {loadingPhases.map((_, index) => (
-                  <span 
+                  <span
                     key={index}
-                    className={`transition-colors duration-300 ${
-                      index <= currentPhase ? 'text-gold-primary' : ''
-                    }`}
+                    className={`transition-colors duration-300 ${index <= currentPhase ? 'text-gold-primary' : ''
+                      }`}
                   >
                     {((index + 1) / loadingPhases.length * 100).toFixed(0)}%
                   </span>
@@ -153,7 +154,7 @@ export function DynamicLoadingProgress({
             {/* Gaming Tips */}
             <div className="bg-muted/50 rounded-lg p-4 border-l-4 border-gold-primary">
               <p className="text-sm text-muted-foreground">
-                <span className="font-semibold text-gold-primary">Pro Tip:</span> 
+                <span className="font-semibold text-gold-primary">Pro Tip:</span>
                 {" "}
                 {currentPhase === 0 && "Check out our popular games section for the latest deals!"}
                 {currentPhase === 1 && "Join our community for exclusive discounts and early access!"}
