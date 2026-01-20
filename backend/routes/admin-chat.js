@@ -40,7 +40,7 @@ router.get('/:id', authenticateToken, ensureAdmin, async (req, res) => {
     try {
         const { id } = req.params;
         const result = await pool.query(
-            'SELECT id, sender, message_encrypted as text, timestamp, read, attachment_url as "attachmentUrl", attachment_type as "attachmentType" FROM chat_messages WHERE session_id = $1 ORDER BY timestamp ASC',
+            'SELECT id, sender, message_encrypted as message, timestamp, read, attachment_url as "attachmentUrl", attachment_type as "attachmentType" FROM chat_messages WHERE session_id = $1 ORDER BY timestamp ASC',
             [id]
         );
         res.json(result.rows);

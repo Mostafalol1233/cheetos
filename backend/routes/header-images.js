@@ -8,33 +8,32 @@ import { getIO } from '../socket.js';
 
 const router = express.Router();
 
-// Public endpoint - Get active header version for hero carousel (no auth required)
+// Public endpoint - Get active header versions for hero carousel (no auth required)
 router.get('/active', async (req, res) => {
   try {
     const result = await pool.query(
-      'SELECT * FROM header_versions WHERE is_active = true AND archived = false LIMIT 1'
+      'SELECT * FROM header_versions WHERE is_active = true AND archived = false ORDER BY created_at DESC'
     );
     if (result.rows.length > 0) {
-      res.json(result.rows[0]);
+      res.json(result.rows);
     } else {
-      // Return default header data if none active
-      res.json({
+      // Return array with default
+      res.json([{
         id: 'default',
         image_url: 'https://files.catbox.moe/ciy961.webp',
         heading_text: 'Level Up Your Game',
         button_text: 'Explore Now',
         button_url: '/games'
-      });
+      }]);
     }
   } catch (err) {
-    // Return default on error
-    res.json({
+    res.json([{
       id: 'default',
       image_url: 'https://files.catbox.moe/ciy961.webp',
       heading_text: 'Level Up Your Game',
       button_text: 'Explore Now',
       button_url: '/games'
-    });
+    }]);
   }
 });
 
@@ -99,22 +98,7 @@ router.post('/save-version', authenticateToken, ensureAdmin, async (req, res) =>
 
     const version = result.rows[0];
 
-    // If active, update site_settings and other versions
-    if (isActive) {
-      await pool.query('UPDATE header_versions SET is_active = false WHERE id != $1', [version.id]);
-
-      // Update site_settings
-      // Use the existing settings ID or 'default' if strictly enforced, but better to target the single row
-      await pool.query(`
-        UPDATE settings 
-        SET header_image_url = $1,
-            header_heading_text = $2,
-            header_button_text = $3,
-            header_button_url = $4,
-            updated_at = NOW()
-        WHERE id = (SELECT id FROM settings LIMIT 1)
-      `, [imageUrl, finalHeadingText, finalButtonText, finalButtonUrl]);
-    }
+    // Note: We NO LONGER deactivate other versions. Multiple active allowed.
 
     res.json(version);
   } catch (err) {
@@ -156,22 +140,8 @@ router.post('/versions/:id/activate', authenticateToken, ensureAdmin, async (req
     if (vRes.rows.length === 0) return res.status(404).json({ message: 'Version not found' });
     const version = vRes.rows[0];
 
-    // Deactivate others
-    await pool.query('UPDATE header_versions SET is_active = false');
-
-    // Activate this one
+    // Activate this one (do not deactivate others)
     await pool.query('UPDATE header_versions SET is_active = true WHERE id = $1', [id]);
-
-    // Update settings
-    await pool.query(`
-        UPDATE settings 
-        SET header_image_url = $1,
-            header_heading_text = $2,
-            header_button_text = $3,
-            header_button_url = $4,
-            updated_at = NOW()
-        WHERE id = (SELECT id FROM settings LIMIT 1)
-      `, [version.image_url, version.heading_text, version.button_text, version.button_url]);
 
     const io = getIO();
     if (io) {
