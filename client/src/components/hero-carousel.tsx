@@ -77,11 +77,11 @@ export function HeroCarousel() {
                   transition={{ delay: 0.2 }}
                   className="bg-black/60 backdrop-blur-md p-3 rounded-lg border border-white/10 shadow-xl max-w-xl"
                 >
-                  <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-cyber-blue/20 text-cyber-blue text-[10px] font-bold uppercase tracking-wider mb-1 border border-cyber-blue/30">
-                    <Gamepad2 className="w-3 h-3" />
+                  <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-cyber-blue/20 text-cyber-blue text-[8px] sm:text-[10px] font-bold uppercase tracking-wider mb-1 border border-cyber-blue/30">
+                    <Gamepad2 className="w-2.5 h-2.5" />
                     Premium Gaming
                   </span>
-                  <h2 className="text-lg sm:text-xl md:text-3xl font-black text-white mb-1 drop-shadow-md tracking-tight leading-tight">
+                  <h2 className="text-base sm:text-lg md:text-3xl font-black text-white mb-1 drop-shadow-md tracking-tight leading-tight">
                     {slide.heading_text}
                   </h2>
                   <p className="text-gray-300 text-[10px] sm:text-xs md:text-sm max-w-md mb-3 line-clamp-2">

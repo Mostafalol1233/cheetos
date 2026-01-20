@@ -1052,6 +1052,28 @@ export default function AdminDashboard() {
                         )}
                       </td>
                       <td className="p-2">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          title="Open Chat"
+                          onClick={() => {
+                            // This is a quick hack to switch tabs if they are controlled by URL or parent state
+                            // Assuming we can just switch the tab state if we had access, but we are in a sub-component? 
+                            // No, OrdersPanel is defined INSIDE AdminPage in the file `admin.tsx`.
+                            // So it has access to `setActiveTab` and `setSelectedUser`.
+                            // I will verify this scope access.
+                            if ((o as any).user_id) {
+                              setSelectedUser((o as any).user_id);
+                              setActiveTab('messages');
+                            } else {
+                              toast({ title: 'No user linked', description: 'This order has no registered user account.', variant: 'destructive' });
+                            }
+                          }}
+                        >
+                          <MessageSquare className="h-4 w-4" />
+                        </Button>
+                      </td>
+                      <td className="p-2">
                         {(!o.status || ['pending', 'pending_approval'].includes(o.status)) && (
                           <div className="flex gap-2">
                             <Button
@@ -1081,11 +1103,11 @@ export default function AdminDashboard() {
                 </tbody>
               </table>
             </div>
-          </CardContent>
-        </Card>
+          </CardContent >
+        </Card >
 
         {/* Response Modal */}
-        <Dialog open={showResponseModal} onOpenChange={setShowResponseModal}>
+        < Dialog open={showResponseModal} onOpenChange={setShowResponseModal} >
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
               <DialogTitle>Confirm Order & Send Message</DialogTitle>
@@ -1156,7 +1178,7 @@ export default function AdminDashboard() {
               </Button>
             </DialogFooter>
           </DialogContent>
-        </Dialog>
+        </Dialog >
       </>
     );
   }

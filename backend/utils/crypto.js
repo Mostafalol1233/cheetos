@@ -20,8 +20,39 @@ export function encryptText(plainText) {
   return out;
 }
 
+// Legacy decryption for JSON format from socket.js (IV/Tag/Data hex)
+export function decryptLegacy(payload) {
+  try {
+    let parsed;
+    if (typeof payload === 'object') parsed = payload;
+    else if (typeof payload === 'string' && payload.startsWith('{')) parsed = JSON.parse(payload);
+    else return null;
+
+    if (!parsed.iv || !parsed.tag || !parsed.data) return null;
+
+    const key = (process.env.PAYMENT_ENCRYPTION_KEY || '').padEnd(32, '0').slice(0, 32);
+    const iv = Buffer.from(parsed.iv, 'hex');
+    const tag = Buffer.from(parsed.tag, 'hex');
+    const encrypted = Buffer.from(parsed.data, 'hex');
+
+    const decipher = crypto.createDecipheriv('aes-256-gcm', Buffer.from(key), iv);
+    decipher.setAuthTag(tag);
+    const decrypted = Buffer.concat([decipher.update(encrypted), decipher.final()]);
+    return decrypted.toString('utf8');
+  } catch (e) {
+    return null;
+  }
+}
+
 export function decryptText(payload) {
-  if (!payload || typeof payload !== 'string') throw new Error('Invalid payload');
+  if (!payload) return '';
+  // Check for Legacy JSON first
+  if (typeof payload === 'string' && payload.trim().startsWith('{')) {
+    const legacy = decryptLegacy(payload);
+    if (legacy) return legacy;
+  }
+
+  if (typeof payload !== 'string') throw new Error('Invalid payload');
   if (!payload.startsWith('v1:')) throw new Error('Unsupported crypto format');
   const [, rest] = payload.split('v1:');
   const parts = rest.split('.');

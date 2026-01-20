@@ -475,8 +475,20 @@ export function HeaderManager() {
                             className="w-full h-full object-cover"
                           />
                           {version.is_active && (
-                            <div className="absolute top-2 left-2">
+                            <div className="absolute top-2 left-2 flex gap-1">
                               <Badge variant="default" className="bg-green-600">Active</Badge>
+                              <Button
+                                variant="destructive"
+                                size="icon"
+                                className="h-5 w-5 rounded-full"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDeactivate(version.id);
+                                }}
+                                title="Deactivate"
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
                             </div>
                           )}
                         </div>
