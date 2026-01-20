@@ -2696,7 +2696,7 @@ export default function AdminDashboard() {
                                             src={msg.attachmentUrl}
                                             alt="Attachment"
                                             className="max-w-full max-h-64 rounded border border-black/10 cursor-pointer"
-                                            onClick={() => window.open(msg.attachmentUrl, '_blank')}
+                                            onClick={() => window.open(msg.attachmentUrl || undefined, '_blank')}
                                           />
                                         </div>
                                       ) : (
