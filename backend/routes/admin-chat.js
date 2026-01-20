@@ -2,8 +2,18 @@ import express from 'express';
 import pool from '../db.js';
 import { authenticateToken, ensureAdmin } from '../middleware/auth.js';
 import { getIO } from '../socket.js';
+import { decryptText } from '../utils/crypto.js';
 
 const router = express.Router();
+
+// Helper to safely decrypt
+const safeDecrypt = (enc) => {
+    try {
+        return decryptText(enc);
+    } catch {
+        return String(enc);
+    }
+}
 
 // Get active chat sessions (users who have sent messages)
 router.get('/sessions', authenticateToken, ensureAdmin, async (req, res) => {
@@ -15,7 +25,8 @@ router.get('/sessions', authenticateToken, ensureAdmin, async (req, res) => {
         u.email,
         u.phone,
         (SELECT COUNT(*) FROM chat_messages WHERE session_id = m.session_id AND read = false AND sender = 'user') as "unreadCount",
-        COALESCE(m.message, m.message_encrypted) as "lastMessage",
+        m.message_encrypted,
+        m.message,
         m.timestamp as "lastActivity"
       FROM chat_messages m
       LEFT JOIN users u ON m.session_id = u.id
@@ -25,8 +36,10 @@ router.get('/sessions', authenticateToken, ensureAdmin, async (req, res) => {
         // Fallback if users table join fails (e.g. anonymous sessions if valid)
         const result = await pool.query(query);
 
-        // Sort by lastActivity descending in JS
-        const sessions = result.rows.sort((a, b) => new Date(b.lastActivity).getTime() - new Date(a.lastActivity).getTime());
+        const sessions = result.rows.map(s => ({
+            ...s,
+            lastMessage: s.message || safeDecrypt(s.message_encrypted)
+        })).sort((a, b) => new Date(b.lastActivity).getTime() - new Date(a.lastActivity).getTime());
 
         res.json(sessions);
     } catch (err) {
@@ -40,10 +53,14 @@ router.get('/:id', authenticateToken, ensureAdmin, async (req, res) => {
     try {
         const { id } = req.params;
         const result = await pool.query(
-            'SELECT id, sender, message_encrypted as message, timestamp, read, attachment_url as "attachmentUrl", attachment_type as "attachmentType" FROM chat_messages WHERE session_id = $1 ORDER BY timestamp ASC',
+            'SELECT id, sender, message, message_encrypted, timestamp, read, attachment_url as "attachmentUrl", attachment_type as "attachmentType" FROM chat_messages WHERE session_id = $1 ORDER BY timestamp ASC',
             [id]
         );
-        res.json(result.rows);
+        const messages = result.rows.map(m => ({
+            ...m,
+            message: m.message || safeDecrypt(m.message_encrypted)
+        }));
+        res.json(messages);
     } catch (err) {
         res.status(500).json({ message: err.message });
     }
@@ -63,6 +80,17 @@ router.put('/:id/read', authenticateToken, ensureAdmin, async (req, res) => {
     }
 });
 
+// Delete a specific message
+router.delete('/:id/messages/:msgId', authenticateToken, ensureAdmin, async (req, res) => {
+    try {
+        const { id, msgId } = req.params;
+        await pool.query('DELETE FROM chat_messages WHERE id = $1 AND session_id = $2', [msgId, id]);
+        res.json({ ok: true });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
 // Send reply
 router.post('/:id', authenticateToken, ensureAdmin, async (req, res) => {
     try {
@@ -73,18 +101,25 @@ router.post('/:id', authenticateToken, ensureAdmin, async (req, res) => {
             return res.status(400).json({ message: 'Message or attachment required' });
         }
 
-        const msgId = `msg_${Date.now()}_${Math.random().toString(36).slice(2, 9)} `;
+        const msgId = `msg_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
         const text = message ? String(message).trim() : '';
 
+        // Store as plaintext for admin replies for now, or could encrypt if consistent
+        // For admin to user, we often store plaintext or encrypt accordingly.
+        // Assuming current pattern is we might move to plaintext or hybrid.
+        // Let's store BOTH to be safe or just encrypted if that's the standard.
+        // The read logic handles fallback. Let's write to `message` column if it exists.
+
         await pool.query(
-            'INSERT INTO chat_messages (id, session_id, sender, message_encrypted, read, attachment_url, attachment_type) VALUES ($1, $2, $3, $4, $5, $6, $7)',
+            'INSERT INTO chat_messages (id, session_id, sender, message, read, attachment_url, attachment_type) VALUES ($1, $2, $3, $4, $5, $6, $7)',
             [msgId, id, 'admin', text, true, attachmentUrl || null, attachmentType || null]
         );
 
         const msgPayload = {
             id: msgId,
             sender: 'admin',
-            text,
+            text, // Legacy for socket events
+            message: text,
             attachmentUrl,
             attachmentType,
             timestamp: new Date().toISOString()

@@ -1444,6 +1444,12 @@ async function initializeDatabase() {
         ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `);
+
+    // Ensure orders table has latest columns
+    await pool.query(`ALTER TABLE orders ADD COLUMN IF NOT EXISTS player_id TEXT`);
+    await pool.query(`ALTER TABLE orders ADD COLUMN IF NOT EXISTS receipt_url TEXT`);
+    await pool.query(`ALTER TABLE orders ADD COLUMN IF NOT EXISTS payment_details TEXT`);
+    await pool.query(`ALTER TABLE orders ADD COLUMN IF NOT EXISTS delivery_method VARCHAR(50) DEFAULT 'whatsapp'`);
     await pool.query(`
       CREATE TABLE IF NOT EXISTS performance_metrics (
         id VARCHAR(60) PRIMARY KEY,

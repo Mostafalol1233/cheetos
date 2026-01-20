@@ -144,11 +144,22 @@ router.post('/versions/:id/activate', authenticateToken, ensureAdmin, async (req
     await pool.query('UPDATE header_versions SET is_active = true WHERE id = $1', [id]);
 
     const io = getIO();
-    if (io) {
-      io.emit('header_updated', { type: 'activate', version });
-    }
-
     res.json({ ok: true, version });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// Deactivate version
+router.post('/versions/:id/deactivate', authenticateToken, ensureAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    await pool.query('UPDATE header_versions SET is_active = false WHERE id = $1', [id]);
+
+    const io = getIO();
+    if (io) io.emit('header_updated', { type: 'deactivate', id });
+
+    res.json({ ok: true });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

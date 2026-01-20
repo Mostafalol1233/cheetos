@@ -59,39 +59,39 @@ export function HeroCarousel() {
                 style={{ backgroundImage: `url(${slide.image_url})` }}
               />
 
-              {/* Main Image - Object Contain to prevent cropping */}
+              {/* Main Image - Strech coverage */}
               <img
                 src={slide.image_url}
                 alt={slide.heading_text}
-                className="absolute inset-0 w-full h-full object-contain z-10"
+                className="absolute inset-0 w-full h-full object-cover z-10"
               />
 
               {/* Gradient Overlay for Text Readability */}
               <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent z-20" />
 
               {/* Content Overlay */}
-              <div className="absolute bottom-0 left-0 w-full p-6 md:p-12 z-30 flex flex-col items-start gap-3">
+              <div className="absolute bottom-0 left-0 w-full p-4 md:p-8 z-30 flex flex-col items-start gap-2">
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.2 }}
-                  className="bg-black/40 backdrop-blur-sm p-4 rounded-xl border border-white/10 shadow-2xl max-w-2xl"
+                  className="bg-black/60 backdrop-blur-md p-3 rounded-lg border border-white/10 shadow-xl max-w-xl"
                 >
-                  <span className="inline-flex items-center gap-2 px-2 py-0.5 rounded-full bg-cyber-blue/20 text-cyber-blue text-[10px] md:text-xs font-bold uppercase tracking-wider mb-2 border border-cyber-blue/30">
+                  <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-cyber-blue/20 text-cyber-blue text-[10px] font-bold uppercase tracking-wider mb-1 border border-cyber-blue/30">
                     <Gamepad2 className="w-3 h-3" />
                     Premium Gaming
                   </span>
-                  <h2 className="text-xl sm:text-2xl md:text-5xl font-black text-white mb-2 drop-shadow-lg tracking-tight leading-tight">
+                  <h2 className="text-lg sm:text-xl md:text-3xl font-black text-white mb-1 drop-shadow-md tracking-tight leading-tight">
                     {slide.heading_text}
                   </h2>
-                  <p className="text-gray-200 text-xs md:text-lg max-w-lg mb-4 drop-shadow-md line-clamp-2">
+                  <p className="text-gray-300 text-[10px] sm:text-xs md:text-sm max-w-md mb-3 line-clamp-2">
                     Get the best deals on game currencies and gift cards.
                   </p>
 
                   <Link href={slide.button_url}>
-                    <Button size="sm" className="rounded-lg px-4 py-2 h-9 md:h-11 md:px-8 font-bold text-xs md:text-base btn-gaming group shadow-glow-blue hover:scale-105 transition-all">
+                    <Button size="sm" className="rounded-md px-3 py-1 h-7 md:h-9 md:px-5 font-bold text-[10px] md:text-xs btn-gaming group shadow-glow-blue hover:scale-105 transition-all">
                       {slide.button_text}
-                      <ArrowRight className="ml-2 w-3 h-3 md:w-5 md:h-5 group-hover:translate-x-1 transition-transform" />
+                      <ArrowRight className="ml-1.5 w-3 h-3 group-hover:translate-x-1 transition-transform" />
                     </Button>
                   </Link>
                 </motion.div>

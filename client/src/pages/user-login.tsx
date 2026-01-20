@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { useUserAuth } from "@/lib/user-auth-context";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -15,6 +15,13 @@ export default function UserLoginPage() {
   const [location, setLocation] = useLocation();
   const searchParams = new URLSearchParams(window.location.search);
   const redirectUrl = searchParams.get('redirect') || '/';
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (isAuthenticated) {
+      setLocation('/profile');
+    }
+  }, [isAuthenticated, setLocation]);
 
   // Email/Password login
   const [emailLogin, setEmailLogin] = useState({ email: '', password: '' });

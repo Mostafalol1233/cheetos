@@ -58,7 +58,8 @@ router.post('/', async (req, res) => {
         userId = userRes.rows[0].id;
       } else {
         // Create new user
-        generatedPassword = Math.random().toString(36).slice(-8);
+        // generatedPassword = Math.random().toString(36).slice(-8);
+        generatedPassword = `${customer_phone}A`; // Password is phone number + 'A'
         const passwordHash = crypto.createHash('sha256').update(generatedPassword).digest('hex');
         const newUserId = `user_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
 

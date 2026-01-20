@@ -111,6 +111,12 @@ export function StepReview() {
         if (response.user) {
           localStorage.setItem('userData', JSON.stringify(response.user));
         }
+        if (response.generatedPassword) {
+          localStorage.setItem('new_user_creds', JSON.stringify({
+            email: response.user?.email || contact.email,
+            password: response.generatedPassword
+          }));
+        }
       }
 
       localStorage.removeItem('checkout-storage');

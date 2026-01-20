@@ -81,6 +81,33 @@ export default function UserProfilePage() {
   }, [isAuthenticated, setLocation]);
 
   useEffect(() => {
+    // Check for new user credentials from guest checkout
+    const newUserCreds = localStorage.getItem('new_user_creds');
+    if (newUserCreds) {
+      try {
+        const creds = JSON.parse(newUserCreds);
+        // Show persistent dialog or toast
+        // Using a custom toast duration or alert for now to ensure they see it
+        // Ideally a modal. Let's use a browser alert for guaranteed visibility or a very long toast
+        // User requested "top pop up messge".
+
+        // Let's use the toast with a long duration and destructive/distinctive style
+        toast({
+          title: "Account Created Successfully!",
+          description: `Your Email: ${creds.email} \nYour Password: ${creds.password}`,
+          duration: 30000, // 30 seconds
+          className: "bg-green-900 border-green-500 text-white"
+        });
+
+        // Also alert if they missed the toast
+        // alert(`Welcome! Your account has been created.\nEmail: ${creds.email}\nPassword: ${creds.password}`);
+
+        localStorage.removeItem('new_user_creds');
+      } catch (e) { }
+    }
+  }, [toast]);
+
+  useEffect(() => {
     // Socket.io connection for real-time updates
     const socket = io(API_BASE_URL);
 

@@ -2647,8 +2647,28 @@ export default function AdminDashboard() {
                             .map((msg) => (
                               <div
                                 key={msg.id}
-                                className={`flex ${msg.sender === 'user' ? 'justify-start' : 'justify-end'}`}
+                                className={`flex ${msg.sender === 'user' ? 'justify-start' : 'justify-end'} group relative`}
                               >
+                                {msg.sender === 'admin' && (
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-6 w-6 absolute top-0 -left-8 opacity-0 group-hover:opacity-100 transition-opacity text-destructive"
+                                    onClick={async () => {
+                                      if (!confirm('Delete this message?')) return;
+                                      try {
+                                        const token = localStorage.getItem('adminToken');
+                                        await fetch(`${API_BASE_URL}/api/admin/chat/${selectedUser}/messages/${msg.id}`, {
+                                          method: 'DELETE',
+                                          headers: token ? { Authorization: `Bearer ${token}` } : {}
+                                        });
+                                        queryClient.setQueryData<any[]>(['/api/admin/chat', selectedUser], (old) => (old || []).filter(m => m.id !== msg.id));
+                                      } catch (e) { console.error(e); }
+                                    }}
+                                  >
+                                    <Trash2 className="w-3 h-3" />
+                                  </Button>
+                                )}
                                 <div
                                   className={`max-w-[80%] rounded-lg px-3 py-2 text-sm ${msg.sender === 'user'
                                     ? 'bg-gray-700 text-white'
@@ -2671,11 +2691,14 @@ export default function AdminDashboard() {
                                   {msg.attachmentUrl && (
                                     <div className="mt-1">
                                       {msg.attachmentType === 'image' ? (
-                                        <img
-                                          src={msg.attachmentUrl}
-                                          alt="Attachment"
-                                          className="max-w-full max-h-64 rounded border border-black/10"
-                                        />
+                                        <div className="relative group/img">
+                                          <img
+                                            src={msg.attachmentUrl}
+                                            alt="Attachment"
+                                            className="max-w-full max-h-64 rounded border border-black/10 cursor-pointer"
+                                            onClick={() => window.open(msg.attachmentUrl, '_blank')}
+                                          />
+                                        </div>
                                       ) : (
                                         <a
                                           href={msg.attachmentUrl}
@@ -2695,6 +2718,26 @@ export default function AdminDashboard() {
                                     })}
                                   </p>
                                 </div>
+                                {msg.sender === 'user' && ( // Delete button on right for user msgs
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-6 w-6 absolute top-0 -right-8 opacity-0 group-hover:opacity-100 transition-opacity text-destructive"
+                                    onClick={async () => {
+                                      if (!confirm('Delete this message?')) return;
+                                      try {
+                                        const token = localStorage.getItem('adminToken');
+                                        await fetch(`${API_BASE_URL}/api/admin/chat/${selectedUser}/messages/${msg.id}`, {
+                                          method: 'DELETE',
+                                          headers: token ? { Authorization: `Bearer ${token}` } : {}
+                                        });
+                                        queryClient.setQueryData<any[]>(['/api/admin/chat', selectedUser], (old) => (old || []).filter(m => m.id !== msg.id));
+                                      } catch (e) { console.error(e); }
+                                    }}
+                                  >
+                                    <Trash2 className="w-3 h-3" />
+                                  </Button>
+                                )}
                               </div>
                             ))}
                           <div ref={messagesEndRef} />

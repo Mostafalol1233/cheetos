@@ -251,267 +251,274 @@ export function HeaderManager() {
     }
   };
 
-  const handleActivate = async (id: string) => {
-    try {
-      const token = localStorage.getItem("adminToken");
-      const headers: Record<string, string> = { "Content-Type": "application/json" };
-      if (token) headers["Authorization"] = `Bearer ${token}`;
-
-      await fetch(`/api/header-images/versions/${id}/activate`, {
-        method: "POST",
-        headers
-      });
-
-      toast({ title: "Activated", description: "Header version is now live" });
-      fetchVersions();
-    } catch (error) {
-      toast({ title: "Error", description: "Failed to activate version", variant: "destructive" });
-    }
+  toast({ title: "Activated", description: "Header version is now live" });
+  fetchVersions();
+} catch (error) {
+  toast({ title: "Error", description: "Failed to activate version", variant: "destructive" });
+}
   };
 
-  const loadVersionIntoEditor = (v: HeaderVersion) => {
-    setImageUrl(v.image_url);
-    setHeadingText(v.heading_text);
-    setButtonText(v.button_text);
-    setButtonUrl(v.button_url);
-    setActiveTab("editor");
-    toast({ title: "Loaded", description: "Version loaded into editor. Click Save to publish changes." });
-  };
+const handleDeactivate = async (id: string) => {
+  try {
+    const token = localStorage.getItem("adminToken");
+    const headers: Record<string, string> = { "Content-Type": "application/json" };
+    if (token) headers["Authorization"] = `Bearer ${token}`;
 
-  return (
-    <div className="space-y-6">
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="editor">Editor & Preview</TabsTrigger>
-          <TabsTrigger value="history">History & Versions</TabsTrigger>
-        </TabsList>
+    await fetch(`/api/header-images/versions/${id}/deactivate`, {
+      method: "POST",
+      headers
+    });
 
-        <TabsContent value="editor" className="space-y-6">
-          {/* Preview Section */}
-          <Card className="overflow-hidden border-2 border-primary/20">
-            <CardHeader>
-              <CardTitle>Live Preview</CardTitle>
-              <CardDescription>This is how your header will look on the site.</CardDescription>
-            </CardHeader>
-            <CardContent className="p-0 relative group">
-              <div className="relative w-full h-[300px] bg-muted flex items-center justify-center overflow-hidden">
-                {imageUrl ? (
-                  <>
-                    <img
-                      src={imageUrl}
-                      alt="Header Preview"
-                      className="w-full h-full object-cover transition-transform hover:scale-105 duration-700"
-                    />
-                    <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center text-white p-4 text-center">
-                      <h1 className="text-4xl md:text-5xl font-bold mb-4 drop-shadow-lg max-w-2xl">
-                        {headingText}
-                      </h1>
-                      <Button
-                        size="lg"
-                        className="bg-gold-primary text-black hover:bg-gold-secondary font-bold text-lg px-8 py-6 rounded-full transition-all hover:scale-105"
-                      >
-                        {buttonText}
-                      </Button>
-                    </div>
-                  </>
-                ) : (
-                  <div className="flex flex-col items-center text-muted-foreground">
-                    <ImageIcon className="h-16 w-16 mb-4 opacity-50" />
-                    <span>No header image selected</span>
+    toast({ title: "Deactivated", description: "Header version is no longer live" });
+    fetchVersions();
+  } catch (error) {
+    toast({ title: "Error", description: "Failed to deactivate version", variant: "destructive" });
+  }
+};
+
+const loadVersionIntoEditor = (v: HeaderVersion) => {
+  setImageUrl(v.image_url);
+  setHeadingText(v.heading_text);
+  setButtonText(v.button_text);
+  setButtonUrl(v.button_url);
+  setActiveTab("editor");
+  toast({ title: "Loaded", description: "Version loaded into editor. Click Save to publish changes." });
+};
+
+return (
+  <div className="space-y-6">
+    <Tabs value={activeTab} onValueChange={setActiveTab}>
+      <TabsList className="grid w-full grid-cols-2">
+        <TabsTrigger value="editor">Editor & Preview</TabsTrigger>
+        <TabsTrigger value="history">History & Versions</TabsTrigger>
+      </TabsList>
+
+      <TabsContent value="editor" className="space-y-6">
+        {/* Preview Section */}
+        <Card className="overflow-hidden border-2 border-primary/20">
+          <CardHeader>
+            <CardTitle>Live Preview</CardTitle>
+            <CardDescription>This is how your header will look on the site.</CardDescription>
+          </CardHeader>
+          <CardContent className="p-0 relative group">
+            <div className="relative w-full h-[300px] bg-muted flex items-center justify-center overflow-hidden">
+              {imageUrl ? (
+                <>
+                  <img
+                    src={imageUrl}
+                    alt="Header Preview"
+                    className="w-full h-full object-cover transition-transform hover:scale-105 duration-700"
+                  />
+                  <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center text-white p-4 text-center">
+                    <h1 className="text-4xl md:text-5xl font-bold mb-4 drop-shadow-lg max-w-2xl">
+                      {headingText}
+                    </h1>
+                    <Button
+                      size="lg"
+                      className="bg-gold-primary text-black hover:bg-gold-secondary font-bold text-lg px-8 py-6 rounded-full transition-all hover:scale-105"
+                    >
+                      {buttonText}
+                    </Button>
                   </div>
+                </>
+              ) : (
+                <div className="flex flex-col items-center text-muted-foreground">
+                  <ImageIcon className="h-16 w-16 mb-4 opacity-50" />
+                  <span>No header image selected</span>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Editor Controls */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Image Source</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex flex-col gap-4">
+                <Button
+                  variant="outline"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="w-full h-24 border-dashed"
+                >
+                  <div className="flex flex-col items-center gap-2">
+                    <Upload className="h-6 w-6" />
+                    <span>Upload New Image</span>
+                    <span className="text-xs text-muted-foreground">1920x300px recommended</span>
+                  </div>
+                </Button>
+                <Input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/png, image/jpeg, image/webp"
+                  className="hidden"
+                  onChange={handleFileSelect}
+                />
+                {selectedFile && (
+                  <Alert>
+                    <ImageIcon className="h-4 w-4" />
+                    <AlertTitle>Selected File</AlertTitle>
+                    <AlertDescription className="flex justify-between items-center">
+                      {selectedFile.name}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setSelectedFile(null);
+                          // Reset to active version image if available, or empty
+                          const active = versions.find(v => v.is_active);
+                          setImageUrl(active?.image_url || "");
+                        }}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </AlertDescription>
+                  </Alert>
                 )}
               </div>
             </CardContent>
           </Card>
 
-          {/* Editor Controls */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Image Source</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex flex-col gap-4">
-                  <Button
-                    variant="outline"
-                    onClick={() => fileInputRef.current?.click()}
-                    className="w-full h-24 border-dashed"
-                  >
-                    <div className="flex flex-col items-center gap-2">
-                      <Upload className="h-6 w-6" />
-                      <span>Upload New Image</span>
-                      <span className="text-xs text-muted-foreground">1920x300px recommended</span>
-                    </div>
-                  </Button>
-                  <Input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/png, image/jpeg, image/webp"
-                    className="hidden"
-                    onChange={handleFileSelect}
-                  />
-                  {selectedFile && (
-                    <Alert>
-                      <ImageIcon className="h-4 w-4" />
-                      <AlertTitle>Selected File</AlertTitle>
-                      <AlertDescription className="flex justify-between items-center">
-                        {selectedFile.name}
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            setSelectedFile(null);
-                            // Reset to active version image if available, or empty
-                            const active = versions.find(v => v.is_active);
-                            setImageUrl(active?.image_url || "");
-                          }}
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </AlertDescription>
-                    </Alert>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Content & Actions</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Heading Text</label>
-                  <Textarea
-                    value={headingText}
-                    onChange={(e) => setHeadingText(e.target.value)}
-                    placeholder="Level up your game"
-                    rows={2}
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Button Text</label>
-                    <Input
-                      value={buttonText}
-                      onChange={(e) => setButtonText(e.target.value)}
-                      placeholder="Shop Now"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Button URL</label>
-                    <Input
-                      value={buttonUrl}
-                      onChange={(e) => setButtonUrl(e.target.value)}
-                      placeholder="/games"
-                    />
-                  </div>
-                </div>
-              </CardContent>
-              <CardFooter>
-                <Button
-                  onClick={handleSaveVersion}
-                  disabled={isSaving || isUploading}
-                  className="w-full bg-primary"
-                >
-                  {(isSaving || isUploading) ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  ) : (
-                    <Save className="mr-2 h-4 w-4" />
-                  )}
-                  Save & Publish Changes
-                </Button>
-              </CardFooter>
-            </Card>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="history">
           <Card>
             <CardHeader>
-              <CardTitle>Version History</CardTitle>
-              <CardDescription>View, restore, or manage previous header configurations.</CardDescription>
+              <CardTitle>Content & Actions</CardTitle>
             </CardHeader>
-            <CardContent>
-              <ScrollArea className="h-[600px] pr-4">
-                <div className="space-y-4">
-                  {isLoadingVersions ? (
-                    <div className="flex justify-center p-8">
-                      <Loader2 className="h-8 w-8 animate-spin" />
-                    </div>
-                  ) : versions.length === 0 ? (
-                    <div className="text-center p-8 text-muted-foreground">
-                      No history available yet.
-                    </div>
-                  ) : (
-                    versions.map((version) => (
-                      <div
-                        key={version.id}
-                        className={`flex flex-col md:flex-row gap-4 p-4 rounded-lg border ${version.is_active ? 'border-primary bg-primary/5' : 'border-border'}`}
-                      >
-                        <div className="w-full md:w-48 h-24 bg-muted rounded-md overflow-hidden flex-shrink-0 relative">
-                          <img
-                            src={version.image_url}
-                            alt="Version preview"
-                            className="w-full h-full object-cover"
-                          />
-                          {version.is_active && (
-                            <div className="absolute top-2 left-2">
-                              <Badge variant="default" className="bg-green-600">Active</Badge>
-                            </div>
-                          )}
-                        </div>
-                        <div className="flex-1 space-y-1">
-                          <div className="flex items-center gap-2">
-                            <h4 className="font-semibold">{version.heading_text}</h4>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Heading Text</label>
+                <Textarea
+                  value={headingText}
+                  onChange={(e) => setHeadingText(e.target.value)}
+                  placeholder="Level up your game"
+                  rows={2}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Button Text</label>
+                  <Input
+                    value={buttonText}
+                    onChange={(e) => setButtonText(e.target.value)}
+                    placeholder="Shop Now"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Button URL</label>
+                  <Input
+                    value={buttonUrl}
+                    onChange={(e) => setButtonUrl(e.target.value)}
+                    placeholder="/games"
+                  />
+                </div>
+              </div>
+            </CardContent>
+            <CardFooter>
+              <Button
+                onClick={handleSaveVersion}
+                disabled={isSaving || isUploading}
+                className="w-full bg-primary"
+              >
+                {(isSaving || isUploading) ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Save className="mr-2 h-4 w-4" />
+                )}
+                Save & Publish Changes
+              </Button>
+            </CardFooter>
+          </Card>
+        </div>
+      </TabsContent>
+
+      <TabsContent value="history">
+        <Card>
+          <CardHeader>
+            <CardTitle>Version History</CardTitle>
+            <CardDescription>View, restore, or manage previous header configurations.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ScrollArea className="h-[600px] pr-4">
+              <div className="space-y-4">
+                {isLoadingVersions ? (
+                  <div className="flex justify-center p-8">
+                    <Loader2 className="h-8 w-8 animate-spin" />
+                  </div>
+                ) : versions.length === 0 ? (
+                  <div className="text-center p-8 text-muted-foreground">
+                    No history available yet.
+                  </div>
+                ) : (
+                  versions.map((version) => (
+                    <div
+                      key={version.id}
+                      className={`flex flex-col md:flex-row gap-4 p-4 rounded-lg border ${version.is_active ? 'border-primary bg-primary/5' : 'border-border'}`}
+                    >
+                      <div className="w-full md:w-48 h-24 bg-muted rounded-md overflow-hidden flex-shrink-0 relative">
+                        <img
+                          src={version.image_url}
+                          alt="Version preview"
+                          className="w-full h-full object-cover"
+                        />
+                        {version.is_active && (
+                          <div className="absolute top-2 left-2">
+                            <Badge variant="default" className="bg-green-600">Active</Badge>
                           </div>
-                          <div className="text-sm text-muted-foreground grid grid-cols-2 gap-2">
-                            <span>Button: {version.button_text} ({version.button_url})</span>
-                            <span className="flex items-center gap-1">
-                              <Clock className="h-3 w-3" />
-                              {format(new Date(version.created_at), "PPP p")}
-                            </span>
-                          </div>
-                        </div>
+                        )}
+                      </div>
+                      <div className="flex-1 space-y-1">
                         <div className="flex items-center gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => loadVersionIntoEditor(version)}
-                            title="Edit this version"
-                          >
-                            <History className="h-4 w-4" />
-                          </Button>
-                          {!version.is_active && (
-                            <>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleActivate(version.id)}
-                                title="Activate this version"
-                              >
-                                <Check className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="destructive"
-                                size="sm"
-                                onClick={() => handleDelete(version.id)}
-                                title="Archive version"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </>
-                          )}
+                          <h4 className="font-semibold">{version.heading_text}</h4>
+                        </div>
+                        <div className="text-sm text-muted-foreground grid grid-cols-2 gap-2">
+                          <span>Button: {version.button_text} ({version.button_url})</span>
+                          <span className="flex items-center gap-1">
+                            <Clock className="h-3 w-3" />
+                            {format(new Date(version.created_at), "PPP p")}
+                          </span>
                         </div>
                       </div>
-                    ))
-                  )}
-                </div>
-              </ScrollArea>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
-    </div>
-  );
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => loadVersionIntoEditor(version)}
+                          title="Edit this version"
+                        >
+                          <History className="h-4 w-4" />
+                        </Button>
+                        {!version.is_active && (
+                          <>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleActivate(version.id)}
+                              title="Activate this version"
+                            >
+                              <Check className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => handleDelete(version.id)}
+                              title="Archive version"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </ScrollArea>
+          </CardContent>
+        </Card>
+      </TabsContent>
+    </Tabs>
+  </div>
+);
 }
