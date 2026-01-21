@@ -109,7 +109,11 @@ export default function UserProfilePage() {
 
   useEffect(() => {
     // Socket.io connection for real-time updates
-    const socket = io(API_BASE_URL);
+    const socket = io(API_BASE_URL, {
+      transports: ['websocket', 'polling'],
+      reconnection: true,
+      path: '/socket.io'
+    });
 
     socket.on('connect', () => {
       // console.log('Connected to socket for order updates');
@@ -294,7 +298,7 @@ export default function UserProfilePage() {
                               <Badge className={`mb-2 ${getStatusColor(order.status)}`}>
                                 {order.status}
                               </Badge>
-                              <p className="text-xl font-bold text-gold-primary">{(order.total_amount ?? order.total ?? 0).toFixed(2)} EGP</p>
+                              <p className="text-xl font-bold text-gold-primary">{Number(order.total_amount ?? order.total ?? 0).toFixed(2)} EGP</p>
                             </div>
                           </div>
                         </CardHeader>

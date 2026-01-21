@@ -1,6 +1,6 @@
 import express from 'express';
 import pool from '../db.js';
-import { authenticateToken, ensureAdmin } from '../middleware/auth.js';
+import { authenticateToken, optionalAuthenticateToken, ensureAdmin } from '../middleware/auth.js';
 import { sendWhatsAppMessage } from '../whatsapp.js';
 import { logAudit } from '../utils/audit.js';
 import { sendEmail } from '../utils/email.js';
@@ -35,7 +35,7 @@ const writeOrders = (orders) => {
 };
 
 // Create Order
-router.post('/', async (req, res) => {
+router.post('/', optionalAuthenticateToken, async (req, res) => {
   const { customer_name, customer_email, customer_phone, items, total_amount, payment_method, notes, player_id, receipt_url } = req.body;
 
   // Validation

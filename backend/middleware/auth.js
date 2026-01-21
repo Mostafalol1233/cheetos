@@ -21,6 +21,24 @@ export const authenticateToken = (req, res, next) => {
   });
 };
 
+export const optionalAuthenticateToken = (req, res, next) => {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+
+  if (!token) {
+    return next();
+  }
+
+  jwt.verify(token, JWT_SECRET, (err, user) => {
+    if (!err) {
+      req.user = user;
+    }
+    // We proceed regardless of token validity in optional mode, 
+    // effectively treating invalid tokens as "guest"
+    next();
+  });
+};
+
 export const ensureAdmin = (req, res, next) => {
   if (!req.user || req.user.role !== 'admin') {
     return res.status(403).json({ message: 'Admin privileges required' });
