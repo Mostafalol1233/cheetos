@@ -984,6 +984,7 @@ export default function AdminDashboard() {
                   <tr className="text-left">
                     <th className="p-2">Order</th>
                     <th className="p-2">Customer</th>
+                    <th className="p-2">Email</th>
                     <th className="p-2">Contact</th>
                     <th className="p-2">Status</th>
                     <th className="p-2">Timestamp</th>
@@ -1000,6 +1001,7 @@ export default function AdminDashboard() {
                     <tr key={o.id} className="border-t">
                       <td className="p-2 font-mono">{o.id}</td>
                       <td className="p-2">{(o as any).customer_name || o.customerName || '-'}</td>
+                      <td className="p-2">{(o as any).customer_email || (o as any).customerEmail || '-'}</td>
                       <td className="p-2">{(o as any).customer_phone || o.customerPhone || '-'}</td>
                       <td className="p-2">
                         <span className={`font-medium ${getStatusColor(o.status)}`}>
