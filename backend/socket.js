@@ -8,6 +8,8 @@ let ioInstance = null;
 
 export const initSocket = (httpServer) => {
   ioInstance = new Server(httpServer, {
+    // Explicit path to match client configuration and avoid websocket 404/close issues
+    path: '/socket.io',
     cors: {
       origin: '*',
       methods: ['GET', 'POST']

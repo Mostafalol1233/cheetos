@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
-import { useCheckout } from '@/state/checkout';
+import { useCheckout, ensureIdempotencyKey } from '@/state/checkout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { ensureIdempotencyKey } from '@/state/checkout';
 import { API_BASE_URL } from '@/lib/queryClient';
 import { Loader2 } from 'lucide-react';
 import { useSettings } from '@/lib/settings-context';
@@ -12,7 +11,7 @@ import { useUserAuth } from '@/lib/user-auth-context';
 import type { PaymentMethod } from '@/state/checkout';
 
 export function StepReview() {
-  const { cart, contact, paymentMethod, paymentData, subtotal, total, setOrderMeta, setError, setStep, reset, availablePaymentMethods } = useCheckout();
+  const { cart, contact, paymentMethod, paymentData, subtotal, total, setOrderMeta, setError, setStep, reset, availablePaymentMethods, setGeneratedPassword } = useCheckout();
   const [deliverVia, setDeliverVia] = useState<'email' | 'whatsapp'>('email');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { settings } = useSettings();

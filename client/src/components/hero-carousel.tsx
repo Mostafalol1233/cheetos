@@ -45,7 +45,7 @@ export function HeroCarousel() {
   const slides = (activeHeaders && activeHeaders.length > 0) ? activeHeaders : [defaultSlide];
 
   return (
-    <div className="relative w-full overflow-hidden rounded-2xl h-[260px] md:h-[400px] lg:h-[480px] bg-black border border-border/50 shadow-2xl group">
+    <div className="relative w-full overflow-hidden rounded-2xl h-[260px] md:h-[400px] lg:h-[480px] bg-transparent border border-border/50 shadow-2xl group">
 
       {/* Carousel Viewport */}
       <div className="h-full w-full" ref={emblaRef}>
@@ -75,7 +75,7 @@ export function HeroCarousel() {
                     <Gamepad2 className="w-2.5 h-2.5" />
                     Premium Gaming
                   </span>
-                  <h2 className="text-base sm:text-lg md:text-xl font-black text-white mb-1 drop-shadow-md tracking-tight leading-tight">
+                  <h2 className="text-base sm:text-lg md:text-xl font-black text-white mb-1 tracking-tight leading-tight">
                     {slide.heading_text}
                   </h2>
                   <p className="text-gray-300 text-[10px] sm:text-xs max-w-xs mb-2 line-clamp-2">
