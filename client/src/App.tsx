@@ -12,6 +12,8 @@ import { LocalizationProvider } from "./lib/localization";
 import { AuthProvider, useAuth } from "./lib/auth-context";
 import { UserAuthProvider } from "./lib/user-auth-context";
 import { useState, useEffect } from "react";
+import { useToast } from "@/hooks/use-toast";
+import { Button } from "@/components/ui/button";
 import Home from "./pages/home";
 import GamePage from "./pages/game";
 import AdminDashboard from "./pages/admin";
@@ -92,8 +94,70 @@ function Router() {
 
 function AppShell() {
   const [location] = useLocation();
+  const { toast } = useToast();
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+
+  // Global credentials popup for guest-checkout auto-account creation.
+  // Keeps showing on any page until user clicks X.
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem('new_user_creds');
+      if (!raw) return;
+      const creds = JSON.parse(raw);
+      if (!creds?.email || !creds?.password) return;
+
+      toast({
+        title: 'Account created - save your credentials',
+        description: (
+          <div className="space-y-2">
+            <div className="text-xs break-all">
+              <span className="opacity-80">Email:</span> {String(creds.email)}
+            </div>
+            <div className="text-xs break-all">
+              <span className="opacity-80">Password:</span> {String(creds.password)}
+            </div>
+            <div className="flex flex-wrap gap-2 pt-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => navigator.clipboard.writeText(String(creds.email)).catch(() => {})}
+              >
+                Copy Email
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => navigator.clipboard.writeText(String(creds.password)).catch(() => {})}
+              >
+                Copy Password
+              </Button>
+              <Button
+                type="button"
+                variant="destructive"
+                size="sm"
+                onClick={() => {
+                  localStorage.removeItem('new_user_creds');
+                  // Show a tiny confirmation
+                  toast({ title: 'Saved', description: 'Credentials popup closed.', duration: 1500 });
+                }}
+              >
+                X
+              </Button>
+            </div>
+            <div className="text-[11px] opacity-80">
+              This message will keep appearing until you close it.
+            </div>
+          </div>
+        ) as any,
+        duration: 600000, // 10 minutes
+        className: 'border border-green-500/40 bg-green-950 text-white'
+      });
+    } catch {
+    }
+  }, [toast, location]);
 
   const isAdminRoute = location === "/admin" || location.startsWith("/admin/") || location === "/admin/login";
   const isProfileRoute = location === "/profile";
