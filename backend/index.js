@@ -154,8 +154,9 @@ const nodeModulesPath = path.join(__dirname, 'node_modules');
 const pgModulePath = path.join(nodeModulesPath, 'pg');
 const baileysModulePath = path.join(nodeModulesPath, '@whiskeysockets', 'baileys');
 const socketIoModulePath = path.join(nodeModulesPath, 'socket.io');
+const bcryptModulePath = path.join(nodeModulesPath, 'bcryptjs');
 
-if (!fs.existsSync(pgModulePath) || !fs.existsSync(baileysModulePath) || !fs.existsSync(socketIoModulePath)) {
+if (!fs.existsSync(pgModulePath) || !fs.existsSync(baileysModulePath) || !fs.existsSync(socketIoModulePath) || !fs.existsSync(bcryptModulePath)) {
   // console.log('📦 Installing dependencies...');
   try {
     execSync('npm install', {
