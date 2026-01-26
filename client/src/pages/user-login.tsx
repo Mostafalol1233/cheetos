@@ -41,10 +41,11 @@ export default function UserLoginPage() {
           className: "bg-green-900 border-green-500 text-white whitespace-pre-line"
         });
         
-        // Redirect after showing the toast
+        // Trigger page reload to update auth context
+        // This ensures the UserAuthProvider picks up the new token
         setTimeout(() => {
-          setLocation(redirectUrl || '/profile');
-        }, 1000);
+          window.location.href = redirectUrl || '/profile';
+        }, 500);
         
         // Clean up
         localStorage.removeItem('auto_login_data');
@@ -52,7 +53,7 @@ export default function UserLoginPage() {
         console.error('Auto-login failed:', err);
       }
     }
-  }, [toast, redirectUrl, setLocation]);
+  }, [toast, redirectUrl]);
 
   // Email/Password login
   const [emailLogin, setEmailLogin] = useState({ email: '', password: '' });
