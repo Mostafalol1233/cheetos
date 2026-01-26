@@ -31,16 +31,44 @@ export default function UserLoginPage() {
 
   // Check for generated credentials in localStorage (from guest checkout) - RUN FIRST
   useEffect(() => {
+    // 1) Prefer complete auto_login_data (has token/user for auto-login)
     const generatedCreds = localStorage.getItem('auto_login_data');
     if (generatedCreds) {
       try {
         const { email, password } = JSON.parse(generatedCreds);
-        // Pre-fill the email and password fields
         setEmailLogin({ email, password });
         setShowGeneratedPasswordNotice(true);
         setGeneratedPasswordData({ email, password });
+        return;
       } catch (err) {
-        console.error('Failed to parse credentials:', err);
+        console.error('Failed to parse auto_login_data:', err);
+      }
+    }
+
+    // 2) Fallback to new_user_creds (guest checkout credentials)
+    const fallbackCreds = localStorage.getItem('new_user_creds');
+    if (fallbackCreds) {
+      try {
+        const { email, password } = JSON.parse(fallbackCreds);
+        if (email && password) {
+          setEmailLogin({ email, password });
+          setShowGeneratedPasswordNotice(true);
+          setGeneratedPasswordData({ email, password });
+          return;
+        }
+      } catch (err) {
+        console.error('Failed to parse new_user_creds:', err);
+      }
+    }
+
+    // 3) As a last resort, prefill from query params if provided
+    const qpEmail = new URLSearchParams(window.location.search).get('email') || '';
+    const qpPassword = new URLSearchParams(window.location.search).get('password') || '';
+    if (qpEmail || qpPassword) {
+      setEmailLogin({ email: qpEmail, password: qpPassword });
+      if (qpEmail && qpPassword) {
+        setShowGeneratedPasswordNotice(true);
+        setGeneratedPasswordData({ email: qpEmail, password: qpPassword });
       }
     }
   }, []);
