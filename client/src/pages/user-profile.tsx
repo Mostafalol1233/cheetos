@@ -75,7 +75,7 @@ export default function UserProfilePage() {
 
   useEffect(() => {
     if (!isAuthenticated) {
-      setLocation("/user-login?redirect=/profile");
+      setLocation("/login?redirect=/profile");
       return;
     }
   }, [isAuthenticated, setLocation]);

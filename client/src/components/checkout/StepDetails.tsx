@@ -80,7 +80,7 @@ export function StepDetails() {
                   <p className="text-xs text-muted-foreground">Sign in to load your saved details</p>
                 </div>
              </div>
-             <Link href="/user-login?redirect=/checkout">
+             <Link href="/login?redirect=/checkout">
                <Button variant="outline" size="sm" className="gap-2 w-full sm:w-auto border-gold-primary/50 text-gold-primary hover:bg-gold-primary/10">
                   <LogIn className="w-4 h-4" />
                   Sign In

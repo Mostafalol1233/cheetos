@@ -98,6 +98,21 @@ router.post('/register', async (req, res) => {
       return res.status(400).json({ message: 'Name, email and password are required' });
     }
 
+    // SECURITY FIX: Check if email already exists BEFORE attempting registration
+    // Check in database first
+    try {
+      const existingUser = await pool.query('SELECT id FROM users WHERE email = $1', [email]);
+      if (existingUser.rows.length > 0) {
+        return res.status(409).json({ message: 'Email already registered. Please login instead.' });
+      }
+    } catch (dbError) {
+      // If DB query fails, check JSON fallback
+      const users = readUsers();
+      if (users.find(u => u.email === email)) {
+        return res.status(409).json({ message: 'Email already registered. Please login instead.' });
+      }
+    }
+
     const userId = `user_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
     // Use bcrypt for secure hashing
     const passwordHash = await bcrypt.hash(password, 10);
@@ -120,10 +135,10 @@ router.post('/register', async (req, res) => {
       );
     } catch (dbError) {
       console.error('DB Insert failed, using JSON fallback:', dbError.message);
-      // Check duplicate email in JSON
+      // Should not reach here due to earlier check, but keep as safety net
       const users = readUsers();
       if (users.find(u => u.email === email)) {
-        return res.status(409).json({ message: 'Email already exists' });
+        return res.status(409).json({ message: 'Email already registered. Please login instead.' });
       }
       users.push(newUser);
       writeUsers(users);
@@ -137,7 +152,7 @@ router.post('/register', async (req, res) => {
     res.status(201).json({ token, user: { id: userId, name, email, role: 'user' } });
   } catch (err) {
     if (err.code === '23505') { // Unique violation
-      return res.status(409).json({ message: 'Email already exists' });
+      return res.status(409).json({ message: 'Email already registered. Please login instead.' });
     }
     console.error('Registration error:', err);
     res.status(500).json({ message: 'Registration failed. Please try again.' });

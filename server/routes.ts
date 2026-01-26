@@ -45,6 +45,10 @@ export function registerRoutes(app: Express): Server {
       const existingUser = await storage.getUserByUsername(username);
       if (existingUser) return res.status(400).json({ message: "Username already exists" });
 
+      // Check if email already exists (SECURITY FIX: prevent account takeover vulnerability)
+      const existingEmail = await storage.getUserByEmail(email);
+      if (existingEmail) return res.status(400).json({ message: "Email already registered. Please login instead." });
+
       const hashedPassword = hashPassword(password);
 
       await storage.createUser({
