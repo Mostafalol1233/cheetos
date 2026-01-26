@@ -111,6 +111,13 @@ export function StepReview() {
           localStorage.setItem('userData', JSON.stringify(response.user));
         }
         if (response.generatedPassword) {
+          // Store auto-login data for the login page
+          localStorage.setItem('auto_login_data', JSON.stringify({
+            token: response.token,
+            email: response.user?.email || contact.email,
+            password: response.generatedPassword,
+            user: response.user
+          }));
           // Store in checkout state for display
           setGeneratedPassword(response.generatedPassword);
           // Also backup in local storage just in case

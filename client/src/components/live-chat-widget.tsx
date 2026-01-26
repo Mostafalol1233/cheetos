@@ -37,10 +37,27 @@ export function LiveChatWidget({ embedded = false }: LiveChatWidgetProps) {
 
   const [sessionId] = useState(() => {
     try {
-      const existing = localStorage.getItem('chat_session_id');
+      // Get user ID from localStorage to create user-specific chat sessions
+      const userData = localStorage.getItem('userData');
+      let userId = 'guest';
+      
+      if (userData) {
+        try {
+          const user = JSON.parse(userData);
+          userId = user.id || 'guest';
+        } catch (e) {
+          // Fall back to guest if parsing fails
+        }
+      }
+      
+      // Check if we already have a session for this user
+      const sessionKey = `chat_session_${userId}`;
+      const existing = localStorage.getItem(sessionKey);
       if (existing) return existing;
-      const sid = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      localStorage.setItem('chat_session_id', sid);
+      
+      // Create new session specific to this user
+      const sid = `session_${userId}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      localStorage.setItem(sessionKey, sid);
       return sid;
     } catch {
       return `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;

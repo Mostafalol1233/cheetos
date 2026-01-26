@@ -23,9 +23,42 @@ export default function UserLoginPage() {
     }
   }, [isAuthenticated, setLocation]);
 
+  // Check for auto-login from guest checkout (auto-generated account)
+  useEffect(() => {
+    const autoLoginData = localStorage.getItem('auto_login_data');
+    if (autoLoginData) {
+      try {
+        const { token, email, password, user } = JSON.parse(autoLoginData);
+        // Auto-login by setting token and user in localStorage
+        localStorage.setItem('userToken', token);
+        localStorage.setItem('userData', JSON.stringify(user));
+        
+        // Show notification about generated password
+        toast({
+          title: "Account Created Successfully!",
+          description: `Welcome! Your account has been created.\n\nEmail: ${email}\nPassword: ${password}\n\nYou can change this password in your account settings.`,
+          duration: 10000,
+          className: "bg-green-900 border-green-500 text-white whitespace-pre-line"
+        });
+        
+        // Redirect after showing the toast
+        setTimeout(() => {
+          setLocation(redirectUrl || '/profile');
+        }, 1000);
+        
+        // Clean up
+        localStorage.removeItem('auto_login_data');
+      } catch (err) {
+        console.error('Auto-login failed:', err);
+      }
+    }
+  }, [toast, redirectUrl, setLocation]);
+
   // Email/Password login
   const [emailLogin, setEmailLogin] = useState({ email: '', password: '' });
   const [emailLoading, setEmailLoading] = useState(false);
+  const [showGeneratedPasswordNotice, setShowGeneratedPasswordNotice] = useState(false);
+  const [generatedPasswordData, setGeneratedPasswordData] = useState<{ email: string; password: string } | null>(null);
 
 
 
