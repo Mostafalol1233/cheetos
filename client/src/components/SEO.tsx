@@ -224,8 +224,7 @@ export function SEO({
       <link rel="apple-touch-icon" href="/logo.png" />
 
       {/* Preload critical resources */}
-      <link rel="preload" href="/logo.png" as="image" />
-      <link rel="preload" href="/favicon.ico" as="image" />
+      {/* Removed aggressive preloads to avoid console warnings when assets are cached/blocked or not used immediately */}
 
       {/* DNS prefetch for external resources */}
       <link rel="dns-prefetch" href="//fonts.googleapis.com" />
