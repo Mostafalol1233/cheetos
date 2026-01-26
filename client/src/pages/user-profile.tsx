@@ -75,7 +75,7 @@ export default function UserProfilePage() {
 
   useEffect(() => {
     if (!isAuthenticated) {
-      setLocation("/login");
+      setLocation("/user-login?redirect=/profile");
       return;
     }
   }, [isAuthenticated, setLocation]);
@@ -94,15 +94,12 @@ export default function UserProfilePage() {
         // Let's use the toast with a long duration and destructive/distinctive style
         toast({
           title: "Account Created Successfully!",
-          description: `Your Email: ${creds.email} \nYour Password: ${creds.password}`,
-          duration: 30000, // 30 seconds
-          className: "bg-green-900 border-green-500 text-white"
+          description: `Email: ${creds.email}\nPassword: ${creds.password}\n\nCopy and save them to login from another device.`,
+          duration: 120000, // 2 minutes
+          className: "bg-green-900 border-green-500 text-white whitespace-pre-line"
         });
 
-        // Also alert if they missed the toast
-        // alert(`Welcome! Your account has been created.\nEmail: ${creds.email}\nPassword: ${creds.password}`);
-
-        localStorage.removeItem('new_user_creds');
+        // Keep creds until the user clears them manually from a global popup/banner.
       } catch (e) { }
     }
   }, [toast]);

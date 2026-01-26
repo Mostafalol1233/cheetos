@@ -51,6 +51,7 @@ export interface CheckoutState {
   orderId?: string;
   orderStatus: OrderStatus;
   error?: string;
+  generatedPassword?: string;
   availablePaymentMethods: PaymentConfig[];
 
   // derived helpers
@@ -68,6 +69,7 @@ export interface CheckoutState {
   setPaymentData: (d: any) => void;
   setIdempotencyKey: (k: string) => void;
   setOrderMeta: (id?: string, status?: OrderStatus) => void;
+  setGeneratedPassword: (p?: string) => void;
   setError: (e?: string) => void;
   reset: () => void;
   fetchPaymentMethods: () => Promise<void>;
@@ -129,6 +131,7 @@ export const useCheckout = create<CheckoutState>()(
       orderId: undefined,
       orderStatus: 'idle',
       error: undefined,
+      generatedPassword: undefined,
       availablePaymentMethods: [],
 
       subtotal: () => {
