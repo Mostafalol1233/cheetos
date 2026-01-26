@@ -41,11 +41,10 @@ export default function UserLoginPage() {
           className: "bg-green-900 border-green-500 text-white whitespace-pre-line"
         });
         
-        // Trigger page reload to update auth context
-        // This ensures the UserAuthProvider picks up the new token
+        // Redirect to profile page (use window.location for hard redirect to ensure auth context reloads)
         setTimeout(() => {
           window.location.href = redirectUrl || '/profile';
-        }, 500);
+        }, 1500);
         
         // Clean up
         localStorage.removeItem('auto_login_data');
@@ -60,6 +59,22 @@ export default function UserLoginPage() {
   const [emailLoading, setEmailLoading] = useState(false);
   const [showGeneratedPasswordNotice, setShowGeneratedPasswordNotice] = useState(false);
   const [generatedPasswordData, setGeneratedPasswordData] = useState<{ email: string; password: string } | null>(null);
+
+  // Check for generated credentials in localStorage (from guest checkout)
+  useEffect(() => {
+    const generatedCreds = localStorage.getItem('auto_login_data');
+    if (generatedCreds) {
+      try {
+        const { email, password } = JSON.parse(generatedCreds);
+        // Pre-fill the email and password fields
+        setEmailLogin({ email, password });
+        setShowGeneratedPasswordNotice(true);
+        setGeneratedPasswordData({ email, password });
+      } catch (err) {
+        // Ignore parsing errors
+      }
+    }
+  }, []);
 
 
 
@@ -144,6 +159,34 @@ export default function UserLoginPage() {
 
           {/* Login Tab */}
           <TabsContent value="login" className="space-y-4">
+            {/* Generated Credentials Notification */}
+            {showGeneratedPasswordNotice && generatedPasswordData && (
+              <Card className="bg-gradient-to-br from-green-900/50 to-green-800/50 border-green-500/50">
+                <CardContent className="p-4">
+                  <div className="space-y-3">
+                    <div className="flex items-start gap-2">
+                      <div className="text-green-400 mt-1">✓</div>
+                      <div>
+                        <p className="text-green-100 font-semibold">Account Created!</p>
+                        <p className="text-green-200 text-sm">Your credentials have been automatically filled below.</p>
+                      </div>
+                    </div>
+                    <div className="bg-black/40 rounded p-3 space-y-2 text-sm">
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-300">Email:</span>
+                        <span className="text-white font-mono">{generatedPasswordData.email}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-300">Password:</span>
+                        <span className="text-white font-mono">••••••••</span>
+                      </div>
+                    </div>
+                    <p className="text-green-200/80 text-xs">Just click "Sign In" below to access your account. Save your password to login from other devices.</p>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
             <Card className="bg-gradient-to-br from-card-bg/80 to-card-bg/60 border-gold-primary/20">
               <CardHeader className="pb-4">
                 <CardTitle className="text-xl text-white flex items-center gap-2">
