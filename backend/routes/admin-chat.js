@@ -2,7 +2,7 @@ import express from 'express';
 import pool from '../db.js';
 import { authenticateToken, ensureAdmin } from '../middleware/auth.js';
 import { getIO } from '../socket.js';
-import { decryptText } from '../utils/crypto.js';
+import { decryptText, encryptText } from '../utils/crypto.js';
 
 const router = express.Router();
 
@@ -110,9 +110,11 @@ router.post('/:id', authenticateToken, ensureAdmin, async (req, res) => {
         // Let's store BOTH to be safe or just encrypted if that's the standard.
         // The read logic handles fallback. Let's write to `message` column if it exists.
 
+        const encrypted = encryptText(text);
+
         await pool.query(
-            'INSERT INTO chat_messages (id, session_id, sender, message, read, attachment_url, attachment_type) VALUES ($1, $2, $3, $4, $5, $6, $7)',
-            [msgId, id, 'admin', text, true, attachmentUrl || null, attachmentType || null]
+            'INSERT INTO chat_messages (id, session_id, sender, message, message_encrypted, read, attachment_url, attachment_type) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)',
+            [msgId, id, 'admin', text, encrypted, true, attachmentUrl || null, attachmentType || null]
         );
 
         const msgPayload = {

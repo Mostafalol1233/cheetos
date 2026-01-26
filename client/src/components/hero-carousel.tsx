@@ -53,21 +53,15 @@ export function HeroCarousel() {
           {slides.map((slide) => (
             <div className="relative flex-[0_0_100%] min-w-0 h-full" key={slide.id}>
 
-              {/* Blurred Background for Fill Effect */}
-              <div
-                className="absolute inset-0 bg-cover bg-center blur-xl opacity-50"
-                style={{ backgroundImage: `url(${slide.image_url})` }}
-              />
-
-              {/* Main Image - Strech coverage */}
+              {/* Main Image - Stretch coverage */}
               <img
                 src={slide.image_url}
                 alt={slide.heading_text}
                 className="absolute inset-0 w-full h-full object-fill z-10"
               />
 
-              {/* Gradient Overlay for Text Readability */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent z-20" />
+              {/* Gradient Overlay for Text Readability - subtle */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent z-20" />
 
               {/* Content Overlay */}
               <div className="absolute bottom-0 left-0 w-full p-4 md:p-6 z-30 flex flex-col items-start gap-2">
@@ -75,7 +69,7 @@ export function HeroCarousel() {
                   initial={{ opacity: 0, y: 20 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.2 }}
-                  className="bg-black/60 backdrop-blur-sm p-2 rounded-lg border border-white/10 shadow-xl max-w-sm md:max-w-md"
+                  className="p-2 max-w-sm md:max-w-md"
                 >
                   <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-cyber-blue/20 text-cyber-blue text-[8px] sm:text-[9px] font-bold uppercase tracking-wider mb-1 border border-cyber-blue/30">
                     <Gamepad2 className="w-2.5 h-2.5" />

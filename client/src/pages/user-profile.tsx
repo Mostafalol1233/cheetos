@@ -112,11 +112,19 @@ export default function UserProfilePage() {
     const socket = io(API_BASE_URL, {
       transports: ['websocket', 'polling'],
       reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000,
+      timeout: 10000,
       path: '/socket.io'
     });
 
     socket.on('connect', () => {
       // console.log('Connected to socket for order updates');
+    });
+
+    socket.on('connect_error', () => {
+      // Silently handle connection errors - polling will be used as fallback
+      // console.debug('Socket connection error, using polling fallback');
     });
 
     socket.on('orders_updated', () => {

@@ -44,7 +44,10 @@ export function HeaderManager() {
     fetchVersions();
 
     // Socket listener for real-time updates
-    const socket = io(API_BASE_URL);
+    const socket = io(API_BASE_URL, {
+      transports: ['websocket', 'polling'],
+      reconnectionAttempts: 5
+    });
 
     socket.on('header_updated', () => {
       fetchVersions();

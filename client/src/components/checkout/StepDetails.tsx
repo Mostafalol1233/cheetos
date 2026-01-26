@@ -60,58 +60,36 @@ export function StepDetails() {
     }
   }, [isAuthenticated, user, setValue, contact]);
 
-  if (!isAuthenticated && !isGuest) {
-    return (
-      <div className="space-y-6">
-        <h2 className="text-2xl font-bold">Contact Details</h2>
-        <Card>
-          <CardHeader>
-            <CardTitle>Sign In to Continue</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <p className="text-muted-foreground">
-              Sign in to your account to continue with checkout, or continue as a guest.
-            </p>
-            <div className="flex gap-3">
-              <Link href="/user-login">
-                <Button className="flex-1 bg-gradient-to-r from-gold-primary to-neon-pink hover:from-gold-secondary hover:to-neon-pink text-black">
-                  <LogIn className="w-4 h-4 mr-2" />
-                  Sign In
-                </Button>
-              </Link>
-              <Link href="/user-register">
-                <Button variant="outline" className="flex-1 border-gold-primary/50 text-gold-primary hover:bg-gold-primary/10">
-                  <User className="w-4 h-4 mr-2" />
-                  Sign Up
-                </Button>
-              </Link>
-            </div>
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t" />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-background px-2 text-muted-foreground">Or continue as guest</span>
-              </div>
-            </div>
-            <Button
-              variant="outline"
-              className="w-full border-gray-600 text-gray-400 hover:bg-gray-800"
-              onClick={() => {
-                setIsGuest(true);
-              }}
-            >
-              Continue as Guest
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
+  // Merged "Fast Checkout" flow: 
+  // If not authenticated, show form immediately but offer login option.
+  // No separate "Guest vs Register" step.
+  
   return (
     <div className="space-y-6">
       <h2 className="text-2xl font-bold">Contact Details</h2>
+
+      {!isAuthenticated && (
+        <Card className="mb-6 bg-muted/50 border-gold-primary/20">
+          <CardContent className="flex flex-col sm:flex-row items-center justify-between p-4 gap-4">
+             <div className="flex items-center gap-3">
+                <div className="p-2 rounded-full bg-gold-primary/10 text-gold-primary">
+                  <User className="w-5 h-5" />
+                </div>
+                <div>
+                  <p className="font-medium">Already have an account?</p>
+                  <p className="text-xs text-muted-foreground">Sign in to load your saved details</p>
+                </div>
+             </div>
+             <Link href="/user-login?redirect=/checkout">
+               <Button variant="outline" size="sm" className="gap-2 w-full sm:w-auto border-gold-primary/50 text-gold-primary hover:bg-gold-primary/10">
+                  <LogIn className="w-4 h-4" />
+                  Sign In
+               </Button>
+             </Link>
+          </CardContent>
+        </Card>
+      )}
+
       <Card>
         <CardHeader>
           <CardTitle>Enter Your Information</CardTitle>

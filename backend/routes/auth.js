@@ -1,6 +1,7 @@
 import express from 'express';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
+import bcrypt from 'bcryptjs';
 import pool from '../db.js';
 import { authenticateToken } from '../middleware/auth.js';
 import dotenv from 'dotenv';
@@ -8,6 +9,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { getIO } from '../socket.js';
+import { logAudit } from '../utils/audit.js';
 
 dotenv.config();
 
@@ -96,9 +98,9 @@ router.post('/register', async (req, res) => {
       return res.status(400).json({ message: 'Name, email and password are required' });
     }
 
-    const userId = `user_${Date.now()}_${Math.random().toString(36).slice(2,9)}`;
-    // Simple hash (in production use bcrypt)
-    const passwordHash = crypto.createHash('sha256').update(password).digest('hex');
+    const userId = `user_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+    // Use bcrypt for secure hashing
+    const passwordHash = await bcrypt.hash(password, 10);
 
     const newUser = {
       id: userId,
@@ -129,15 +131,16 @@ router.post('/register', async (req, res) => {
 
     const token = jwt.sign({ id: userId, name, email, role: 'user' }, JWT_SECRET, { expiresIn: '30d' });
 
-    // Log audit event
-    logAudit('user_register', `New user registered: ${email}`, { id: userId, email, name });
+    // Log audit event (safe)
+    await logAudit('user_register', `New user registered: ${email}`, { id: userId, email, name });
 
     res.status(201).json({ token, user: { id: userId, name, email, role: 'user' } });
   } catch (err) {
     if (err.code === '23505') { // Unique violation
       return res.status(409).json({ message: 'Email already exists' });
     }
-    res.status(500).json({ message: err.message });
+    console.error('Registration error:', err);
+    res.status(500).json({ message: 'Registration failed. Please try again.' });
   }
 });
 
@@ -148,48 +151,48 @@ router.post('/login', async (req, res) => {
 
     // Legacy/Chat login (Name + Phone)
     if (!password && name && phone) {
-        // Create or get user
-        let userId;
-        let user;
-        
-        try {
-            const userResult = await pool.query('SELECT id, name, phone, email, role FROM users WHERE phone = $1', [phone]);
-            if (userResult.rows.length === 0) {
-                userId = `user_${Date.now()}_${Math.random().toString(36).slice(2,9)}`;
-                user = { id: userId, name, phone, email: email || '', role: 'user' };
-                await pool.query('INSERT INTO users (id, name, phone, email) VALUES ($1, $2, $3, $4)', [userId, name, phone, email || null]);
-            } else {
-                user = userResult.rows[0];
-                userId = user.id;
-                // Update name if provided
-                if (name !== user.name) {
-                    await pool.query('UPDATE users SET name = $1 WHERE id = $2', [name, userId]);
-                    user.name = name;
-                    try { getIO()?.emit('users_updated'); } catch (e) {}
-                }
-            }
-        } catch (dbError) {
-             // Fallback to JSON
-             const users = readUsers();
-             user = users.find(u => u.phone === phone);
-             if (!user) {
-                 userId = `user_${Date.now()}_${Math.random().toString(36).slice(2,9)}`;
-                 user = { id: userId, name, phone, email: email || '', role: 'user' };
-                 users.push(user);
-                 writeUsers(users);
-                 try { getIO()?.emit('users_updated'); } catch (e) {}
-             } else {
-                 userId = user.id;
-                 if (name !== user.name) {
-                     user.name = name;
-                     writeUsers(users);
-                     try { getIO()?.emit('users_updated'); } catch (e) {}
-                 }
-             }
-        }
+      // Create or get user
+      let userId;
+      let user;
 
-        const sessionToken = jwt.sign({ id: userId, name: user.name, phone: user.phone, role: 'user' }, JWT_SECRET, { expiresIn: '30d' });
-        return res.json({ token: sessionToken, user, message: 'Login successful' });
+      try {
+        const userResult = await pool.query('SELECT id, name, phone, email, role FROM users WHERE phone = $1', [phone]);
+        if (userResult.rows.length === 0) {
+          userId = `user_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+          user = { id: userId, name, phone, email: email || '', role: 'user' };
+          await pool.query('INSERT INTO users (id, name, phone, email) VALUES ($1, $2, $3, $4)', [userId, name, phone, email || null]);
+        } else {
+          user = userResult.rows[0];
+          userId = user.id;
+          // Update name if provided
+          if (name !== user.name) {
+            await pool.query('UPDATE users SET name = $1 WHERE id = $2', [name, userId]);
+            user.name = name;
+            try { getIO()?.emit('users_updated'); } catch (e) { }
+          }
+        }
+      } catch (dbError) {
+        // Fallback to JSON
+        const users = readUsers();
+        user = users.find(u => u.phone === phone);
+        if (!user) {
+          userId = `user_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+          user = { id: userId, name, phone, email: email || '', role: 'user' };
+          users.push(user);
+          writeUsers(users);
+          try { getIO()?.emit('users_updated'); } catch (e) { }
+        } else {
+          userId = user.id;
+          if (name !== user.name) {
+            user.name = name;
+            writeUsers(users);
+            try { getIO()?.emit('users_updated'); } catch (e) { }
+          }
+        }
+      }
+
+      const sessionToken = jwt.sign({ id: userId, name: user.name, phone: user.phone, role: 'user' }, JWT_SECRET, { expiresIn: '30d' });
+      return res.json({ token: sessionToken, user, message: 'Login successful' });
     }
 
     // Standard Login (Email + Password)
@@ -197,18 +200,39 @@ router.post('/login', async (req, res) => {
       return res.status(400).json({ message: 'Email and password are required' });
     }
 
-    const passwordHash = crypto.createHash('sha256').update(password).digest('hex');
-    
     let user;
     try {
-        const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
-        user = result.rows[0];
+      const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+      user = result.rows[0];
     } catch (dbError) {
-        const users = readUsers();
-        user = users.find(u => u.email === email);
+      const users = readUsers();
+      user = users.find(u => u.email === email);
     }
 
-    if (!user || user.password_hash !== passwordHash) {
+    if (!user) {
+      return res.status(401).json({ message: 'Invalid credentials' });
+    }
+
+    let isValid = false;
+    // Check if password_hash is bcrypt (starts with $2)
+    if (user.password_hash && user.password_hash.startsWith('$2')) {
+      isValid = await bcrypt.compare(password, user.password_hash);
+    } else {
+      // Legacy SHA-256 fallback
+      const sha256Hash = crypto.createHash('sha256').update(password).digest('hex');
+      if (user.password_hash === sha256Hash) {
+        isValid = true;
+        // Upgrade to bcrypt silently
+        try {
+          const newHash = await bcrypt.hash(password, 10);
+          await pool.query('UPDATE users SET password_hash = $1 WHERE id = $2', [newHash, user.id]);
+        } catch (e) {
+          // Ignore upgrade errors
+        }
+      }
+    }
+
+    if (!isValid) {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 

@@ -1,36 +1,139 @@
 [
   {
+    "id": "game_1",
+    "name": "Valorant",
+    "slug": "valorant",
+    "description": "Tactical 5v5 team-based competitive shooter",
+    "price": "0",
+    "currency": "EGP",
+    "image": "https://res.cloudinary.com/ddzbutb12/image/upload/v1767362913/gamecart/games/agqglgnutlcwdujewrtb.webp",
+    "category": "online-games",
+    "isPopular": true,
+    "stock": 99,
+    "packages": [
+      "285 VP",
+      "575 VP",
+      "1150 VP",
+      "2350 VP",
+      "4800 VP",
+      "9800 VP"
+    ],
+    "packagePrices": [
+      "160",
+      "310",
+      "610",
+      "1200",
+      "2400",
+      "4800"
+    ],
+    "discountPrices": [
+      "102",
+      "205",
+      "400",
+      "965",
+      "1990",
+      "4900"
+    ],
+    "discountPrice": "260",
+    "packageDiscountPrices": []
+  },
+  {
+    "id": "game_3",
+    "name": "Crossfire",
+    "slug": "crossfire",
+    "description": "CrossFire tends to have a wide range of ZP packages that allow players to purchase weapons, characters, and other items in the game.",
+    "price": "45",
+    "currency": "EGP",
+    "image": "https://res.cloudinary.com/ddzbutb12/image/upload/v1767336669/gamecart/games/gycgy8wck599qhgfz02o.webp",
+    "category": "online-games",
+    "isPopular": true,
+    "stock": 22,
+    "packages": [
+      "5,000 ZP",
+      "10,000 ZP",
+      "20,000 ZP",
+      "50,000 ZP",
+      "100,000 ZP"
+    ],
+    "packagePrices": [
+      "204",
+      "310",
+      "500",
+      "1030",
+      "2090"
+    ],
+    "discountPrices": [
+      "102",
+      "205",
+      "400",
+      "965",
+      "1990",
+      "0"
+    ],
+    "discountPrice": "0",
+    "packageDiscountPrices": []
+  },
+  {
+    "id": "game_4",
+    "name": "Roblox",
+    "slug": "roblox",
+    "description": "Roblox uses Robux for purchasing in-game items, avatar accessories, and access to specific game passes within Roblox games.",
+    "price": "28",
+    "currency": "EGP",
+    "image": "https://res.cloudinary.com/ddzbutb12/image/upload/v1767361962/gamecart/games/vacgrtvsmdx9zfxnf78y.webp",
+    "category": "casual",
+    "isPopular": true,
+    "stock": 100,
+    "packages": [
+      "80 Robux",
+      "120 Robux",
+      "160 Robux",
+      "240 Robux",
+      "4000 Robux",
+      "1000 Robux",
+      "2000 Robux"
+    ],
+    "packagePrices": [
+      "75",
+      "115",
+      "150",
+      "225",
+      "340",
+      "580",
+      "1160"
+    ],
+    "discountPrices": [
+      "75",
+      "115",
+      "150",
+      "225",
+      "340",
+      "580",
+      "1160"
+    ],
+    "discountPrice": "128",
+    "packageDiscountPrices": []
+  },
+  {
     "id": "game_5",
     "name": "PUBG Mobile",
     "slug": "pubg-mobile",
     "description": "UC is the in-game currency used in PUBG Mobile for purchasing skins, crates, and other cosmetics.",
-    "price": 250,
+    "price": "50",
     "currency": "EGP",
-    "image": "https://i.postimg.cc/5QJVfhdk/image-34-1754945434846.png",
+    "image": "https://res.cloudinary.com/ddzbutb12/image/upload/v1767358451/gamecart/games/di8abokfn8kk0y8iywl8.webp",
     "category": "shooters",
     "isPopular": true,
     "stock": 100,
     "packages": [
-      "100 UC",
-      "300 UC",
-      "600 UC",
-      "1,200 UC",
-      "3,000 UC",
-      "6,000 UC",
-      "10,000 UC",
-      "30,000 UC"
+      "60 UC",
+      "325 UC",
+      "660 UC",
+      "1,800 UC",
+      "3,850 UC",
+      "8,100 UC"
     ],
     "packagePrices": [
-      "150",
-      "250",
-      "400",
-      "700",
-      "1600",
-      "3100",
-      "5100",
-      "15100"
-    ],
-    "discountPrices": [
       "50",
       "150",
       "300",
@@ -40,27 +143,36 @@
       "5000",
       "15000"
     ],
-    "discountPrice": "150"
+    "discountPrices": [
+      "55",
+      "225",
+      "450",
+      "1150",
+      "2300",
+      "4300"
+    ],
+    "discountPrice": "150",
+    "packageDiscountPrices": []
   },
   {
     "id": "game_6",
     "name": "Free Fire",
     "slug": "free-fire",
     "description": "Diamonds in Free Fire are used for unlocking skins, outfits, and premium events.",
-    "price": 204,
+    "price": "4",
     "currency": "EGP",
-    "image": "https://i.postimg.cc/JHQW0pM3/image-35-1754945434846.png",
+    "image": "https://res.cloudinary.com/ddzbutb12/image/upload/v1767358483/gamecart/games/wz9n9qteta31p5db6a5p.webp",
     "category": "shooters",
     "isPopular": true,
     "stock": 100,
     "packages": [
-      "10 Diamonds",
-      "100 Diamonds",
-      "500 Diamonds",
-      "1,000 Diamonds",
-      "3,000 Diamonds",
-      "5,000 Diamonds",
-      "10,000 Diamonds"
+      "110 Diamonds",
+      "210 Diamonds",
+      "310 Diamonds",
+      "530 Diamonds",
+      "1080 Diamonds",
+      "2200 Diamonds",
+      "4400 Diamonds"
     ],
     "packagePrices": [
       "104",
@@ -72,24 +184,25 @@
       "3510"
     ],
     "discountPrices": [
-      "4",
-      "34",
-      "170",
-      "340",
-      "1030",
-      "1710",
-      "3410"
+      "55",
+      "110",
+      "165",
+      "275",
+      "550",
+      "1100",
+      "2200"
     ],
-    "discountPrice": "104"
+    "discountPrice": "104",
+    "packageDiscountPrices": []
   },
   {
     "id": "game_7",
     "name": "Minecraft",
     "slug": "minecraft",
     "description": "Minecoins are the currency used in Minecraft to buy skins, texture packs, and other in-game items.",
-    "price": 256,
+    "price": "56",
     "currency": "EGP",
-    "image": "https://i.postimg.cc/XBg0qs4h/image-36-1754945434846.png",
+    "image": "https://res.cloudinary.com/ddzbutb12/image/upload/v1767358505/gamecart/games/adcmaerttiimskittv7h.webp",
     "category": "casual",
     "isPopular": true,
     "stock": 100,
@@ -100,27 +213,28 @@
       "5,000 Minecoins"
     ],
     "packagePrices": [
-      "156",
-      "280",
-      "540",
-      "980"
-    ],
-    "discountPrices": [
       "56",
       "180",
       "440",
       "880"
     ],
-    "discountPrice": "156"
+    "discountPrices": [
+      "156",
+      "280",
+      "540",
+      "980"
+    ],
+    "discountPrice": "156",
+    "packageDiscountPrices": []
   },
   {
     "id": "game_1766467677924_bg0j3",
     "name": "Fortnite",
     "slug": "fortnite",
     "description": "Fortnite's currency, V-Bucks, is used to buy skins, emotes, and other cosmetics.",
-    "price": 650,
+    "price": "450",
     "currency": "EGP",
-    "image": "https://cdn2.unrealengine.com/fortnite-battle-royale-chapter-4-season-og-1920x1080-410036343.jpg",
+    "image": "https://res.cloudinary.com/ddzbutb12/image/upload/v1767358551/gamecart/games/kirhe2aozirq4fmeqikg.webp",
     "category": "shooters",
     "isPopular": true,
     "stock": 100,
@@ -131,27 +245,28 @@
       "13,500 V-Bucks"
     ],
     "packagePrices": [
-      "550",
-      "1360",
-      "2350",
-      "6180"
-    ],
-    "discountPrices": [
       "450",
       "1260",
       "2250",
       "6080"
     ],
-    "discountPrice": "550"
+    "discountPrices": [
+      "550",
+      "1360",
+      "2350",
+      "6180"
+    ],
+    "discountPrice": "550",
+    "packageDiscountPrices": []
   },
   {
     "id": "game_1766467677945_pieag",
     "name": "League of Legends",
     "slug": "league-of-legends",
     "description": "In League of Legends, RP (Riot Points) is used for purchasing skins, champions, and other premium content.",
-    "price": 530,
+    "price": "330",
     "currency": "EGP",
-    "image": "https://images.contentstack.io/v3/assets/blt731105aded5a7e72/blt125927407d280d30/5ea9f0093866630f69906495/league-of-legends-keyart.jpg",
+    "image": "https://res.cloudinary.com/ddzbutb12/image/upload/v1767358602/gamecart/games/juivqzvwdbfyp4lrqbzu.webp",
     "category": "casual",
     "isPopular": true,
     "stock": 100,
@@ -163,29 +278,30 @@
       "13,500 RP"
     ],
     "packagePrices": [
-      "430",
-      "750",
-      "1730",
-      "2700",
-      "6850"
-    ],
-    "discountPrices": [
       "330",
       "650",
       "1630",
       "2600",
       "6750"
     ],
-    "discountPrice": "430"
+    "discountPrices": [
+      "430",
+      "750",
+      "1730",
+      "2700",
+      "6850"
+    ],
+    "discountPrice": "430",
+    "packageDiscountPrices": []
   },
   {
     "id": "game_1766467677973_fny99",
     "name": "Clash of Clans",
     "slug": "clash-of-clans",
     "description": "Gems are used to speed up upgrades and buy special items in Clash of Clans.",
-    "price": 210,
+    "price": "10",
     "currency": "EGP",
-    "image": "https://supercell.com/images/25/all_clashofclans_keyart.jpg",
+    "image": "https://res.cloudinary.com/ddzbutb12/image/upload/v1767358735/gamecart/games/lzbgz8iiy4veujrlmqj4.webp",
     "category": "casual",
     "isPopular": true,
     "stock": 100,
@@ -199,15 +315,6 @@
       "10,000 Gems"
     ],
     "packagePrices": [
-      "110",
-      "150",
-      "350",
-      "600",
-      "1100",
-      "2600",
-      "5100"
-    ],
-    "discountPrices": [
       "10",
       "50",
       "250",
@@ -216,14 +323,24 @@
       "2500",
       "5000"
     ],
-    "discountPrice": "110"
+    "discountPrices": [
+      "110",
+      "150",
+      "350",
+      "600",
+      "1100",
+      "2600",
+      "5100"
+    ],
+    "discountPrice": "110",
+    "packageDiscountPrices": []
   },
   {
     "id": "game_1766467677979_07xxk",
     "name": "Apex Legends",
     "slug": "apex-legends",
     "description": "Apex Coins are used for skins, battle passes, and other cosmetic items in Apex Legends.",
-    "price": 250,
+    "price": "50",
     "currency": "EGP",
     "image": "https://media.contentapi.ea.com/content/dam/apex-legends/images/2019/01/apex-featured-image-16x9.jpg.adapt.crop191x100.1200w.jpg",
     "category": "shooters",
@@ -238,20 +355,20 @@
       "4,000 Apex Coins"
     ],
     "packagePrices": [
-      "150",
-      "200",
-      "350",
-      "600",
-      "1100",
-      "2100"
-    ],
-    "discountPrices": [
       "50",
       "100",
       "250",
       "500",
       "1000",
       "2000"
+    ],
+    "discountPrices": [
+      "150",
+      "200",
+      "350",
+      "600",
+      "1100",
+      "2100"
     ],
     "discountPrice": "150"
   },
@@ -260,7 +377,7 @@
     "name": "Call of Duty Mobile",
     "slug": "call-of-duty-mobile",
     "description": "CP (Call of Duty Points) is used for purchasing in-game items like skins, blueprints, and other premium content.",
-    "price": 240,
+    "price": "40",
     "currency": "EGP",
     "image": "https://i.postimg.cc/H8mgTqDr/COD-MOBILE.png",
     "category": "shooters",
@@ -275,20 +392,20 @@
       "5,000 CP"
     ],
     "packagePrices": [
-      "140",
-      "200",
-      "360",
-      "700",
-      "1300",
-      "2600"
-    ],
-    "discountPrices": [
       "40",
       "100",
       "260",
       "600",
       "1200",
       "2500"
+    ],
+    "discountPrices": [
+      "140",
+      "200",
+      "360",
+      "700",
+      "1300",
+      "2600"
     ],
     "discountPrice": "140"
   },
@@ -297,7 +414,7 @@
     "name": "Genshin Impact",
     "slug": "genshin-impact",
     "description": "Primogems are the main currency in Genshin Impact for wishing on banners and purchasing items.",
-    "price": 225,
+    "price": "25",
     "currency": "EGP",
     "image": "https://i.postimg.cc/5QJVfhd9/6Ctb-Rd-NXA0HM.png",
     "category": "casual",
@@ -305,13 +422,13 @@
     "stock": 100,
     "packages": [
       "50 Primogems",
-      "300 Primogems"
+      "300 Primogems",
+      "980 Primogems",
+      "1,600 Primogems",
+      "3,200 Primogems",
+      "6,400 Primogems"
     ],
     "packagePrices": [
-      125,
-      250
-    ],
-    "discountPrices": [
       "25",
       "150",
       "490",
@@ -319,104 +436,14 @@
       "1600",
       "3200"
     ],
-    "discountPrice": "125",
-    "packageDiscountPrices": [
-      100,
-      null
-    ],
-    "packageThumbnails": [
-      null,
-      null
-    ],
-    "updated_at": "2026-01-03T16:13:20.439Z"
-  },
-  {
-    "id": "game_1766468555324_bqa5x",
-    "name": "Garena",
-    "slug": "garena",
-    "description": "Garena typically has different games with Diamonds as the universal currency (mainly used for Free Fire).",
-    "price": 234,
-    "currency": "EGP",
-    "image": "https://logos-world.net/wp-content/uploads/2021/03/Garena-Logo.png",
-    "category": "casual",
-    "isPopular": true,
-    "stock": 100,
-    "packages": [
-      "100 Diamonds",
-      "300 Diamonds",
-      "1,000 Diamonds",
-      "2,500 Diamonds",
-      "5,000 Diamonds"
-    ],
-    "packagePrices": [
-      "134",
-      "210",
-      "440",
-      "960",
-      "1810"
-    ],
     "discountPrices": [
-      "34",
-      "110",
-      "340",
-      "860",
-      "1710"
+      "125",
+      "250",
+      "590",
+      "900",
+      "1700",
+      "3300"
     ],
-    "discountPrice": "134"
-  },
-  {
-    "id": "game_1767471121418",
-    "name": "Valorant Test",
-    "slug": "valorant-test",
-    "description": "",
-    "price": 360,
-    "currency": "EGP",
-    "image": "/images/ps-store-64x64.webp",
-    "category": "shooters",
-    "isPopular": false,
-    "stock": 50,
-    "packages": [
-      "285 VP",
-      "575 VP"
-    ],
-    "packagePrices": [
-      "260",
-      "410"
-    ],
-    "discountPrice": null,
-    "packageDiscountPrices": [
-      "160",
-      "310"
-    ],
-    "created_at": "2026-01-03T20:12:01.418Z"
-  },
-  {
-    "id": "game_1767471121937",
-    "name": "Gift Card Test",
-    "slug": "gift-card-test",
-    "description": "",
-    "price": 100,
-    "currency": "EGP",
-    "image": "/images/Steam-Logo-White_3.png",
-    "category": "gift_cards",
-    "isPopular": false,
-    "stock": 999,
-    "packages": [
-      "10 USD",
-      "25 USD",
-      "50 USD"
-    ],
-    "packagePrices": [
-      "400",
-      "950",
-      "1900"
-    ],
-    "discountPrice": null,
-    "packageDiscountPrices": [
-      null,
-      null,
-      null
-    ],
-    "created_at": "2026-01-03T20:12:01.937Z"
+    "discountPrice": "125"
   }
 ]

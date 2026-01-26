@@ -58,9 +58,12 @@ router.post('/', optionalAuthenticateToken, async (req, res) => {
         userId = userRes.rows[0].id;
       } else {
         // Create new user
-        // generatedPassword = Math.random().toString(36).slice(-8);
-        generatedPassword = `${customer_phone}A`; // Password is phone number + 'A'
-        const passwordHash = crypto.createHash('sha256').update(generatedPassword).digest('hex');
+        // Generate a random password (8 chars alphanumeric)
+        generatedPassword = Math.random().toString(36).slice(2, 10) + Math.random().toString(36).slice(2, 4).toUpperCase();
+        
+        // Use bcrypt for secure hashing
+        const passwordHash = await import('bcryptjs').then(bcrypt => bcrypt.hash(generatedPassword, 10));
+        
         const newUserId = `user_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
 
         let username = customer_email.split('@')[0];

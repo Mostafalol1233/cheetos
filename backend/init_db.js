@@ -95,6 +95,17 @@ const createTables = async () => {
       ADD COLUMN IF NOT EXISTS package_thumbnails JSONB,
       ADD COLUMN IF NOT EXISTS multi_currency_prices JSONB,
       ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT NOW();
+    `);
+
+    // Add missing columns to orders table
+    await pool.query(`
+      ALTER TABLE orders 
+      ADD COLUMN IF NOT EXISTS player_id TEXT,
+      ADD COLUMN IF NOT EXISTS notes TEXT,
+      ADD COLUMN IF NOT EXISTS receipt_url TEXT,
+      ADD COLUMN IF NOT EXISTS payment_details JSONB,
+      ADD COLUMN IF NOT EXISTS delivery_method TEXT;
+    `);
 
     await pool.query(`
       ALTER TABLE users

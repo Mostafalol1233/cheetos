@@ -483,7 +483,11 @@ export default function AdminDashboard() {
 
   // Global socket listeners for real-time data sync
   useEffect(() => {
-    const socket = io(API_BASE_URL);
+    const socket = io(API_BASE_URL, {
+      transports: ['websocket', 'polling'],
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000,
+    });
 
     const handleOrdersUpdate = () => {
       queryClient.invalidateQueries({ queryKey: ['/api/orders'] });
@@ -871,7 +875,30 @@ export default function AdminDashboard() {
     const [responseMessage, setResponseMessage] = useState('');
     const [showResponseModal, setShowResponseModal] = useState(false);
 
-    const { data: orders = [], isLoading, isError, refetch } = useQuery<Array<{ id: string; paymentMethod: string; total: number; status: string; timestamp: number; customerName: string; customerPhone: string; items: Array<{ gameId: string; gameName?: string; quantity: number; price: number }> }>>({
+    const { data: orders = [], isLoading, isError, refetch } = useQuery<Array<{ 
+      id: string; 
+      paymentMethod: string; 
+      total: number; 
+      status: string; 
+      timestamp: number; 
+      customerName: string; 
+      customerPhone: string; 
+      items: Array<{ gameId: string; gameName?: string; quantity: number; price: number }>;
+      player_id?: string;
+      notes?: string;
+      // Add support for potential camelCase from backend or other sources
+      playerId?: string;
+      // Legacy or alternative field names
+      customer_name?: string;
+      customer_email?: string;
+      customer_phone?: string;
+      payment_method?: string;
+      total_amount?: number;
+      delivery_method?: string;
+      receipt_url?: string;
+      user_id?: string;
+      created_at?: string;
+    }>>({
       queryKey: ['/api/orders'],
       enabled: true,
       refetchInterval: 30000, // Consistency check
@@ -993,6 +1020,8 @@ export default function AdminDashboard() {
                     <th className="p-2">Items</th>
                     <th className="p-2">Delivery</th>
                     <th className="p-2">Receipt</th>
+                    <th className="p-2">Player ID</th>
+                    <th className="p-2">Notes</th>
                     <th className="p-2">Actions</th>
                   </tr>
                 </thead>
@@ -1053,6 +1082,12 @@ export default function AdminDashboard() {
                           <span className="text-muted-foreground text-xs">-</span>
                         )}
                       </td>
+                      <td className="p-2 font-mono text-xs">
+                        {o.player_id || o.playerId || '-'}
+                      </td>
+                      <td className="p-2 text-xs max-w-[200px] truncate" title={o.notes || ''}>
+                        {o.notes || '-'}
+                      </td>
                       <td className="p-2">
                         <Button
                           variant="ghost"
@@ -1099,7 +1134,7 @@ export default function AdminDashboard() {
                   ))}
                   {orders.length === 0 && (
                     <tr>
-                      <td colSpan={9} className="p-4 text-center text-muted-foreground">No orders</td>
+                      <td colSpan={14} className="p-4 text-center text-muted-foreground">No orders</td>
                     </tr>
                   )}
                 </tbody>
