@@ -155,6 +155,7 @@ export const useCheckout = create<CheckoutState>()(
         orderId: id !== undefined ? id : state.orderId,
         orderStatus: status !== undefined ? status : state.orderStatus
       })),
+      setGeneratedPassword: (p) => set({ generatedPassword: p }),
       setError: (e) => set({ error: e }),
       reset: () => {
         clearCheckoutStorage();
@@ -167,7 +168,8 @@ export const useCheckout = create<CheckoutState>()(
         idempotencyKey: generateIdempotencyKey(),
         orderId: undefined,
         orderStatus: 'idle',
-        error: undefined
+        error: undefined,
+        generatedPassword: undefined
       })
       },
       fetchPaymentMethods: async () => {

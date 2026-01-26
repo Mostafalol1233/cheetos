@@ -487,6 +487,7 @@ export default function AdminDashboard() {
       transports: ['websocket', 'polling'],
       reconnectionAttempts: 5,
       reconnectionDelay: 1000,
+      path: '/socket.io'
     });
 
     const handleOrdersUpdate = () => {

@@ -112,6 +112,9 @@ export function StepReview() {
           localStorage.setItem('userData', JSON.stringify(response.user));
         }
         if (response.generatedPassword) {
+          // Store in checkout state for display
+          setGeneratedPassword(response.generatedPassword);
+          // Also backup in local storage just in case
           localStorage.setItem('new_user_creds', JSON.stringify({
             email: response.user?.email || contact.email,
             password: response.generatedPassword
@@ -120,10 +123,11 @@ export function StepReview() {
       }
 
       localStorage.removeItem('checkout-storage');
-      reset(); // Reset checkout state (preserves contact)
-
-      // Redirect to profile using relative path (works in dev and production)
-      window.location.href = '/profile';
+      
+      // Update state to show result step
+      setOrderMeta(response.id, response.status === 'pending_approval' ? 'pending_approval' : 'paid');
+      setStep('result');
+      
       return;
 
     } catch (error) {

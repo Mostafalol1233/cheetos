@@ -62,8 +62,16 @@ export function StepResult() {
             </>
           )}
 
-          <Button onClick={reset} className="w-full">
-            {isSuccess ? 'Place Another Order' : 'Try Again'}
+          <Button 
+            onClick={() => {
+              reset();
+              if (isSuccess) {
+                window.location.href = '/profile';
+              }
+            }} 
+            className="w-full"
+          >
+            {isSuccess ? 'Go to Profile' : 'Try Again'}
           </Button>
         </CardContent>
       </Card>

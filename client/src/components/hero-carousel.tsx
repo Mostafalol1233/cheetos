@@ -60,8 +60,8 @@ export function HeroCarousel() {
                 className="absolute inset-0 w-full h-full object-fill z-10"
               />
 
-              {/* Gradient Overlay for Text Readability - subtle */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent z-20" />
+              {/* Gradient Overlay Removed per user request */}
+              {/* <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent z-20" /> */}
 
               {/* Content Overlay */}
               <div className="absolute bottom-0 left-0 w-full p-4 md:p-6 z-30 flex flex-col items-start gap-2">
