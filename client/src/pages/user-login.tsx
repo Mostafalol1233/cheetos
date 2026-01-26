@@ -23,44 +23,13 @@ export default function UserLoginPage() {
     }
   }, [isAuthenticated, setLocation]);
 
-  // Check for auto-login from guest checkout (auto-generated account)
-  useEffect(() => {
-    const autoLoginData = localStorage.getItem('auto_login_data');
-    if (autoLoginData) {
-      try {
-        const { token, email, password, user } = JSON.parse(autoLoginData);
-        // Auto-login by setting token and user in localStorage
-        localStorage.setItem('userToken', token);
-        localStorage.setItem('userData', JSON.stringify(user));
-        
-        // Show notification about generated password
-        toast({
-          title: "Account Created Successfully!",
-          description: `Welcome! Your account has been created.\n\nEmail: ${email}\nPassword: ${password}\n\nYou can change this password in your account settings.`,
-          duration: 10000,
-          className: "bg-green-900 border-green-500 text-white whitespace-pre-line"
-        });
-        
-        // Redirect to profile page (use window.location for hard redirect to ensure auth context reloads)
-        setTimeout(() => {
-          window.location.href = redirectUrl || '/profile';
-        }, 1500);
-        
-        // Clean up
-        localStorage.removeItem('auto_login_data');
-      } catch (err) {
-        console.error('Auto-login failed:', err);
-      }
-    }
-  }, [toast, redirectUrl]);
-
   // Email/Password login
   const [emailLogin, setEmailLogin] = useState({ email: '', password: '' });
   const [emailLoading, setEmailLoading] = useState(false);
   const [showGeneratedPasswordNotice, setShowGeneratedPasswordNotice] = useState(false);
   const [generatedPasswordData, setGeneratedPasswordData] = useState<{ email: string; password: string } | null>(null);
 
-  // Check for generated credentials in localStorage (from guest checkout)
+  // Check for generated credentials in localStorage (from guest checkout) - RUN FIRST
   useEffect(() => {
     const generatedCreds = localStorage.getItem('auto_login_data');
     if (generatedCreds) {
@@ -71,10 +40,38 @@ export default function UserLoginPage() {
         setShowGeneratedPasswordNotice(true);
         setGeneratedPasswordData({ email, password });
       } catch (err) {
-        // Ignore parsing errors
+        console.error('Failed to parse credentials:', err);
       }
     }
   }, []);
+
+  // Check for auto-login from guest checkout (auto-generated account) - RUN AFTER PRE-FILL
+  useEffect(() => {
+    // Only auto-redirect if credentials were already shown for a moment
+    const timer = setTimeout(() => {
+      const autoLoginData = localStorage.getItem('auto_login_data');
+      if (autoLoginData && generatedPasswordData) {
+        try {
+          const { token, user } = JSON.parse(autoLoginData);
+          // Auto-login by setting token and user in localStorage
+          localStorage.setItem('userToken', token);
+          localStorage.setItem('userData', JSON.stringify(user));
+          
+          // Clean up
+          localStorage.removeItem('auto_login_data');
+          
+          // Redirect to profile page
+          setTimeout(() => {
+            window.location.href = redirectUrl || '/profile';
+          }, 2000);
+        } catch (err) {
+          console.error('Auto-login failed:', err);
+        }
+      }
+    }, 2000); // Wait 2 seconds before auto-redirect
+    
+    return () => clearTimeout(timer);
+  }, [generatedPasswordData, redirectUrl]);
 
 
 
@@ -168,20 +165,44 @@ export default function UserLoginPage() {
                       <div className="text-green-400 mt-1">✓</div>
                       <div>
                         <p className="text-green-100 font-semibold">Account Created!</p>
-                        <p className="text-green-200 text-sm">Your credentials have been automatically filled below.</p>
+                        <p className="text-green-200 text-sm">Your login credentials are shown below and filled in the form.</p>
                       </div>
                     </div>
                     <div className="bg-black/40 rounded p-3 space-y-2 text-sm">
-                      <div className="flex justify-between items-center">
-                        <span className="text-gray-300">Email:</span>
-                        <span className="text-white font-mono">{generatedPasswordData.email}</span>
+                      <div className="space-y-1">
+                        <span className="text-gray-300 block text-xs uppercase">Email</span>
+                        <div className="flex justify-between items-center gap-2">
+                          <span className="text-white font-mono break-all">{generatedPasswordData.email}</span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              navigator.clipboard.writeText(generatedPasswordData.email);
+                              toast({ title: "Copied!", description: "Email copied to clipboard" });
+                            }}
+                            className="text-xs px-2 py-1 bg-green-600 hover:bg-green-700 text-white rounded whitespace-nowrap"
+                          >
+                            Copy
+                          </button>
+                        </div>
                       </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-gray-300">Password:</span>
-                        <span className="text-white font-mono">••••••••</span>
+                      <div className="space-y-1">
+                        <span className="text-gray-300 block text-xs uppercase">Password</span>
+                        <div className="flex justify-between items-center gap-2">
+                          <span className="text-white font-mono">{generatedPasswordData.password}</span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              navigator.clipboard.writeText(generatedPasswordData.password);
+                              toast({ title: "Copied!", description: "Password copied to clipboard" });
+                            }}
+                            className="text-xs px-2 py-1 bg-green-600 hover:bg-green-700 text-white rounded whitespace-nowrap"
+                          >
+                            Copy
+                          </button>
+                        </div>
                       </div>
                     </div>
-                    <p className="text-green-200/80 text-xs">Just click "Sign In" below to access your account. Save your password to login from other devices.</p>
+                    <p className="text-green-200/80 text-xs">💡 Save these credentials to login from other devices. Just click the "Quick Login" button below!</p>
                   </div>
                 </CardContent>
               </Card>
@@ -236,6 +257,11 @@ export default function UserLoginPage() {
                       <>
                         <div className="animate-spin w-4 h-4 border-2 border-black border-t-transparent rounded-full mr-2"></div>
                         Signing In...
+                      </>
+                    ) : showGeneratedPasswordNotice ? (
+                      <>
+                        <LogIn className="w-4 h-4 mr-2" />
+                        Quick Login
                       </>
                     ) : (
                       <>
