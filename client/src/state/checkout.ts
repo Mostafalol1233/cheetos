@@ -18,6 +18,7 @@ export type ContactDetails = {
   password?: string;
   countryCode?: string;
   notes?: string;
+  deliveryMethod?: 'email' | 'whatsapp';
 };
 
 export type PaymentMethod = 'vodafone_cash' | 'instapay' | 'orange_cash' | 'etisalat_cash' | 'we_pay' | 'credit_card' | 'other';
@@ -206,7 +207,8 @@ export const useCheckout = create<CheckoutState>()(
       partialize: (state) => ({
         cart: state.cart,
         contact: state.contact,
-        step: state.step === 'result' ? 'cart' : state.step // Don't persist result step
+        // Only persist early steps. If in review/processing/result, reset to cart to force re-verification.
+        step: (['cart', 'details', 'payment'].includes(state.step)) ? state.step : 'cart'
       })
     }
   )

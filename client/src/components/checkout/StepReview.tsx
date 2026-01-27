@@ -16,7 +16,7 @@ export function StepReview() {
   const { cart, contact, paymentMethod, paymentData, subtotal, total, setOrderMeta, setError, setStep, reset, availablePaymentMethods, setGeneratedPassword } = useCheckout();
   const { toast } = useToast();
   const [, setLocation] = useLocation();
-  const [deliverVia, setDeliverVia] = useState<'email' | 'whatsapp'>('email');
+  const [deliverVia, setDeliverVia] = useState<'email' | 'whatsapp'>(contact.deliveryMethod || 'email');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { settings } = useSettings();
   const [logoError, setLogoError] = useState(false);
@@ -182,10 +182,11 @@ export function StepReview() {
 
       <div className="grid gap-6 md:grid-cols-2">
         <Card>
-          <CardHeader>
-            <CardTitle>Contact Details</CardTitle>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-xl">Contact Details</CardTitle>
+            <Button variant="ghost" size="sm" onClick={() => setStep('details')}>Edit</Button>
           </CardHeader>
-          <CardContent className="space-y-2">
+          <CardContent className="space-y-2 pt-4">
             <p><strong>Name:</strong> {contact.fullName}</p>
             <p><strong>Email:</strong> {contact.email}</p>
             <p><strong>Phone:</strong> {contact.phone}</p>
@@ -194,10 +195,11 @@ export function StepReview() {
         </Card>
 
         <Card>
-          <CardHeader>
-            <CardTitle>Payment Method</CardTitle>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-xl">Payment Method</CardTitle>
+            <Button variant="ghost" size="sm" onClick={() => setStep('payment')}>Edit</Button>
           </CardHeader>
-          <CardContent>
+          <CardContent className="pt-4">
             {selectedPayment && (
               <div className="flex items-center space-x-3">
                 <div className="w-8 h-8 flex items-center justify-center">
