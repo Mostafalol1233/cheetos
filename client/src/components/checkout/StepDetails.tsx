@@ -130,7 +130,12 @@ export function StepDetails({ onNext }: StepDetailsProps) {
       // Move to next step immediately
       onNext?.();
     } catch (err: any) {
-      setSignupError(err.message || 'Registration failed');
+      const msg = err.message || 'Registration failed';
+      setSignupError(msg);
+      // If user exists, we could auto-switch to login tab, but showing the error is safer for now.
+      if (msg.includes('already registered') || msg.includes('409')) {
+         setSignupError("This email is already registered. Please sign in instead.");
+      }
     } finally {
       setIsSigningUp(false);
     }
@@ -139,13 +144,12 @@ export function StepDetails({ onNext }: StepDetailsProps) {
   // If user is authenticated, pre-fill details form
   React.useEffect(() => {
     if (isAuthenticated && user) {
-      setValueDetails('fullName', user.name || contact.fullName || '');
-      setValueDetails('email', user.email || contact.email || '');
-      // Handle phone if needed, but might be complex to split country code
-      // keeping existing contact phone if available, or user phone
-      if (user.phone) {
-         // simple heuristic or just use what's in contact
-      }
+      // Ensure we have values, fallback to contact state
+      const name = user.name || contact.fullName || '';
+      const email = user.email || contact.email || '';
+      
+      if (name) setValueDetails('fullName', name);
+      if (email) setValueDetails('email', email);
     }
   }, [isAuthenticated, user, setValueDetails, contact]);
 

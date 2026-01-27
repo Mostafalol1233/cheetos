@@ -484,7 +484,7 @@ export default function AdminDashboard() {
   // Global socket listeners for real-time data sync
   useEffect(() => {
     const socket = io(API_BASE_URL, {
-      transports: ['websocket', 'polling'],
+      transports: ['polling', 'websocket'],
       reconnectionAttempts: 5,
       reconnectionDelay: 1000,
       path: '/socket.io'

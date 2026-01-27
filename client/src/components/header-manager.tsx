@@ -45,7 +45,7 @@ export function HeaderManager() {
 
     // Socket listener for real-time updates
     const socket = io(API_BASE_URL, {
-      transports: ['websocket', 'polling'],
+      transports: ['polling', 'websocket'],
       reconnectionAttempts: 5
     });
 
