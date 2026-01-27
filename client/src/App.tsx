@@ -38,6 +38,7 @@ import { Analytics } from "@vercel/analytics/react";
 
 import PackageDetailsPage from "./pages/package-details";
 import PackageCheckoutPage from "./pages/package-checkout";
+import MaintenancePage from "./pages/maintenance";
 
 // Protected admin route component
 function ProtectedAdminRoute() {
@@ -97,6 +98,40 @@ function AppShell() {
   const { toast } = useToast();
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+
+  const [healthState, setHealthState] = useState<{
+    ok: boolean;
+    checking: boolean;
+    reason?: string;
+  }>({ ok: true, checking: true });
+
+  const runHealthCheck = async () => {
+    setHealthState((s) => ({ ...s, checking: true }));
+    try {
+      const res = await fetch('/api/health', { cache: 'no-store' });
+      if (!res.ok) {
+        setHealthState({ ok: false, checking: false, reason: 'Backend or database is temporarily unavailable.' });
+        return;
+      }
+      const data = await res.json().catch(() => ({} as any));
+      const dbOk = (data as any)?.db?.ok;
+      if (dbOk === false || (data as any)?.status === 'maintenance') {
+        setHealthState({ ok: false, checking: false, reason: 'Database connection is currently unavailable.' });
+        return;
+      }
+      setHealthState({ ok: true, checking: false });
+    } catch {
+      setHealthState({ ok: false, checking: false, reason: 'Cannot connect to backend server.' });
+    }
+  };
+
+  useEffect(() => {
+    runHealthCheck();
+    const id = window.setInterval(() => {
+      runHealthCheck();
+    }, 15000);
+    return () => window.clearInterval(id);
+  }, []);
 
   // Global credentials popup for guest-checkout auto-account creation.
   // Keeps showing on any page until user clicks X.
@@ -162,6 +197,10 @@ function AppShell() {
   const isAdminRoute = location === "/admin" || location.startsWith("/admin/") || location === "/admin/login";
   const isProfileRoute = location === "/profile";
   const isHomeRoute = location === "/" || location.startsWith("/#");
+
+  if (!healthState.ok && !isAdminRoute) {
+    return <MaintenancePage reason={healthState.reason} onRetry={runHealthCheck} />;
+  }
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {

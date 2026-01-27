@@ -823,12 +823,24 @@ app.get('/manifest.webmanifest', (req, res) => {
   res.sendFile(file);
 });
 
-app.get('/api/health', (req, res) => {
-  res.json({
-    status: 'ok',
-    version: '1.0.0',
-    timestamp: new Date().toISOString()
-  });
+app.get('/api/health', async (req, res) => {
+  try {
+    const dbOk = await checkConnection(1, 1);
+    const statusCode = dbOk ? 200 : 503;
+    res.status(statusCode).json({
+      status: dbOk ? 'ok' : 'maintenance',
+      db: { ok: dbOk },
+      version: '1.0.0',
+      timestamp: new Date().toISOString(),
+    });
+  } catch (err) {
+    res.status(503).json({
+      status: 'maintenance',
+      db: { ok: false },
+      version: '1.0.0',
+      timestamp: new Date().toISOString(),
+    });
+  }
 });
 
 // ===================== CONTACT INFO (ENV) =====================
@@ -4928,7 +4940,7 @@ app.post('/api/admin/alerts/:id/flag', authenticateToken, async (req, res) => {
 });
 
 // Health check
-app.get('/api/health', (req, res) => {
+app.get('/api/health-simple', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
 });
 
