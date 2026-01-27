@@ -44,17 +44,25 @@ export function StepReview() {
 
 
   // Validation Guard: If data is missing (e.g. page refresh cleared non-persisted parts or persistence failed), show error.
-  if (cart.length === 0 || !contact.email) {
+  if (cart.length === 0 || !contact.email || !contact.phone) {
     return (
       <div className="text-center py-10 space-y-4">
         <h2 className="text-xl font-semibold text-destructive">Session Expired or Invalid Data</h2>
         <p className="text-muted-foreground">It looks like some checkout information is missing. Please start over.</p>
-        <Button onClick={() => {
-          reset();
-          window.location.reload();
-        }}>
-          Restart Checkout
-        </Button>
+        <div className="flex justify-center gap-4">
+          <Button variant="outline" onClick={() => window.location.href = '/'}>
+            Go Home
+          </Button>
+          <Button onClick={() => {
+            const { reset } = useCheckout.getState();
+            reset();
+            localStorage.removeItem('checkout-storage'); // Force clear persistence
+            localStorage.removeItem('checkout_package');
+            window.location.reload();
+          }}>
+            Restart Checkout
+          </Button>
+        </div>
       </div>
     );
   }
