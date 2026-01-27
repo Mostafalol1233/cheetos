@@ -14,14 +14,15 @@ export default function UserLoginPage() {
   const { toast } = useToast();
   const [location, setLocation] = useLocation();
   const searchParams = new URLSearchParams(window.location.search);
-  const redirectUrl = searchParams.get('redirect') || '/';
+  const redirectUrl = searchParams.get('redirect') || '/profile';
+  const defaultTab = searchParams.get('tab') || 'login';
 
   // Redirect if already logged in
   useEffect(() => {
     if (isAuthenticated) {
-      setLocation('/profile');
+      setLocation(redirectUrl);
     }
-  }, [isAuthenticated, setLocation]);
+  }, [isAuthenticated, setLocation, redirectUrl]);
 
   // Email/Password login
   const [emailLogin, setEmailLogin] = useState({ email: '', password: '' });
@@ -172,7 +173,7 @@ export default function UserLoginPage() {
           <p className="text-gray-400 mt-2">Sign in to your account or create a new one</p>
         </div>
 
-        <Tabs defaultValue="login" className="w-full">
+        <Tabs defaultValue={defaultTab} className="w-full">
           <TabsList className="grid w-full grid-cols-2 bg-gray-800/50">
             <TabsTrigger value="login" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black">
               Sign In

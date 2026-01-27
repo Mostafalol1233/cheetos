@@ -244,11 +244,18 @@ export function Header() {
                   </Button>
                 </div>
               ) : (
-                <Link href="/login" className="hidden md:block">
-                  <Button className="rounded-xl px-6 bg-gold-primary text-background hover:bg-gold-accent transition-colors">
-                    Sign In
-                  </Button>
-                </Link>
+                <div className="hidden md:flex items-center gap-2">
+                  <Link href="/login?tab=register">
+                    <Button variant="ghost" className="rounded-xl hover:bg-gold-primary/10 hover:text-gold-primary">
+                      Sign Up
+                    </Button>
+                  </Link>
+                  <Link href="/login">
+                    <Button className="rounded-xl px-6 bg-gold-primary text-background hover:bg-gold-accent transition-colors">
+                      Sign In
+                    </Button>
+                  </Link>
+                </div>
               )}
 
               {/* Mobile Menu Toggle */}
@@ -405,11 +412,18 @@ export function Header() {
                       </button>
                     </div>
                   ) : (
-                    <Link href="/login">
-                      <Button className="w-full btn-gaming rounded-xl py-4">
-                        Sign In
-                      </Button>
-                    </Link>
+                    <div className="space-y-3">
+                      <Link href="/login">
+                        <Button className="w-full btn-gaming rounded-xl py-4">
+                          Sign In
+                        </Button>
+                      </Link>
+                      <Link href="/login?tab=register">
+                        <Button variant="outline" className="w-full rounded-xl py-4 border-gold-primary text-gold-primary hover:bg-gold-primary/10">
+                          Sign Up
+                        </Button>
+                      </Link>
+                    </div>
                   )}
                 </motion.div>
               </div>
