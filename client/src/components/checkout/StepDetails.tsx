@@ -11,8 +11,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Link } from 'wouter';
-import { User, LogIn, ArrowRight } from 'lucide-react';
+import { User, LogIn, ArrowRight, UserPlus } from 'lucide-react';
 import { useTranslation } from "@/lib/translation";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const detailsSchema = z.object({
   fullName: z.string().min(2, 'Name must be at least 2 characters'),
@@ -20,11 +21,18 @@ const detailsSchema = z.object({
   countryCode: z.string().default('+20'),
   phone: z.string().min(9, 'Phone number is too short'),
   notes: z.string().optional(),
-  password: z.string().optional(),
-  createAccount: z.boolean().optional(),
+});
+
+const signupSchema = z.object({
+  fullName: z.string().min(2, 'Name must be at least 2 characters'),
+  email: z.string().email('Invalid email address'),
+  countryCode: z.string().default('+20'),
+  phone: z.string().min(9, 'Phone number is too short'),
+  password: z.string().min(6, 'Password must be at least 6 characters'),
 });
 
 type DetailsForm = z.infer<typeof detailsSchema>;
+type SignupForm = z.infer<typeof signupSchema>;
 
 interface StepDetailsProps {
   onNext?: () => void;
@@ -34,34 +42,48 @@ interface StepDetailsProps {
 
 export function StepDetails({ onNext }: StepDetailsProps) {
   const { contact, setContact } = useCheckout();
-  const { user, isAuthenticated, login } = useUserAuth();
+  const { user, isAuthenticated, login, register: registerUser } = useUserAuth();
   const { t } = useTranslation();
-  const [authTab, setAuthTab] = React.useState<'guest' | 'login'>('guest');
-
+  
   // Login State
   const [loginEmail, setLoginEmail] = React.useState('');
   const [loginPassword, setLoginPassword] = React.useState('');
   const [loginError, setLoginError] = React.useState('');
   const [isLoggingIn, setIsLoggingIn] = React.useState(false);
 
-  // Form Hook
+  // Signup State
+  const [signupError, setSignupError] = React.useState('');
+  const [isSigningUp, setIsSigningUp] = React.useState(false);
+
+  // Details Form (for authenticated users)
   const {
-    register,
-    handleSubmit,
-    control,
-    setValue,
-    watch,
-    formState: { errors },
+    register: registerDetails,
+    handleSubmit: handleSubmitDetails,
+    control: controlDetails,
+    setValue: setValueDetails,
+    formState: { errors: errorsDetails },
   } = useForm<DetailsForm>({
     resolver: zodResolver(detailsSchema),
     defaultValues: {
       ...contact,
       countryCode: contact.countryCode || '+20',
-      createAccount: false,
     },
   });
 
-  const onSubmit = (data: DetailsForm) => {
+  // Signup Form
+  const {
+    register: registerSignup,
+    handleSubmit: handleSubmitSignup,
+    control: controlSignup,
+    formState: { errors: errorsSignup },
+  } = useForm<SignupForm>({
+    resolver: zodResolver(signupSchema),
+    defaultValues: {
+      countryCode: '+20',
+    },
+  });
+
+  const onDetailsSubmit = (data: DetailsForm) => {
     setContact({ 
       ...contact, 
       ...data, 
@@ -76,7 +98,7 @@ export function StepDetails({ onNext }: StepDetailsProps) {
     setIsLoggingIn(true);
     try {
       await login(loginEmail, loginPassword);
-      setAuthTab('guest'); // Switch back to form view
+      // Auth context updates, component re-renders, shows authenticated view
     } catch (err: any) {
       setLoginError(err.message || 'Login failed');
     } finally {
@@ -84,106 +106,219 @@ export function StepDetails({ onNext }: StepDetailsProps) {
     }
   };
 
-  // If user is authenticated, pre-fill form
+  const onSignupSubmit = async (data: SignupForm) => {
+    setSignupError('');
+    setIsSigningUp(true);
+    try {
+      const fullPhone = `${data.countryCode}${data.phone}`;
+      await registerUser({
+        name: data.fullName,
+        email: data.email,
+        password: data.password,
+        phone: fullPhone
+      });
+      
+      // Update contact info in checkout state
+      setContact({
+        fullName: data.fullName,
+        email: data.email,
+        phone: data.phone,
+        countryCode: data.countryCode,
+        deliveryMethod: 'email'
+      });
+
+      // Move to next step immediately
+      onNext?.();
+    } catch (err: any) {
+      setSignupError(err.message || 'Registration failed');
+    } finally {
+      setIsSigningUp(false);
+    }
+  };
+
+  // If user is authenticated, pre-fill details form
   React.useEffect(() => {
     if (isAuthenticated && user) {
-      setValue('fullName', user.name || contact.fullName || '');
-      setValue('email', user.email || contact.email || '');
-      setValue('phone', user.phone || contact.phone || '');
+      setValueDetails('fullName', user.name || contact.fullName || '');
+      setValueDetails('email', user.email || contact.email || '');
+      // Handle phone if needed, but might be complex to split country code
+      // keeping existing contact phone if available, or user phone
+      if (user.phone) {
+         // simple heuristic or just use what's in contact
+      }
     }
-  }, [isAuthenticated, user, setValue, contact]);
+  }, [isAuthenticated, user, setValueDetails, contact]);
 
-  const createAccount = watch('createAccount');
-
-  if (!isAuthenticated && authTab === 'login') {
+  if (!isAuthenticated) {
     return (
       <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <h2 className="text-2xl font-bold">Sign In</h2>
-          <Button variant="ghost" onClick={() => setAuthTab('guest')}>
-            Continue as Guest
-          </Button>
-        </div>
-        <Card>
-          <CardContent className="pt-6">
-            <form onSubmit={handleLogin} className="space-y-4 max-w-md mx-auto">
-              <div className="text-center mb-6">
-                <p className="text-muted-foreground">
-                  Sign in to access your saved details and complete your order faster.
-                </p>
-              </div>
-              
-              {loginError && (
-                <div className="bg-destructive/15 text-destructive text-sm p-3 rounded-md">
-                  {loginError}
-                </div>
-              )}
+        <Tabs defaultValue="signup" className="w-full">
+          <TabsList className="grid w-full grid-cols-2 mb-6">
+            <TabsTrigger value="signup">Sign Up</TabsTrigger>
+            <TabsTrigger value="login">Sign In</TabsTrigger>
+          </TabsList>
 
-              <div className="space-y-2">
-                <Label htmlFor="login-email">Email</Label>
-                <Input
-                  id="login-email"
-                  type="email"
-                  value={loginEmail}
-                  onChange={(e) => setLoginEmail(e.target.value)}
-                  placeholder="name@example.com"
-                  required
-                />
-              </div>
+          <TabsContent value="signup">
+            <Card>
+              <CardContent className="pt-6">
+                <form onSubmit={handleSubmitSignup(onSignupSubmit)} className="space-y-4">
+                  <div className="text-center mb-6">
+                    <h3 className="text-lg font-semibold">Create an Account</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Sign up to track your order and checkout faster.
+                    </p>
+                  </div>
 
-              <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <Label htmlFor="login-password">Password</Label>
-                  <Link href="/forgot-password">
-                    <span className="text-xs text-primary hover:underline cursor-pointer">
-                      Forgot password?
-                    </span>
-                  </Link>
-                </div>
-                <Input
-                  id="login-password"
-                  type="password"
-                  value={loginPassword}
-                  onChange={(e) => setLoginPassword(e.target.value)}
-                  placeholder="••••••••"
-                  required
-                />
-              </div>
+                  {signupError && (
+                    <div className="bg-destructive/15 text-destructive text-sm p-3 rounded-md">
+                      {signupError}
+                    </div>
+                  )}
 
-              <Button type="submit" className="w-full" size="lg" disabled={isLoggingIn}>
-                {isLoggingIn ? (
-                  <>
-                    <span className="animate-spin mr-2">⏳</span> Signing In...
-                  </>
-                ) : (
-                  <>
-                    <LogIn className="mr-2 h-4 w-4" /> Sign In
-                  </>
-                )}
-              </Button>
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-name">Full Name</Label>
+                    <Input
+                      id="signup-name"
+                      {...registerSignup('fullName')}
+                      placeholder="John Doe"
+                    />
+                    {errorsSignup.fullName && <p className="text-sm text-destructive">{errorsSignup.fullName.message}</p>}
+                  </div>
 
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <span className="w-full border-t" />
-                </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-background px-2 text-muted-foreground">
-                    Or
-                  </span>
-                </div>
-              </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-email">Email</Label>
+                    <Input
+                      id="signup-email"
+                      type="email"
+                      {...registerSignup('email')}
+                      placeholder="name@example.com"
+                    />
+                    {errorsSignup.email && <p className="text-sm text-destructive">{errorsSignup.email.message}</p>}
+                  </div>
 
-              <Button 
-                type="button" 
-                variant="outline" 
-                className="w-full" 
-                onClick={() => setAuthTab('guest')}
-              >
-                Continue as Guest / Sign Up
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-phone">Phone Number</Label>
+                    <div className="flex gap-2">
+                      <Controller
+                        name="countryCode"
+                        control={controlSignup}
+                        render={({ field }) => (
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <SelectTrigger className="w-[110px]">
+                              <SelectValue placeholder="+20" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="+20">🇪🇬 +20</SelectItem>
+                              <SelectItem value="+966">🇸🇦 +966</SelectItem>
+                              <SelectItem value="+971">🇦🇪 +971</SelectItem>
+                              <SelectItem value="+965">🇰🇼 +965</SelectItem>
+                              <SelectItem value="+974">🇶🇦 +974</SelectItem>
+                              <SelectItem value="+1">🇺🇸 +1</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        )}
+                      />
+                      <Input
+                        id="signup-phone"
+                        className="flex-1"
+                        {...registerSignup('phone')}
+                        placeholder="1xxxxxxxxx"
+                      />
+                    </div>
+                    {errorsSignup.phone && <p className="text-sm text-destructive">{errorsSignup.phone.message}</p>}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-password">Password</Label>
+                    <Input
+                      id="signup-password"
+                      type="password"
+                      {...registerSignup('password')}
+                      placeholder="Choose a password"
+                    />
+                    {errorsSignup.password && <p className="text-sm text-destructive">{errorsSignup.password.message}</p>}
+                  </div>
+
+                  <Button type="submit" className="w-full" size="lg" disabled={isSigningUp}>
+                    {isSigningUp ? (
+                      <>
+                        <span className="animate-spin mr-2">⏳</span> Creating Account...
+                      </>
+                    ) : (
+                      <>
+                        <UserPlus className="mr-2 h-4 w-4" /> Sign Up & Continue
+                      </>
+                    )}
+                  </Button>
+                </form>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="login">
+            <Card>
+              <CardContent className="pt-6">
+                <form onSubmit={handleLogin} className="space-y-4 max-w-md mx-auto">
+                  <div className="text-center mb-6">
+                    <h3 className="text-lg font-semibold">Welcome Back</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Sign in to access your saved details.
+                    </p>
+                  </div>
+                  
+                  {loginError && (
+                    <div className="bg-destructive/15 text-destructive text-sm p-3 rounded-md">
+                      {loginError}
+                    </div>
+                  )}
+
+                  <div className="space-y-2">
+                    <Label htmlFor="login-email">Email</Label>
+                    <Input
+                      id="login-email"
+                      type="email"
+                      value={loginEmail}
+                      onChange={(e) => setLoginEmail(e.target.value)}
+                      placeholder="name@example.com"
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center">
+                      <Label htmlFor="login-password">Password</Label>
+                      <Link href="/forgot-password">
+                        <span className="text-xs text-primary hover:underline cursor-pointer">
+                          Forgot password?
+                        </span>
+                      </Link>
+                    </div>
+                    <Input
+                      id="login-password"
+                      type="password"
+                      value={loginPassword}
+                      onChange={(e) => setLoginPassword(e.target.value)}
+                      placeholder="••••••••"
+                      required
+                    />
+                  </div>
+
+                  <Button type="submit" className="w-full" size="lg" disabled={isLoggingIn}>
+                    {isLoggingIn ? (
+                      <>
+                        <span className="animate-spin mr-2">⏳</span> Signing In...
+                      </>
+                    ) : (
+                      <>
+                        <LogIn className="mr-2 h-4 w-4" /> Sign In
+                      </>
+                    )}
+                  </Button>
+                </form>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
     );
   }
@@ -192,36 +327,30 @@ export function StepDetails({ onNext }: StepDetailsProps) {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold">{t("details_title") || "Your Details"}</h2>
-        {!isAuthenticated && (
-          <Button variant="ghost" onClick={() => setAuthTab('login')} size="sm">
-            <User className="mr-2 h-4 w-4" />
-            Already have an account?
-          </Button>
-        )}
       </div>
 
       <Card>
         <CardContent className="pt-6">
-          <form id="details-form" onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <form id="details-form" onSubmit={handleSubmitDetails(onDetailsSubmit)} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="fullName">{t("full_name") || "Full Name"}</Label>
                 <Input
                   id="fullName"
-                  {...register('fullName')}
+                  {...registerDetails('fullName')}
                   placeholder={t("enter_full_name") || "Enter your full name"}
                 />
-                {errors.fullName && <p className="text-sm text-destructive mt-1">{errors.fullName.message}</p>}
+                {errorsDetails.fullName && <p className="text-sm text-destructive mt-1">{errorsDetails.fullName.message}</p>}
               </div>
               <div>
                 <Label htmlFor="email">Email</Label>
                 <Input
                   id="email"
                   type="email"
-                  {...register('email')}
+                  {...registerDetails('email')}
                   placeholder="name@example.com"
                 />
-                {errors.email && <p className="text-sm text-destructive mt-1">{errors.email.message}</p>}
+                {errorsDetails.email && <p className="text-sm text-destructive mt-1">{errorsDetails.email.message}</p>}
               </div>
             </div>
 
@@ -230,7 +359,7 @@ export function StepDetails({ onNext }: StepDetailsProps) {
               <div className="flex gap-2">
                 <Controller
                   name="countryCode"
-                  control={control}
+                  control={controlDetails}
                   render={({ field }) => (
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <SelectTrigger className="w-[110px]">
@@ -250,47 +379,18 @@ export function StepDetails({ onNext }: StepDetailsProps) {
                 <Input
                   id="phone"
                   className="flex-1"
-                  {...register('phone')}
+                  {...registerDetails('phone')}
                   placeholder="1xxxxxxxxx"
                 />
               </div>
-              {errors.phone && <p className="text-sm text-destructive mt-1">{errors.phone.message}</p>}
+              {errorsDetails.phone && <p className="text-sm text-destructive mt-1">{errorsDetails.phone.message}</p>}
             </div>
-
-            {!isAuthenticated && (
-              <div className="space-y-4 pt-2 border-t">
-                <div className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    id="createAccount"
-                    className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
-                    {...register('createAccount')}
-                  />
-                  <Label htmlFor="createAccount" className="font-normal cursor-pointer">
-                    Create an account for faster checkout next time
-                  </Label>
-                </div>
-                
-                {createAccount && (
-                  <div>
-                    <Label htmlFor="password">Password</Label>
-                    <Input
-                      id="password"
-                      type="password"
-                      {...register('password')}
-                      placeholder="Choose a password"
-                    />
-                    {errors.password && <p className="text-sm text-destructive mt-1">{errors.password.message}</p>}
-                  </div>
-                )}
-              </div>
-            )}
 
             <div>
               <Label htmlFor="notes">Additional Notes (Optional)</Label>
               <Textarea
                 id="notes"
-                {...register('notes')}
+                {...registerDetails('notes')}
                 placeholder="Any special instructions..."
                 rows={3}
               />
