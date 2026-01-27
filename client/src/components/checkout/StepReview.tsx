@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useCheckout, ensureIdempotencyKey } from '@/state/checkout';
+import { useLocation } from "wouter";
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
@@ -12,6 +13,7 @@ import type { PaymentMethod } from '@/state/checkout';
 
 export function StepReview() {
   const { cart, contact, paymentMethod, paymentData, subtotal, total, setOrderMeta, setError, setStep, reset, availablePaymentMethods, setGeneratedPassword } = useCheckout();
+  const [, setLocation] = useLocation();
   const [deliverVia, setDeliverVia] = useState<'email' | 'whatsapp'>('email');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { settings } = useSettings();
@@ -111,16 +113,7 @@ export function StepReview() {
           localStorage.setItem('userData', JSON.stringify(response.user));
         }
         if (response.generatedPassword) {
-          // Store auto-login data for the login page
-          localStorage.setItem('auto_login_data', JSON.stringify({
-            token: response.token,
-            email: response.user?.email || contact.email,
-            password: response.generatedPassword,
-            user: response.user
-          }));
-          // Store in checkout state for display
-          setGeneratedPassword(response.generatedPassword);
-          // Also backup in local storage just in case
+          // Store credentials for the Profile page modal or Login page fallback
           localStorage.setItem('new_user_creds', JSON.stringify({
             email: response.user?.email || contact.email,
             password: response.generatedPassword
@@ -129,11 +122,17 @@ export function StepReview() {
       }
 
       localStorage.removeItem('checkout-storage');
-      
+
       // Update state to show result step
       setOrderMeta(response.id, response.status === 'pending_approval' ? 'pending_approval' : 'paid');
-      setStep('result');
-      
+
+      // Redirect based on outcome
+      if (response.loginFailed) {
+        setLocation('/login?redirect=/profile');
+      } else {
+        setLocation('/profile');
+      }
+
       return;
 
     } catch (error) {

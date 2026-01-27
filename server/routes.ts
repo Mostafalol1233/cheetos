@@ -241,13 +241,13 @@ export function registerRoutes(app: Express): Server {
       if (process.env.PAYPAL_EMAIL) {
         methods.push({
           id: "credit_card", // Mapping 'credit_card' to PayPal as per frontend expectation or vice versa? 
-                             // Checkout.ts uses: 'vodafone_cash' | 'instapay' | 'orange_cash' | 'etisalat_cash' | 'we_pay' | 'credit_card' | 'other'
-                             // Let's use 'credit_card' for PayPal if that's the intent, or add 'paypal'. 
-                             // The PaymentIcon component has 'paypal' case.
-                             // But CheckoutState type has 'credit_card'.
-                             // Let's stick to 'credit_card' for now or check if I should add 'paypal'.
-                             // The user said "Replace all existing PayPal icons...". 
-                             // Let's assume 'credit_card' covers PayPal/Cards.
+          // Checkout.ts uses: 'vodafone_cash' | 'instapay' | 'orange_cash' | 'etisalat_cash' | 'we_pay' | 'credit_card' | 'other'
+          // Let's use 'credit_card' for PayPal if that's the intent, or add 'paypal'. 
+          // The PaymentIcon component has 'paypal' case.
+          // But CheckoutState type has 'credit_card'.
+          // Let's stick to 'credit_card' for now or check if I should add 'paypal'.
+          // The user said "Replace all existing PayPal icons...". 
+          // Let's assume 'credit_card' covers PayPal/Cards.
           name: "Credit Card / PayPal",
           type: "card",
           details: {
@@ -577,12 +577,17 @@ export function registerRoutes(app: Express): Server {
         if (user) {
           userId = user.id;
           // Log the user in to establish session
-          await new Promise<void>((resolve, reject) => {
-            req.login(user, (err) => {
-              if (err) reject(err);
-              else resolve();
+          try {
+            await new Promise<void>((resolve, reject) => {
+              req.login(user, (err) => {
+                if (err) reject(err);
+                else resolve();
+              });
             });
-          });
+          } catch (loginErr) {
+            console.error("Auto-login failed:", loginErr);
+            // Continue execution, do not fail the order
+          }
         }
       }
 
@@ -625,7 +630,8 @@ export function registerRoutes(app: Express): Server {
         status: "pending",
         user: user,
         newAccount: newUserCreated,
-        generatedPassword: newUserCreated ? generatedPassword : undefined
+        generatedPassword: newUserCreated ? generatedPassword : undefined,
+        loginFailed: newUserCreated && !req.isAuthenticated()
       });
     } catch (err: any) {
       res.status(500).json({ message: err.message || "Failed to create order" });

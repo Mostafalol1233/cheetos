@@ -22,10 +22,19 @@ import {
   Calendar,
   ArrowLeft,
   Eye,
-  Download
+  Download,
+  Copy
 } from "lucide-react";
 import { io } from "socket.io-client";
 import { LiveChatWidget } from "@/components/live-chat-widget";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 
 interface Order {
   id: string;
@@ -80,29 +89,34 @@ export default function UserProfilePage() {
     }
   }, [isAuthenticated, setLocation]);
 
+  const [showNewUserModal, setShowNewUserModal] = useState(false);
+  const [newUserCreds, setNewUserCreds] = useState<{ email: string, password: string } | null>(null);
+
   useEffect(() => {
     // Check for new user credentials from guest checkout
-    const newUserCreds = localStorage.getItem('new_user_creds');
-    if (newUserCreds) {
+    const storedCreds = localStorage.getItem('new_user_creds');
+    if (storedCreds) {
       try {
-        const creds = JSON.parse(newUserCreds);
-        // Show persistent dialog or toast
-        // Using a custom toast duration or alert for now to ensure they see it
-        // Ideally a modal. Let's use a browser alert for guaranteed visibility or a very long toast
-        // User requested "top pop up messge".
-
-        // Let's use the toast with a long duration and destructive/distinctive style
-        toast({
-          title: "Account Created Successfully!",
-          description: `Email: ${creds.email}\nPassword: ${creds.password}\n\nCopy and save them to login from another device.`,
-          duration: 120000, // 2 minutes
-          className: "bg-green-900 border-green-500 text-white whitespace-pre-line"
-        });
-
-        // Keep creds until the user clears them manually from a global popup/banner.
+        const creds = JSON.parse(storedCreds);
+        setNewUserCreds(creds);
+        setShowNewUserModal(true);
       } catch (e) { }
     }
-  }, [toast]);
+  }, []);
+
+  const handleCloseNewUserModal = () => {
+    setShowNewUserModal(false);
+    localStorage.removeItem('new_user_creds');
+  };
+
+  const copyToClipboard = (text: string, label: string) => {
+    navigator.clipboard.writeText(text);
+    toast({
+      title: "Copied!",
+      description: `${label} copied to clipboard`,
+      duration: 2000,
+    });
+  };
 
   useEffect(() => {
     // Socket.io connection for real-time updates
@@ -410,6 +424,67 @@ export default function UserProfilePage() {
         </div>
       </div>
 
+      <Dialog open={showNewUserModal} onOpenChange={handleCloseNewUserModal}>
+        <DialogContent className="bg-gradient-to-br from-gray-900 to-black border-gold-primary text-white sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold text-center bg-gradient-to-r from-gold-primary to-neon-pink bg-clip-text text-transparent">
+              Account Created!
+            </DialogTitle>
+            <DialogDescription className="text-gray-400 text-center">
+              Your account has been automatically created. Please save these credentials to log in next time.
+            </DialogDescription>
+          </DialogHeader>
+
+          {newUserCreds && (
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label className="text-sm font-medium text-gold-primary uppercase tracking-wider">Email</Label>
+                <div className="flex items-center gap-2 p-3 bg-gray-800/50 rounded-lg border border-gray-700">
+                  <span className="flex-1 font-mono text-sm break-all">{newUserCreds.email}</span>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-8 w-8 p-0 text-gray-400 hover:text-white"
+                    onClick={() => copyToClipboard(newUserCreds.email, "Email")}
+                  >
+                    <Copy className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-sm font-medium text-gold-primary uppercase tracking-wider">Password</Label>
+                <div className="flex items-center gap-2 p-3 bg-gray-800/50 rounded-lg border border-gray-700">
+                  <span className="flex-1 font-mono text-sm">{newUserCreds.password}</span>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-8 w-8 p-0 text-gray-400 hover:text-white"
+                    onClick={() => copyToClipboard(newUserCreds.password, "Password")}
+                  >
+                    <Copy className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+
+              <div className="p-3 bg-blue-900/20 border border-blue-500/30 rounded-lg">
+                <p className="text-blue-200 text-xs text-center">
+                  Tip: You can change your password later in settings.
+                </p>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button
+              onClick={handleCloseNewUserModal}
+              className="w-full bg-gradient-to-r from-gold-primary to-neon-pink hover:from-gold-secondary hover:to-neon-pink text-black font-bold"
+            >
+              I've Saved Them
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
