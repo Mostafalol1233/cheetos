@@ -10,7 +10,6 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Link } from 'wouter';
 import { User, LogIn, ArrowRight } from 'lucide-react';
 import { useTranslation } from "@/lib/translation";
@@ -35,10 +34,17 @@ interface StepDetailsProps {
 
 export function StepDetails({ onNext }: StepDetailsProps) {
   const { contact, setContact } = useCheckout();
-  const { user, isAuthenticated } = useUserAuth();
+  const { user, isAuthenticated, login } = useUserAuth();
   const { t } = useTranslation();
   const [authTab, setAuthTab] = React.useState<'guest' | 'login'>('guest');
 
+  // Login State
+  const [loginEmail, setLoginEmail] = React.useState('');
+  const [loginPassword, setLoginPassword] = React.useState('');
+  const [loginError, setLoginError] = React.useState('');
+  const [isLoggingIn, setIsLoggingIn] = React.useState(false);
+
+  // Form Hook
   const {
     register,
     handleSubmit,
@@ -56,13 +62,26 @@ export function StepDetails({ onNext }: StepDetailsProps) {
   });
 
   const onSubmit = (data: DetailsForm) => {
-    // Force delivery method to email (website flow)
     setContact({ 
       ...contact, 
       ...data, 
       deliveryMethod: 'email' 
     });
     onNext?.();
+  };
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoginError('');
+    setIsLoggingIn(true);
+    try {
+      await login(loginEmail, loginPassword);
+      setAuthTab('guest'); // Switch back to form view
+    } catch (err: any) {
+      setLoginError(err.message || 'Login failed');
+    } finally {
+      setIsLoggingIn(false);
+    }
   };
 
   // If user is authenticated, pre-fill form
@@ -86,16 +105,83 @@ export function StepDetails({ onNext }: StepDetailsProps) {
           </Button>
         </div>
         <Card>
-          <CardContent className="pt-6 flex flex-col items-center justify-center space-y-4 min-h-[300px]">
-            <p className="text-muted-foreground text-center mb-4">
-              Please sign in to access your saved details and order history.
-            </p>
-            <Link href="/login?redirect=/checkout">
-              <Button size="lg" className="w-full md:w-auto px-8">
-                <LogIn className="mr-2 h-4 w-4" />
-                Sign In to Continue
+          <CardContent className="pt-6">
+            <form onSubmit={handleLogin} className="space-y-4 max-w-md mx-auto">
+              <div className="text-center mb-6">
+                <p className="text-muted-foreground">
+                  Sign in to access your saved details and complete your order faster.
+                </p>
+              </div>
+              
+              {loginError && (
+                <div className="bg-destructive/15 text-destructive text-sm p-3 rounded-md">
+                  {loginError}
+                </div>
+              )}
+
+              <div className="space-y-2">
+                <Label htmlFor="login-email">Email</Label>
+                <Input
+                  id="login-email"
+                  type="email"
+                  value={loginEmail}
+                  onChange={(e) => setLoginEmail(e.target.value)}
+                  placeholder="name@example.com"
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex justify-between items-center">
+                  <Label htmlFor="login-password">Password</Label>
+                  <Link href="/forgot-password">
+                    <span className="text-xs text-primary hover:underline cursor-pointer">
+                      Forgot password?
+                    </span>
+                  </Link>
+                </div>
+                <Input
+                  id="login-password"
+                  type="password"
+                  value={loginPassword}
+                  onChange={(e) => setLoginPassword(e.target.value)}
+                  placeholder="••••••••"
+                  required
+                />
+              </div>
+
+              <Button type="submit" className="w-full" size="lg" disabled={isLoggingIn}>
+                {isLoggingIn ? (
+                  <>
+                    <span className="animate-spin mr-2">⏳</span> Signing In...
+                  </>
+                ) : (
+                  <>
+                    <LogIn className="mr-2 h-4 w-4" /> Sign In
+                  </>
+                )}
               </Button>
-            </Link>
+
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-background px-2 text-muted-foreground">
+                    Or
+                  </span>
+                </div>
+              </div>
+
+              <Button 
+                type="button" 
+                variant="outline" 
+                className="w-full" 
+                onClick={() => setAuthTab('guest')}
+              >
+                Continue as Guest / Sign Up
+              </Button>
+            </form>
           </CardContent>
         </Card>
       </div>
