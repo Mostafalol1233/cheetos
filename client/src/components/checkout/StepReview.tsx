@@ -41,8 +41,36 @@ export function StepReview() {
     }
   };
 
+
+
+  // Validation Guard: If data is missing (e.g. page refresh cleared non-persisted parts or persistence failed), show error.
+  if (cart.length === 0 || !contact.email) {
+    return (
+      <div className="text-center py-10 space-y-4">
+        <h2 className="text-xl font-semibold text-destructive">Session Expired or Invalid Data</h2>
+        <p className="text-muted-foreground">It looks like some checkout information is missing. Please start over.</p>
+        <Button onClick={() => {
+          reset();
+          window.location.reload();
+        }}>
+          Restart Checkout
+        </Button>
+      </div>
+    );
+  }
+
   const handleSubmit = async () => {
     if (isSubmitting) return;
+
+    // Client-side validation to prevent 400s
+    if (cart.length === 0) {
+      setError("Your cart is empty.");
+      return;
+    }
+    if (!contact.email || !contact.phone) {
+      setError("Contact information is missing.");
+      return;
+    }
 
     setIsSubmitting(true);
     setError(undefined);
