@@ -2,18 +2,28 @@ import React, { useEffect } from 'react';
 import { useCheckout } from '@/state/checkout';
 import { useCart } from '@/lib/cart-context';
 import { StepDetails } from '@/components/checkout/StepDetails';
+import { StepPayment } from '@/components/checkout/StepPayment';
+import { StepReview } from '@/components/checkout/StepReview';
+import { StepProcessing } from '@/components/checkout/StepProcessing';
+import { StepResult } from '@/components/checkout/StepResult';
 import { Button } from '@/components/ui/button';
+import { Progress } from '@/components/ui/progress';
 import { Card, CardContent } from '@/components/ui/card';
 import { useUserAuth } from "@/lib/user-auth-context";
 import { useLocation } from "wouter";
 
 const steps: { key: string; label: string; component: React.ComponentType<any> }[] = [
   { key: 'details', label: 'Details', component: StepDetails },
+  { key: 'payment', label: 'Payment', component: StepPayment },
+  { key: 'review', label: 'Review', component: StepReview },
+  { key: 'processing', label: 'Processing', component: StepProcessing },
+  { key: 'result', label: 'Result', component: StepResult },
 ];
 
 export function CheckoutContent({ isEmbedded = false }: { isEmbedded?: boolean }) {
-  const { step, setStep, cart, setCart } = useCheckout();
+  const { step, setStep, cart, setCart, contact, paymentMethod } = useCheckout();
   const { cart: globalCart } = useCart();
+  const { isAuthenticated } = useUserAuth();
   const [, setLocation] = useLocation();
 
   useEffect(() => {
@@ -39,21 +49,45 @@ export function CheckoutContent({ isEmbedded = false }: { isEmbedded?: boolean }
     }
   }, [globalCart, setCart]);
 
+  const currentStepIndex = steps.findIndex(s => s.key === step);
+  // Default to details if step is 'cart' (legacy) or invalid
+  const currentStep = steps[currentStepIndex] || steps[0];
+  const progress = ((currentStepIndex + 1) / (steps.length - 2)) * 100; // Exclude processing and result
+
   useEffect(() => {
-    // Redirect if cart is empty
+    // Redirect if cart is empty and not on result step
     const timer = setTimeout(() => {
-      if (cart.length === 0) {
+      if (cart.length === 0 && step !== 'result') {
         // Optional: setLocation('/'); 
       }
     }, 500);
     return () => clearTimeout(timer);
-  }, [cart]);
+  }, [cart, step]);
 
-  // Always reset to details on mount since it's the only step
+  // Reset stale steps or invalid state on mount/update
   useEffect(() => {
-      setStep('details');
-  }, [setStep]);
+    // If cart is empty, force back to details (or even better, redirect to home if intended, but let's stick to reset)
+    if (cart.length === 0 && !localStorage.getItem('checkout_package')) {
+      // Only reset if we are deep in the flow
+      if (step !== 'details' && step !== 'result') {
+        setStep('details');
+      }
+    }
 
+    // If we are on payment or review but don't have contact info, go back to details
+    const hasContactInfo = contact.fullName && contact.email && contact.phone;
+    if ((step === 'payment' || step === 'review') && !hasContactInfo) {
+      setStep('details');
+    }
+
+    // Always reset processing or result on mount
+    if (step === 'processing' || step === 'result') {
+      setStep('details');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step, cart.length, contact]);
+
+  // Handle explicit reset
   const handleStartOver = () => {
     const { reset } = useCheckout.getState();
     reset(); // Clear state
@@ -61,7 +95,39 @@ export function CheckoutContent({ isEmbedded = false }: { isEmbedded?: boolean }
     window.location.reload();
   };
 
-  const StepComponent = steps[0].component;
+  const canGoNext = () => {
+    switch (step) {
+      case 'details':
+        return !!(contact.fullName && contact.email && contact.phone);
+      case 'payment':
+        return !!paymentMethod;
+      case 'review':
+        return true;
+      default:
+        return false;
+    }
+  };
+
+  const handleNext = () => {
+    if (canGoNext()) {
+      const nextIndex = Math.min(currentStepIndex + 1, steps.length - 1);
+      setStep(steps[nextIndex].key as any);
+    }
+  };
+
+  const handleBack = () => {
+    if (currentStepIndex > 0) {
+      setStep(steps[currentStepIndex - 1].key as any);
+    }
+  };
+
+  // Ensure StepComponent is valid
+  if (!currentStep) {
+    setStep('details');
+    return null;
+  }
+
+  const StepComponent = currentStep.component;
 
   return (
     <div className="min-h-screen bg-background">
@@ -74,9 +140,38 @@ export function CheckoutContent({ isEmbedded = false }: { isEmbedded?: boolean }
             </Button>
           </div>
 
+          {!isEmbedded && (
+            <div className="mb-8">
+              {/* Progress Bar */}
+              <div className="relative mb-8">
+                <Progress value={progress} className="h-2" />
+                <div className="absolute top-0 left-0 w-full flex justify-between -mt-2">
+                  {steps.slice(0, 3).map((s, i) => ( // Show first 3 steps in progress bar
+                    <div
+                      key={s.key}
+                      className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-colors ${i <= currentStepIndex ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
+                        }`}
+                    >
+                      {i + 1}
+                    </div>
+                  ))}
+                </div>
+                <div className="flex justify-between mt-2 text-xs text-muted-foreground">
+                  {steps.slice(0, 3).map((s) => (
+                    <span key={s.key}>{s.label}</span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
           <Card>
             <CardContent className="p-6">
-              <StepComponent />
+              <StepComponent
+                onNext={handleNext}
+                onBack={handleBack}
+                canGoNext={canGoNext()}
+              />
             </CardContent>
           </Card>
         </div>
