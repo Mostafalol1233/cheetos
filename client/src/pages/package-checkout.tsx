@@ -319,6 +319,9 @@ I would like to purchase this package. Please let me know how to proceed.`;
                             <DialogTitle className="text-2xl font-bold text-center">
                                 How would you like to complete your order?
                             </DialogTitle>
+                            <DialogDescription className="text-center text-muted-foreground">
+                                Choose your preferred checkout method below.
+                            </DialogDescription>
                         </DialogHeader>
 
                         <div className="space-y-4 mt-6">

@@ -56,7 +56,13 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     load();
 
-    const socket = io(API_BASE_URL);
+    const socket = io(API_BASE_URL, {
+      path: '/socket.io',
+      transports: ['websocket', 'polling'],
+      reconnectionAttempts: 5,
+      autoConnect: true
+    });
+    
     socket.on('settings_updated', (newSettings: any) => {
       // Normalize data similar to load()
       const normalized: Settings = {

@@ -96,6 +96,9 @@ export function SocialSharing({ game }: SocialSharingProps) {
             <Share2 className="w-5 h-5 text-gold-primary" />
             Share {game.name}
           </DialogTitle>
+          <DialogDescription>
+            Share this game with your friends on social media.
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-6">

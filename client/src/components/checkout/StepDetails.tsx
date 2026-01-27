@@ -79,6 +79,18 @@ export function StepDetails() {
     try {
       await login(loginEmail, loginPass);
       toast({ title: "Welcome back!", description: "Successfully signed in." });
+      
+      // Auto-advance after login
+      const { user } = useUserAuth.getState();
+      if (user) {
+        setContact({
+          ...contact,
+          fullName: user.name || contact.fullName,
+          email: user.email || contact.email,
+          phone: user.phone || contact.phone,
+        });
+        setStep('payment');
+      }
     } catch (err: any) {
       toast({ title: "Login failed", description: err.message, variant: "destructive" });
     } finally {

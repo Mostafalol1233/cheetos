@@ -107,6 +107,7 @@ export function StepReview() {
           payment_method: paymentMethod,
           delivery_method: deliverVia, // Aligning with backend field name
           customer_name: contact.fullName,
+          customer_email: contact.email, // Required by backend
           customer_phone: contact.phone ? `${contact.countryCode || ''}${contact.phone}` : undefined,
           customer_password: contact.password, // Pass custom password if provided
           notes: contact.notes,
