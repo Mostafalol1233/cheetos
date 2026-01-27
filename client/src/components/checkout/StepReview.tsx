@@ -71,8 +71,8 @@ export function StepReview() {
           payment_method: paymentMethod,
           delivery_method: deliverVia, // Aligning with backend field name
           customer_name: contact.fullName,
-          customer_email: contact.email,
           customer_phone: contact.phone ? `${contact.countryCode || ''}${contact.phone}` : undefined,
+          customer_password: contact.password, // Pass custom password if provided
           notes: contact.notes,
           player_id: paymentData?.playerId, // Optional chaining for paymentData
           receipt_url: paymentData?.receiptUrl, // Optional chaining for paymentData
@@ -95,50 +95,40 @@ export function StepReview() {
         saveUserCheckoutPreferences(response);
       }
 
-      // Handle successful order - clear storage and redirect
-      if (response.token) {
-        localStorage.setItem('userToken', response.token);
-        if (response.user) {
-          localStorage.setItem('userData', JSON.stringify(response.user));
-        }
-      }
-
+      // Handle successful order - clear storage
       localStorage.removeItem('cart');
       if (response.id) {
         localStorage.setItem('order_notification', JSON.stringify({ id: response.id, unread: true }));
       }
 
-      // Auto-login if token is returned (e.g. guest checkout created account)
-      if (response.token) {
-        localStorage.setItem('userToken', response.token);
-        if (response.user) {
-          localStorage.setItem('userData', JSON.stringify(response.user));
-        }
-        if (response.generatedPassword) {
-          // Store credentials for the Profile page modal or Login page fallback
-          localStorage.setItem('new_user_creds', JSON.stringify({
-            email: response.user?.email || contact.email,
-            password: response.generatedPassword
-          }));
-        }
+      // Logic:
+      // 1. If we have a generated password (or custom password was used to create account),
+      // we redirect to Login page for the user to manually sign in.
+      // 2. We do NOT auto-login anymore as per request.
+
+      if (response.generatedPassword || (contact.password && response.newAccount)) {
+        // Store credentials to pre-fill the login form
+        localStorage.setItem('auto_login_data', JSON.stringify({
+          email: response.user?.email || contact.email,
+          password: contact.password || response.generatedPassword
+        }));
+
+        // Redirect to Login Page
+        setLocation('/login?redirect=/profile');
+        return;
       }
 
-      localStorage.removeItem('checkout-storage');
-
-      // Update state to show result step
-      setOrderMeta(response.id, response.status === 'pending_approval' ? 'pending_approval' : 'paid');
-
-      // Redirect based on outcome
-      if (response.loginFailed) {
-        setLocation('/login?redirect=/profile');
-      } else if (response.token) {
-        // Force a hard reload to ensure the UserAuthProvider picks up the new token
-        window.location.href = '/profile';
-      } else {
-        // Order placed but no auto-login (e.g. existing user guest checkout)
-        // Redirect to login with a friendly message if possible, or just login
-        setLocation('/login?redirect=/profile');
+      // If user was ALREADY logged in (token exists in response or local), just go to profile
+      if (response.token || localStorage.getItem('userToken')) {
+        setLocation('/profile');
+        return;
       }
+
+      // Default fallback (e.g. WhatsApp guest checkout without account) -> Profile (will show guest view or redirect)
+      // Or maybe login page?
+      setLocation('/profile');
+
+      return;
 
       return;
 

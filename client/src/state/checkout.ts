@@ -15,6 +15,7 @@ export type ContactDetails = {
   fullName: string;
   email: string;
   phone: string;
+  password?: string;
   countryCode?: string;
   notes?: string;
 };
@@ -122,47 +123,6 @@ export const useCheckout = create<CheckoutState>()(
     (set, get) => {
       clearLegacyCheckoutStorageOnce();
       return {
-      step: 'cart',
-      cart: [],
-      contact: initialContact,
-      paymentMethod: undefined,
-      paymentData: {},
-      idempotencyKey: generateIdempotencyKey(),
-      orderId: undefined,
-      orderStatus: 'idle',
-      error: undefined,
-      generatedPassword: undefined,
-      availablePaymentMethods: [],
-
-      subtotal: () => {
-        return get().cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
-      },
-      total: () => {
-        return get().subtotal();
-      },
-
-      setStep: (s) => set({ step: s }),
-      setCart: (items) => set({ cart: items }),
-      updateItemQty: (id, qty) => set((state) => ({
-        cart: state.cart.map((i) => (i.id === id ? { ...i, quantity: qty } : i))
-      })),
-      removeItem: (id) => set((state) => ({
-        cart: state.cart.filter((i) => i.id !== id)
-      })),
-      clearCart: () => set({ cart: [] }),
-      setContact: (c) => set((state) => ({ contact: { ...state.contact, ...c } })),
-      setPaymentMethod: (m) => set({ paymentMethod: m }),
-      setPaymentData: (d) => set((state) => ({ paymentData: { ...state.paymentData, ...d } })),
-      setIdempotencyKey: (k) => set({ idempotencyKey: k }),
-      setOrderMeta: (id, status) => set((state) => ({
-        orderId: id !== undefined ? id : state.orderId,
-        orderStatus: status !== undefined ? status : state.orderStatus
-      })),
-      setGeneratedPassword: (p) => set({ generatedPassword: p }),
-      setError: (e) => set({ error: e }),
-      reset: () => {
-        clearCheckoutStorage();
-        set({
         step: 'cart',
         cart: [],
         contact: initialContact,
@@ -172,41 +132,82 @@ export const useCheckout = create<CheckoutState>()(
         orderId: undefined,
         orderStatus: 'idle',
         error: undefined,
-        generatedPassword: undefined
-      })
-      },
-      fetchPaymentMethods: async () => {
-        try {
-          const res = await fetch('/api/payments/config');
-          if (!res.ok) throw new Error('Failed to fetch payment methods');
-          const data = await res.json();
-          const methods: PaymentConfig[] = data.map((m: any) => ({
-            key: m.id,
-            label: m.name,
-            type: m.type,
-            info: {
-              accountNumber: m.details?.number,
-              address: m.details?.address,
-              email: m.details?.email,
-              instructions: m.details?.instructions
-            }
-          }));
-          set({ availablePaymentMethods: methods });
-        } catch (error) {
-          console.error('Error loading payment methods:', error);
-          // Fallback to empty or error state
-          set({ availablePaymentMethods: [] });
+        generatedPassword: undefined,
+        availablePaymentMethods: [],
+
+        subtotal: () => {
+          return get().cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+        },
+        total: () => {
+          return get().subtotal();
+        },
+
+        setStep: (s) => set({ step: s }),
+        setCart: (items) => set({ cart: items }),
+        updateItemQty: (id, qty) => set((state) => ({
+          cart: state.cart.map((i) => (i.id === id ? { ...i, quantity: qty } : i))
+        })),
+        removeItem: (id) => set((state) => ({
+          cart: state.cart.filter((i) => i.id !== id)
+        })),
+        clearCart: () => set({ cart: [] }),
+        setContact: (c) => set((state) => ({ contact: { ...state.contact, ...c } })),
+        setPaymentMethod: (m) => set({ paymentMethod: m }),
+        setPaymentData: (d) => set((state) => ({ paymentData: { ...state.paymentData, ...d } })),
+        setIdempotencyKey: (k) => set({ idempotencyKey: k }),
+        setOrderMeta: (id, status) => set((state) => ({
+          orderId: id !== undefined ? id : state.orderId,
+          orderStatus: status !== undefined ? status : state.orderStatus
+        })),
+        setGeneratedPassword: (p) => set({ generatedPassword: p }),
+        setError: (e) => set({ error: e }),
+        reset: () => {
+          clearCheckoutStorage();
+          set({
+            step: 'cart',
+            cart: [],
+            contact: initialContact,
+            paymentMethod: undefined,
+            paymentData: {},
+            idempotencyKey: generateIdempotencyKey(),
+            orderId: undefined,
+            orderStatus: 'idle',
+            error: undefined,
+            generatedPassword: undefined
+          })
+        },
+        fetchPaymentMethods: async () => {
+          try {
+            const res = await fetch('/api/payments/config');
+            if (!res.ok) throw new Error('Failed to fetch payment methods');
+            const data = await res.json();
+            const methods: PaymentConfig[] = data.map((m: any) => ({
+              key: m.id,
+              label: m.name,
+              type: m.type,
+              info: {
+                accountNumber: m.details?.number,
+                address: m.details?.address,
+                email: m.details?.email,
+                instructions: m.details?.instructions
+              }
+            }));
+            set({ availablePaymentMethods: methods });
+          } catch (error) {
+            console.error('Error loading payment methods:', error);
+            // Fallback to empty or error state
+            set({ availablePaymentMethods: [] });
+          }
         }
-      }
-    };
-  },
+      };
+    },
     {
       name: 'checkout-storage',
-      partialize: (state) => ({ 
-        cart: state.cart, 
+      partialize: (state) => ({
+        cart: state.cart,
         contact: state.contact,
         step: state.step === 'result' ? 'cart' : state.step // Don't persist result step
-      }) 
+      })
     }
   )
 );

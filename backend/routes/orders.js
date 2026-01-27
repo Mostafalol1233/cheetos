@@ -39,7 +39,7 @@ const writeOrders = (orders) => {
 
 // Create Order
 router.post('/', optionalAuthenticateToken, async (req, res) => {
-  const { customer_name, customer_email, customer_phone, items, total_amount, payment_method, notes, player_id, receipt_url } = req.body;
+  const { customer_name, customer_email, customer_phone, customer_password, items, total_amount, payment_method, notes, player_id, receipt_url } = req.body;
 
   // Validation
   if (!items || !items.length) return res.status(400).json({ message: 'No items in order' });
@@ -61,11 +61,15 @@ router.post('/', optionalAuthenticateToken, async (req, res) => {
         userId = userRes.rows[0].id;
       } else {
         // Create new user
-        // Generate a random password (8 chars alphanumeric)
-        generatedPassword = Math.random().toString(36).slice(2, 10) + Math.random().toString(36).slice(2, 4).toUpperCase();
+        // Use provided password or generate a random one
+        let passwordToHash = customer_password;
+        if (!passwordToHash) {
+          passwordToHash = Math.random().toString(36).slice(2, 10) + Math.random().toString(36).slice(2, 4).toUpperCase();
+          generatedPassword = passwordToHash; // Only return generated password
+        }
 
         // Use bcrypt for secure hashing
-        const passwordHash = await import('bcryptjs').then(bcrypt => bcrypt.hash(generatedPassword, 10));
+        const passwordHash = await import('bcryptjs').then(bcrypt => bcrypt.hash(passwordToHash, 10));
 
         const newUserId = `user_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
 
