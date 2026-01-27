@@ -70,25 +70,43 @@ export function CheckoutContent({ isEmbedded = false }: { isEmbedded?: boolean }
 
   // Reset stale steps or invalid state on mount/update
   useEffect(() => {
+    // If cart is empty, force back to details (or even better, redirect to home if intended, but let's stick to reset)
+    if (cart.length === 0 && !localStorage.getItem('checkout_package')) {
+      // Only reset if we are deep in the flow
+      if (step !== 'details' && step !== 'result') {
+        setStep('details');
+      }
+    }
+
     // If we are on payment or review but don't have contact info, go back to details
     const hasContactInfo = contact.fullName && contact.email && contact.phone;
     if ((step === 'payment' || step === 'review') && !hasContactInfo) {
       setStep('details');
     }
 
-    // Always reset processing or result on mount to avoid stuck states
+    // Always reset processing or result on mount
     if (step === 'processing' || step === 'result') {
       setStep('details');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [step, cart.length, contact]);
+
+  // Handle explicit reset
+  const handleStartOver = () => {
+    const { reset } = useCheckout.getState();
+    reset(); // Clear state
+    localStorage.removeItem('checkout_package');
+    // If we have a global cart, maybe reload it?
+    // For now, location reload effectively resets everything due to the initial useEffects
+    window.location.reload();
+  };
 
   const canGoNext = () => {
     switch (step) {
       case 'details':
-        return contact.fullName && contact.email && contact.phone;
+        return !!(contact.fullName && contact.email && contact.phone);
       case 'payment':
-        return paymentMethod;
+        return !!paymentMethod;
       case 'review':
         return true;
       default:
@@ -109,19 +127,31 @@ export function CheckoutContent({ isEmbedded = false }: { isEmbedded?: boolean }
     }
   };
 
-  const StepComponent = currentStep.component;
-
   // if (!isAuthenticated) {
   //   return null; // or a loading spinner while redirecting
   // }
+
+  // Ensure StepComponent is valid
+  if (!currentStep) {
+    setStep('details');
+    return null;
+  }
+
+  const StepComponent = currentStep.component;
 
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto">
+          <div className="flex justify-between items-center mb-8">
+            {!isEmbedded && <h1 className="text-3xl font-bold">Checkout</h1>}
+            <Button variant="ghost" size="sm" onClick={handleStartOver} className="text-muted-foreground hover:text-destructive">
+              Start Over
+            </Button>
+          </div>
+
           {!isEmbedded && (
             <div className="mb-8">
-              <h1 className="text-3xl font-bold mb-6">Checkout</h1>
               {/* Progress Bar */}
               <div className="relative mb-8">
                 <Progress value={progress} className="h-2" />
