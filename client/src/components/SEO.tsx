@@ -23,7 +23,7 @@ export function SEO({
     "ضياء ألعاب", "Diaa gaming", "شحن ألعاب اونلاين", "متجر ألعاب مصر",
     "gaming store", "شحن ألعاب سريع"
   ],
-  image = "/logo.png",
+  image = "https://files.catbox.moe/brmkrj.png",
   url = window.location.href,
   type = "website",
   siteName = "متجر ضياء",

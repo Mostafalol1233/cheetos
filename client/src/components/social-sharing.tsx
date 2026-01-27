@@ -21,6 +21,7 @@ export function SocialSharing({ game }: SocialSharingProps) {
   const [sharedPlatforms, setSharedPlatforms] = useState<string[]>([]);
 
   const gameUrl = `${window.location.origin}/game/${game.slug}`;
+  const shareUrl = `${window.location.origin}/share/game/${game.slug}`;
   const shareText = `Check out ${game.name} - ${game.description} from Diaa Eldeen`;
   const hashtags = '#Gaming #DiaElDeen #GameDeals';
 
@@ -29,28 +30,28 @@ export function SocialSharing({ game }: SocialSharingProps) {
       name: 'Facebook',
       icon: <Facebook className="w-5 h-5" />,
       color: 'bg-blue-600 hover:bg-blue-700',
-      url: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(gameUrl)}&quote=${encodeURIComponent(shareText)}`,
+      url: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}&quote=${encodeURIComponent(shareText)}`,
       description: 'Share on Facebook'
     },
     {
       name: 'Twitter',
       icon: <Twitter className="w-5 h-5" />,
       color: 'bg-blue-400 hover:bg-blue-500',
-      url: `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(gameUrl)}&hashtags=${encodeURIComponent(hashtags)}`,
+      url: `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}&hashtags=${encodeURIComponent(hashtags)}`,
       description: 'Tweet about this game'
     },
     {
       name: 'WhatsApp',
       icon: <MessageCircle className="w-5 h-5" />,
       color: 'bg-green-600 hover:bg-green-700',
-      url: `https://wa.me/?text=${encodeURIComponent(`${shareText} ${gameUrl}`)}`,
+      url: `https://wa.me/?text=${encodeURIComponent(`${shareText} ${shareUrl}`)}`,
       description: 'Share via WhatsApp'
     },
     {
       name: 'Telegram',
       icon: <Send className="w-5 h-5" />,
       color: 'bg-blue-500 hover:bg-blue-600',
-      url: `https://t.me/share/url?url=${encodeURIComponent(gameUrl)}&text=${encodeURIComponent(shareText)}`,
+      url: `https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(shareText)}`,
       description: 'Share on Telegram'
     }
   ];
@@ -66,13 +67,13 @@ export function SocialSharing({ game }: SocialSharingProps) {
 
   const handleCopyLink = async () => {
     try {
-      await navigator.clipboard.writeText(gameUrl);
+      await navigator.clipboard.writeText(shareUrl);
       setCopiedLink(true);
       setTimeout(() => setCopiedLink(false), 2000);
     } catch (err) {
       // Fallback for browsers that don't support clipboard API
       const textArea = document.createElement('textarea');
-      textArea.value = gameUrl;
+      textArea.value = shareUrl;
       document.body.appendChild(textArea);
       textArea.select();
       document.execCommand('copy');
@@ -162,7 +163,7 @@ export function SocialSharing({ game }: SocialSharingProps) {
             <div className="flex gap-2">
               <input
                 type="text"
-                value={gameUrl}
+                value={shareUrl}
                 readOnly
                 className="flex-1 px-3 py-2 text-sm bg-muted rounded-lg focus:outline-none focus:ring-2 focus:ring-gold-primary/50"
               />

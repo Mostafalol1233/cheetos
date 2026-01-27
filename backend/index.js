@@ -183,6 +183,8 @@ const CLOUDINARY_CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME || '';
 const CLOUDINARY_API_KEY = process.env.CLOUDINARY_API_KEY || '';
 const CLOUDINARY_API_SECRET = process.env.CLOUDINARY_API_SECRET || '';
 const DEFAULT_PLACEHOLDER_IMAGE = process.env.DEFAULT_PLACEHOLDER_IMAGE || 'https://placehold.co/800x450/png?text=GameCart';
+const SITE_LOGO_URL = process.env.SITE_LOGO_URL || 'https://files.catbox.moe/brmkrj.png';
+const SITE_NAME = process.env.SITE_NAME || 'Diaa Eldeen';
 const CSRF_ENABLED = String(process.env.CSRF_ENABLED ?? 'false').toLowerCase() === 'true';
 const CSRF_ALLOW_HEADER_ONLY = String(process.env.CSRF_ALLOW_HEADER_ONLY ?? (process.env.NODE_ENV !== 'production' ? 'true' : 'false')).toLowerCase() === 'true';
 const CSRF_STATIC_TOKEN = process.env.CSRF_STATIC_TOKEN || '';
@@ -258,6 +260,59 @@ function normalizeImageUrl(raw) {
   }
 
   return v;
+}
+
+function getPublicOrigin(req) {
+  const proto = (req.headers['x-forwarded-proto'] || 'http').toString().split(',')[0].trim();
+  const host = (req.headers['x-forwarded-host'] || req.headers.host || 'localhost').toString().split(',')[0].trim();
+  return `${proto}://${host}`;
+}
+
+function toAbsoluteUrl(origin, maybeUrl) {
+  const v = String(maybeUrl || '').trim();
+  if (!v) return '';
+  if (/^https?:\/\//i.test(v)) return v;
+  if (v.startsWith('//')) return `${origin.split(':')[0]}:${v}`;
+  const path = v.startsWith('/') ? v : `/${v}`;
+  return `${origin}${path}`;
+}
+
+function stripHtml(raw) {
+  return String(raw || '')
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function renderShareHtml({ title, description, image, url }) {
+  const safeTitle = String(title || SITE_NAME);
+  const safeDesc = String(description || '').slice(0, 300);
+  const safeImg = String(image || SITE_LOGO_URL);
+  const safeUrl = String(url || '');
+
+  return `<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>${safeTitle}</title>
+    <meta name="description" content="${safeDesc.replace(/"/g, '&quot;')}" />
+    <meta property="og:title" content="${safeTitle.replace(/"/g, '&quot;')}" />
+    <meta property="og:description" content="${safeDesc.replace(/"/g, '&quot;')}" />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="${safeUrl}" />
+    <meta property="og:image" content="${safeImg}" />
+    <meta property="og:site_name" content="${SITE_NAME.replace(/"/g, '&quot;')}" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="${safeTitle.replace(/"/g, '&quot;')}" />
+    <meta name="twitter:description" content="${safeDesc.replace(/"/g, '&quot;')}" />
+    <meta name="twitter:image" content="${safeImg}" />
+    <meta http-equiv="refresh" content="0;url=${safeUrl}" />
+  </head>
+  <body>
+    <a href="${safeUrl}">Continue</a>
+  </body>
+</html>`;
 }
 
 function coerceJsonArray(value) {
@@ -611,6 +666,124 @@ app.use('/payments-images', express.static(path.join(__dirname, 'payments-images
 // Serve attached_assets from multiple possible locations
 const attachedAssetsDir = path.join(__dirname, 'public', 'attached_assets');
 const rootAttachedAssetsDir = path.join(__dirname, '..', 'attached_assets');
+
+// ===================== SHARE / OG PAGES =====================
+// These routes exist because WhatsApp/Facebook crawlers often don't execute JS.
+// They will read OG/Twitter meta tags from the initial HTML response.
+
+app.get('/share', async (req, res) => {
+  const origin = getPublicOrigin(req);
+  const url = `${origin}/`;
+  const image = toAbsoluteUrl(origin, SITE_LOGO_URL);
+  res.type('text/html').send(
+    renderShareHtml({
+      title: `${SITE_NAME} | Premium Game Store`,
+      description: 'Fast delivery, secure payments, and unbeatable prices for top games.',
+      image,
+      url,
+    })
+  );
+});
+
+app.get('/share/game/:slug', async (req, res) => {
+  const origin = getPublicOrigin(req);
+  const slug = String(req.params.slug || '').trim();
+  const url = `${origin}/game/${encodeURIComponent(slug)}`;
+
+  let title = `${SITE_NAME}`;
+  let description = 'Game top up - fast delivery.';
+  let image = toAbsoluteUrl(origin, SITE_LOGO_URL);
+
+  try {
+    const gameRes = await pool.query(
+      'SELECT name, description, image, image_url FROM games WHERE slug = $1 OR id = $1 LIMIT 1',
+      [slug]
+    );
+    const g = gameRes.rows?.[0];
+    if (g) {
+      title = `${g.name} | ${SITE_NAME}`;
+      description = stripHtml(g.description || '').slice(0, 200) || description;
+      const rawImg = g.image_url || g.image || SITE_LOGO_URL;
+      image = toAbsoluteUrl(origin, normalizeImageUrl(rawImg) || SITE_LOGO_URL);
+    }
+  } catch {
+    // ignore and fallback to logo
+  }
+
+  res.type('text/html').send(renderShareHtml({ title, description, image, url }));
+});
+
+app.get('/share/package/:gameSlug/:packageIndex', async (req, res) => {
+  const origin = getPublicOrigin(req);
+  const gameSlug = String(req.params.gameSlug || '').trim();
+  const packageIndex = Number(req.params.packageIndex || 0);
+  const url = `${origin}/package/${encodeURIComponent(gameSlug)}/${encodeURIComponent(String(packageIndex))}`;
+
+  let title = `${SITE_NAME}`;
+  let description = 'Package checkout - fast delivery.';
+  let image = toAbsoluteUrl(origin, SITE_LOGO_URL);
+
+  try {
+    const gameRes = await pool.query(
+      `SELECT g.id, g.name, g.description, g.image, g.image_url,
+              COALESCE(json_agg(gp ORDER BY gp.price) FILTER (WHERE gp.id IS NOT NULL), '[]') as packages_data
+       FROM games g
+       LEFT JOIN game_packages gp ON g.id = gp.game_id
+       WHERE g.slug = $1 OR g.id = $1
+       GROUP BY g.id
+       LIMIT 1`,
+      [gameSlug]
+    );
+
+    const row = gameRes.rows?.[0];
+    if (row) {
+      const packages = Array.isArray(row.packages_data) ? row.packages_data : [];
+      const pkg = packages[Number.isFinite(packageIndex) ? packageIndex : 0];
+
+      const gameName = row.name || 'Game';
+      title = `${pkg?.name || 'Package'} - ${gameName} | ${SITE_NAME}`;
+      description = stripHtml(pkg?.description || row.description || '').slice(0, 200) || description;
+      const rawImg = pkg?.image || row.image_url || row.image || SITE_LOGO_URL;
+      image = toAbsoluteUrl(origin, normalizeImageUrl(rawImg) || SITE_LOGO_URL);
+    }
+  } catch {
+    // ignore and fallback to logo
+  }
+
+  res.type('text/html').send(renderShareHtml({ title, description, image, url }));
+});
+
+app.get('/share/packages/:slug', async (req, res) => {
+  const origin = getPublicOrigin(req);
+  const slug = String(req.params.slug || '').trim();
+  const url = `${origin}/packages/${encodeURIComponent(slug)}`;
+
+  let title = `${SITE_NAME}`;
+  let description = 'Package details.';
+  let image = toAbsoluteUrl(origin, SITE_LOGO_URL);
+
+  try {
+    const pkgRes = await pool.query(
+      `SELECT gp.name, gp.description, gp.image, g.name as game_name, g.image as game_image
+       FROM game_packages gp
+       LEFT JOIN games g ON gp.game_id = g.id
+       WHERE gp.slug = $1
+       LIMIT 1`,
+      [slug]
+    );
+    const p = pkgRes.rows?.[0];
+    if (p) {
+      title = `${p.name} - ${p.game_name || ''} | ${SITE_NAME}`.replace(/\s+/g, ' ').trim();
+      description = stripHtml(p.description || '').slice(0, 200) || description;
+      const rawImg = p.image || p.game_image || SITE_LOGO_URL;
+      image = toAbsoluteUrl(origin, normalizeImageUrl(rawImg) || SITE_LOGO_URL);
+    }
+  } catch {
+    // ignore and fallback to logo
+  }
+
+  res.type('text/html').send(renderShareHtml({ title, description, image, url }));
+});
 
 // Create directories if they don't exist
 if (!fs.existsSync(attachedAssetsDir)) {

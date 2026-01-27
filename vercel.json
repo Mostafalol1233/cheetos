@@ -6,6 +6,10 @@
       "destination": "http://fi4.bot-hosting.net:22135/api/$1"
     },
     {
+      "source": "/share/(.*)",
+      "destination": "http://fi4.bot-hosting.net:22135/share/$1"
+    },
+    {
       "source": "/uploads/(.*)",
       "destination": "http://fi4.bot-hosting.net:22135/uploads/$1"
     },
@@ -18,7 +22,7 @@
       "destination": "http://fi4.bot-hosting.net:22135/socket.io/$1"
     },
     {
-      "source": "/((?!api/|uploads/|media/|socket.io/|.*\\.(?:png|jpg|jpeg|gif|ico|json|svg|css|js|woff|woff2)).*)",
+      "source": "/((?!api/|uploads/|media/|socket.io/|share/|.*\\.(?:png|jpg|jpeg|gif|ico|json|svg|css|js|woff|woff2)).*)",
       "destination": "/index.html"
     }
   ]
