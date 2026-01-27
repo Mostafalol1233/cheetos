@@ -80,16 +80,23 @@ export function StepDetails() {
       await login(loginEmail, loginPass);
       toast({ title: "Welcome back!", description: "Successfully signed in." });
       
-      // Auto-advance after login
+      // Auto-advance after login only if we have required info
       const { user } = useUserAuth.getState();
       if (user) {
-        setContact({
+        const updatedContact = {
           ...contact,
           fullName: user.name || contact.fullName,
           email: user.email || contact.email,
           phone: user.phone || contact.phone,
-        });
-        setStep('payment');
+        };
+        setContact(updatedContact);
+        
+        // Check if we have enough info to proceed (especially phone which is required)
+        if (updatedContact.fullName && updatedContact.phone && updatedContact.phone.length >= 9) {
+          setStep('payment');
+        } else {
+          toast({ title: "Details Required", description: "Please complete your contact information." });
+        }
       }
     } catch (err: any) {
       toast({ title: "Login failed", description: err.message, variant: "destructive" });
