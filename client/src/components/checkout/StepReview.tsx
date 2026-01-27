@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { API_BASE_URL } from '@/lib/queryClient';
+import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from 'lucide-react';
 import { useSettings } from '@/lib/settings-context';
 import { PaymentIcon } from '../payment-icon';
@@ -13,6 +14,7 @@ import type { PaymentMethod } from '@/state/checkout';
 
 export function StepReview() {
   const { cart, contact, paymentMethod, paymentData, subtotal, total, setOrderMeta, setError, setStep, reset, availablePaymentMethods, setGeneratedPassword } = useCheckout();
+  const { toast } = useToast();
   const [, setLocation] = useLocation();
   const [deliverVia, setDeliverVia] = useState<'email' | 'whatsapp'>('email');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -129,8 +131,13 @@ export function StepReview() {
       // Redirect based on outcome
       if (response.loginFailed) {
         setLocation('/login?redirect=/profile');
+      } else if (response.token) {
+        // Force a hard reload to ensure the UserAuthProvider picks up the new token
+        window.location.href = '/profile';
       } else {
-        setLocation('/profile');
+        // Order placed but no auto-login (e.g. existing user guest checkout)
+        // Redirect to login with a friendly message if possible, or just login
+        setLocation('/login?redirect=/profile');
       }
 
       return;
