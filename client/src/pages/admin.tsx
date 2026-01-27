@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
-import { Trash2, Edit, Plus, MessageSquare, Bell, Check, AlertCircle, Info, Search, Package, Shield, ShoppingCart, User, Bot, Paperclip, Phone } from 'lucide-react';
+import { Trash2, Edit, Plus, MessageSquare, Bell, Check, AlertCircle, Info, Search, Package, Shield, ShoppingCart, User, Bot, Paperclip, Phone, Image } from 'lucide-react';
 import { API_BASE_URL, queryClient } from '@/lib/queryClient';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Label } from '@/components/ui/label';
@@ -296,6 +296,336 @@ function CategoriesPanel() {
         ))}
         {categories.length === 0 && <div className="col-span-2 text-center text-muted-foreground">No categories found.</div>}
       </div>
+    </div>
+  );
+}
+
+function OgImagesPanel({ allGames }: { allGames: Game[] }) {
+  const { toast } = useToast();
+
+  const { data, isLoading, isError, refetch } = useQuery<any>({
+    queryKey: ['/api/admin/og-images'],
+    queryFn: async () => {
+      const token = localStorage.getItem('adminToken');
+      const res = await fetch(apiPath('/api/admin/og-images'), {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error((json as any)?.message || 'Failed to load OG images');
+      return json;
+    }
+  });
+
+  const [draft, setDraft] = useState<any>(null);
+
+  useEffect(() => {
+    if (!data) return;
+    const normalized = {
+      global: data?.overrides?.global || {},
+      share: data?.overrides?.share || {},
+      game: data?.overrides?.game || {},
+      packageDetails: data?.overrides?.packageDetails || {},
+      packageCheckout: data?.overrides?.packageCheckout || {},
+    };
+    setDraft(normalized);
+  }, [data]);
+
+  const saveMutation = useMutation({
+    mutationFn: async (nextOverrides: any) => {
+      const token = localStorage.getItem('adminToken');
+      const res = await fetch(apiPath('/api/admin/og-images'), {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: JSON.stringify({ overrides: nextOverrides })
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error((json as any)?.message || 'Failed to save');
+      return json;
+    },
+    onSuccess: () => {
+      toast({ title: 'Saved', description: 'OG image settings updated', duration: 1500 });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/og-images'] });
+    },
+    onError: (err: any) => {
+      toast({ title: 'Error', description: err?.message || 'Failed', variant: 'destructive' });
+    }
+  });
+
+  const siteLogoUrl = String(data?.siteLogoUrl || '');
+
+  const [selectedGameSlug, setSelectedGameSlug] = useState<string>('');
+  const [selectedGameImage, setSelectedGameImage] = useState<string>('');
+
+  const [packageSlug, setPackageSlug] = useState<string>('');
+  const [packageSlugImage, setPackageSlugImage] = useState<string>('');
+
+  const [checkoutGameSlug, setCheckoutGameSlug] = useState<string>('');
+  const [checkoutIndex, setCheckoutIndex] = useState<number>(0);
+  const [checkoutImage, setCheckoutImage] = useState<string>('');
+
+  const setGlobal = (key: string, value: string) => {
+    setDraft((prev: any) => ({
+      ...(prev || {}),
+      global: { ...(prev?.global || {}), [key]: value }
+    }));
+  };
+
+  const upsertMap = (type: string, key: string, value: string) => {
+    setDraft((prev: any) => ({
+      ...(prev || {}),
+      [type]: { ...(prev?.[type] || {}), [key]: value }
+    }));
+  };
+
+  const removeMap = (type: string, key: string) => {
+    setDraft((prev: any) => {
+      const next = { ...(prev || {}) };
+      const bag = { ...(next?.[type] || {}) };
+      delete (bag as any)[key];
+      next[type] = bag;
+      return next;
+    });
+  };
+
+  if (isLoading || !draft) {
+    return (
+      <div className="p-8 text-center space-y-4">
+        <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto"></div>
+        <p className="text-muted-foreground">Loading OG images...</p>
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="p-8 text-center text-red-500 space-y-2">
+        <AlertCircle className="h-8 w-8 mx-auto" />
+        <p>Failed to load OG image settings.</p>
+        <Button onClick={() => refetch()} variant="outline" size="sm">Retry</Button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <Card className="bg-card/50 border-gold-primary/30">
+        <CardHeader>
+          <CardTitle className="text-lg flex items-center gap-2"><Image className="w-5 h-5" /> OG Images</CardTitle>
+          <CardDescription>
+            Default is the main logo until you change it. You can also clear a field to go back to auto images.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-5">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Global default for Home Share (/share)</Label>
+              <Input value={String(draft.global?.share ?? '')} onChange={(e) => setGlobal('share', e.target.value)} placeholder={siteLogoUrl || 'Main logo URL'} />
+              <div className="flex gap-2">
+                <Button type="button" variant="outline" size="sm" onClick={() => setGlobal('share', siteLogoUrl)}>Use Main Logo</Button>
+                <Button type="button" variant="outline" size="sm" onClick={() => setGlobal('share', '')}>Auto</Button>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Global default for Game Share (/share/game/:slug)</Label>
+              <Input value={String(draft.global?.game ?? '')} onChange={(e) => setGlobal('game', e.target.value)} placeholder={siteLogoUrl || 'Main logo URL'} />
+              <div className="flex gap-2">
+                <Button type="button" variant="outline" size="sm" onClick={() => setGlobal('game', siteLogoUrl)}>Use Main Logo</Button>
+                <Button type="button" variant="outline" size="sm" onClick={() => setGlobal('game', '')}>Auto</Button>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Global default for Package Details (/share/packages/:slug)</Label>
+              <Input value={String(draft.global?.packageDetails ?? '')} onChange={(e) => setGlobal('packageDetails', e.target.value)} placeholder={siteLogoUrl || 'Main logo URL'} />
+              <div className="flex gap-2">
+                <Button type="button" variant="outline" size="sm" onClick={() => setGlobal('packageDetails', siteLogoUrl)}>Use Main Logo</Button>
+                <Button type="button" variant="outline" size="sm" onClick={() => setGlobal('packageDetails', '')}>Auto</Button>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Global default for Package Checkout (/share/package/:gameSlug/:index)</Label>
+              <Input value={String(draft.global?.packageCheckout ?? '')} onChange={(e) => setGlobal('packageCheckout', e.target.value)} placeholder={siteLogoUrl || 'Main logo URL'} />
+              <div className="flex gap-2">
+                <Button type="button" variant="outline" size="sm" onClick={() => setGlobal('packageCheckout', siteLogoUrl)}>Use Main Logo</Button>
+                <Button type="button" variant="outline" size="sm" onClick={() => setGlobal('packageCheckout', '')}>Auto</Button>
+              </div>
+            </div>
+          </div>
+
+          <div className="border-t pt-5 space-y-4">
+            <div className="text-sm font-semibold">Per Game Override</div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
+              <div className="space-y-2">
+                <Label>Game</Label>
+                <Select value={selectedGameSlug} onValueChange={(v) => setSelectedGameSlug(v)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select game" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(Array.isArray(allGames) ? allGames : []).map((g) => (
+                      <SelectItem key={g.id} value={String(g.slug || g.id)}>{g.name} ({String(g.slug || g.id)})</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>OG Image URL</Label>
+                <Input value={selectedGameImage} onChange={(e) => setSelectedGameImage(e.target.value)} placeholder="https://..." />
+              </div>
+              <Button
+                type="button"
+                className="bg-gold-primary hover:bg-gold-primary/80"
+                onClick={() => {
+                  if (!selectedGameSlug) return;
+                  upsertMap('game', selectedGameSlug, selectedGameImage.trim());
+                  setSelectedGameImage('');
+                }}
+              >
+                Save Game Override
+              </Button>
+            </div>
+
+            <div className="space-y-2">
+              {Object.entries(draft.game || {}).length === 0 ? (
+                <div className="text-xs text-muted-foreground">No per-game overrides yet.</div>
+              ) : (
+                <div className="space-y-2">
+                  {Object.entries(draft.game || {}).map(([k, v]: any) => (
+                    <div key={k} className="flex items-center gap-2">
+                      <div className="text-xs w-[220px] truncate">{k}</div>
+                      <div className="text-xs flex-1 truncate">{String(v || '')}</div>
+                      <Button type="button" size="sm" variant="outline" onClick={() => window.open(`/share/game/${encodeURIComponent(String(k))}`, '_blank')}>Preview</Button>
+                      <Button type="button" size="sm" variant="destructive" onClick={() => removeMap('game', k)}>Remove</Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="border-t pt-5 space-y-4">
+            <div className="text-sm font-semibold">Per Package Details Override (by package slug)</div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
+              <div className="space-y-2">
+                <Label>Package slug</Label>
+                <Input value={packageSlug} onChange={(e) => setPackageSlug(e.target.value)} placeholder="example-package-slug" />
+              </div>
+              <div className="space-y-2">
+                <Label>OG Image URL</Label>
+                <Input value={packageSlugImage} onChange={(e) => setPackageSlugImage(e.target.value)} placeholder="https://..." />
+              </div>
+              <Button
+                type="button"
+                className="bg-gold-primary hover:bg-gold-primary/80"
+                onClick={() => {
+                  const key = packageSlug.trim();
+                  if (!key) return;
+                  upsertMap('packageDetails', key, packageSlugImage.trim());
+                  setPackageSlugImage('');
+                }}
+              >
+                Save Package Override
+              </Button>
+            </div>
+
+            <div className="space-y-2">
+              {Object.entries(draft.packageDetails || {}).length === 0 ? (
+                <div className="text-xs text-muted-foreground">No package details overrides yet.</div>
+              ) : (
+                <div className="space-y-2">
+                  {Object.entries(draft.packageDetails || {}).map(([k, v]: any) => (
+                    <div key={k} className="flex items-center gap-2">
+                      <div className="text-xs w-[220px] truncate">{k}</div>
+                      <div className="text-xs flex-1 truncate">{String(v || '')}</div>
+                      <Button type="button" size="sm" variant="outline" onClick={() => window.open(`/share/packages/${encodeURIComponent(String(k))}`, '_blank')}>Preview</Button>
+                      <Button type="button" size="sm" variant="destructive" onClick={() => removeMap('packageDetails', k)}>Remove</Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="border-t pt-5 space-y-4">
+            <div className="text-sm font-semibold">Per Package Checkout Override</div>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-3 items-end">
+              <div className="space-y-2">
+                <Label>Game slug</Label>
+                <Select value={checkoutGameSlug} onValueChange={(v) => setCheckoutGameSlug(v)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select game" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(Array.isArray(allGames) ? allGames : []).map((g) => (
+                      <SelectItem key={g.id} value={String(g.slug || g.id)}>{g.name} ({String(g.slug || g.id)})</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Package index</Label>
+                <Input type="number" value={String(checkoutIndex)} onChange={(e) => setCheckoutIndex(Number(e.target.value || 0))} />
+              </div>
+              <div className="space-y-2">
+                <Label>OG Image URL</Label>
+                <Input value={checkoutImage} onChange={(e) => setCheckoutImage(e.target.value)} placeholder="https://..." />
+              </div>
+              <Button
+                type="button"
+                className="bg-gold-primary hover:bg-gold-primary/80"
+                onClick={() => {
+                  const g = checkoutGameSlug.trim();
+                  if (!g) return;
+                  const key = `${String(g).toLowerCase().replace(/_/g, '-').replace(/\s+/g, '-')}:${Number.isFinite(checkoutIndex) ? checkoutIndex : 0}`;
+                  upsertMap('packageCheckout', key, checkoutImage.trim());
+                  setCheckoutImage('');
+                }}
+              >
+                Save Checkout Override
+              </Button>
+            </div>
+
+            <div className="space-y-2">
+              {Object.entries(draft.packageCheckout || {}).length === 0 ? (
+                <div className="text-xs text-muted-foreground">No checkout overrides yet.</div>
+              ) : (
+                <div className="space-y-2">
+                  {Object.entries(draft.packageCheckout || {}).map(([k, v]: any) => (
+                    <div key={k} className="flex items-center gap-2">
+                      <div className="text-xs w-[220px] truncate">{k}</div>
+                      <div className="text-xs flex-1 truncate">{String(v || '')}</div>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          const parts = String(k).split(':');
+                          const g = parts[0] || '';
+                          const idx = parts[1] || '0';
+                          window.open(`/share/package/${encodeURIComponent(g)}/${encodeURIComponent(idx)}`, '_blank');
+                        }}
+                      >
+                        Preview
+                      </Button>
+                      <Button type="button" size="sm" variant="destructive" onClick={() => removeMap('packageCheckout', k)}>Remove</Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="pt-2">
+            <Button
+              type="button"
+              className="bg-cyan-600 hover:bg-cyan-500 text-white"
+              disabled={saveMutation.isPending}
+              onClick={() => saveMutation.mutate(draft)}
+            >
+              Apply Changes
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
@@ -1931,6 +2261,7 @@ export default function AdminDashboard() {
               <TabsTrigger value="catbox-upload" data-testid="tab-catbox-upload" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Catbox Image Upload</TabsTrigger>
               <TabsTrigger value="header-images" data-testid="tab-header-images" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Header Images</TabsTrigger>
               <TabsTrigger value="image-manager" data-testid="tab-image-manager" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Image Manager</TabsTrigger>
+              <TabsTrigger value="og-images" data-testid="tab-og-images" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">OG Images</TabsTrigger>
               <TabsTrigger value="advanced-editor" data-testid="tab-advanced-editor" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Advanced Editor</TabsTrigger>
               <TabsTrigger value="content" data-testid="tab-content" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Content</TabsTrigger>
               <TabsTrigger value="theme" data-testid="tab-theme" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Theme</TabsTrigger>
@@ -2102,6 +2433,10 @@ export default function AdminDashboard() {
                 <ImageManagerPanel />
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="og-images" className="space-y-6">
+            <OgImagesPanel allGames={allGames} />
           </TabsContent>
 
           {/* Advanced Editor Tab */}

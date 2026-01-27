@@ -315,6 +315,98 @@ function renderShareHtml({ title, description, image, url }) {
 </html>`;
 }
 
+let ogImageOverridesCache = { ts: 0, value: null };
+const OG_IMAGE_OVERRIDES_CACHE_MS = 30000;
+
+function normalizeOgKey(s) {
+  return String(s || '').trim().toLowerCase().replace(/_/g, '-').replace(/\s+/g, '-');
+}
+
+async function loadOgImageOverrides() {
+  const now = Date.now();
+  if (ogImageOverridesCache.value && now - ogImageOverridesCache.ts < OG_IMAGE_OVERRIDES_CACHE_MS) {
+    return ogImageOverridesCache.value;
+  }
+
+  let overrides = {
+    global: {
+      share: SITE_LOGO_URL,
+      game: SITE_LOGO_URL,
+      packageDetails: SITE_LOGO_URL,
+      packageCheckout: SITE_LOGO_URL,
+    },
+    share: {},
+    game: {},
+    packageDetails: {},
+    packageCheckout: {},
+  };
+  try {
+    try {
+      await pool.query("ALTER TABLE settings ADD COLUMN IF NOT EXISTS og_image_overrides JSONB DEFAULT '{}'::jsonb");
+    } catch { }
+
+    const res = await pool.query('SELECT og_image_overrides FROM settings LIMIT 1');
+    const raw = res.rows?.[0]?.og_image_overrides;
+    if (raw && typeof raw === 'object') {
+      const rawGlobal = (raw.global && typeof raw.global === 'object') ? raw.global : {};
+      overrides = {
+        global: {
+          share: (typeof rawGlobal.share === 'string') ? rawGlobal.share : overrides.global.share,
+          game: (typeof rawGlobal.game === 'string') ? rawGlobal.game : overrides.global.game,
+          packageDetails: (typeof rawGlobal.packageDetails === 'string') ? rawGlobal.packageDetails : overrides.global.packageDetails,
+          packageCheckout: (typeof rawGlobal.packageCheckout === 'string') ? rawGlobal.packageCheckout : overrides.global.packageCheckout,
+        },
+        share: (raw.share && typeof raw.share === 'object') ? raw.share : {},
+        game: (raw.game && typeof raw.game === 'object') ? raw.game : {},
+        packageDetails: (raw.packageDetails && typeof raw.packageDetails === 'object') ? raw.packageDetails : {},
+        packageCheckout: (raw.packageCheckout && typeof raw.packageCheckout === 'object') ? raw.packageCheckout : {},
+      };
+    }
+  } catch {
+    overrides = {
+      global: {
+        share: SITE_LOGO_URL,
+        game: SITE_LOGO_URL,
+        packageDetails: SITE_LOGO_URL,
+        packageCheckout: SITE_LOGO_URL,
+      },
+      share: {},
+      game: {},
+      packageDetails: {},
+      packageCheckout: {},
+    };
+  }
+
+  ogImageOverridesCache = { ts: now, value: overrides };
+  return overrides;
+}
+
+function resolveOgImageOverride(origin, overrides, type, key) {
+  if (key !== undefined && key !== null && String(key).trim() !== '') {
+    const k = normalizeOgKey(key);
+    const bag = overrides && typeof overrides === 'object' ? overrides[type] : null;
+    if (bag && typeof bag === 'object') {
+      const direct = bag[key];
+      if (typeof direct === 'string' && direct.trim()) {
+        return toAbsoluteUrl(origin, normalizeImageUrl(direct.trim()));
+      }
+      const normalized = bag[k];
+      if (typeof normalized === 'string' && normalized.trim()) {
+        return toAbsoluteUrl(origin, normalizeImageUrl(normalized.trim()));
+      }
+    }
+  }
+
+  try {
+    const globalValue = overrides?.global && typeof overrides.global === 'object' ? overrides.global[type] : null;
+    if (typeof globalValue === 'string' && globalValue.trim()) {
+      return toAbsoluteUrl(origin, normalizeImageUrl(globalValue.trim()));
+    }
+  } catch { }
+
+  return null;
+}
+
 function coerceJsonArray(value) {
   if (value === undefined || value === null) return [];
   if (Array.isArray(value)) return value;
@@ -674,7 +766,8 @@ const rootAttachedAssetsDir = path.join(__dirname, '..', 'attached_assets');
 app.get('/share', async (req, res) => {
   const origin = getPublicOrigin(req);
   const url = `${origin}/`;
-  const image = toAbsoluteUrl(origin, SITE_LOGO_URL);
+  const overrides = await loadOgImageOverrides();
+  const image = resolveOgImageOverride(origin, overrides, 'share', 'share') || toAbsoluteUrl(origin, SITE_LOGO_URL);
   res.type('text/html').send(
     renderShareHtml({
       title: `${SITE_NAME} | Premium Game Store`,
@@ -694,20 +787,46 @@ app.get('/share/game/:slug', async (req, res) => {
   let description = 'Game top up - fast delivery.';
   let image = toAbsoluteUrl(origin, SITE_LOGO_URL);
 
+  const overrides = await loadOgImageOverrides();
+  const imageOverride = resolveOgImageOverride(origin, overrides, 'game', slug);
+  if (imageOverride) {
+    image = imageOverride;
+  }
+
+  const applyGame = (g) => {
+    if (!g) return;
+    title = `${g.name} | ${SITE_NAME}`;
+    description = stripHtml(g.description || '').slice(0, 200) || description;
+    if (!imageOverride) {
+      const rawImg = g.image_url || g.image || SITE_LOGO_URL;
+      image = toAbsoluteUrl(origin, normalizeImageUrl(rawImg) || SITE_LOGO_URL);
+    }
+  };
+
   try {
     const gameRes = await pool.query(
       'SELECT name, description, image, image_url FROM games WHERE slug = $1 OR id = $1 LIMIT 1',
       [slug]
     );
     const g = gameRes.rows?.[0];
-    if (g) {
-      title = `${g.name} | ${SITE_NAME}`;
-      description = stripHtml(g.description || '').slice(0, 200) || description;
-      const rawImg = g.image_url || g.image || SITE_LOGO_URL;
-      image = toAbsoluteUrl(origin, normalizeImageUrl(rawImg) || SITE_LOGO_URL);
-    }
-  } catch {
-    // ignore and fallback to logo
+    if (g) applyGame(g);
+  } catch { }
+
+  if (!imageOverride && image === toAbsoluteUrl(origin, SITE_LOGO_URL)) {
+    try {
+      const normalizeKey = (s) => String(s || '').trim().toLowerCase().replace(/_/g, '-').replace(/\s+/g, '-');
+      const fallback = localDb.findGame(slug);
+      if (fallback) {
+        applyGame(fallback);
+      } else {
+        const all = localDb.getGames();
+        const target = normalizeKey(slug);
+        const match = Array.isArray(all)
+          ? all.find((gg) => normalizeKey(gg?.slug) === target || normalizeKey(gg?.id) === target)
+          : null;
+        if (match) applyGame(match);
+      }
+    } catch { }
   }
 
   res.type('text/html').send(renderShareHtml({ title, description, image, url }));
@@ -722,6 +841,13 @@ app.get('/share/package/:gameSlug/:packageIndex', async (req, res) => {
   let title = `${SITE_NAME}`;
   let description = 'Package checkout - fast delivery.';
   let image = toAbsoluteUrl(origin, SITE_LOGO_URL);
+
+  const overrides = await loadOgImageOverrides();
+  const packageKey = `${normalizeOgKey(gameSlug)}:${Number.isFinite(packageIndex) ? packageIndex : 0}`;
+  const imageOverride = resolveOgImageOverride(origin, overrides, 'packageCheckout', packageKey);
+  if (imageOverride) {
+    image = imageOverride;
+  }
 
   try {
     const gameRes = await pool.query(
@@ -743,8 +869,10 @@ app.get('/share/package/:gameSlug/:packageIndex', async (req, res) => {
       const gameName = row.name || 'Game';
       title = `${pkg?.name || 'Package'} - ${gameName} | ${SITE_NAME}`;
       description = stripHtml(pkg?.description || row.description || '').slice(0, 200) || description;
-      const rawImg = pkg?.image || row.image_url || row.image || SITE_LOGO_URL;
-      image = toAbsoluteUrl(origin, normalizeImageUrl(rawImg) || SITE_LOGO_URL);
+      if (!imageOverride) {
+        const rawImg = pkg?.image || row.image_url || row.image || SITE_LOGO_URL;
+        image = toAbsoluteUrl(origin, normalizeImageUrl(rawImg) || SITE_LOGO_URL);
+      }
     }
   } catch {
     // ignore and fallback to logo
@@ -762,6 +890,12 @@ app.get('/share/packages/:slug', async (req, res) => {
   let description = 'Package details.';
   let image = toAbsoluteUrl(origin, SITE_LOGO_URL);
 
+  const overrides = await loadOgImageOverrides();
+  const imageOverride = resolveOgImageOverride(origin, overrides, 'packageDetails', slug);
+  if (imageOverride) {
+    image = imageOverride;
+  }
+
   try {
     const pkgRes = await pool.query(
       `SELECT gp.name, gp.description, gp.image, g.name as game_name, g.image as game_image
@@ -775,8 +909,10 @@ app.get('/share/packages/:slug', async (req, res) => {
     if (p) {
       title = `${p.name} - ${p.game_name || ''} | ${SITE_NAME}`.replace(/\s+/g, ' ').trim();
       description = stripHtml(p.description || '').slice(0, 200) || description;
-      const rawImg = p.image || p.game_image || SITE_LOGO_URL;
-      image = toAbsoluteUrl(origin, normalizeImageUrl(rawImg) || SITE_LOGO_URL);
+      if (!imageOverride) {
+        const rawImg = p.image || p.game_image || SITE_LOGO_URL;
+        image = toAbsoluteUrl(origin, normalizeImageUrl(rawImg) || SITE_LOGO_URL);
+      }
     }
   } catch {
     // ignore and fallback to logo
@@ -840,6 +976,60 @@ app.get('/api/health', async (req, res) => {
       version: '1.0.0',
       timestamp: new Date().toISOString(),
     });
+  }
+});
+
+app.get('/api/admin/og-images', authenticateToken, ensureAdmin, async (req, res) => {
+  try {
+    const overrides = await loadOgImageOverrides();
+    res.json({ siteLogoUrl: SITE_LOGO_URL, overrides });
+  } catch {
+    res.json({
+      siteLogoUrl: SITE_LOGO_URL,
+      overrides: {
+        global: { share: SITE_LOGO_URL, game: SITE_LOGO_URL, packageDetails: SITE_LOGO_URL, packageCheckout: SITE_LOGO_URL },
+        share: {},
+        game: {},
+        packageDetails: {},
+        packageCheckout: {},
+      }
+    });
+  }
+});
+
+app.put('/api/admin/og-images', authenticateToken, ensureAdmin, async (req, res) => {
+  try {
+    const next = req.body?.overrides;
+    if (!next || typeof next !== 'object') {
+      return res.status(400).json({ message: 'Invalid overrides payload' });
+    }
+
+    try {
+      await pool.query("ALTER TABLE settings ADD COLUMN IF NOT EXISTS og_image_overrides JSONB DEFAULT '{}'::jsonb");
+    } catch { }
+
+    const existing = await pool.query('SELECT id FROM settings LIMIT 1');
+    if (existing.rows.length > 0) {
+      await pool.query(
+        'UPDATE settings SET og_image_overrides = $1::jsonb, updated_at = NOW() WHERE id = $2',
+        [JSON.stringify(next), existing.rows[0].id]
+      );
+    } else {
+      await pool.query(
+        'INSERT INTO settings (id, og_image_overrides, updated_at) VALUES ($1, $2::jsonb, NOW())',
+        ['default', JSON.stringify(next)]
+      );
+    }
+
+    ogImageOverridesCache = { ts: 0, value: null };
+    const io = getIO();
+    if (io) {
+      io.emit('og_images_updated', { overrides: next });
+    }
+
+    res.json({ message: 'OG image overrides updated', overrides: next });
+  } catch (err) {
+    res.status(500).json({ message: err?.message || 'Failed to update OG image overrides' });
   }
 });
 
