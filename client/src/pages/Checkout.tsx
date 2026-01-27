@@ -68,15 +68,15 @@ export function CheckoutContent({ isEmbedded = false }: { isEmbedded?: boolean }
     return () => clearTimeout(timer);
   }, [cart, step]);
 
-  // If step is 'cart' which we removed, go to 'details'
+  // Reset stale steps or invalid state on mount/update
   useEffect(() => {
-    if (step === 'cart') {
+    // If we are on payment or review but don't have contact info, go back to details
+    const hasContactInfo = contact.fullName && contact.email && contact.phone;
+    if ((step === 'payment' || step === 'review') && !hasContactInfo) {
       setStep('details');
     }
-  }, [step, setStep]);
 
-  // Reset stale 'processing' or 'result' steps on mount
-  useEffect(() => {
+    // Always reset processing or result on mount to avoid stuck states
     if (step === 'processing' || step === 'result') {
       setStep('details');
     }
