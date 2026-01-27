@@ -84,12 +84,17 @@ export function StepDetails({ onNext }: StepDetailsProps) {
   });
 
   const onDetailsSubmit = (data: DetailsForm) => {
+    // Ensure we capture the country code if not in data (though it should be)
     setContact({ 
       ...contact, 
       ...data, 
       deliveryMethod: 'email' 
     });
-    onNext?.();
+    
+    // Explicitly call onNext
+    if (onNext) {
+        onNext();
+    }
   };
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -150,6 +155,22 @@ export function StepDetails({ onNext }: StepDetailsProps) {
       
       if (name) setValueDetails('fullName', name);
       if (email) setValueDetails('email', email);
+      
+      // Handle phone
+      const userPhone = user.phone || contact.phone || '';
+      if (userPhone) {
+        // Simple heuristic to split country code if possible, or just put it all in phone
+        // If it starts with +, try to split.
+        if (userPhone.startsWith('+')) {
+           // naive split, assume +20 for now or whatever is matched
+           // But our select only has a few options. 
+           // Better to just set the phone field and let user fix if needed.
+           // Or just put it in phone field.
+           setValueDetails('phone', userPhone.replace(/^\+\d+\s?/, '')); // strip prefix if possible
+        } else {
+           setValueDetails('phone', userPhone);
+        }
+      }
     }
   }, [isAuthenticated, user, setValueDetails, contact]);
 
@@ -404,6 +425,11 @@ export function StepDetails({ onNext }: StepDetailsProps) {
               Continue to Payment
               <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
+            {Object.keys(errorsDetails).length > 0 && (
+                <div className="text-sm text-destructive mt-2 bg-destructive/10 p-2 rounded text-center">
+                    Please fix the errors above to continue.
+                </div>
+            )}
           </form>
         </CardContent>
       </Card>

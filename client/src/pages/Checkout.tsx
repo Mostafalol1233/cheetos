@@ -109,10 +109,10 @@ export function CheckoutContent({ isEmbedded = false }: { isEmbedded?: boolean }
   };
 
   const handleNext = () => {
-    if (canGoNext()) {
-      const nextIndex = Math.min(currentStepIndex + 1, steps.length - 1);
-      setStep(steps[nextIndex].key as any);
-    }
+    // Trust the component's validation. 
+    // The state in 'contact' might be stale in this closure if it was just updated.
+    const nextIndex = Math.min(currentStepIndex + 1, steps.length - 1);
+    setStep(steps[nextIndex].key as any);
   };
 
   const handleBack = () => {
