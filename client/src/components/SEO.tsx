@@ -34,6 +34,17 @@ export function SEO({
   const fullTitle = title;
   const keywordsString = keywords.join(', ');
 
+  // Ensure image is an absolute URL for Open Graph
+  const getAbsoluteImageUrl = (img: string) => {
+    if (!img) return '';
+    if (img.startsWith('http')) return img;
+    // Remove leading slash to avoid double slashes if origin has trailing slash (though origin usually doesn't)
+    const cleanPath = img.startsWith('/') ? img : `/${img}`;
+    return `${window.location.origin}${cleanPath}`;
+  };
+
+  const ogImage = getAbsoluteImageUrl(image);
+
   return (
     <Helmet>
       {/* Basic Meta Tags */}
@@ -72,7 +83,7 @@ export function SEO({
       {/* Open Graph */}
       <meta property="og:title" content={fullTitle} />
       <meta property="og:description" content={description} />
-      <meta property="og:image" content={image} />
+      <meta property="og:image" content={ogImage} />
       <meta property="og:url" content={url} />
       <meta property="og:type" content={type} />
       <meta property="og:site_name" content={siteName} />
@@ -85,7 +96,7 @@ export function SEO({
       <meta name="twitter:card" content="summary_large_image" />
       <meta name="twitter:title" content={fullTitle} />
       <meta name="twitter:description" content={description} />
-      <meta name="twitter:image" content={image} />
+      <meta name="twitter:image" content={ogImage} />
 
       {/* Canonical URL */}
       <link rel="canonical" href={url} />

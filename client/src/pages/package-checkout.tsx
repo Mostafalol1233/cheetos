@@ -161,6 +161,8 @@ I would like to purchase this package. Please let me know how to proceed.`;
                 title={`شراء ${selectedPackage} - ${game.name} | متجر ضياء`}
                 description={`اشتري ${selectedPackage} في ${game.name}. توصيل فوري وآمن.`}
                 keywords={[game.name, selectedPackage, 'شحن', 'شراء']}
+                image={(game as any).image_url || game.image}
+                url={window.location.href}
             />
 
             <div className="min-h-screen bg-background">

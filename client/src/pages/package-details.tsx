@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { SEO } from "@/components/SEO";
 import { ArrowLeft, Check, ShieldCheck, Zap } from "lucide-react";
 import { useCart } from "@/lib/cart-context";
 import { useState, useRef } from "react";
@@ -81,8 +82,17 @@ export default function PackageDetailsPage() {
     }, 100);
   };
 
+  const seoImage = pkg.image || pkg.gameImage || '/logo.png';
+
   return (
     <div className="container mx-auto py-10 px-4 max-w-6xl">
+      <SEO
+        title={`${pkg.name} - ${pkg.gameName || 'GameCart'} | Diaa Store`}
+        description={pkg.description || `Buy ${pkg.name} for ${pkg.gameName} securely on Diaa Store.`}
+        image={seoImage}
+        keywords={[pkg.name, pkg.gameName, 'top up', 'game cards', 'Diaa Store']}
+        url={window.location.href}
+      />
       <div className="mb-6">
         <Breadcrumb>
           <BreadcrumbList>
