@@ -13,6 +13,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Link } from 'wouter';
 import { User, LogIn } from 'lucide-react';
 
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Loader2 } from 'lucide-react';
+import { useToast } from "@/hooks/use-toast";
+
 const detailsSchema = z.object({
   fullName: z.string().min(2, 'Name must be at least 2 characters'),
   email: z.string().email('Invalid email address'),
@@ -23,6 +27,141 @@ const detailsSchema = z.object({
 });
 
 type DetailsForm = z.infer<typeof detailsSchema>;
+
+function InlineAuth({ onAuthSuccess }: { onAuthSuccess: (user: any) => void }) {
+  const { login, register } = useUserAuth();
+  const { toast } = useToast();
+  const [isLoading, setIsLoading] = React.useState(false);
+  const [mode, setMode] = React.useState<'login' | 'register'>('login');
+
+  // Login State
+  const [loginEmail, setLoginEmail] = React.useState('');
+  const [loginPass, setLoginPass] = React.useState('');
+
+  // Register State
+  const [regName, setRegName] = React.useState('');
+  const [regEmail, setRegEmail] = React.useState('');
+  const [regPass, setRegPass] = React.useState('');
+  const [regPhone, setRegPhone] = React.useState('');
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    try {
+      await login(loginEmail, loginPass);
+      // Auth context will update user, but we can also trigger callback directly if we want instant feedback
+      // Wait a tick for context to update or just fetch user data?
+      // Since `login` updates context state, the parent `StepDetails` useEffect should fire.
+      toast({ title: "Welcome back!", description: "Successfully signed in." });
+    } catch (err: any) {
+      toast({ title: "Login failed", description: err.message, variant: "destructive" });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleRegister = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    try {
+      await register({ name: regName, email: regEmail, password: regPass, phone: regPhone });
+      toast({ title: "Welcome!", description: "Account created successfully." });
+    } catch (err: any) {
+      toast({ title: "Registration failed", description: err.message, variant: "destructive" });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <Tabs value={mode} onValueChange={(v) => setMode(v as any)} className="w-full">
+      <TabsList className="grid w-full grid-cols-2 mb-4 bg-muted/50">
+        <TabsTrigger value="login">Sign In</TabsTrigger>
+        <TabsTrigger value="register">Create Account</TabsTrigger>
+      </TabsList>
+
+      <TabsContent value="login" className="space-y-4">
+        <form onSubmit={handleLogin} className="space-y-3">
+          <div className="space-y-1">
+            <Label htmlFor="inline-email">Email</Label>
+            <Input
+              id="inline-email"
+              type="email"
+              placeholder="name@example.com"
+              value={loginEmail}
+              onChange={e => setLoginEmail(e.target.value)}
+              required
+            />
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor="inline-pass">Password</Label>
+            <Input
+              id="inline-pass"
+              type="password"
+              placeholder="Enter your password"
+              value={loginPass}
+              onChange={e => setLoginPass(e.target.value)}
+              required
+            />
+          </div>
+          <Button type="submit" className="w-full" disabled={isLoading}>
+            {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Sign In"}
+          </Button>
+        </form>
+      </TabsContent>
+
+      <TabsContent value="register" className="space-y-4">
+        <form onSubmit={handleRegister} className="space-y-3">
+          <div className="space-y-1">
+            <Label htmlFor="inline-reg-name">Full Name</Label>
+            <Input
+              id="inline-reg-name"
+              placeholder="Your Name"
+              value={regName}
+              onChange={e => setRegName(e.target.value)}
+              required
+            />
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor="inline-reg-email">Email</Label>
+            <Input
+              id="inline-reg-email"
+              type="email"
+              placeholder="name@example.com"
+              value={regEmail}
+              onChange={e => setRegEmail(e.target.value)}
+              required
+            />
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor="inline-reg-pass">Password</Label>
+            <Input
+              id="inline-reg-pass"
+              type="password"
+              placeholder="Create password"
+              value={regPass}
+              onChange={e => setRegPass(e.target.value)}
+              required
+            />
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor="inline-reg-phone">Phone (Optional)</Label>
+            <Input
+              id="inline-reg-phone"
+              type="tel"
+              placeholder="+20..."
+              value={regPhone}
+              onChange={e => setRegPhone(e.target.value)}
+            />
+          </div>
+          <Button type="submit" className="w-full" disabled={isLoading}>
+            {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Create Account"}
+          </Button>
+        </form>
+      </TabsContent>
+    </Tabs>
+  );
+}
 
 export function StepDetails() {
   const { contact, setContact, setStep } = useCheckout();
@@ -63,29 +202,33 @@ export function StepDetails() {
   // Merged "Fast Checkout" flow: 
   // If not authenticated, show form immediately but offer login option.
   // No separate "Guest vs Register" step.
-  
+
   return (
     <div className="space-y-6">
       <h2 className="text-2xl font-bold">Contact Details</h2>
 
       {!isAuthenticated && (
         <Card className="mb-6 bg-muted/50 border-gold-primary/20">
-          <CardContent className="flex flex-col sm:flex-row items-center justify-between p-4 gap-4">
-             <div className="flex items-center gap-3">
+          <CardContent className="p-0">
+            <div className="p-4 bg-black/40 border-b border-border/50 flex items-center justify-between">
+              <div className="flex items-center gap-3">
                 <div className="p-2 rounded-full bg-gold-primary/10 text-gold-primary">
                   <User className="w-5 h-5" />
                 </div>
                 <div>
-                  <p className="font-medium">Already have an account?</p>
-                  <p className="text-xs text-muted-foreground">Sign in to load your saved details</p>
+                  <p className="font-medium">Account</p>
+                  <p className="text-xs text-muted-foreground">Sign in for a better experience or continue as guest</p>
                 </div>
-             </div>
-             <Link href="/login?redirect=/checkout">
-               <Button variant="outline" size="sm" className="gap-2 w-full sm:w-auto border-gold-primary/50 text-gold-primary hover:bg-gold-primary/10">
-                  <LogIn className="w-4 h-4" />
-                  Sign In
-               </Button>
-             </Link>
+              </div>
+            </div>
+
+            <div className="p-4">
+              <InlineAuth onAuthSuccess={(user) => {
+                setValue('fullName', user.name || '');
+                setValue('email', user.email || '');
+                setValue('phone', user.phone || '');
+              }} />
+            </div>
           </CardContent>
         </Card>
       )}
