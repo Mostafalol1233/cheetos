@@ -119,6 +119,21 @@ export default function UserProfilePage() {
   };
 
   useEffect(() => {
+    // Clear order notification when profile page loads
+    const notif = localStorage.getItem('order_notification');
+    if (notif) {
+      try {
+        const parsed = JSON.parse(notif);
+        if (parsed.unread) {
+          localStorage.setItem('order_notification', JSON.stringify({ ...parsed, unread: false }));
+          // Trigger a storage event to notify header component
+          window.dispatchEvent(new Event('storage'));
+        }
+      } catch {}
+    }
+  }, []);
+
+  useEffect(() => {
     // Socket.io connection for real-time updates
     const socket = io(API_BASE_URL, {
       transports: ['polling'],
@@ -167,11 +182,13 @@ export default function UserProfilePage() {
     switch (status.toLowerCase()) {
       case 'completed':
       case 'delivered':
+      case 'approved':
         return 'bg-green-500/20 text-green-400 border-green-500/50';
       case 'processing':
       case 'pending':
         return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/50';
       case 'cancelled':
+      case 'declined':
         return 'bg-red-500/20 text-red-400 border-red-500/50';
       default:
         return 'bg-gray-500/20 text-gray-400 border-gray-500/50';

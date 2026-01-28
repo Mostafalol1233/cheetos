@@ -28,6 +28,27 @@ export function Header() {
   const { settings } = useSettings();
   const [hasOrderNotification, setHasOrderNotification] = useState(false);
 
+  // Load and sync order notification state
+  useEffect(() => {
+    const update = () => {
+      const notif = localStorage.getItem('order_notification');
+      if (notif) {
+        try {
+          const parsed = JSON.parse(notif);
+          setHasOrderNotification(!!parsed.unread);
+        } catch {
+          setHasOrderNotification(false);
+        }
+      } else {
+        setHasOrderNotification(false);
+      }
+    };
+    update();
+    const handleStorage = () => update();
+    window.addEventListener('storage', handleStorage);
+    return () => window.removeEventListener('storage', handleStorage);
+  }, []);
+
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 20);
@@ -229,9 +250,12 @@ export function Header() {
               {isAuthenticated ? (
                 <div className="hidden md:flex items-center gap-2">
                   <Link href="/profile">
-                    <Button variant="ghost" size="sm" className="rounded-xl hover:bg-gold-primary/10 hover:text-gold-primary">
+                    <Button variant="ghost" size="sm" className="rounded-xl hover:bg-gold-primary/10 hover:text-gold-primary relative">
                       <User className="mr-2 h-4 w-4" />
                       <span className="hidden sm:inline">{user?.name}</span>
+                      {hasOrderNotification && (
+                        <span className="absolute -top-1 -right-1 inline-flex h-2.5 w-2.5 rounded-full bg-red-500 shadow-[0_0_0_3px_rgba(248,113,113,0.4)]" />
+                      )}
                     </Button>
                   </Link>
                   <Button
@@ -398,9 +422,12 @@ export function Header() {
                   {isAuthenticated ? (
                     <div className="space-y-2">
                       <Link href="/profile">
-                        <div className="flex items-center gap-4 px-4 py-4 rounded-xl hover:bg-muted transition-all text-foreground">
+                        <div className="flex items-center gap-4 px-4 py-4 rounded-xl hover:bg-muted transition-all text-foreground relative">
                           <User className="w-5 h-5" />
                           <span className="font-medium">{user?.name || "Profile"}</span>
+                          {hasOrderNotification && (
+                            <span className="absolute top-3 right-3 inline-flex h-2.5 w-2.5 rounded-full bg-red-500 shadow-[0_0_0_3px_rgba(248,113,113,0.4)]" />
+                          )}
                         </div>
                       </Link>
                       <button
