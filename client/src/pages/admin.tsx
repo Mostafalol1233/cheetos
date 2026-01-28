@@ -814,7 +814,8 @@ export default function AdminDashboard() {
   // Global socket listeners for real-time data sync
   useEffect(() => {
     const socket = io(API_BASE_URL, {
-      transports: ['polling', 'websocket'],
+      transports: ['polling'],
+      upgrade: false,
       reconnectionAttempts: 5,
       reconnectionDelay: 1000,
       path: '/socket.io'
@@ -1078,7 +1079,7 @@ export default function AdminDashboard() {
   const gameCardsTotal = cardsResponse?.total || 0;
 
   // Fetch all live chat sessions
-  const { data: chatSessions = [] } = useQuery<Array<{ id: string; startedAt: number; lastActivity: number; unreadCount: number }>>({
+  const { data: chatSessions = [] } = useQuery<Array<{ id: string; name?: string | null; email?: string | null; phone?: string | null; lastActivity?: any; unreadCount?: number; lastMessage?: string | null }>>({
     queryKey: ['/api/admin/chat/sessions'],
     enabled: true,
     queryFn: async () => {
@@ -1091,6 +1092,8 @@ export default function AdminDashboard() {
       return Array.isArray(data) ? data : [];
     }
   });
+
+  const selectedSessionInfo = selectedUser ? (chatSessions as any[]).find((s) => s && s.id === selectedUser) : null;
 
   // Fetch messages for selected session
   const { data: sessionMessages = [] } = useQuery<Array<{ id: string; sender: string; message: string; timestamp: number; read: boolean; attachmentUrl?: string | null; attachmentType?: string | null }>>({
@@ -1139,7 +1142,13 @@ export default function AdminDashboard() {
     const token = typeof window !== 'undefined' ? localStorage.getItem('adminToken') : null;
     if (!token) return;
 
-    const socket = io(API_BASE_URL);
+    const socket = io(API_BASE_URL, {
+      transports: ['polling'],
+      upgrade: false,
+      path: '/socket.io',
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000,
+    });
     chatSocketRef.current = socket;
 
     socket.on('connect', () => {
@@ -1761,7 +1770,7 @@ export default function AdminDashboard() {
       setReplyAttachment(null);
       queryClient.invalidateQueries({ queryKey: [`/api/admin/chat/${selectedUser}`] });
       queryClient.invalidateQueries({ queryKey: ['/api/admin/chat/sessions'] });
-      toast({ title: 'Reply sent', description: 'Your message has been sent to the visitor.' });
+      toast({ title: 'Reply sent', description: 'Your message has been sent.' });
     },
     onError: (error) => {
       toast({
@@ -2943,7 +2952,9 @@ export default function AdminDashboard() {
                           </div>
                         ) : (
                           chatSessions.map((session) => {
-                            const lastMessage = sessionMessages.find(msg => msg.timestamp === Math.max(...sessionMessages.map(m => m.timestamp)));
+                            const displayName = (session as any).name || (session as any).email || 'Visitor';
+                            const displayEmail = (session as any).email || '';
+                            const lastMessageText = (session as any).lastMessage || '';
 
                             return (
                               <Button
@@ -2955,18 +2966,27 @@ export default function AdminDashboard() {
                                 <div className="flex flex-col items-start w-full">
                                   <div className="flex items-center gap-2 w-full">
                                     <MessageSquare className="w-4 h-4 flex-shrink-0" />
-                                    <span className="font-medium truncate">Session {session.id.slice(-8)}</span>
-                                    {session.unreadCount > 0 && (
+                                    <span className="font-medium truncate">{String(displayName)}</span>
+                                    {!!displayEmail && (
+                                      <span className="text-muted-foreground truncate">({String(displayEmail)})</span>
+                                    )}
+                                    {Number((session as any).unreadCount || 0) > 0 && (
                                       <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">
-                                        {session.unreadCount}
+                                        {Number((session as any).unreadCount || 0)}
                                       </span>
                                     )}
                                   </div>
                                   <p className="text-xs text-muted-foreground mt-1 truncate w-full">
-                                    {lastMessage?.message || 'No messages'}
+                                    {String(lastMessageText || 'No messages')}
                                   </p>
                                   <p className="text-xs text-muted-foreground mt-1">
-                                    {new Date(session.lastActivity).toLocaleDateString()}
+                                    {(() => {
+                                      try {
+                                        return new Date((session as any).lastActivity).toLocaleDateString();
+                                      } catch {
+                                        return '';
+                                      }
+                                    })()}
                                   </p>
                                 </div>
                               </Button>
@@ -2985,7 +3005,7 @@ export default function AdminDashboard() {
                   <Card className="bg-card/50 border-gold-primary/30 h-full flex flex-col">
                     <CardHeader>
                       <CardTitle className="text-lg">
-                        Chat Session {selectedUser.slice(-8)}
+                        {selectedSessionInfo?.name || selectedSessionInfo?.email ? `Chat: ${selectedSessionInfo?.name || selectedSessionInfo?.email}` : `Chat Session ${selectedUser.slice(-8)}`}
                       </CardTitle>
                       <p className="text-sm text-muted-foreground">
                         Live chat conversation
@@ -3014,7 +3034,8 @@ export default function AdminDashboard() {
                                           method: 'DELETE',
                                           headers: token ? { Authorization: `Bearer ${token}` } : {}
                                         });
-                                        queryClient.setQueryData<any[]>(['/api/admin/chat', selectedUser], (old) => (old || []).filter(m => m.id !== msg.id));
+                                        queryClient.invalidateQueries({ queryKey: [`/api/admin/chat/${selectedUser}`] });
+                                        queryClient.invalidateQueries({ queryKey: ['/api/admin/chat/sessions'] });
                                       } catch (e) { console.error(e); }
                                     }}
                                   >
@@ -3034,7 +3055,7 @@ export default function AdminDashboard() {
                                       <Bot className="w-3 h-3" />
                                     )}
                                     <span className="text-xs opacity-70">
-                                      {msg.sender === 'user' ? 'Visitor' : 'Support'}
+                                      {msg.sender === 'user' ? String(selectedSessionInfo?.name || selectedSessionInfo?.email || 'Visitor') : 'Support'}
                                     </span>
                                   </div>
                                   {msg.message && (
@@ -3082,7 +3103,8 @@ export default function AdminDashboard() {
                                         method: 'DELETE',
                                         headers: token ? { Authorization: `Bearer ${token}` } : {}
                                       });
-                                      queryClient.setQueryData<any[]>(['/api/admin/chat', selectedUser], (old) => (old || []).filter(m => m.id !== msg.id));
+                                      queryClient.invalidateQueries({ queryKey: [`/api/admin/chat/${selectedUser}`] });
+                                      queryClient.invalidateQueries({ queryKey: ['/api/admin/chat/sessions'] });
                                     } catch (e) { console.error(e); }
                                   }}
                                 >
@@ -4304,7 +4326,7 @@ function LogoManagementPanel() {
       let uploadBlob: Blob = file;
       if (!isSvg) {
         const url = URL.createObjectURL(file);
-        const img = new Image();
+        const img = new window.Image();
         img.onload = async () => {
           setPreviewInfo(`${img.naturalWidth}x${img.naturalHeight}px`);
           const recommendedW = 300, recommendedH = 100;

@@ -121,7 +121,8 @@ export default function UserProfilePage() {
   useEffect(() => {
     // Socket.io connection for real-time updates
     const socket = io(API_BASE_URL, {
-      transports: ['polling', 'websocket'], // Polling first for better Vercel compatibility
+      transports: ['polling'],
+      upgrade: false,
       reconnection: true,
       reconnectionAttempts: 5,
       reconnectionDelay: 1000,

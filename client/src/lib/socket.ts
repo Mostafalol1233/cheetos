@@ -6,7 +6,8 @@ let socket: Socket | null = null;
 export const getSocket = () => {
   if (!socket) {
     socket = io(API_BASE_URL, {
-      transports: ['polling', 'websocket'], // Polling first for better Vercel compatibility
+      transports: ['polling'],
+      upgrade: false,
       path: '/socket.io',
       reconnectionAttempts: 5,
       reconnectionDelay: 1000,

@@ -2,9 +2,9 @@ import crypto from 'crypto';
 
 // Derive a 32-byte key from ENCRYPTION_KEY env using SHA-256
 function getKey() {
-  const secret = process.env.ENCRYPTION_KEY || '';
+  const secret = (process.env.ENCRYPTION_KEY || process.env.PAYMENT_ENCRYPTION_KEY || '').trim();
   if (!secret) {
-    throw new Error('ENCRYPTION_KEY is not set');
+    return null;
   }
   return crypto.createHash('sha256').update(String(secret)).digest(); // 32 bytes
 }
@@ -12,6 +12,9 @@ function getKey() {
 // AES-256-GCM encryption. Returns a compact string: v1:base64(iv).base64(ciphertext).base64(tag)
 export function encryptText(plainText) {
   const key = getKey();
+  if (!key) {
+    return String(plainText ?? '');
+  }
   const iv = crypto.randomBytes(12); // recommended 96-bit IV for GCM
   const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
   const ciphertext = Buffer.concat([cipher.update(String(plainText), 'utf8'), cipher.final()]);
@@ -53,7 +56,8 @@ export function decryptText(payload) {
   }
 
   if (typeof payload !== 'string') throw new Error('Invalid payload');
-  if (!payload.startsWith('v1:')) throw new Error('Unsupported crypto format');
+  // If encryption is not configured and the payload is not encrypted, treat it as plaintext.
+  if (!payload.startsWith('v1:')) return payload;
   const [, rest] = payload.split('v1:');
   const parts = rest.split('.');
   if (parts.length !== 3) throw new Error('Malformed encrypted data');
@@ -61,6 +65,9 @@ export function decryptText(payload) {
   const ciphertext = Buffer.from(parts[1], 'base64');
   const authTag = Buffer.from(parts[2], 'base64');
   const key = getKey();
+  if (!key) {
+    throw new Error('ENCRYPTION_KEY is not set');
+  }
   const decipher = crypto.createDecipheriv('aes-256-gcm', key, iv);
   decipher.setAuthTag(authTag);
   const decrypted = Buffer.concat([decipher.update(ciphertext), decipher.final()]);

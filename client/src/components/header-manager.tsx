@@ -45,8 +45,10 @@ export function HeaderManager() {
 
     // Socket listener for real-time updates
     const socket = io(API_BASE_URL, {
-      transports: ['polling', 'websocket'],
-      reconnectionAttempts: 5
+      transports: ['polling'],
+      upgrade: false,
+      reconnectionAttempts: 5,
+      path: '/socket.io'
     });
 
     socket.on('header_updated', () => {

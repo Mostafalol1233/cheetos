@@ -58,7 +58,8 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
 
     const socket = io(API_BASE_URL, {
       path: '/socket.io',
-      transports: ['polling', 'websocket'],
+      transports: ['polling'],
+      upgrade: false,
       reconnectionAttempts: 5,
       autoConnect: true
     });

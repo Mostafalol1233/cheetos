@@ -4514,9 +4514,29 @@ app.post('/api/whatsapp/webhook', async (req, res) => {
 
 // ===================== CHAT ENDPOINTS =====================
 
+function getAuthUserFromRequest(req) {
+  try {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && String(authHeader).split(' ')[1];
+    if (!token) return null;
+    return jwt.verify(token, JWT_SECRET);
+  } catch {
+    return null;
+  }
+}
+
 app.get('/api/chat/:sessionId', async (req, res) => {
   try {
     const { sessionId } = req.params;
+    const authUser = getAuthUserFromRequest(req);
+    const isGuestSession = String(sessionId).startsWith('guest_');
+    if (!authUser) {
+      if (!isGuestSession) return res.status(401).json({ message: 'Access token required' });
+    } else if (authUser.role !== 'admin') {
+      if (String(authUser.id) !== String(sessionId)) {
+        return res.status(403).json({ message: 'Forbidden' });
+      }
+    }
     const result = await pool.query('SELECT id, sender, message_encrypted, message, session_id, timestamp, attachment_url, attachment_type FROM chat_messages WHERE session_id = $1 ORDER BY timestamp ASC', [sessionId]);
     const safeDecrypt = (enc, plain) => {
       if (plain) return String(plain);
@@ -4703,7 +4723,7 @@ app.get('/api/admin/chat/all', authenticateToken, async (req, res) => {
   }
 });
 
-app.get('/api/chat/all', async (req, res) => {
+app.get('/api/chat/all', authenticateToken, ensureAdmin, async (req, res) => {
   try {
     const result = await pool.query('SELECT id, sender, message_encrypted, message, session_id, timestamp, attachment_url, attachment_type FROM chat_messages ORDER BY timestamp DESC LIMIT 500');
     const safeDecrypt = (enc, plain) => {
@@ -4738,7 +4758,7 @@ app.get('/api/chat/all', async (req, res) => {
   }
 });
 
-app.get('/api/admin/chat/:sessionId', authenticateToken, async (req, res) => {
+app.get('/api/admin/chat/:sessionId', authenticateToken, ensureAdmin, async (req, res) => {
   try {
     const { sessionId } = req.params;
     const result = await pool.query(
@@ -4784,14 +4804,21 @@ app.post('/api/chat/message', async (req, res) => {
     const { sender, message, sessionId, attachmentUrl, attachmentType } = req.body;
     if (!sender || (!message && !attachmentUrl) || !sessionId) return res.status(400).json({ message: 'sender, message or attachment, sessionId required' });
 
+    const authUser = getAuthUserFromRequest(req);
+    const isGuestSession = String(sessionId).startsWith('guest_');
+
     if (sender === 'support') {
-      const authHeader = req.headers['authorization'];
-      const token = authHeader && String(authHeader).split(' ')[1];
-      if (!token) return res.status(401).json({ message: 'Access token required' });
-      try {
-        jwt.verify(token, JWT_SECRET);
-      } catch {
-        return res.status(403).json({ message: 'Invalid or expired token' });
+      if (!authUser) return res.status(401).json({ message: 'Access token required' });
+      if (authUser.role !== 'admin') return res.status(403).json({ message: 'Admin privileges required' });
+    }
+
+    if (sender === 'user') {
+      if (!authUser) {
+        if (!isGuestSession) return res.status(401).json({ message: 'Access token required' });
+      } else if (authUser.role !== 'admin') {
+        if (String(authUser.id) !== String(sessionId)) {
+          return res.status(403).json({ message: 'Forbidden' });
+        }
       }
     }
 
@@ -4958,7 +4985,7 @@ app.get('/api/admin/whatsapp/messages', authenticateToken, async (req, res) => {
   }
 });
 
-app.put('/api/admin/chat/:sessionId/read', authenticateToken, async (req, res) => {
+app.put('/api/admin/chat/:sessionId/read', authenticateToken, ensureAdmin, async (req, res) => {
   try {
     const { sessionId } = req.params;
     await pool.query('UPDATE chat_messages SET read = true WHERE session_id = $1', [sessionId]);
@@ -4975,24 +5002,44 @@ app.put('/api/admin/chat/:sessionId/read', authenticateToken, async (req, res) =
   }
 });
 
-app.get('/api/admin/chat/sessions', authenticateToken, async (req, res) => {
+app.get('/api/admin/chat/sessions', authenticateToken, ensureAdmin, async (req, res) => {
   try {
     const rows = await pool.query(`
-      SELECT session_id as id,
-             MIN(timestamp) as started_at,
-             MAX(timestamp) as last_activity,
-             SUM(CASE WHEN read = false THEN 1 ELSE 0 END) as unread_count
-      FROM chat_messages
-      GROUP BY session_id
-      ORDER BY last_activity DESC
+      SELECT DISTINCT ON (m.session_id)
+        m.session_id as id,
+        u.name,
+        u.email,
+        u.phone,
+        (SELECT MIN(timestamp) FROM chat_messages WHERE session_id = m.session_id) as started_at,
+        m.timestamp as last_activity,
+        (SELECT COUNT(*) FROM chat_messages WHERE session_id = m.session_id AND read = false AND sender = 'user') as unread_count,
+        m.message,
+        m.message_encrypted
+      FROM chat_messages m
+      LEFT JOIN users u ON m.session_id = u.id
+      ORDER BY m.session_id, m.timestamp DESC
       LIMIT 500
     `);
-    res.json(rows.rows.map(r => ({
-      id: r.id,
-      startedAt: new Date(r.started_at).getTime(),
-      lastActivity: new Date(r.last_activity).getTime(),
-      unreadCount: parseInt(r.unread_count || 0)
-    })));
+
+    const safeDecrypt = (enc, plain) => {
+      if (plain) return String(plain);
+      if (!enc) return '';
+      try { return decryptMessage(enc); } catch { return String(enc); }
+    };
+
+    res.json(rows.rows
+      .map(r => ({
+        id: r.id,
+        name: r.name || null,
+        email: r.email || null,
+        phone: r.phone || null,
+        startedAt: r.started_at ? new Date(r.started_at).getTime() : Date.now(),
+        lastActivity: r.last_activity ? new Date(r.last_activity).getTime() : Date.now(),
+        unreadCount: parseInt(r.unread_count || 0),
+        lastMessage: safeDecrypt(r.message_encrypted, r.message),
+      }))
+      .sort((a, b) => (b.lastActivity || 0) - (a.lastActivity || 0))
+    );
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

@@ -6,6 +6,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { queryClient, apiRequest, API_BASE_URL } from '@/lib/queryClient';
 import { useSettings } from '@/lib/settings-context';
+import { useUserAuth } from '@/lib/user-auth-context';
 import { io, Socket } from 'socket.io-client';
 
 interface ChatMessage {
@@ -28,41 +29,54 @@ interface LiveChatWidgetProps {
   embedded?: boolean;
 }
 
-export function LiveChatWidget({ embedded = false }: LiveChatWidgetProps) {
+ export function LiveChatWidget({ embedded = false }: LiveChatWidgetProps) {
   const [isOpen, setIsOpen] = useState(embedded);
   const [isMinimized, setIsMinimized] = useState(false);
   const [inputMessage, setInputMessage] = useState('');
   const [showOptions, setShowOptions] = useState(true);
   const { settings: siteSettings } = useSettings();
+  const { user, isAuthenticated } = useUserAuth();
 
-  const [sessionId] = useState(() => {
+  const [sessionId, setSessionId] = useState(() => {
     try {
-      // Get user ID from localStorage to create user-specific chat sessions
       const userData = localStorage.getItem('userData');
-      let userId = 'guest';
-      
       if (userData) {
         try {
-          const user = JSON.parse(userData);
-          userId = user.id || 'guest';
-        } catch (e) {
-          // Fall back to guest if parsing fails
-        }
+          const parsed = JSON.parse(userData);
+          const uid = parsed?.id;
+          if (uid) return String(uid);
+        } catch { }
       }
-      
-      // Check if we already have a session for this user
-      const sessionKey = `chat_session_${userId}`;
+
+      const sessionKey = 'chat_session_guest';
       const existing = localStorage.getItem(sessionKey);
       if (existing) return existing;
-      
-      // Create new session specific to this user
-      const sid = `session_${userId}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const sid = `guest_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
       localStorage.setItem(sessionKey, sid);
       return sid;
     } catch {
-      return `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      return `guest_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
     }
   });
+
+  useEffect(() => {
+    try {
+      if (isAuthenticated && user?.id) {
+        setSessionId(String(user.id));
+        return;
+      }
+
+      const sessionKey = 'chat_session_guest';
+      const existing = localStorage.getItem(sessionKey);
+      if (existing) {
+        setSessionId(existing);
+        return;
+      }
+      const sid = `guest_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+      localStorage.setItem(sessionKey, sid);
+      setSessionId(sid);
+    } catch { }
+  }, [isAuthenticated, user?.id]);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const socketRef = useRef<Socket | null>(null);
   const [isUserTyping, setIsUserTyping] = useState(false);
@@ -88,7 +102,17 @@ export function LiveChatWidget({ embedded = false }: LiveChatWidgetProps) {
 
   const { data: messages = [] } = useQuery<ChatMessage[]>({
     queryKey: [`/api/chat/${sessionId}`],
-    enabled: isOpen
+    enabled: isOpen,
+    queryFn: async () => {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('userToken') : null;
+      const res = await fetch(`${API_BASE_URL}/api/chat/${sessionId}`, {
+        credentials: 'include',
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined
+      });
+      const data = await res.json().catch(() => ([]));
+      if (!res.ok) throw new Error((data as any)?.message || 'Failed to load chat');
+      return Array.isArray(data) ? data : [];
+    }
   });
 
   // Auto-reply mutation
@@ -124,25 +148,25 @@ export function LiveChatWidget({ embedded = false }: LiveChatWidgetProps) {
 
   const sendMutation = useMutation({
     mutationFn: async (msg: string) => {
-      const response = await apiRequest('POST', '/api/chat/message', {
-        sender: 'user',
-        message: msg,
-        sessionId
-      });
-      return response.json();
-    },
-    onSuccess: (data, msg) => {
-      // Optimistic update
-      queryClient.setQueryData<ChatMessage[]>([`/api/chat/${sessionId}`], (old) => {
-        const current = old || [];
-        const optimisticMsg: ChatMessage = {
-          id: `temp_${Date.now()}`,
+      const token = typeof window !== 'undefined' ? localStorage.getItem('userToken') : null;
+      const res = await fetch(`${API_BASE_URL}/api/chat/message`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({
           sender: 'user',
           message: msg,
-          timestamp: Date.now()
-        };
-        return [...current, optimisticMsg];
+          sessionId
+        })
       });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error((data as any)?.message || 'Failed to send');
+      return data;
+    },
+    onSuccess: () => {
       setInputMessage('');
       queryClient.invalidateQueries({ queryKey: [`/api/chat/${sessionId}`] });
     }
@@ -208,7 +232,8 @@ export function LiveChatWidget({ embedded = false }: LiveChatWidgetProps) {
 
     if (!socketRef.current) {
       const socket = io(API_BASE_URL, {
-        transports: ['websocket', 'polling'],
+        transports: ['polling'],
+        upgrade: false,
         reconnection: true,
         reconnectionAttempts: 5,
         reconnectionDelay: 1000,
