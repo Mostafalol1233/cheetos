@@ -27,6 +27,15 @@ export function CheckoutContent({ isEmbedded = false }: { isEmbedded?: boolean }
   const [, setLocation] = useLocation();
 
   useEffect(() => {
+    // Normalize legacy/initial step value.
+    // When `step` is 'cart', we still render the Details UI, but `handleNext` would
+    // not advance correctly because the step index is -1.
+    if (step === 'cart') {
+      setStep('details');
+    }
+  }, [step, setStep]);
+
+  useEffect(() => {
     // Check for single package checkout
     const checkoutPackageJson = localStorage.getItem('checkout_package');
     if (checkoutPackageJson) {
@@ -49,8 +58,8 @@ export function CheckoutContent({ isEmbedded = false }: { isEmbedded?: boolean }
     }
   }, [globalCart, setCart]);
 
-  const currentStepIndex = steps.findIndex(s => s.key === step);
-  // Default to details if step is 'cart' (legacy) or invalid
+  const rawStepIndex = steps.findIndex(s => s.key === step);
+  const currentStepIndex = rawStepIndex >= 0 ? rawStepIndex : 0;
   const currentStep = steps[currentStepIndex] || steps[0];
   const progress = ((currentStepIndex + 1) / (steps.length - 2)) * 100; // Exclude processing and result
 

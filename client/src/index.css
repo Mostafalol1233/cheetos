@@ -319,8 +319,8 @@
   .light p,
   .light span,
   .light label {
-    color: hsl(48 100% 92%);
-    /* Warm cream text */
+    color: hsl(var(--foreground));
+    /* Use theme foreground for readable light-mode text */
   }
 
   .dark p,

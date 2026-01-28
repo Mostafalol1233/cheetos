@@ -35,8 +35,10 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       
       if (nextTheme === "dark") {
         document.documentElement.classList.add("dark");
+        document.documentElement.classList.remove("light");
       } else {
         document.documentElement.classList.remove("dark");
+        document.documentElement.classList.add("light");
       }
     };
 
@@ -55,8 +57,10 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     }
     if (theme === "dark") {
       document.documentElement.classList.add("dark");
+      document.documentElement.classList.remove("light");
     } else {
       document.documentElement.classList.remove("dark");
+      document.documentElement.classList.add("light");
     }
   }, [theme]);
 
