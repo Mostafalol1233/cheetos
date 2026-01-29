@@ -671,6 +671,20 @@ app.use(cors({
   credentials: true
 }));
 
+// Middleware to prevent direct browser access to API routes
+app.use((req, res, next) => {
+  // Only apply to /api routes
+  if (req.path.startsWith('/api/')) {
+    // Browsers request text/html for top-level navigation
+    const accept = req.headers.accept || '';
+    // If client explicitly requests HTML, it's likely a browser navigation, not an API call
+    if (accept.indexOf('text/html') !== -1) {
+       return res.redirect('/');
+    }
+  }
+  next();
+});
+
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use(requestLogger);
