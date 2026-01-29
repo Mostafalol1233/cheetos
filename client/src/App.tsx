@@ -108,7 +108,7 @@ function AppShell() {
   const runHealthCheck = async () => {
     setHealthState((s) => ({ ...s, checking: true }));
     try {
-      const res = await fetch('/api/health', { cache: 'no-store' });
+      const res = await fetch(`${API_BASE_URL}/api/health`, { cache: 'no-store' });
       if (!res.ok) {
         setHealthState({ ok: false, checking: false, reason: 'Backend or database is temporarily unavailable.' });
         return;
@@ -124,6 +124,15 @@ function AppShell() {
       setHealthState({ ok: false, checking: false, reason: 'Cannot connect to backend server.' });
     }
   };
+
+  useEffect(() => {
+    const onDown = (e: any) => {
+      const reason = e?.detail?.reason;
+      setHealthState({ ok: false, checking: false, reason: reason ? String(reason) : 'Cannot connect to backend server.' });
+    };
+    window.addEventListener('backend:down', onDown);
+    return () => window.removeEventListener('backend:down', onDown);
+  }, []);
 
   useEffect(() => {
     runHealthCheck();

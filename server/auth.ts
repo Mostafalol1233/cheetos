@@ -4,16 +4,35 @@ import { storage } from "./storage";
 import crypto from "crypto";
 import { type Express } from "express";
 import session from "express-session";
+import pg from "pg";
+import connectPgSimple from "connect-pg-simple";
 
 export function setupAuth(app: Express) {
   // Session setup
+  const sessionSecret = process.env.SESSION_SECRET || "super_secret_key";
+  const PgSession = connectPgSimple(session);
+  const canUseDbSession = Boolean(process.env.DATABASE_URL);
+
+  const store = canUseDbSession
+    ? new PgSession({
+      pool: new pg.Pool({
+        connectionString: process.env.DATABASE_URL,
+        ssl: process.env.NODE_ENV === "production" ? { rejectUnauthorized: false } : undefined,
+      }),
+      tableName: "user_sessions",
+      createTableIfMissing: true,
+    })
+    : undefined;
+
   app.use(session({
-    secret: process.env.SESSION_SECRET || "super_secret_key",
+    store,
+    secret: sessionSecret,
     resave: false,
     saveUninitialized: false,
     cookie: {
-      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
-      secure: process.env.NODE_ENV === "production"
+      maxAge: 30 * 24 * 60 * 60 * 1000,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
     }
   }));
 

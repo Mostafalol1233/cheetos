@@ -10,6 +10,7 @@ export const API_BASE_URL = (() => {
     if (/^https?:\/\//i.test(s)) return s;
     return `http://${s}`;
   };
+
   try {
     const u = new URL(window.location.href);
     if (u.searchParams.get("mock") === "1") {
@@ -21,6 +22,24 @@ export const API_BASE_URL = (() => {
   if (window.location.protocol === "https:" && normalized.startsWith("http://")) return window.location.origin;
   return normalized;
 })();
+
+export function notifyBackendDown(reason?: string) {
+  if (typeof window === "undefined") return;
+  try {
+    window.dispatchEvent(new CustomEvent("backend:down", { detail: { reason } }));
+  } catch {
+    // ignore
+  }
+}
+
+function isBackendDown() {
+  if (typeof window === "undefined") return false;
+  try {
+    return (window as any).__BACKEND_DOWN__ === true;
+  } catch {
+    return false;
+  }
+}
 
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
@@ -43,15 +62,27 @@ export async function apiRequest(
       return "";
     }
   })();
-  const res = await fetch(finalUrl, {
-    method,
-    headers: {
-      ...(data ? { "Content-Type": "application/json" } : {}),
-      ...(csrf ? { "X-CSRF-Token": csrf } : {}),
-    },
-    body: data ? JSON.stringify(data) : undefined,
-    credentials: "include",
-  });
+  let res: Response;
+  try {
+    res = await fetch(finalUrl, {
+      method,
+      headers: {
+        ...(data ? { "Content-Type": "application/json" } : {}),
+        ...(csrf ? { "X-CSRF-Token": csrf } : {}),
+      },
+      body: data ? JSON.stringify(data) : undefined,
+      credentials: "include",
+    });
+  } catch (err: any) {
+    try { (window as any).__BACKEND_DOWN__ = true; } catch { }
+    notifyBackendDown(err?.message || "Network error");
+    throw err;
+  }
+
+  if (res.status >= 500) {
+    try { (window as any).__BACKEND_DOWN__ = true; } catch { }
+    notifyBackendDown(`HTTP ${res.status}`);
+  }
 
   await throwIfResNotOk(res);
   return res;
@@ -73,12 +104,24 @@ export const getQueryFn: <T>(options: {
         return "";
       }
     })();
-    const res = await fetch(finalUrl, {
-      credentials: "include",
-      headers: {
-        ...(csrf ? { "X-CSRF-Token": csrf } : {}),
-      },
-    });
+    let res: Response;
+    try {
+      res = await fetch(finalUrl, {
+        credentials: "include",
+        headers: {
+          ...(csrf ? { "X-CSRF-Token": csrf } : {}),
+        },
+      });
+    } catch (err: any) {
+      try { (window as any).__BACKEND_DOWN__ = true; } catch { }
+      notifyBackendDown(err?.message || "Network error");
+      throw err;
+    }
+
+    if (res.status >= 500) {
+      try { (window as any).__BACKEND_DOWN__ = true; } catch { }
+      notifyBackendDown(`HTTP ${res.status}`);
+    }
 
     if (unauthorizedBehavior === "returnNull" && res.status === 401) {
       return null;
@@ -110,7 +153,9 @@ export const getQueryFn: <T>(options: {
         return maybeArray;
       }
 
-      console.warn(`Expected array but got:`, typeof data, data);
+      if (!isBackendDown()) {
+        console.warn(`Expected array but got:`, typeof data, data);
+      }
       return [];
     }
     
