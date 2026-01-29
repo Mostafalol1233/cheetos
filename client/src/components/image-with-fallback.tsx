@@ -31,8 +31,20 @@ export default function ImageWithFallback({ src, alt, className, width, height, 
     if (imgSrc.startsWith('/attached_assets/')) {
       return imgSrc;
     }
+
+    // Backend-served assets must be prefixed when frontend is on a different domain
+    if (imgSrc.startsWith('/media/') || imgSrc.startsWith('/uploads/') || imgSrc.startsWith('/payments-images/')) {
+      const base = String(API_BASE_URL || '').replace(/\/$/, '');
+      if (!base) return imgSrc;
+      return `${base}${imgSrc}`;
+    }
+
+    // Frontend-served static assets
+    if (imgSrc.startsWith('/images/')) {
+      return imgSrc;
+    }
     
-    // If it starts with /, it's a relative path from the root
+    // If it starts with /, it's a relative path from the frontend root
     if (imgSrc.startsWith('/')) {
       return imgSrc;
     }

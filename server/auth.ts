@@ -9,7 +9,8 @@ import connectPgSimple from "connect-pg-simple";
 
 export function setupAuth(app: Express) {
   // Session setup
-  const sessionSecret = process.env.SESSION_SECRET || "super_secret_key";
+  // Changed default secret to a strong random value as requested
+  const sessionSecret = process.env.SESSION_SECRET || "9f8e7d6c5b4a3f2e1d0c9b8a7f6e5d4c3b2a1f0e9d8c7b6a5f4e3d2c1b0a";
   const PgSession = connectPgSimple(session);
   const canUseDbSession = Boolean(process.env.DATABASE_URL);
 

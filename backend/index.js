@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import multer from 'multer';
 import dotenv from 'dotenv';
+import helmet from 'helmet';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath, pathToFileURL } from 'url';
@@ -191,6 +192,17 @@ const CSRF_STATIC_TOKEN = process.env.CSRF_STATIC_TOKEN || '';
 // Image behavior flags
 const ENABLE_IMAGE_SEEDING = String(process.env.ENABLE_IMAGE_SEEDING || '').toLowerCase() === 'true';
 const ENABLE_IMAGE_OVERRIDES = String(process.env.ENABLE_IMAGE_OVERRIDES || '').toLowerCase() === 'true';
+
+if (process.env.NODE_ENV === 'production') {
+  const weakJwt = !process.env.JWT_SECRET || JWT_SECRET === 'your_jwt_secret_key_change_this_in_production';
+  const weakAdminPassword = !process.env.ADMIN_PASSWORD || ADMIN_PASSWORD === 'admin123';
+  if (weakJwt) {
+    throw new Error('JWT_SECRET must be set to a strong random value in production');
+  }
+  if (weakAdminPassword) {
+    throw new Error('ADMIN_PASSWORD must be set to a strong value in production');
+  }
+}
 
 const CLOUDINARY_ENABLED = Boolean(
   CLOUDINARY_CLOUD_NAME && CLOUDINARY_API_KEY && CLOUDINARY_API_SECRET
@@ -630,17 +642,32 @@ function csrfProtection(req, res, next) {
 }
 
 // Middleware
+app.set('trust proxy', 1);
+app.use(helmet({
+  contentSecurityPolicy: false,
+  crossOriginResourcePolicy: { policy: 'cross-origin' },
+}));
+
+const allowedOrigins = [
+  process.env.FRONTEND_URL,
+  'https://diaasadek.com',
+  'https://www.diaasadek.com',
+  'https://diaaa.vercel.app',
+].filter(Boolean);
+
 app.use(cors({
-  origin: [
-    process.env.FRONTEND_URL,
-    // Development origins - commented out for production safety or kept if needed for dev
-    // 'http://localhost:5173',
-    // 'http://localhost:5000',
-    'https://diaasadek.com',
-    'https://www.diaasadek.com',
-    'https://diaaa.vercel.app',
-    'https://*.vercel.app'
-  ].filter(Boolean),
+  origin: (origin, cb) => {
+    // Allow non-browser clients and same-origin requests
+    if (!origin) return cb(null, true);
+    try {
+      if (allowedOrigins.includes(origin)) return cb(null, true);
+      const u = new URL(origin);
+      if (u.hostname.endsWith('.vercel.app')) return cb(null, true);
+      return cb(new Error('Not allowed by CORS'));
+    } catch {
+      return cb(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true
 }));
 

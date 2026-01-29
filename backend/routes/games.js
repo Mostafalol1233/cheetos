@@ -7,6 +7,13 @@ import { getIO } from '../socket.js';
 
 const router = express.Router();
 
+const shouldAllowLocalFallback = () => {
+  const disabled = String(process.env.DISABLE_LOCAL_FALLBACK || '').toLowerCase() === 'true';
+  if (disabled) return false;
+  if (process.env.NODE_ENV === 'production') return false;
+  return true;
+};
+
 // Helper to normalize image URL
 const normalizeImageUrl = (raw) => {
   const v = String(raw || '').trim();
@@ -163,7 +170,12 @@ router.get('/', async (req, res) => {
       totalPages: Math.ceil(total / limit)
     });
   } catch (error) {
-    // console.error('DB Error in GET /api/games, falling back to local DB:', error.message);
+    if (!shouldAllowLocalFallback()) {
+      return res.status(503).json({
+        message: 'Database unavailable',
+      });
+    }
+
     try {
       const allGames = localDb.getGames();
       const total = allGames.length;
@@ -179,7 +191,6 @@ router.get('/', async (req, res) => {
         totalPages: Math.ceil(total / limit)
       });
     } catch (fallbackError) {
-      // console.error('Fallback LocalDB Error in GET /api/games:', fallbackError);
       res.status(500).json({
         message: 'Failed to fetch games (DB and Fallback failed)',
         error: error.message,
@@ -215,6 +226,12 @@ router.get('/popular', async (req, res) => {
     setPopularCache(items);
     res.json(items);
   } catch (error) {
+    if (!shouldAllowLocalFallback()) {
+      return res.status(503).json({
+        message: 'Database unavailable',
+      });
+    }
+
     console.error('DB Error (popular), falling back to local DB:', error.message);
     const allGames = localDb.getGames();
     const visibleGames = allGames.filter(g => (g.showOnMainPage !== undefined ? g.showOnMainPage : (g.show_on_main_page !== undefined ? g.show_on_main_page : true)));
@@ -252,6 +269,9 @@ router.get('/id/:id', async (req, res) => {
     const { packages_data, ...game } = gamesRes.rows[0];
     res.json(formatGame(game, packages_data));
   } catch (error) {
+    if (!shouldAllowLocalFallback()) {
+      return res.status(503).json({ message: 'Database unavailable' });
+    }
     console.error('DB Error (get by id), falling back to local DB:', error.message);
     const game = localDb.findGame(id);
     if (!game) return res.status(404).json({ message: 'Game not found' });
@@ -281,6 +301,9 @@ router.get('/slug/:slug', async (req, res) => {
     const { packages_data, ...game } = gamesRes.rows[0];
     res.json(formatGame(game, packages_data));
   } catch (error) {
+    if (!shouldAllowLocalFallback()) {
+      return res.status(503).json({ message: 'Database unavailable' });
+    }
     console.error('DB Error (get by slug), falling back to local DB:', error.message);
     const game = localDb.findGame(slug);
     if (!game) return res.status(404).json({ message: 'Game not found' });
@@ -310,6 +333,9 @@ router.get('/:id', async (req, res) => {
     const { packages_data, ...game } = gamesRes.rows[0];
     res.json(formatGame(game, packages_data));
   } catch (error) {
+    if (!shouldAllowLocalFallback()) {
+      return res.status(503).json({ message: 'Database unavailable' });
+    }
     console.error('DB Error (get one), falling back to local DB:', error.message);
     const game = localDb.findGame(id);
     if (!game) return res.status(404).json({ message: 'Game not found' });
@@ -635,6 +661,9 @@ router.get('/category/:category', async (req, res) => {
 
     res.json(items);
   } catch (error) {
+    if (!shouldAllowLocalFallback()) {
+      return res.status(503).json({ message: 'Database unavailable' });
+    }
     console.error('DB Error (category), falling back to local DB:', error.message);
     const allGames = localDb.getGames();
     const filtered = allGames.filter(g => (g.category || '').toLowerCase() === category.toLowerCase());
