@@ -12,6 +12,20 @@ createRoot(document.getElementById("root")!).render(
   </HelmetProvider>
 );
 
+const loader = document.getElementById("app-loader");
+if (loader) {
+  const hideLoader = () => {
+    loader.classList.add("app-loader--hide");
+    window.setTimeout(() => loader.remove(), 450);
+  };
+
+  if (document.readyState === "complete") {
+    hideLoader();
+  } else {
+    window.addEventListener("load", hideLoader, { once: true });
+  }
+}
+
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js').catch(() => {});

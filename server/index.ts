@@ -22,6 +22,12 @@ app.use(helmet({
     },
   },
   crossOriginEmbedderPolicy: false,
+  crossOriginOpenerPolicy: { policy: "same-origin" },
+  crossOriginResourcePolicy: { policy: "same-site" },
+  frameguard: { action: "deny" },
+  hsts: { maxAge: 15552000, includeSubDomains: true, preload: true },
+  noSniff: true,
+  referrerPolicy: { policy: "strict-origin-when-cross-origin" },
 }));
 
 app.use(express.json());
