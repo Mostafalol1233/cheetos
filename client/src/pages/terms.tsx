@@ -85,7 +85,7 @@ export default function TermsPage() {
               <section>
                 <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">8. Contact Information</h2>
                 <p className="text-gray-600 dark:text-gray-300">
-                  For questions about these Terms of Service, please contact us at support@diaaeldeen.com or through our 
+                  For questions about these Terms of Service, please contact us at support@diaasadek.com or through our 
                   support page.
                 </p>
               </section>

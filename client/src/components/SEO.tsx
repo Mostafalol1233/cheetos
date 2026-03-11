@@ -76,7 +76,7 @@ export function SEO({
 
       {/* Article specific (for blog-like content) */}
       <meta property="article:author" content="Diaa Sadek" />
-      <meta property="article:publisher" content="https://www.facebook.com/diaasadek" />
+      <meta property="article:publisher" content="https://www.facebook.com/diaaaeldeen" />
       <meta property="article:section" content="Gaming" />
       <meta property="article:tag" content="Gaming Top-Up" />
 
@@ -150,7 +150,7 @@ export function SEO({
             "availableLanguage": ["Arabic", "English"]
           },
           "sameAs": [
-            "https://www.facebook.com/diaasadek",
+            "https://www.facebook.com/diaaaeldeen",
             "https://www.instagram.com/diaasadek",
             "https://wa.me/20XXXXXXXXX"
           ],

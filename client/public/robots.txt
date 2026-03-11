@@ -29,6 +29,8 @@ Allow: /assets/
 Allow: /images/
 Allow: /css/
 Allow: /js/
+Allow: /logo.png
+Allow: /favicon.png
 
 # Crawl delay for respectful crawling
 Crawl-delay: 1

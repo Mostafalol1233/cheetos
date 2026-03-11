@@ -22,7 +22,7 @@ export function Footer() {
 
   const socialLinks = [
     { href: "https://www.facebook.com/diaaaeldeen", icon: Facebook, label: "Facebook", hoverColor: "hover:text-[#1877F2] hover:shadow-[0_0_20px_rgba(24,119,242,0.5)]" },
-    { href: "https://t.me/diaaeldeen1", icon: SiTelegram, label: "Telegram", hoverColor: "hover:text-[#0088cc] hover:shadow-[0_0_20px_rgba(0,136,204,0.5)]" },
+    { href: "https://t.me/diaaaeldeen", icon: SiTelegram, label: "Telegram", hoverColor: "hover:text-[#0088cc] hover:shadow-[0_0_20px_rgba(0,136,204,0.5)]" },
     { href: "https://wa.me/201011696196", icon: SiWhatsapp, label: "WhatsApp", hoverColor: "hover:text-[#25D366] hover:shadow-[0_0_20px_rgba(37,211,102,0.5)]" },
     { href: "https://tiktok.com/@diaa_eldeen", icon: SiTiktok, label: "TikTok", hoverColor: "hover:text-foreground hover:shadow-[0_0_20px_rgba(255,255,255,0.3)]" },
     { href: "https://www.youtube.com/@bemora-site", icon: Youtube, label: "YouTube", hoverColor: "hover:text-[#FF0000] hover:shadow-[0_0_20px_rgba(255,0,0,0.5)]" },
@@ -180,7 +180,7 @@ export function Footer() {
                   <div className="w-8 h-8 rounded-lg bg-gold-primary/10 flex items-center justify-center shrink-0 group-hover:bg-gold-primary/20 transition-colors">
                     <Mail className="w-4 h-4 text-gold-primary" />
                   </div>
-                  <span className="text-sm">support@diaaeldeen.com</span>
+                  <span className="text-sm">support@diaasadek.com</span>
                 </li>
               </ul>
             </motion.div>

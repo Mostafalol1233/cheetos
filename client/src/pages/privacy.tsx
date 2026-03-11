@@ -95,7 +95,7 @@ export default function PrivacyPage() {
               <section>
                 <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">9. Contact Us</h2>
                 <p className="text-gray-600 dark:text-gray-300">
-                  If you have questions about this Privacy Policy, please contact us at support@diaaeldeen.com or through 
+                  If you have questions about this Privacy Policy, please contact us at support@diaasadek.com or through 
                   our support page.
                 </p>
               </section>

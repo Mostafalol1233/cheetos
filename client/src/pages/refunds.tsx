@@ -58,7 +58,7 @@ export default function RefundsPage() {
                   To request a refund, please follow these steps:
                 </p>
                 <ol className="list-decimal list-inside text-gray-600 dark:text-gray-300 space-y-2 ml-4">
-                  <li>Contact our support team via live chat or email at support@diaaeldeen.com</li>
+                  <li>Contact our support team via live chat or email at support@diaasadek.com</li>
                   <li>Provide your order number or transaction ID</li>
                   <li>Explain the reason for your refund request</li>
                   <li>Wait for our team to review and process your request (typically within 24-48 hours)</li>
@@ -85,7 +85,7 @@ export default function RefundsPage() {
                 <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Contact Us</h2>
                 <p className="text-gray-600 dark:text-gray-300">
                   If you have questions about our refund policy or need assistance with a refund request, please contact our 
-                  support team at support@diaaeldeen.com or use our live chat feature.
+                  support team at support@diaasadek.com or use our live chat feature.
                 </p>
               </section>
             </CardContent>
