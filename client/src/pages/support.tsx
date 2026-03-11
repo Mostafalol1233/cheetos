@@ -36,7 +36,7 @@ export default function SupportPage() {
   };
 
   const whatsappHref = formatWhatsAppLink();
-  const telegramHref = "https://t.me/diaaaeldeen";
+  const telegramHref = "https://t.me/diaaeldeen1";
   const facebookHref = "https://www.facebook.com/diaaaeldeen";
   const etisalatCash = contactInfo?.etisalat_cash || null;
 
