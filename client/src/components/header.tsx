@@ -127,11 +127,11 @@ export function Header() {
               >
                 <div className={cn("flex items-center transition-all duration-300", isScrolled ? "h-14" : "h-16")}>
                   <img
-                    src="/images/diaa-logo-new.png"
+                    src="https://files.catbox.moe/brmkrj.png"
                     alt="Diaa Store Logo"
                     className="h-full w-auto object-contain drop-shadow-[0_0_8px_rgba(212,175,55,0.4)] group-hover:drop-shadow-[0_0_12px_rgba(212,175,55,0.7)] transition-all duration-300"
                     onError={(e) => {
-                      (e.target as HTMLImageElement).src = "https://files.catbox.moe/brmkrj.png";
+                      (e.target as HTMLImageElement).src = "/images/diaa-logo-new.png";
                     }}
                   />
                 </div>
@@ -366,10 +366,10 @@ export function Header() {
                 <div className="flex items-center justify-between mb-7">
                   <div className="flex items-center gap-2">
                     <img
-                      src="/images/diaa-logo-new.png"
+                      src="https://files.catbox.moe/brmkrj.png"
                       alt="Diaa Store Logo"
                       className="h-11 w-auto object-contain"
-                      onError={(e) => { (e.target as HTMLImageElement).src = "https://files.catbox.moe/brmkrj.png"; }}
+                      onError={(e) => { (e.target as HTMLImageElement).src = "/images/diaa-logo-new.png"; }}
                     />
                   </div>
                   <Button

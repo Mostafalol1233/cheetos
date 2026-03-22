@@ -1762,6 +1762,7 @@ async function initializeDatabase() {
       await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verified BOOLEAN DEFAULT false');
       await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS role VARCHAR(20) DEFAULT \'user\'');
       await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP');
+      await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_url TEXT');
       await pool.query('ALTER TABLE users ALTER COLUMN email DROP NOT NULL');
       await pool.query('ALTER TABLE users ALTER COLUMN password_hash DROP NOT NULL');
     } catch (e) { /* ignore if fails */ }

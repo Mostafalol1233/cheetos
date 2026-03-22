@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Zap, Headphones, Shield, Tag, ArrowRight, Sparkles, Trophy, Clock } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion, useAnimation, AnimatePresence } from "framer-motion";
 import { Link } from "wouter";
 
 import { ShoppingCategories } from "@/components/shopping-categories";
@@ -11,6 +11,7 @@ import { Footer } from "@/components/footer";
 import { useTranslation } from "@/lib/translation";
 import { SEO } from "@/components/SEO";
 import { Button } from "@/components/ui/button";
+import { WelcomeConfetti } from "@/components/confetti-celebration";
 
 const features = [
   {
@@ -104,6 +105,8 @@ export default function Home() {
         }}
       />
 
+      <WelcomeConfetti />
+
       <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
         {/* Hero Section */}
         <section className="relative">
@@ -158,31 +161,148 @@ export default function Home() {
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: feature.delay }}
                 viewport={{ once: true }}
-                whileHover={{ y: -8, scale: 1.02 }}
+                whileHover={{ y: -10, scale: 1.03 }}
                 className="group"
               >
                 <div className="relative p-6 rounded-2xl glass border border-white/5 hover:border-gold-primary/30 transition-all duration-300 overflow-hidden">
-                  {/* Icon with animation */}
-                  <motion.div
-                    className={`w-16 h-16 rounded-2xl ${feature.bg} border flex items-center justify-center mb-5 shadow-lg`}
-                    animate={
-                      feature.animType === 'bounce'
-                        ? { y: [0, -6, 0] }
-                        : feature.animType === 'spin'
-                        ? { rotate: [0, 15, -15, 0] }
-                        : feature.animType === 'pulse'
-                        ? { scale: [1, 1.12, 1] }
-                        : { x: [0, -4, 4, -4, 0] }
-                    }
-                    transition={{
-                      duration: feature.animType === 'spin' ? 2.5 : feature.animType === 'bounce' ? 2 : 1.8,
-                      repeat: Infinity,
-                      ease: "easeInOut",
-                      repeatDelay: 1,
-                    }}
-                  >
-                    <feature.icon className={`w-8 h-8 ${feature.color}`} />
-                  </motion.div>
+                  {/* Advanced Icon Animations */}
+                  <div className={`relative w-16 h-16 rounded-2xl ${feature.bg} border flex items-center justify-center mb-5 shadow-lg overflow-visible`}>
+
+                    {/* LIGHTNING (Zap) */}
+                    {feature.animType === 'bounce' && (
+                      <div className="relative flex items-center justify-center w-full h-full">
+                        {/* Electric arc rings */}
+                        {[1, 2].map((i) => (
+                          <motion.div
+                            key={i}
+                            className="absolute rounded-full border border-yellow-400/60"
+                            style={{ width: 52 + i * 14, height: 52 + i * 14 }}
+                            animate={{ opacity: [0, 0.8, 0], scale: [0.6, 1.3, 1.6] }}
+                            transition={{ duration: 0.6, repeat: Infinity, delay: i * 0.15, repeatDelay: 2.8, ease: "easeOut" }}
+                          />
+                        ))}
+                        {/* The actual flash overlay */}
+                        <motion.div
+                          className="absolute inset-0 rounded-xl bg-yellow-300/80"
+                          animate={{ opacity: [0, 0, 0.9, 0.3, 0.8, 0, 0] }}
+                          transition={{ duration: 0.5, repeat: Infinity, repeatDelay: 3, times: [0, 0.3, 0.4, 0.5, 0.6, 0.7, 1] }}
+                        />
+                        <motion.div
+                          animate={{
+                            scale: [1, 1, 1.6, 0.8, 1.4, 1, 1],
+                            rotate: [0, 0, -12, 12, -6, 0, 0],
+                            filter: [
+                              "drop-shadow(0 0 4px #fbbf24)",
+                              "drop-shadow(0 0 4px #fbbf24)",
+                              "drop-shadow(0 0 30px #fff) brightness(3)",
+                              "drop-shadow(0 0 15px #fbbf24)",
+                              "drop-shadow(0 0 25px #fff) brightness(2)",
+                              "drop-shadow(0 0 8px #fbbf24)",
+                              "drop-shadow(0 0 4px #fbbf24)",
+                            ],
+                          }}
+                          transition={{ duration: 0.6, repeat: Infinity, repeatDelay: 3, times: [0, 0.3, 0.4, 0.5, 0.6, 0.8, 1] }}
+                        >
+                          <Zap className="w-8 h-8 text-yellow-400 relative z-10 fill-yellow-400/30" />
+                        </motion.div>
+                      </div>
+                    )}
+
+                    {/* HEADPHONES (Sound Waves) */}
+                    {feature.animType === 'spin' && (
+                      <div className="relative flex items-center justify-center w-full h-full">
+                        {[1, 2, 3].map((i) => (
+                          <motion.div
+                            key={i}
+                            className="absolute rounded-full border border-purple-400/50"
+                            style={{ width: 40 + i * 18, height: 40 + i * 18 }}
+                            animate={{ opacity: [0.7, 0], scale: [0.7, 1.6] }}
+                            transition={{ duration: 1.6, repeat: Infinity, delay: i * 0.45, ease: "easeOut" }}
+                          />
+                        ))}
+                        <motion.div
+                          animate={{ rotate: [0, -8, 8, -5, 0], scale: [1, 1.05, 1] }}
+                          transition={{ duration: 2, repeat: Infinity, repeatDelay: 0.5, ease: "easeInOut" }}
+                        >
+                          <Headphones className="w-8 h-8 text-purple-400 relative z-10" />
+                        </motion.div>
+                      </div>
+                    )}
+
+                    {/* SHIELD (Shield + Swords Morph) */}
+                    {feature.animType === 'pulse' && (
+                      <div className="relative flex items-center justify-center w-full h-full">
+                        {/* Rotating aura */}
+                        <motion.div
+                          className="absolute inset-0 rounded-xl border border-emerald-400/40"
+                          animate={{ scale: [1, 1.4, 1], opacity: [0.8, 0, 0.6], rotate: [0, 90, 180] }}
+                          transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
+                        />
+                        {/* Crossed swords SVG overlay */}
+                        <motion.svg
+                          viewBox="0 0 64 64"
+                          className="absolute inset-0 w-full h-full"
+                          animate={{ opacity: [0, 0, 1, 1, 0], scale: [0.5, 0.5, 1, 1, 1.2] }}
+                          transition={{ duration: 2.5, repeat: Infinity, repeatDelay: 0.5, times: [0, 0.3, 0.5, 0.8, 1] }}
+                        >
+                          <line x1="14" y1="50" x2="50" y2="14" stroke="#34d399" strokeWidth="3" strokeLinecap="round" opacity="0.9" />
+                          <line x1="50" y1="50" x2="14" y2="14" stroke="#34d399" strokeWidth="3" strokeLinecap="round" opacity="0.9" />
+                          <circle cx="14" cy="50" r="3" fill="#34d399" opacity="0.8" />
+                          <circle cx="50" cy="50" r="3" fill="#34d399" opacity="0.8" />
+                          <circle cx="14" cy="14" r="2" fill="#34d399" opacity="0.6" />
+                          <circle cx="50" cy="14" r="2" fill="#34d399" opacity="0.6" />
+                        </motion.svg>
+                        <motion.div
+                          animate={{
+                            scale: [1, 1.2, 1, 1.15, 1],
+                            filter: [
+                              "drop-shadow(0 0 0px transparent)",
+                              "drop-shadow(0 0 20px #34d399)",
+                              "drop-shadow(0 0 5px #34d399)",
+                              "drop-shadow(0 0 18px #34d399)",
+                              "drop-shadow(0 0 2px transparent)",
+                            ],
+                          }}
+                          transition={{ duration: 2.5, repeat: Infinity, repeatDelay: 0.5 }}
+                        >
+                          <Shield className="w-8 h-8 text-emerald-400 relative z-10" />
+                        </motion.div>
+                      </div>
+                    )}
+
+                    {/* TAG (Swing + Sparkles) */}
+                    {feature.animType === 'shake' && (
+                      <div className="relative flex items-center justify-center w-full h-full overflow-visible">
+                        {/* Sparkle dots */}
+                        {[
+                          { top: "-8px", left: "-8px", delay: 0 },
+                          { top: "-8px", right: "-8px", delay: 0.3 },
+                          { bottom: "-8px", left: "-8px", delay: 0.6 },
+                          { bottom: "-8px", right: "-8px", delay: 0.9 },
+                          { top: "50%", left: "-12px", delay: 0.45 },
+                          { top: "50%", right: "-12px", delay: 0.75 },
+                        ].map((pos, i) => (
+                          <motion.div
+                            key={i}
+                            className="absolute w-2 h-2 rounded-full bg-gold-primary"
+                            style={pos as any}
+                            animate={{ opacity: [0, 1, 0], scale: [0, 1.5, 0] }}
+                            transition={{ duration: 0.8, repeat: Infinity, delay: pos.delay, repeatDelay: 1.5 }}
+                          />
+                        ))}
+                        <motion.div
+                          animate={{
+                            rotate: [0, -15, 15, -10, 10, -5, 5, 0],
+                            y: [0, -2, 2, -1, 1, 0],
+                          }}
+                          transition={{ duration: 1.5, repeat: Infinity, repeatDelay: 1.5, ease: "easeInOut" }}
+                          style={{ transformOrigin: "top center" }}
+                        >
+                          <Tag className="w-8 h-8 text-gold-primary relative z-10" />
+                        </motion.div>
+                      </div>
+                    )}
+                  </div>
 
                   {/* Content */}
                   <h3 className="text-lg font-bold text-foreground mb-2 group-hover:text-gold-primary transition-colors">
@@ -193,7 +313,12 @@ export default function Home() {
                   </p>
 
                   {/* Hover Glow */}
-                  <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-gold-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 -z-10" />
+                  <motion.div
+                    className="absolute inset-0 rounded-2xl bg-gradient-to-br from-gold-primary/5 to-transparent -z-10"
+                    initial={{ opacity: 0 }}
+                    whileHover={{ opacity: 1 }}
+                    transition={{ duration: 0.3 }}
+                  />
                 </div>
               </motion.div>
             ))}

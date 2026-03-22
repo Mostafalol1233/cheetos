@@ -26,7 +26,8 @@ import {
   Download,
   Copy,
   Lock,
-  Pencil
+  Pencil,
+  Camera
 } from "lucide-react";
 import { io } from "socket.io-client";
 import { LiveChatWidget } from "@/components/live-chat-widget";
@@ -105,6 +106,56 @@ export default function UserProfilePage() {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isChangingPassword, setIsChangingPassword] = useState(false);
+
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+
+  useEffect(() => {
+    if (user && (user as any).avatar_url) {
+      setAvatarUrl((user as any).avatar_url);
+    }
+  }, [user]);
+
+  const handleAvatarClick = () => {
+    const input = document.getElementById('avatar-upload-input') as HTMLInputElement;
+    input?.click();
+  };
+
+  const handleAvatarFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      toast({ title: "Error", description: "Please select an image file", variant: "destructive" });
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      toast({ title: "Error", description: "Image must be under 2MB", variant: "destructive" });
+      return;
+    }
+    setIsUploadingAvatar(true);
+    try {
+      const reader = new FileReader();
+      reader.onload = async (ev) => {
+        const base64 = ev.target?.result as string;
+        const token = localStorage.getItem('userToken');
+        const response = await fetch(`${API_BASE_URL}/api/user/avatar`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify({ avatarBase64: base64 }),
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.message || 'Upload failed');
+        setAvatarUrl(data.avatarUrl + '?t=' + Date.now());
+        toast({ title: "Avatar Updated", description: "Your profile picture has been updated!" });
+        setIsUploadingAvatar(false);
+      };
+      reader.readAsDataURL(file);
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+      setIsUploadingAvatar(false);
+    }
+    e.target.value = '';
+  };
 
   const handleOpenEditProfile = () => {
     setEditName(user?.name || '');
@@ -328,9 +379,37 @@ export default function UserProfilePage() {
             <Card className="bg-gradient-to-br from-card-bg/80 to-card-bg/60 border-gold-primary/20">
               <CardContent className="p-6">
                 <div className="text-center">
-                  <div className="bg-gradient-to-r from-gold-primary to-neon-pink w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <User className="w-8 h-8 text-white" />
+                  {/* Clickable Avatar */}
+                  <div className="relative w-20 h-20 mx-auto mb-4 group cursor-pointer" onClick={handleAvatarClick}>
+                    {avatarUrl ? (
+                      <img
+                        src={avatarUrl}
+                        alt="Profile"
+                        className="w-full h-full rounded-full object-cover border-2 border-gold-primary/50"
+                      />
+                    ) : (
+                      <div className="bg-gradient-to-r from-gold-primary to-neon-pink w-full h-full rounded-full flex items-center justify-center">
+                        <span className="text-2xl font-bold text-white">
+                          {user?.name?.charAt(0)?.toUpperCase() || <User className="w-8 h-8 text-white" />}
+                        </span>
+                      </div>
+                    )}
+                    {/* Camera overlay */}
+                    <div className="absolute inset-0 rounded-full bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                      {isUploadingAvatar ? (
+                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      ) : (
+                        <Camera className="w-5 h-5 text-white" />
+                      )}
+                    </div>
                   </div>
+                  <input
+                    id="avatar-upload-input"
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleAvatarFileChange}
+                  />
                   <h3 className="text-xl font-semibold text-white mb-2">{user?.name}</h3>
                   <p className="text-gray-400 text-sm mb-4">{user?.email}</p>
                   {user?.phone && (

@@ -107,7 +107,7 @@ router.get('/profile', getUserFromToken, async (req, res) => {
     // Try database first
     try {
       const result = await pool.query(
-        'SELECT id, name, email, phone, role, created_at FROM users WHERE id = $1',
+        'SELECT id, name, email, phone, role, created_at, avatar_url FROM users WHERE id = $1',
         [userId]
       );
 
@@ -116,7 +116,6 @@ router.get('/profile', getUserFromToken, async (req, res) => {
       }
     } catch (dbError) {
       console.error('DB query failed, using JSON fallback:', dbError.message);
-      // Fallback to JSON
       const users = JSON.parse(fs.readFileSync(path.join(__dirname, '../data/users.json'), 'utf8') || '[]');
       user = users.find(u => u.id === userId);
     }
@@ -129,6 +128,47 @@ router.get('/profile', getUserFromToken, async (req, res) => {
   } catch (err) {
     console.error('Error fetching profile:', err);
     res.status(500).json({ message: 'Failed to fetch profile' });
+  }
+});
+
+// Upload avatar (accepts base64 image)
+router.post('/avatar', getUserFromToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { avatarBase64 } = req.body;
+
+    if (!avatarBase64) {
+      return res.status(400).json({ message: 'Avatar data required' });
+    }
+
+    const matches = avatarBase64.match(/^data:(image\/\w+);base64,(.+)$/);
+    if (!matches) {
+      return res.status(400).json({ message: 'Invalid image data' });
+    }
+
+    const ext = matches[1].split('/')[1] === 'jpeg' ? 'jpg' : matches[1].split('/')[1];
+    const base64Data = matches[2];
+    const buffer = Buffer.from(base64Data, 'base64');
+
+    if (buffer.length > 2 * 1024 * 1024) {
+      return res.status(400).json({ message: 'Image must be under 2MB' });
+    }
+
+    const avatarsDir = path.join(__dirname, '../uploads/avatars');
+    if (!fs.existsSync(avatarsDir)) fs.mkdirSync(avatarsDir, { recursive: true });
+
+    const filename = `avatar_${userId}.${ext}`;
+    const filepath = path.join(avatarsDir, filename);
+    fs.writeFileSync(filepath, buffer);
+
+    const avatarUrl = `/uploads/avatars/${filename}`;
+
+    await pool.query('UPDATE users SET avatar_url = $1 WHERE id = $2', [avatarUrl, userId]);
+
+    res.json({ avatarUrl, message: 'Avatar updated successfully' });
+  } catch (err) {
+    console.error('Error uploading avatar:', err);
+    res.status(500).json({ message: 'Failed to upload avatar' });
   }
 });
 
