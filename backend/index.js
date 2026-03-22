@@ -5505,7 +5505,7 @@ app.put('/api/admin/orders/:id', authenticateToken, ensureAdmin, async (req, res
     if (order.customer_email) {
       try {
         const isDelivery = ['completed', 'delivered'].includes(status);
-        if (isDelivery && delivery_message) {
+        if ((isDelivery || status === 'approved') && delivery_message) {
           await sendEmail(order.customer_email, 'orderDelivery', { ...order, delivery_message });
         } else if (status === 'approved') {
           await sendEmail(order.customer_email, 'orderStatusUpdate', { ...order, status: 'تم تأكيد الدفع ✅' });

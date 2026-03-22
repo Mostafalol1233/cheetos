@@ -14,8 +14,9 @@ const transporter = nodemailer.createTransport({
 
 const STORE_NAME    = 'متجر ضياء صادق';
 const STORE_NAME_EN = 'Diaa Sadek Store';
+const OWNER_NAME    = 'ضياء صادق';
 const SITE_URL      = process.env.FRONTEND_URL || 'https://diaasadek.com';
-const LOGO_URL      = 'https://res.cloudinary.com/ddzbutb12/image/upload/v1774173479/gamecart/logo.png';
+const LOGO_URL      = process.env.SITE_LOGO_URL || 'https://files.catbox.moe/brmkrj.png';
 const GOLD          = '#D4AF37';
 const GOLD_DARK     = '#b8962e';
 const BG_DARK       = '#0d0d0d';
@@ -54,8 +55,11 @@ const wrap = (body) => `
         <!-- FOOTER -->
         <tr>
           <td style="background:#0a0a0a;padding:24px;text-align:center;border-top:1px solid ${BORDER};">
+            <div style="margin-bottom:8px;">
+              <span style="font-size:15px;font-weight:700;color:${GOLD};">${OWNER_NAME}</span>
+            </div>
             <div style="margin-bottom:12px;">
-              <a href="${SITE_URL}" style="color:${GOLD};text-decoration:none;font-size:13px;font-weight:600;">${SITE_URL.replace('https://', '')}</a>
+              <a href="${SITE_URL}" style="color:#888;text-decoration:none;font-size:12px;">${SITE_URL.replace('https://', '')}</a>
             </div>
             <div style="color:#444;font-size:11px;line-height:1.8;">
               © ${new Date().getFullYear()} ${STORE_NAME} — جميع الحقوق محفوظة<br/>
@@ -291,7 +295,7 @@ export const sendEmail = async (to, templateName, data) => {
 
   try {
     const info = await transporter.sendMail({
-      from: `"${STORE_NAME} | ${STORE_NAME_EN}" <${process.env.SMTP_FROM || 'support@diaasadek.com'}>`,
+      from: `"${OWNER_NAME} | ${STORE_NAME}" <${process.env.SMTP_FROM || 'support@diaasadek.com'}>`,
       to,
       subject,
       text,
@@ -333,7 +337,7 @@ export const sendRawEmail = async (to, subject, text, html) => {
 
   try {
     const info = await transporter.sendMail({
-      from: `"${STORE_NAME} | ${STORE_NAME_EN}" <${process.env.SMTP_FROM || 'support@diaasadek.com'}>`,
+      from: `"${OWNER_NAME} | ${STORE_NAME}" <${process.env.SMTP_FROM || 'support@diaasadek.com'}>`,
       to,
       subject: String(subject || `📩 رسالة من ${STORE_NAME}`),
       text: String(text || ''),

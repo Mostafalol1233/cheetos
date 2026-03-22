@@ -4973,6 +4973,7 @@ function ApprovalsPanel() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [approvalNote, setApprovalNote] = useState('');
+  const [deliveryCode, setDeliveryCode] = useState('');
   const [rejectionReason, setRejectionReason] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [formAction, setFormAction] = useState<'approve' | 'reject'>('approve');
@@ -5003,14 +5004,14 @@ function ApprovalsPanel() {
   });
 
   const updateOrderMutation = useMutation({
-    mutationFn: async ({ id, status, note }: { id: string; status: string; note?: string }) => {
+    mutationFn: async ({ id, status, note, delivery_message }: { id: string; status: string; note?: string; delivery_message?: string }) => {
       const res = await fetch(apiPath(`/api/admin/orders/${id}`), {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
           ...(token ? { Authorization: `Bearer ${token}` } : {})
         },
-        body: JSON.stringify({ status, adminNote: note })
+        body: JSON.stringify({ status, adminNote: note, delivery_message })
       });
       if (!res.ok) throw new Error('Failed to update order');
       return res.json();
@@ -5036,6 +5037,7 @@ function ApprovalsPanel() {
     setSelectedOrder(order);
     setFormAction('approve');
     setApprovalNote('');
+    setDeliveryCode('');
     setRejectionReason('');
     setShowForm(true);
   };
@@ -5057,7 +5059,8 @@ function ApprovalsPanel() {
     updateOrderMutation.mutate({
       id: selectedOrder.id,
       status: formAction === 'approve' ? 'approved' : 'rejected',
-      note: formAction === 'approve' ? approvalNote : rejectionReason
+      note: formAction === 'approve' ? approvalNote : rejectionReason,
+      delivery_message: formAction === 'approve' && deliveryCode.trim() ? deliveryCode.trim() : undefined
     });
   };
 
@@ -5228,16 +5231,31 @@ function ApprovalsPanel() {
               </div>
 
               {formAction === 'approve' ? (
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium">ملاحظة للموافقة (اختياري)</Label>
-                  <Textarea
-                    value={approvalNote}
-                    onChange={(e) => setApprovalNote(e.target.value)}
-                    placeholder="مثال: تمت المعالجة بنجاح، سيتم شحن العملة خلال 24 ساعة..."
-                    className="h-28 text-right resize-none"
-                    dir="rtl"
-                  />
-                  <p className="text-xs text-muted-foreground">سيتم إرسال هذه الملاحظة للعميل مع تأكيد الموافقة</p>
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium flex items-center gap-2">
+                      🎮 كود اللعبة / رسالة التسليم <span className="text-xs text-muted-foreground">(للألعاب التي تحتاج شحن يدوي)</span>
+                    </Label>
+                    <Textarea
+                      value={deliveryCode}
+                      onChange={(e) => setDeliveryCode(e.target.value)}
+                      placeholder="ضع هنا الكود أو رسالة الشحن اليدوي — مثال: كود بطاقة Amazon: XXXX-XXXX-XXXX أو تم شحن 100 داياموند في حسابك"
+                      className="h-28 text-right resize-none border-gold-primary/40 focus:border-gold-primary font-mono"
+                      dir="rtl"
+                    />
+                    <p className="text-xs text-muted-foreground">لو في كود أو رسالة تسليم، ستُرسَل مباشرة للعميل على الإيميل ✅</p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">ملاحظة إضافية (اختياري)</Label>
+                    <Textarea
+                      value={approvalNote}
+                      onChange={(e) => setApprovalNote(e.target.value)}
+                      placeholder="مثال: تمت المعالجة بنجاح، سيتم شحن العملة خلال 24 ساعة..."
+                      className="h-20 text-right resize-none"
+                      dir="rtl"
+                    />
+                    <p className="text-xs text-muted-foreground">سيتم إرسال هذه الملاحظة للعميل مع تأكيد الموافقة</p>
+                  </div>
                 </div>
               ) : (
                 <div className="space-y-2">
