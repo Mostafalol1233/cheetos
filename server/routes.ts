@@ -51,21 +51,21 @@ export function registerRoutes(app: Express): Server {
   app.get("/api/header-images/active", (_req, res) => res.json([
     {
       id: "slide-1",
-      image_url: "/images/hero-free-fire.png",
+      image_url: "/images/banner-free-fire.png",
       heading_text: "Free Fire - Top Up Diamonds",
       button_text: "Shop Now",
       button_url: "/game/free-fire"
     },
     {
       id: "slide-2",
-      image_url: "/images/hero-pubg.png",
+      image_url: "/images/banner-pubg.png",
       heading_text: "PUBG Mobile - UC Top Up",
       button_text: "Shop Now",
       button_url: "/game/pubg-mobile"
     },
     {
       id: "slide-3",
-      image_url: "/images/hero-crossfire.png",
+      image_url: "/images/banner-crossfire.png",
       heading_text: "CrossFire - ZP Top Up",
       button_text: "Shop Now",
       button_url: "/game/crossfire"

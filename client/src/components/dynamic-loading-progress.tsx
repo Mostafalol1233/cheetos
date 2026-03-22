@@ -79,10 +79,10 @@ export function DynamicLoadingProgress({
   const currentPhaseData = loadingPhases[currentPhase] || loadingPhases[0];
 
   return (
-    <div className="fixed inset-0 bg-background/95 backdrop-blur-sm z-50 flex items-center justify-center">
+    <div className="fixed inset-0 bg-black z-50 flex items-center justify-center">
       <div className="relative max-w-md w-full mx-4">
         {/* Animated Background */}
-        <div className="absolute inset-0 bg-gradient-to-br from-gold-primary/10 via-neon-pink/10 to-blue-500/10 rounded-2xl blur-xl"></div>
+        <div className="absolute inset-0 bg-gradient-to-br from-gold-primary/10 via-neon-pink/10 to-transparent rounded-2xl blur-xl"></div>
 
         {/* Floating Particles */}
         {particles.map((particle) => (

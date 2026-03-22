@@ -9,6 +9,37 @@ import ImageWithFallback from "./image-with-fallback";
 import { useTranslation } from "@/lib/translation";
 import { cn } from "@/lib/utils";
 
+const GAME_SLUG_IMAGES: Record<string, string> = {
+  'free-fire': '/images/free-fire-game.png',
+  'freefire': '/images/free-fire-game.png',
+  'pubg': '/images/pubg-game.png',
+  'pubg-mobile': '/images/pubg-game.png',
+  'crossfire': '/images/crossfire-game.png',
+  'minecraft': '/images/minecraft.webp',
+  'honor-of-kings': '/images/hok-main.webp',
+  'hok': '/images/hok-main.webp',
+  'valorant': '/images/VALORANT.jpg',
+  'valornt': '/images/VALORANT.jpg',
+  'roblox': '/images/roblox.webp',
+  'steam': '/images/Steam-Logo-White_4.webp',
+  'xbox': '/images/xbox-live.webp',
+  'xbox-live': '/images/xbox-live.webp',
+  'playstation': '/images/ps-store.webp',
+  'ps-store': '/images/ps-store.webp',
+  'discord': '/images/dis-co.webp',
+  'discord-nitro': '/images/dis-co.webp',
+  'netflix': '/images/netflix_-_Home_1.webp',
+  'google-play': '/images/gplay1-64c83ac2e830f.webp',
+  'ea-play': '/images/ea-play-icon-1.webp',
+  'yalla-ludo': '/images/yalla-ludo-2-67563efa1ab95.webp',
+};
+
+function getGameImage(game: Game): string {
+  if (GAME_SLUG_IMAGES[game.slug]) return GAME_SLUG_IMAGES[game.slug];
+  if (game.image) return game.image;
+  return '';
+}
+
 export function PopularGames() {
   const { t } = useTranslation();
   const { data: games = [], isLoading, isError } = useQuery<Game[]>({
@@ -52,9 +83,9 @@ export function PopularGames() {
                     <div className="absolute inset-0 pointer-events-none rounded-2xl shadow-[0_12px_30px_rgba(0,0,0,0.25)]" />
 
                     {/* Game Image */}
-                    <div className="relative mb-3 w-full overflow-hidden rounded-t-2xl bg-muted/30 aspect-[4/3] sm:aspect-[16/9]">
+                    <div className="relative mb-3 w-full overflow-hidden rounded-t-2xl bg-[#0e1a2b] aspect-[4/3] sm:aspect-[16/9]">
                       <ImageWithFallback
-                        src={game.image || ''}
+                        src={getGameImage(game)}
                         alt={game.name}
                         className="w-full h-full object-contain transition-transform duration-700 group-hover:scale-105"
                       />

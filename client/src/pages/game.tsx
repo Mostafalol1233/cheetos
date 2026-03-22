@@ -84,13 +84,40 @@ export default function GamePage() {
   const isOutOfStock = Number(game.stock) <= 0;
 
   const getHeroImage = () => {
+    const gameSlug = (game as any).slug || (game as any).id || '';
+
+    const slugImageMap: Record<string, string> = {
+      'free-fire': '/images/free-fire-game.png',
+      'freefire': '/images/free-fire-game.png',
+      'pubg': '/images/pubg-game.png',
+      'pubg-mobile': '/images/pubg-game.png',
+      'crossfire': '/images/crossfire-game.png',
+      'minecraft': '/images/minecraft.webp',
+      'honor-of-kings': '/images/hok-main.webp',
+      'hok': '/images/hok-main.webp',
+      'valorant': '/images/VALORANT.jpg',
+      'valornt': '/images/VALORANT.jpg',
+      'roblox': '/images/roblox.webp',
+      'steam': '/images/Steam-Logo-White_4.webp',
+      'xbox': '/images/xbox-live.webp',
+      'xbox-live': '/images/xbox-live.webp',
+      'playstation': '/images/ps-store.webp',
+      'ps-store': '/images/ps-store.webp',
+      'discord': '/images/dis-co.webp',
+      'discord-nitro': '/images/dis-co.webp',
+      'netflix': '/images/netflix_-_Home_1.webp',
+      'google-play': '/images/gplay1-64c83ac2e830f.webp',
+      'ea-play': '/images/ea-play-icon-1.webp',
+      'yalla-ludo': '/images/yalla-ludo-2-67563efa1ab95.webp',
+    };
+
+    if (gameSlug && slugImageMap[gameSlug]) {
+      return slugImageMap[gameSlug];
+    }
+
     const direct = (game as any).image_url || game.image;
     if (direct) return direct;
-    const gameSlug = (game as any).slug || (game as any).id || '';
-    if (!gameSlug) return '';
-    if (gameSlug === 'crossfire') {
-      return '/images/crossfire-icon.webp';
-    }
+
     return `/images/${gameSlug}.webp`;
   };
 
@@ -156,18 +183,12 @@ export default function GamePage() {
                 transition={{ duration: 0.5 }}
                 className="relative"
               >
-                <div className="relative rounded-3xl overflow-hidden glass border border-white/10 aspect-[4/3]">
-                  {getHeroImage() ? (
-                    <img
-                      src={getHeroImage()}
-                      alt={game.name}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-gray-900 text-gray-500">
-                      No image
-                    </div>
-                  )}
+                <div className="relative rounded-3xl overflow-hidden bg-gray-900 border border-white/10 aspect-[4/3]">
+                  <ImageWithFallback
+                    src={getHeroImage()}
+                    alt={game.name}
+                    className="w-full h-full object-cover"
+                  />
 
                   <div className="absolute top-4 left-4 flex flex-col gap-2">
                     {game.isPopular && (

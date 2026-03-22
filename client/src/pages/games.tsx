@@ -10,6 +10,37 @@ import ImageWithFallback from "@/components/image-with-fallback";
 import { useTranslation } from "@/lib/translation";
 import { motion } from "framer-motion";
 
+const GAME_SLUG_IMAGES: Record<string, string> = {
+  'free-fire': '/images/free-fire-game.png',
+  'freefire': '/images/free-fire-game.png',
+  'pubg': '/images/pubg-game.png',
+  'pubg-mobile': '/images/pubg-game.png',
+  'crossfire': '/images/crossfire-game.png',
+  'minecraft': '/images/minecraft.webp',
+  'honor-of-kings': '/images/hok-main.webp',
+  'hok': '/images/hok-main.webp',
+  'valorant': '/images/VALORANT.jpg',
+  'valornt': '/images/VALORANT.jpg',
+  'roblox': '/images/roblox.webp',
+  'steam': '/images/Steam-Logo-White_4.webp',
+  'xbox': '/images/xbox-live.webp',
+  'xbox-live': '/images/xbox-live.webp',
+  'playstation': '/images/ps-store.webp',
+  'ps-store': '/images/ps-store.webp',
+  'discord': '/images/dis-co.webp',
+  'discord-nitro': '/images/dis-co.webp',
+  'netflix': '/images/netflix_-_Home_1.webp',
+  'google-play': '/images/gplay1-64c83ac2e830f.webp',
+  'ea-play': '/images/ea-play-icon-1.webp',
+  'yalla-ludo': '/images/yalla-ludo-2-67563efa1ab95.webp',
+};
+
+function getGameImage(game: Game): string {
+  if (GAME_SLUG_IMAGES[game.slug]) return GAME_SLUG_IMAGES[game.slug];
+  if (game.image) return game.image;
+  return '';
+}
+
 export default function GamesPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
@@ -124,11 +155,11 @@ export default function GamesPage() {
                     <div className="relative flex flex-col rounded-2xl overflow-hidden border border-border/50 bg-card hover:border-gold-primary/40 transition-all duration-300 shadow-sm hover:shadow-xl hover:shadow-gold-primary/8 hover:-translate-y-1 h-full">
 
                       {/* Image area */}
-                      <div className="relative aspect-[3/4] overflow-hidden bg-muted/30">
+                      <div className="relative aspect-square overflow-hidden bg-gray-900 flex items-center justify-center">
                         <ImageWithFallback
-                          src={game.image}
+                          src={getGameImage(game)}
                           alt={game.name}
-                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                          className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-105"
                         />
 
                         {/* Gradient overlay bottom */}

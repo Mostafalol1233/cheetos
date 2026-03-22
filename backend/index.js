@@ -983,6 +983,12 @@ if (fs.existsSync(imagesDir)) {
   app.use('/media', express.static(imagesDir));
 }
 
+// Also serve client/public/images as fallback for frontend game images
+const clientPublicImagesDir = path.join(__dirname, '..', 'client', 'public', 'images');
+if (fs.existsSync(clientPublicImagesDir)) {
+  app.use('/images', express.static(clientPublicImagesDir));
+}
+
 app.get('/manifest.webmanifest', (req, res) => {
   const candidates = [
     path.join(__dirname, '..', 'client', 'public', 'manifest.webmanifest'),
