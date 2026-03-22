@@ -104,10 +104,10 @@ export function Header() {
       {/* Main Header */}
       <header
         className={cn(
-          "fixed w-full top-0 z-50 transition-all duration-500",
+          "fixed w-full top-0 z-50 transition-all duration-500 bg-black/95 border-b border-white/10",
           isScrolled
-            ? "py-2 glass shadow-lg shadow-black/10"
-            : "py-4 bg-gradient-to-b from-background/90 to-transparent"
+            ? "py-2 shadow-lg shadow-black/30"
+            : "py-3"
         )}
       >
         <div className="container mx-auto px-4">

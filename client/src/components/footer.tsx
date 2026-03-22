@@ -29,7 +29,7 @@ export function Footer() {
   ];
 
   return (
-    <footer className="relative mt-auto overflow-hidden">
+    <footer className="relative mt-auto overflow-hidden bg-black">
       {/* Gradient Top Border */}
       <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-gold-primary via-gold-accent to-gold-secondary" />
 
@@ -48,7 +48,7 @@ export function Footer() {
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m18 15-6-6-6 6" /></svg>
       </motion.button>
 
-      <div className="relative glass border-t border-white/5 backdrop-blur-xl">
+      <div className="relative bg-black border-t border-white/10">
         <div className="container mx-auto px-4 py-20">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-16">
 
