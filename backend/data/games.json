@@ -445,5 +445,244 @@
       "3300"
     ],
     "discountPrice": "125"
+  },
+  {
+    "id": "gc_steam",
+    "name": "Steam Wallet",
+    "slug": "steam-wallet",
+    "description": "<p><strong>بطاقة Steam Wallet</strong> هي كرت رصيد رسمي لمنصة ستيم — أكبر منصة ألعاب على الكمبيوتر في العالم.</p><h4>🎮 استخدامات الكرت:</h4><ul><li>شراء الألعاب والـ DLC من متجر ستيم</li><li>شراء العناصر داخل الألعاب (In-Game Items)</li><li>إهداء ألعاب لأصدقائك</li><li>شراء اشتراكات ستيم</li></ul><h4>🛒 طريقة الاستخدام:</h4><ol><li>افتح تطبيق Steam على جهازك</li><li>اضغط على اسمك → استرداد كود Steam</li><li>أدخل الكود المكوّن من 15 خانة</li><li>هيتضاف الرصيد لمحفظتك فورًا</li></ol><h4>⚡ ملاحظة:</h4><p>تأكد من أن الكرت بيدعم منطقتك (Global / US / EU). هنوضحلك في الوصف بعد الشراء.</p>",
+    "price": "500",
+    "currency": "EGP",
+    "image": "/images/giftcard-steam.svg",
+    "category": "gift-cards",
+    "isPopular": true,
+    "stock": 99,
+    "packages": [
+      "Steam 0",
+      "Steam 0",
+      "Steam 0",
+      "Steam 00"
+    ],
+    "packagePrices": [
+      "500",
+      "1000",
+      "2500",
+      "5000"
+    ],
+    "discountPrices": [
+      "480",
+      "960",
+      "2400",
+      "4800"
+    ],
+    "discountPrice": "480"
+  },
+  {
+    "id": "gc_google_play",
+    "name": "Google Play",
+    "slug": "google-play",
+    "description": "<p><strong>بطاقة Google Play</strong> هي كرت رصيد رسمي لمتجر جوجل بلاي على أندرويد.</p><h4>🎮 استخدامات الكرت:</h4><ul><li>شراء الألعاب والتطبيقات من متجر Play</li><li>شراء العملات داخل الألعاب (مثل Diamonds، Coins، Gems)</li><li>الاشتراك في خدمات جوجل (Google One، YouTube Premium)</li><li>شراء فيلم أو موسيقى من Google Play</li></ul><h4>🛒 طريقة الاستخدام:</h4><ol><li>افتح متجر Google Play على أندرويد</li><li>اضغط على صورتك → الدفع والاشتراكات → استرداد رمز الهدية</li><li>أدخل الكود وهيتضاف الرصيد لحسابك فورًا</li></ol><h4>⚡ متوفر لجميع أجهزة أندرويد</h4>",
+    "price": "500",
+    "currency": "EGP",
+    "image": "/images/giftcard-google-play.svg",
+    "category": "gift-cards",
+    "isPopular": true,
+    "stock": 99,
+    "packages": [
+      "Google Play $10",
+      "Google Play $25",
+      "Google Play $50",
+      "Google Play $100"
+    ],
+    "packagePrices": [
+      "500",
+      "1250",
+      "2500",
+      "5000"
+    ],
+    "discountPrices": [
+      "480",
+      "1200",
+      "2400",
+      "4800"
+    ],
+    "discountPrice": "480"
+  },
+  {
+    "id": "gc_itunes",
+    "name": "iTunes / App Store",
+    "slug": "itunes-app-store",
+    "description": "<p><strong>بطاقة iTunes / App Store</strong> هي كرت رصيد رسمي لمنصة آبل — صالحة لأيفون وآيباد وماك.</p><h4>🎮 استخدامات الكرت:</h4><ul><li>شراء التطبيقات والألعاب من App Store</li><li>شراء العملات داخل الألعاب على iOS</li><li>الاشتراك في iCloud, Apple Music, Apple TV+</li><li>شراء المحتوى من iTunes Store</li></ul><h4>🛒 طريقة الاستخدام:</h4><ol><li>افتح App Store على جهازك</li><li>اضغط على صورتك في الأعلى</li><li>اضغط \"Redeem Gift Card or Code\"</li><li>أدخل الكود وهيتضاف الرصيد فورًا</li></ol><h4>⚡ تأكد من منطقة حسابك</h4>",
+    "price": "750",
+    "currency": "EGP",
+    "image": "/images/giftcard-itunes.svg",
+    "category": "gift-cards",
+    "isPopular": false,
+    "stock": 99,
+    "packages": [
+      "iTunes $15",
+      "iTunes $25",
+      "iTunes $50",
+      "iTunes $100"
+    ],
+    "packagePrices": [
+      "750",
+      "1250",
+      "2500",
+      "5000"
+    ],
+    "discountPrices": [
+      "720",
+      "1200",
+      "2400",
+      "4800"
+    ],
+    "discountPrice": "720"
+  },
+  {
+    "id": "gc_psn",
+    "name": "PlayStation Store",
+    "slug": "playstation-store",
+    "description": "<p><strong>بطاقة PlayStation Store</strong> هي كرت رصيد رسمي لمتجر بلاي ستيشن — للـ PS4 والـ PS5.</p><h4>🎮 استخدامات الكرت:</h4><ul><li>شراء الألعاب والـ DLC من PlayStation Store</li><li>شراء عملة PS Store لشراء V-Bucks وغيرها</li><li>الاشتراك في PlayStation Plus (PS+)</li><li>شراء محتوى حصري للـ PS4/PS5</li></ul><h4>🛒 طريقة الاستخدام:</h4><ol><li>افتح متجر PlayStation Store على جهازك</li><li>اذهب إلى الأسفل → استرداد الرموز</li><li>أدخل الكود المكوّن من 12 خانة</li><li>هيتضاف الرصيد لمحفظتك فورًا</li></ol><h4>⚡ متاح للـ PS4 وPS5</h4>",
+    "price": "500",
+    "currency": "EGP",
+    "image": "/images/giftcard-psn.svg",
+    "category": "gift-cards",
+    "isPopular": true,
+    "stock": 99,
+    "packages": [
+      "PSN $10",
+      "PSN $20",
+      "PSN $50",
+      "PSN $100"
+    ],
+    "packagePrices": [
+      "500",
+      "1000",
+      "2500",
+      "5000"
+    ],
+    "discountPrices": [
+      "480",
+      "960",
+      "2400",
+      "4800"
+    ],
+    "discountPrice": "480"
+  },
+  {
+    "id": "gc_xbox",
+    "name": "Xbox Gift Card",
+    "slug": "xbox-gift-card",
+    "description": "<p><strong>بطاقة Xbox</strong> هي كرت رصيد رسمي لمنصة مايكروسوفت — للـ Xbox وWindows.</p><h4>🎮 استخدامات الكرت:</h4><ul><li>شراء الألعاب من Microsoft Store</li><li>شراء محتوى داخل الألعاب</li><li>الاشتراك في Xbox Game Pass</li><li>شراء Xbox Live Gold</li></ul><h4>🛒 طريقة الاستخدام:</h4><ol><li>افتح Microsoft Store أو Xbox</li><li>اضغط على صورتك → استرداد كود</li><li>أدخل الكود المكوّن من 25 خانة</li><li>هيتضاف الرصيد لحسابك فورًا</li></ol><h4>⚡ صالح للـ Xbox وWindows PC</h4>",
+    "price": "500",
+    "currency": "EGP",
+    "image": "/images/giftcard-xbox.svg",
+    "category": "gift-cards",
+    "isPopular": false,
+    "stock": 99,
+    "packages": [
+      "Xbox $10",
+      "Xbox $25",
+      "Xbox $50",
+      "Xbox $100"
+    ],
+    "packagePrices": [
+      "500",
+      "1250",
+      "2500",
+      "5000"
+    ],
+    "discountPrices": [
+      "480",
+      "1200",
+      "2400",
+      "4800"
+    ],
+    "discountPrice": "480"
+  },
+  {
+    "id": "gc_amazon",
+    "name": "Amazon Gift Card",
+    "slug": "amazon-gift-card",
+    "description": "<p><strong>بطاقة Amazon</strong> هي كرت رصيد رسمي لمتجر أمازون الأمريكي.</p><h4>🛍️ استخدامات الكرت:</h4><ul><li>التسوق من موقع Amazon.com</li><li>شراء الكتب والإلكترونيات والملابس</li><li>الاشتراك في خدمة Amazon Prime</li><li>شراء عروض Amazon Prime Video</li></ul><h4>🛒 طريقة الاستخدام:</h4><ol><li>ادخل موقع Amazon.com وسجل دخولك</li><li>اضغط على حسابك → Gift Cards → Redeem a Gift Card</li><li>أدخل الكود وهيتضاف الرصيد لحسابك</li></ol><h4>⚡ للحسابات الأمريكية</h4>",
+    "price": "1250",
+    "currency": "EGP",
+    "image": "/images/giftcard-amazon.svg",
+    "category": "gift-cards",
+    "isPopular": false,
+    "stock": 99,
+    "packages": [
+      "Amazon $25",
+      "Amazon $50",
+      "Amazon $100"
+    ],
+    "packagePrices": [
+      "1250",
+      "2500",
+      "5000"
+    ],
+    "discountPrices": [
+      "1200",
+      "2400",
+      "4800"
+    ],
+    "discountPrice": "1200"
+  },
+  {
+    "id": "gc_netflix",
+    "name": "Netflix Gift Card",
+    "slug": "netflix-gift-card",
+    "description": "<p><strong>بطاقة Netflix</strong> هي كرت اشتراك رسمي لمنصة نتفلكس للأفلام والمسلسلات.</p><h4>🎬 استخدامات الكرت:</h4><ul><li>تجديد الاشتراك الشهري في نتفلكس</li><li>الاشتراك الأول في المنصة</li><li>مشاهدة المحتوى بدون إعلانات</li><li>دعم نتفلكس 4K HDR</li></ul><h4>🛒 طريقة الاستخدام:</h4><ol><li>ادخل موقع Netflix.com</li><li>اضغط على حسابك → Redeem a Gift Card</li><li>أدخل الكود وهيتضاف الرصيد للاشتراك</li></ol><h4>⚡ صالح في معظم الدول</h4>",
+    "price": "750",
+    "currency": "EGP",
+    "image": "/images/giftcard-netflix.svg",
+    "category": "gift-cards",
+    "isPopular": false,
+    "stock": 99,
+    "packages": [
+      "Netflix $15",
+      "Netflix $25",
+      "Netflix $50"
+    ],
+    "packagePrices": [
+      "750",
+      "1250",
+      "2500"
+    ],
+    "discountPrices": [
+      "720",
+      "1200",
+      "2400"
+    ],
+    "discountPrice": "720"
+  },
+  {
+    "id": "gc_spotify",
+    "name": "Spotify Gift Card",
+    "slug": "spotify-gift-card",
+    "description": "<p><strong>بطاقة Spotify</strong> هي كرت اشتراك رسمي لمنصة الموسيقى الأشهر في العالم.</p><h4>🎵 استخدامات الكرت:</h4><ul><li>الاشتراك في Spotify Premium بدون إعلانات</li><li>الاستماع للموسيقى offline بدون نت</li><li>جودة صوت عالية</li><li>تخطي الأغاني بدون حدود</li></ul><h4>🛒 طريقة الاستخدام:</h4><ol><li>ادخل موقع Spotify.com أو التطبيق</li><li>اضغط على حسابك → Redeem</li><li>أدخل الكود وهيتضاف اشتراك Premium</li></ol><h4>⚡ متوفر لمعظم الدول العربية</h4>",
+    "price": "500",
+    "currency": "EGP",
+    "image": "/images/giftcard-spotify.svg",
+    "category": "gift-cards",
+    "isPopular": false,
+    "stock": 99,
+    "packages": [
+      "Spotify 1 شهر",
+      "Spotify 3 شهور",
+      "Spotify 6 شهور"
+    ],
+    "packagePrices": [
+      "500",
+      "1400",
+      "2700"
+    ],
+    "discountPrices": [
+      "480",
+      "1350",
+      "2600"
+    ],
+    "discountPrice": "480"
   }
 ]

@@ -3020,6 +3020,56 @@ app.put('/api/admin/chat-widget/config', authenticateToken, ensureAdmin, async (
   }
 });
 
+// ===================== CHECKOUT TEMPLATES =====================
+
+const checkoutTemplatesFile = path.join(__dirname, 'data', 'checkout-templates.json');
+
+const defaultCheckoutTemplates = {
+  customerMessage: 'مرحباً {name} 👋\n\nشكراً لطلبك من Diaa Gaming! 🎮\n\nرقم طلبك: #{id}\n\nنحن نراجع طلبك الآن وسيتم التواصل معك في أقرب وقت لإتمام التوصيل.\n\nلأي استفسار تواصل معنا مباشرةً عبر واتساب ✅',
+  adminMessage: '🛒 طلب جديد #{id}\n\nالعميل: {name}\nالهاتف: {phone}\nالإجمالي: {total} ج.م\nطريقة الدفع: {paymentMethod}\n\nالمنتجات:\n{items}\n\nيرجى المراجعة والموافقة من لوحة الإدارة.'
+};
+
+function getCheckoutTemplates() {
+  try {
+    if (fs.existsSync(checkoutTemplatesFile)) {
+      const t = JSON.parse(fs.readFileSync(checkoutTemplatesFile, 'utf8'));
+      return {
+        customerMessage: t.customerMessage || defaultCheckoutTemplates.customerMessage,
+        adminMessage: t.adminMessage || defaultCheckoutTemplates.adminMessage
+      };
+    }
+  } catch (e) { /* ignore */ }
+  return defaultCheckoutTemplates;
+}
+
+function applyTemplateVars(template, vars) {
+  return template
+    .replace(/\{id\}/g, vars.id || '')
+    .replace(/\{name\}/g, vars.name || '')
+    .replace(/\{phone\}/g, vars.phone || '')
+    .replace(/\{total\}/g, vars.total || '')
+    .replace(/\{items\}/g, vars.items || '')
+    .replace(/\{paymentMethod\}/g, vars.paymentMethod || '');
+}
+
+app.get('/api/admin/checkout/templates', authenticateToken, ensureAdmin, (req, res) => {
+  res.json(getCheckoutTemplates());
+});
+
+app.put('/api/admin/checkout/templates', authenticateToken, ensureAdmin, (req, res) => {
+  try {
+    const { customerMessage, adminMessage } = req.body;
+    if (!customerMessage || !adminMessage) {
+      return res.status(400).json({ message: 'Both customerMessage and adminMessage are required' });
+    }
+    const templates = { customerMessage, adminMessage };
+    fs.writeFileSync(checkoutTemplatesFile, JSON.stringify(templates, null, 2));
+    res.json({ ok: true, ...templates });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 // ===================== LOGO CONFIGURATION =====================
 
 // Get logo config
@@ -3475,8 +3525,18 @@ app.post('/api/transactions/checkout', async (req, res) => {
 
     // Send WhatsApp Confirmation
     try {
-      const waMessage = `New Order #${transactionId}\nTotal: ${total} EGP\nCustomer: ${customerName} (${customerPhone})\nItems:\n${items.map(i => `- ${i.title || i.name} (x${i.quantity})`).join('\n')}`;
-      const customerMsg = `Thank you for your order #${transactionId}! We are processing it.\n\nشكراً لطلبك رقم #${transactionId}! نحن نقوم بمعالجته الآن.`;
+      const checkoutTpls = getCheckoutTemplates();
+      const itemsText = items.map(i => `- ${i.title || i.name} (x${i.quantity || 1})`).join('\n');
+      const tplVars = {
+        id: transactionId,
+        name: customerName,
+        phone: customerPhone,
+        total: String(total),
+        items: itemsText,
+        paymentMethod: paymentMethod || 'غير محدد'
+      };
+      const waMessage = applyTemplateVars(checkoutTpls.adminMessage, tplVars);
+      const customerMsg = applyTemplateVars(checkoutTpls.customerMessage, tplVars);
       await sendWhatsAppMessage(customerPhone, customerMsg);
       // Notify all admin phones
       const adminPhones = (process.env.ADMIN_PHONE || '').split(',').map(p => p.trim()).filter(Boolean);

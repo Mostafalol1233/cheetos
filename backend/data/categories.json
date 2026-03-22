@@ -25,5 +25,14 @@
     "image": "/CLASH_ROYALE.jpg",
     "gradient": "from-yellow-500 to-green-500",
     "icon": "Smile"
+  },
+  {
+    "id": "cat_4",
+    "name": "كروت الهدايا",
+    "slug": "gift-cards",
+    "description": "بطاقات هدايا رقمية — Steam، Google Play، PSN، Xbox، Amazon، Netflix وأكتر",
+    "image": "/images/category-gift-cards.svg",
+    "gradient": "from-purple-600 to-pink-600",
+    "icon": "Gift"
   }
 ]
