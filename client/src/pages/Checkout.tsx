@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useCheckout } from '@/state/checkout';
 import { useCart } from '@/lib/cart-context';
 import { StepDetails } from '@/components/checkout/StepDetails';
@@ -8,8 +8,9 @@ import { StepProcessing } from '@/components/checkout/StepProcessing';
 import { StepResult } from '@/components/checkout/StepResult';
 import { useUserAuth } from "@/lib/user-auth-context";
 import { useLocation } from "wouter";
-import { ShieldCheck, Zap, Clock, Package, ChevronRight } from 'lucide-react';
+import { ShieldCheck, Zap, Clock, Package, Tag, CheckCircle, X, Loader2 } from 'lucide-react';
 import ImageWithFallback from '@/components/image-with-fallback';
+import { API_BASE_URL } from '@/lib/queryClient';
 
 const VISIBLE_STEPS = [
   { key: 'details', label: 'Details', icon: '①' },
@@ -25,11 +26,81 @@ const ALL_STEPS: { key: string; label: string; component: React.ComponentType<an
   { key: 'result',     label: 'Result',     component: StepResult },
 ];
 
+function PromoCodeInput() {
+  const { promoCode, promoDiscount, setPromoCode, cart } = useCheckout();
+  const [input, setInput] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const total = cart.reduce((s, i) => s + i.price * i.quantity, 0);
+
+  const handleApply = async () => {
+    if (!input.trim()) return;
+    setLoading(true);
+    setError('');
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/promo/validate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: input.trim(), order_total: total })
+      });
+      const data = await res.json();
+      if (!res.ok) { setError(data.message || 'Invalid code'); return; }
+      setPromoCode(input.trim().toUpperCase(), data.discount);
+    } catch { setError('Failed to apply code'); }
+    finally { setLoading(false); }
+  };
+
+  const handleRemove = () => { setPromoCode(undefined, 0); setInput(''); setError(''); };
+
+  if (promoCode) {
+    return (
+      <div className="flex items-center justify-between bg-green-500/10 border border-green-500/30 rounded-lg px-3 py-2 text-sm">
+        <div className="flex items-center gap-2 text-green-400">
+          <CheckCircle className="w-4 h-4 shrink-0" />
+          <span className="font-mono font-bold">{promoCode}</span>
+          <span className="text-green-300">−{promoDiscount.toFixed(0)} EGP</span>
+        </div>
+        <button onClick={handleRemove} className="text-muted-foreground hover:text-red-400">
+          <X className="w-3.5 h-3.5" />
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-1.5">
+      <div className="flex gap-2">
+        <div className="relative flex-1">
+          <Tag className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+          <input
+            type="text"
+            value={input}
+            onChange={e => { setInput(e.target.value.toUpperCase()); setError(''); }}
+            onKeyDown={e => e.key === 'Enter' && handleApply()}
+            placeholder="Promo code"
+            className="w-full pl-8 pr-3 py-2 text-xs rounded-lg bg-white/5 border border-white/10 text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-gold-primary/50 transition-colors"
+          />
+        </div>
+        <button
+          onClick={handleApply}
+          disabled={loading || !input.trim()}
+          className="px-3 py-2 text-xs font-semibold rounded-lg bg-gold-primary/20 hover:bg-gold-primary/30 text-gold-primary border border-gold-primary/30 disabled:opacity-40 transition-all flex items-center gap-1"
+        >
+          {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Apply'}
+        </button>
+      </div>
+      {error && <p className="text-xs text-red-400">{error}</p>}
+    </div>
+  );
+}
+
 export function CheckoutContent({ isEmbedded = false }: { isEmbedded?: boolean }) {
-  const { step, setStep, cart, setCart, contact, paymentMethod } = useCheckout();
+  const { step, setStep, cart, setCart, contact, paymentMethod, promoDiscount } = useCheckout();
   const { cart: globalCart } = useCart();
   const { isAuthenticated } = useUserAuth();
   const [, setLocation] = useLocation();
+  const abandonedSaved = useRef(false);
 
   useEffect(() => {
     if (step === 'cart') setStep('details');
@@ -67,6 +138,26 @@ export function CheckoutContent({ isEmbedded = false }: { isEmbedded?: boolean }
     if ((step === 'payment' || step === 'review') && !hasContactInfo) setStep('details');
     if (step === 'processing' || step === 'result') setStep('details');
   }, [step, cart.length, contact]);
+
+  // Abandoned cart tracking — save when user has email and items
+  useEffect(() => {
+    if (abandonedSaved.current) return;
+    if (!contact.email || cart.length === 0) return;
+    if (step === 'result') return;
+    const total = cart.reduce((s, i) => s + i.price * i.quantity, 0);
+    abandonedSaved.current = true;
+    fetch(`${API_BASE_URL}/api/abandoned-cart/save`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: contact.email,
+        name: contact.fullName || undefined,
+        phone: contact.phone || undefined,
+        items: cart.map(i => ({ name: i.name, price: i.price, quantity: i.quantity })),
+        total_amount: total
+      })
+    }).catch(() => {});
+  }, [contact.email, cart, step]);
 
   const handleStartOver = () => {
     const { reset } = useCheckout.getState();
@@ -212,11 +303,24 @@ export function CheckoutContent({ isEmbedded = false }: { isEmbedded?: boolean }
                       <span className="text-muted-foreground">Fees</span>
                       <span className="text-green-400 font-medium">Free</span>
                     </div>
+                    {promoDiscount > 0 && (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-green-400">Discount</span>
+                        <span className="text-green-400 font-medium">−{formatPrice(promoDiscount)}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Promo Code Input */}
+                  <div className="mb-4">
+                    <PromoCodeInput />
                   </div>
 
                   <div className="flex justify-between items-center border-t border-white/8 pt-4 mb-5">
                     <span className="font-bold text-foreground">Total</span>
-                    <span className="text-xl font-black text-gold-primary">{formatPrice(itemPrice)}</span>
+                    <span className="text-xl font-black text-gold-primary">
+                      {formatPrice(Math.max(0, itemPrice - promoDiscount))}
+                    </span>
                   </div>
 
                   {/* Trust badges */}

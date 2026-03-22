@@ -723,5 +723,249 @@ export function registerRoutes(app: Express): Server {
   });
 
 
+  // --- Promo Codes Routes ---
+  const initPromoTable = async () => {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS promo_codes (
+        id SERIAL PRIMARY KEY,
+        code VARCHAR(50) UNIQUE NOT NULL,
+        discount_type VARCHAR(10) NOT NULL DEFAULT 'percent',
+        discount_value DECIMAL(10,2) NOT NULL,
+        min_order_amount DECIMAL(10,2) DEFAULT 0,
+        max_uses INTEGER DEFAULT NULL,
+        used_count INTEGER DEFAULT 0,
+        expires_at BIGINT DEFAULT NULL,
+        is_active BOOLEAN DEFAULT true,
+        created_at BIGINT DEFAULT (EXTRACT(EPOCH FROM NOW()) * 1000)
+      )
+    `);
+  };
+  initPromoTable().catch(console.error);
+
+  app.post("/api/promo/validate", async (req, res) => {
+    const { code, order_total } = req.body;
+    if (!code) return res.status(400).json({ message: 'Code required' });
+    try {
+      const result = await pool.query(
+        'SELECT * FROM promo_codes WHERE UPPER(code) = UPPER($1) AND is_active = true',
+        [code]
+      );
+      if (result.rows.length === 0) return res.status(404).json({ message: 'Invalid or expired promo code' });
+      const promo = result.rows[0];
+      if (promo.expires_at && Date.now() > Number(promo.expires_at)) return res.status(400).json({ message: 'Promo code has expired' });
+      if (promo.max_uses !== null && promo.used_count >= promo.max_uses) return res.status(400).json({ message: 'Promo code usage limit reached' });
+      const orderAmount = parseFloat(order_total) || 0;
+      if (promo.min_order_amount > 0 && orderAmount < promo.min_order_amount) {
+        return res.status(400).json({ message: `Minimum order amount is ${promo.min_order_amount} EGP` });
+      }
+      let discount = promo.discount_type === 'percent'
+        ? (orderAmount * parseFloat(promo.discount_value)) / 100
+        : parseFloat(promo.discount_value);
+      discount = Math.min(discount, orderAmount);
+      res.json({ valid: true, promo, discount: parseFloat(discount.toFixed(2)) });
+    } catch (err) { res.status(500).json({ message: 'Server error' }); }
+  });
+
+  app.post("/api/promo/apply", async (req, res) => {
+    const { code } = req.body;
+    if (!code) return res.status(400).json({ message: 'Code required' });
+    try {
+      await pool.query('UPDATE promo_codes SET used_count = used_count + 1 WHERE UPPER(code) = UPPER($1)', [code]);
+      res.json({ success: true });
+    } catch (err) { res.status(500).json({ message: 'Server error' }); }
+  });
+
+  app.get("/api/promo", requireAdmin, async (req, res) => {
+    try {
+      const result = await pool.query('SELECT * FROM promo_codes ORDER BY created_at DESC');
+      res.json(result.rows);
+    } catch (err) { res.status(500).json({ message: 'Server error' }); }
+  });
+
+  app.post("/api/promo", requireAdmin, async (req, res) => {
+    const { code, discount_type, discount_value, min_order_amount, max_uses, expires_at } = req.body;
+    if (!code || discount_value === undefined) return res.status(400).json({ message: 'Code and discount_value are required' });
+    try {
+      const result = await pool.query(
+        `INSERT INTO promo_codes (code, discount_type, discount_value, min_order_amount, max_uses, expires_at)
+         VALUES (UPPER($1), $2, $3, $4, $5, $6) RETURNING *`,
+        [code, discount_type || 'percent', discount_value, min_order_amount || 0, max_uses || null, expires_at || null]
+      );
+      res.status(201).json(result.rows[0]);
+    } catch (err: any) {
+      if (err.code === '23505') return res.status(409).json({ message: 'Promo code already exists' });
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+
+  app.put("/api/promo/:id", requireAdmin, async (req, res) => {
+    const { id } = req.params;
+    const { code, discount_type, discount_value, min_order_amount, max_uses, expires_at, is_active } = req.body;
+    try {
+      const result = await pool.query(
+        `UPDATE promo_codes SET
+          code = COALESCE(UPPER($1), code),
+          discount_type = COALESCE($2, discount_type),
+          discount_value = COALESCE($3, discount_value),
+          min_order_amount = COALESCE($4, min_order_amount),
+          max_uses = $5,
+          expires_at = $6,
+          is_active = COALESCE($7, is_active)
+         WHERE id = $8 RETURNING *`,
+        [code, discount_type, discount_value, min_order_amount, max_uses ?? null, expires_at ?? null, is_active, id]
+      );
+      if (result.rows.length === 0) return res.status(404).json({ message: 'Not found' });
+      res.json(result.rows[0]);
+    } catch (err) { res.status(500).json({ message: 'Server error' }); }
+  });
+
+  app.delete("/api/promo/:id", requireAdmin, async (req, res) => {
+    try {
+      await pool.query('DELETE FROM promo_codes WHERE id = $1', [req.params.id]);
+      res.json({ success: true });
+    } catch (err) { res.status(500).json({ message: 'Server error' }); }
+  });
+
+  // --- Reviews & Ratings Routes ---
+  const initReviewsTable = async () => {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS reviews (
+        id SERIAL PRIMARY KEY,
+        game_slug VARCHAR(100) NOT NULL,
+        user_name VARCHAR(100) NOT NULL,
+        user_email VARCHAR(200),
+        rating INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 5),
+        comment TEXT,
+        is_approved BOOLEAN DEFAULT true,
+        created_at BIGINT DEFAULT (EXTRACT(EPOCH FROM NOW()) * 1000)
+      )
+    `);
+  };
+  initReviewsTable().catch(console.error);
+
+  app.get("/api/reviews/game/:slug", async (req, res) => {
+    const { slug } = req.params;
+    try {
+      const result = await pool.query(
+        'SELECT * FROM reviews WHERE game_slug = $1 AND is_approved = true ORDER BY created_at DESC LIMIT 30',
+        [slug]
+      );
+      const stats = await pool.query(
+        `SELECT ROUND(AVG(rating)::NUMERIC, 1) as avg_rating, COUNT(*) as total,
+          COUNT(CASE WHEN rating = 5 THEN 1 END) as five_star,
+          COUNT(CASE WHEN rating = 4 THEN 1 END) as four_star,
+          COUNT(CASE WHEN rating = 3 THEN 1 END) as three_star,
+          COUNT(CASE WHEN rating = 2 THEN 1 END) as two_star,
+          COUNT(CASE WHEN rating = 1 THEN 1 END) as one_star
+         FROM reviews WHERE game_slug = $1 AND is_approved = true`,
+        [slug]
+      );
+      res.json({ reviews: result.rows, stats: stats.rows[0] });
+    } catch (err) { res.status(500).json({ message: 'Server error' }); }
+  });
+
+  app.post("/api/reviews", async (req, res) => {
+    const { game_slug, user_name, user_email, rating, comment } = req.body;
+    if (!game_slug || !user_name || !rating) return res.status(400).json({ message: 'Game, name, and rating are required' });
+    const ratingNum = parseInt(rating);
+    if (isNaN(ratingNum) || ratingNum < 1 || ratingNum > 5) return res.status(400).json({ message: 'Rating must be 1-5' });
+    try {
+      const result = await pool.query(
+        `INSERT INTO reviews (game_slug, user_name, user_email, rating, comment) VALUES ($1, $2, $3, $4, $5) RETURNING *`,
+        [game_slug, user_name, user_email || null, ratingNum, comment || null]
+      );
+      res.status(201).json(result.rows[0]);
+    } catch (err) { res.status(500).json({ message: 'Server error' }); }
+  });
+
+  app.get("/api/reviews", requireAdmin, async (req, res) => {
+    try {
+      const result = await pool.query('SELECT * FROM reviews ORDER BY created_at DESC');
+      res.json(result.rows);
+    } catch (err) { res.status(500).json({ message: 'Server error' }); }
+  });
+
+  app.put("/api/reviews/:id", requireAdmin, async (req, res) => {
+    const { is_approved } = req.body;
+    try {
+      const result = await pool.query('UPDATE reviews SET is_approved = $1 WHERE id = $2 RETURNING *', [is_approved, req.params.id]);
+      if (result.rows.length === 0) return res.status(404).json({ message: 'Not found' });
+      res.json(result.rows[0]);
+    } catch (err) { res.status(500).json({ message: 'Server error' }); }
+  });
+
+  app.delete("/api/reviews/:id", requireAdmin, async (req, res) => {
+    try {
+      await pool.query('DELETE FROM reviews WHERE id = $1', [req.params.id]);
+      res.json({ success: true });
+    } catch (err) { res.status(500).json({ message: 'Server error' }); }
+  });
+
+  // --- Abandoned Cart Recovery Routes ---
+  const initAbandonedCartTable = async () => {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS abandoned_carts (
+        id SERIAL PRIMARY KEY,
+        email VARCHAR(200) NOT NULL,
+        name VARCHAR(200),
+        phone VARCHAR(50),
+        items JSONB NOT NULL,
+        total_amount DECIMAL(10,2),
+        reminder_sent BOOLEAN DEFAULT false,
+        recovered BOOLEAN DEFAULT false,
+        created_at BIGINT DEFAULT (EXTRACT(EPOCH FROM NOW()) * 1000),
+        updated_at BIGINT DEFAULT (EXTRACT(EPOCH FROM NOW()) * 1000)
+      )
+    `);
+  };
+  initAbandonedCartTable().catch(console.error);
+
+  app.post("/api/abandoned-cart/save", async (req, res) => {
+    const { email, name, phone, items, total_amount } = req.body;
+    if (!email || !items || !Array.isArray(items) || items.length === 0) {
+      return res.status(400).json({ message: 'Email and items required' });
+    }
+    try {
+      const existing = await pool.query(
+        'SELECT id FROM abandoned_carts WHERE email = $1 AND recovered = false ORDER BY created_at DESC LIMIT 1',
+        [email]
+      );
+      if (existing.rows.length > 0) {
+        await pool.query(
+          `UPDATE abandoned_carts SET items = $1, total_amount = $2, name = $3, phone = $4,
+           updated_at = (EXTRACT(EPOCH FROM NOW()) * 1000), reminder_sent = false WHERE id = $5`,
+          [JSON.stringify(items), total_amount || 0, name || null, phone || null, existing.rows[0].id]
+        );
+        return res.json({ success: true, updated: true });
+      }
+      await pool.query(
+        `INSERT INTO abandoned_carts (email, name, phone, items, total_amount) VALUES ($1, $2, $3, $4, $5)`,
+        [email, name || null, phone || null, JSON.stringify(items), total_amount || 0]
+      );
+      res.json({ success: true, created: true });
+    } catch (err) { res.status(500).json({ message: 'Server error' }); }
+  });
+
+  app.post("/api/abandoned-cart/recover", async (req, res) => {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ message: 'Email required' });
+    try {
+      await pool.query('UPDATE abandoned_carts SET recovered = true WHERE email = $1 AND recovered = false', [email]);
+      res.json({ success: true });
+    } catch (err) { res.status(500).json({ message: 'Server error' }); }
+  });
+
+  app.get("/api/abandoned-cart", requireAdmin, async (req, res) => {
+    try {
+      const result = await pool.query('SELECT * FROM abandoned_carts ORDER BY created_at DESC LIMIT 100');
+      res.json(result.rows);
+    } catch (err) { res.status(500).json({ message: 'Server error' }); }
+  });
+
+  // --- Push Notification Permission Route ---
+  app.post("/api/notifications/register", async (req, res) => {
+    res.json({ success: true });
+  });
+
   return createServer(app);
 }

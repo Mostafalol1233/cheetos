@@ -69,8 +69,8 @@ const CURRENCY_IMAGES: Record<string, string> = {
 };
 
 const HERO_IMAGES: Record<string, string> = {
-  'free-fire': '/images/free-fire-game.png',
-  'freefire': '/images/free-fire-game.png',
+  'free-fire': '/images/freefire-Icon_1_1.webp',
+  'freefire': '/images/freefire-Icon_1_1.webp',
   'pubg': '/images/pubg-game.png',
   'pubg-mobile': '/images/pubg-game.png',
   'crossfire': '/images/crossfire-game.png',

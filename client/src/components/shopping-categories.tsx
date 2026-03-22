@@ -13,7 +13,7 @@ const SLUG_DISPLAY_NAMES: Record<string, string> = {
 };
 
 const getDisplayName = (name: string, slug: string) =>
-  name && name.length > 3 ? name : (SLUG_DISPLAY_NAMES[slug] || name);
+  SLUG_DISPLAY_NAMES[slug] || name;
 
 const ICON_MAP: Record<string, React.ElementType> = {
   fire: Flame,
@@ -57,7 +57,7 @@ const TAG_MAP: Record<string, string> = {
 const FALLBACK_IMAGES: Record<string, string> = {
   "hot-deals":    "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=600&q=80",
   "mobile-games": "https://images.unsplash.com/photo-1511512578047-dfb367046420?w=600&q=80",
-  "gift-cards":   "https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?w=600&q=80",
+  "gift-cards":   "/images/category-gift-cards.svg",
   "online-games": "https://images.unsplash.com/photo-1593305841991-05c297ba4575?w=600&q=80",
 };
 

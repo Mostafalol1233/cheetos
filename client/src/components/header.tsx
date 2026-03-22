@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { Sun, Moon, Gamepad2, User, LogOut, Menu, X, Home, Grid3X3, MessageCircle, Package, Flame, Smartphone, Gift, Monitor, ChevronRight } from "lucide-react";
+import { Sun, Moon, Gamepad2, User, LogOut, Menu, X, Home, Grid3X3, MessageCircle, Package, Flame, Smartphone, Gift, Monitor, ChevronRight, Bell, BellOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { LanguageCurrencySwitcher } from "@/components/language-currency-switcher";
 import { useTheme } from "@/components/theme-provider";
@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
 import type { Category } from "@shared/schema";
+import { requestNotificationPermission, getNotificationPermission } from "@/lib/notification-service";
 import {
   NavigationMenu,
   NavigationMenuContent,
@@ -40,6 +41,34 @@ const CATEGORY_BG_MAP: Record<string, string> = {
   "gift-cards":   "bg-emerald-500/10 border-emerald-500/20 hover:bg-emerald-500/20",
   "online-games": "bg-blue-500/10 border-blue-500/20 hover:bg-blue-500/20",
 };
+
+function NotificationButton() {
+  const notifSupported = typeof window !== 'undefined' && 'Notification' in window;
+  const [perm, setPerm] = useState<NotificationPermission>(
+    notifSupported ? Notification.permission : 'denied'
+  );
+
+  const handleClick = async () => {
+    const granted = await requestNotificationPermission();
+    setPerm(granted ? 'granted' : 'denied');
+  };
+
+  if (!notifSupported || perm === 'denied') return null;
+
+  return (
+    <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={handleClick}
+        title={perm === 'granted' ? 'Order notifications enabled' : 'Enable order notifications'}
+        className={`rounded-xl transition-all duration-300 ${perm === 'granted' ? 'text-gold-primary hover:bg-gold-primary/10' : 'hover:bg-gold-primary/10 hover:text-gold-primary'}`}
+      >
+        <Bell className={`h-5 w-5 ${perm !== 'granted' ? 'opacity-60' : ''}`} />
+      </Button>
+    </motion.div>
+  );
+}
 
 export function Header() {
   const { theme, setTheme } = useTheme();
@@ -232,6 +261,9 @@ export function Header() {
             {/* Right Side Actions */}
             <div className="flex items-center gap-2 md:gap-4">
               <LanguageCurrencySwitcher />
+
+              {/* Push Notification Toggle */}
+              <NotificationButton />
 
               {/* Theme Toggle */}
               <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>

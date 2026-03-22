@@ -46,9 +46,8 @@ export function DynamicLoadingProgress({
 
     const updateProgress = () => {
       setProgress(prev => {
-        // Boosted increment to ensure completion within ~5 seconds
-        // Avg interval 350ms, need ~10% per step
-        const newProgress = Math.min(prev + Math.random() * 10 + 5, 100);
+        // Fast increment — completes in ~1.5 seconds
+        const newProgress = Math.min(prev + Math.random() * 25 + 15, 100);
 
         // Update phase based on progress
         const newPhase = Math.floor((newProgress / 100) * loadingPhases.length);
@@ -57,7 +56,7 @@ export function DynamicLoadingProgress({
         }
 
         if (newProgress >= 100) {
-          setTimeout(() => onComplete?.(), 500);
+          setTimeout(() => onComplete?.(), 200);
           return 100;
         }
 
@@ -65,8 +64,8 @@ export function DynamicLoadingProgress({
       });
     };
 
-    // Start progress animation
-    progressTimer = setInterval(updateProgress, 200 + Math.random() * 300);
+    // Start progress animation — fast interval
+    progressTimer = setInterval(updateProgress, 100 + Math.random() * 100);
 
     return () => {
       clearInterval(progressTimer);

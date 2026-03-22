@@ -1,124 +1,171 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 300" width="800" height="300">
   <defs>
-    <linearGradient id="mainBg" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#0f0c29"/>
-      <stop offset="50%" style="stop-color:#302b63"/>
-      <stop offset="100%" style="stop-color:#24243e"/>
+    <linearGradient id="mainBg2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0a0a1a"/>
+      <stop offset="40%" style="stop-color:#0d1b3e"/>
+      <stop offset="100%" style="stop-color:#130a2a"/>
     </linearGradient>
-    <linearGradient id="steamGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+    <linearGradient id="neonBorder" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#00d4ff"/>
+      <stop offset="50%" style="stop-color:#a855f7"/>
+      <stop offset="100%" style="stop-color:#ff6b6b"/>
+    </linearGradient>
+    <linearGradient id="cardShine" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#ffffff;stop-opacity:0.15"/>
+      <stop offset="100%" style="stop-color:#ffffff;stop-opacity:0"/>
+    </linearGradient>
+    <linearGradient id="titleGrad2" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#00d4ff"/>
+      <stop offset="40%" style="stop-color:#a855f7"/>
+      <stop offset="100%" style="stop-color:#ff6b6b"/>
+    </linearGradient>
+    <linearGradient id="steamG" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" style="stop-color:#1b2838"/>
       <stop offset="100%" style="stop-color:#2a475e"/>
     </linearGradient>
-    <linearGradient id="googleGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+    <linearGradient id="googleG" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" style="stop-color:#01875f"/>
       <stop offset="100%" style="stop-color:#34a853"/>
     </linearGradient>
-    <linearGradient id="amazonGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+    <linearGradient id="amazonG" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" style="stop-color:#131921"/>
       <stop offset="100%" style="stop-color:#232f3e"/>
     </linearGradient>
-    <linearGradient id="psnGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#003087"/>
+    <linearGradient id="psnG" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#00439c"/>
       <stop offset="100%" style="stop-color:#0070cc"/>
     </linearGradient>
-    <linearGradient id="xboxGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+    <linearGradient id="xboxG" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" style="stop-color:#107c10"/>
       <stop offset="100%" style="stop-color:#52b043"/>
     </linearGradient>
-    <linearGradient id="netflixGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#b81c1c"/>
+    <linearGradient id="netflixG" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#8b0000"/>
       <stop offset="100%" style="stop-color:#e50914"/>
     </linearGradient>
-    <linearGradient id="titleGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" style="stop-color:#f9d71c"/>
-      <stop offset="50%" style="stop-color:#f97316"/>
-      <stop offset="100%" style="stop-color:#ec4899"/>
-    </linearGradient>
-    <filter id="glow">
-      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+    <filter id="glow2" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
       <feMerge>
         <feMergeNode in="coloredBlur"/>
         <feMergeNode in="SourceGraphic"/>
       </feMerge>
     </filter>
-    <filter id="shadow">
-      <feDropShadow dx="2" dy="4" stdDeviation="4" flood-color="#000000" flood-opacity="0.5"/>
+    <filter id="cardShadow">
+      <feDropShadow dx="0" dy="6" stdDeviation="6" flood-color="#000000" flood-opacity="0.6"/>
     </filter>
+    <filter id="neonGlow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="6" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <clipPath id="roundClip">
+      <rect width="800" height="300" rx="0"/>
+    </clipPath>
   </defs>
 
   <!-- Background -->
-  <rect width="800" height="300" fill="url(#mainBg)"/>
+  <rect width="800" height="300" fill="url(#mainBg2)"/>
 
-  <!-- Subtle grid pattern -->
-  <pattern id="grid" x="0" y="0" width="40" height="40" patternUnits="userSpaceOnUse">
-    <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#ffffff" stroke-width="0.3" opacity="0.08"/>
+  <!-- Animated grid lines -->
+  <pattern id="grid2" x="0" y="0" width="50" height="50" patternUnits="userSpaceOnUse">
+    <path d="M 50 0 L 0 0 0 50" fill="none" stroke="#4f46e5" stroke-width="0.4" opacity="0.12"/>
   </pattern>
-  <rect width="800" height="300" fill="url(#grid)"/>
+  <rect width="800" height="300" fill="url(#grid2)"/>
 
-  <!-- Decorative circles -->
-  <circle cx="700" cy="50" r="120" fill="#7c3aed" opacity="0.12"/>
-  <circle cx="100" cy="250" r="100" fill="#db2777" opacity="0.12"/>
-  <circle cx="400" cy="150" r="150" fill="#3b82f6" opacity="0.06"/>
+  <!-- Glowing orbs background -->
+  <circle cx="650" cy="80" r="160" fill="#7c3aed" opacity="0.08"/>
+  <circle cx="150" cy="220" r="130" fill="#0ea5e9" opacity="0.08"/>
+  <circle cx="400" cy="150" r="200" fill="#ec4899" opacity="0.04"/>
 
-  <!-- STEAM card -->
-  <g filter="url(#shadow)">
-    <rect x="30" y="80" width="110" height="70" rx="10" fill="url(#steamGrad)" transform="rotate(-8, 85, 115)"/>
-    <text x="85" y="120" text-anchor="middle" font-family="Arial,sans-serif" font-size="13" font-weight="bold" fill="#66c0f4" transform="rotate(-8, 85, 115)">STEAM</text>
-    <text x="85" y="136" text-anchor="middle" font-family="Arial,sans-serif" font-size="9" fill="#c7d5e0" transform="rotate(-8, 85, 115)">WALLET</text>
+  <!-- Scanline accent -->
+  <rect x="0" y="0" width="800" height="1" fill="url(#neonBorder)" opacity="0.7"/>
+  <rect x="0" y="299" width="800" height="1" fill="url(#neonBorder)" opacity="0.7"/>
+
+  <!-- STEAM card — left cluster -->
+  <g filter="url(#cardShadow)" transform="rotate(-10, 95, 130)">
+    <rect x="25" y="90" width="140" height="85" rx="12" fill="url(#steamG)"/>
+    <rect x="25" y="90" width="140" height="85" rx="12" fill="url(#cardShine)"/>
+    <rect x="25" y="90" width="140" height="4" rx="2" fill="#66c0f4" opacity="0.6"/>
+    <text x="95" y="140" text-anchor="middle" font-family="Arial Black,Arial,sans-serif" font-size="15" font-weight="900" fill="#66c0f4">STEAM</text>
+    <text x="95" y="158" text-anchor="middle" font-family="Arial,sans-serif" font-size="9" fill="#c7d5e0" opacity="0.8">WALLET</text>
+    <text x="95" y="170" text-anchor="middle" font-family="Arial,sans-serif" font-size="8" fill="#4f7da1" opacity="0.9">GIFT CARD</text>
   </g>
 
   <!-- Google Play card -->
-  <g filter="url(#shadow)">
-    <rect x="160" y="60" width="110" height="70" rx="10" fill="url(#googleGrad)" transform="rotate(5, 215, 95)"/>
-    <text x="215" y="95" text-anchor="middle" font-family="Arial,sans-serif" font-size="10" font-weight="bold" fill="#ffffff" transform="rotate(5, 215, 95)">Google Play</text>
-    <text x="215" y="110" text-anchor="middle" font-family="Arial,sans-serif" font-size="8" fill="#ffffff" opacity="0.8" transform="rotate(5, 215, 95)">GIFT CARD</text>
+  <g filter="url(#cardShadow)" transform="rotate(7, 220, 110)">
+    <rect x="150" y="65" width="140" height="85" rx="12" fill="url(#googleG)"/>
+    <rect x="150" y="65" width="140" height="85" rx="12" fill="url(#cardShine)"/>
+    <rect x="150" y="65" width="140" height="4" rx="2" fill="#4ade80" opacity="0.6"/>
+    <text x="220" y="115" text-anchor="middle" font-family="Arial Black,Arial,sans-serif" font-size="11" font-weight="900" fill="#ffffff">Google Play</text>
+    <text x="220" y="132" text-anchor="middle" font-family="Arial,sans-serif" font-size="9" fill="#ffffff" opacity="0.85">GIFT CARD</text>
   </g>
 
-  <!-- Amazon card -->
-  <g filter="url(#shadow)">
-    <rect x="55" y="170" width="110" height="70" rx="10" fill="url(#amazonGrad)" transform="rotate(10, 110, 205)"/>
-    <text x="110" y="205" text-anchor="middle" font-family="Arial,sans-serif" font-size="13" font-weight="bold" fill="#ff9900" transform="rotate(10, 110, 205)">amazon</text>
-    <text x="110" y="220" text-anchor="middle" font-family="Arial,sans-serif" font-size="8" fill="#ffffff" opacity="0.7" transform="rotate(10, 110, 205)">GIFT CARD</text>
+  <!-- Amazon card — lower left -->
+  <g filter="url(#cardShadow)" transform="rotate(12, 115, 218)">
+    <rect x="45" y="178" width="140" height="85" rx="12" fill="url(#amazonG)"/>
+    <rect x="45" y="178" width="140" height="85" rx="12" fill="url(#cardShine)"/>
+    <rect x="45" y="178" width="140" height="4" rx="2" fill="#ff9900" opacity="0.7"/>
+    <text x="115" y="228" text-anchor="middle" font-family="Arial Black,Arial,sans-serif" font-size="15" font-weight="900" fill="#ff9900">amazon</text>
+    <text x="115" y="248" text-anchor="middle" font-family="Arial,sans-serif" font-size="9" fill="#ffffff" opacity="0.75">GIFT CARD</text>
   </g>
 
-  <!-- PSN card -->
-  <g filter="url(#shadow)">
-    <rect x="590" y="65" width="110" height="70" rx="10" fill="url(#psnGrad)" transform="rotate(-6, 645, 100)"/>
-    <text x="645" y="100" text-anchor="middle" font-family="Arial,sans-serif" font-size="11" font-weight="bold" fill="#ffffff" transform="rotate(-6, 645, 100)">PlayStation</text>
-    <text x="645" y="115" text-anchor="middle" font-family="Arial,sans-serif" font-size="8" fill="#ffffff" opacity="0.8" transform="rotate(-6, 645, 100)">STORE</text>
+  <!-- PSN card — right cluster -->
+  <g filter="url(#cardShadow)" transform="rotate(-7, 640, 105)">
+    <rect x="565" y="65" width="150" height="85" rx="12" fill="url(#psnG)"/>
+    <rect x="565" y="65" width="150" height="85" rx="12" fill="url(#cardShine)"/>
+    <rect x="565" y="65" width="150" height="4" rx="2" fill="#00aaff" opacity="0.7"/>
+    <text x="640" y="115" text-anchor="middle" font-family="Arial Black,Arial,sans-serif" font-size="13" font-weight="900" fill="#ffffff">PlayStation</text>
+    <text x="640" y="133" text-anchor="middle" font-family="Arial,sans-serif" font-size="9" fill="#cce4ff" opacity="0.85">STORE</text>
   </g>
 
   <!-- Xbox card -->
-  <g filter="url(#shadow)">
-    <rect x="660" y="150" width="110" height="70" rx="10" fill="url(#xboxGrad)" transform="rotate(8, 715, 185)"/>
-    <text x="715" y="185" text-anchor="middle" font-family="Arial,sans-serif" font-size="12" font-weight="bold" fill="#ffffff" transform="rotate(8, 715, 185)">XBOX</text>
-    <text x="715" y="200" text-anchor="middle" font-family="Arial,sans-serif" font-size="8" fill="#ffffff" opacity="0.8" transform="rotate(8, 715, 185)">GIFT CARD</text>
+  <g filter="url(#cardShadow)" transform="rotate(9, 710, 200)">
+    <rect x="635" y="162" width="150" height="85" rx="12" fill="url(#xboxG)"/>
+    <rect x="635" y="162" width="150" height="85" rx="12" fill="url(#cardShine)"/>
+    <rect x="635" y="162" width="150" height="4" rx="2" fill="#52b043" opacity="0.7"/>
+    <text x="710" y="212" text-anchor="middle" font-family="Arial Black,Arial,sans-serif" font-size="15" font-weight="900" fill="#ffffff">XBOX</text>
+    <text x="710" y="230" text-anchor="middle" font-family="Arial,sans-serif" font-size="9" fill="#c0e8a8" opacity="0.85">GIFT CARD</text>
   </g>
 
-  <!-- Netflix card -->
-  <g filter="url(#shadow)">
-    <rect x="560" y="175" width="110" height="70" rx="10" fill="url(#netflixGrad)" transform="rotate(-5, 615, 210)"/>
-    <text x="615" y="215" text-anchor="middle" font-family="Arial,sans-serif" font-size="13" font-weight="bold" fill="#ffffff" transform="rotate(-5, 615, 210)">NETFLIX</text>
-    <text x="615" y="230" text-anchor="middle" font-family="Arial,sans-serif" font-size="8" fill="#ffffff" opacity="0.8" transform="rotate(-5, 615, 210)">GIFT CARD</text>
+  <!-- Netflix card — lower right -->
+  <g filter="url(#cardShadow)" transform="rotate(-6, 620, 222)">
+    <rect x="548" y="182" width="145" height="85" rx="12" fill="url(#netflixG)"/>
+    <rect x="548" y="182" width="145" height="85" rx="12" fill="url(#cardShine)"/>
+    <rect x="548" y="182" width="145" height="4" rx="2" fill="#e50914" opacity="0.7"/>
+    <text x="620" y="232" text-anchor="middle" font-family="Arial Black,Arial,sans-serif" font-size="15" font-weight="900" fill="#ffffff">NETFLIX</text>
+    <text x="620" y="250" text-anchor="middle" font-family="Arial,sans-serif" font-size="9" fill="#ffbbbb" opacity="0.85">GIFT CARD</text>
   </g>
 
-  <!-- Central gift box icon -->
-  <g transform="translate(390, 100)" filter="url(#glow)">
-    <rect x="-30" y="10" width="60" height="50" rx="4" fill="#7c3aed" opacity="0.9"/>
-    <rect x="-35" y="5" width="70" height="15" rx="4" fill="#9333ea" opacity="0.9"/>
-    <rect x="-3" y="5" width="6" height="50" fill="#f9d71c" opacity="0.9"/>
-    <path d="M-3 5 Q-15 -10 -25 -5 Q-20 10 -3 5 Z" fill="#f97316" opacity="0.9"/>
-    <path d="M3 5 Q15 -10 25 -5 Q20 10 3 5 Z" fill="#f97316" opacity="0.9"/>
+  <!-- Central glow circle -->
+  <circle cx="400" cy="145" r="75" fill="#4f46e5" opacity="0.07"/>
+  <circle cx="400" cy="145" r="55" fill="#7c3aed" opacity="0.05"/>
+
+  <!-- Gift box icon — center -->
+  <g transform="translate(367, 105)" filter="url(#neonGlow)">
+    <rect x="0" y="18" width="66" height="52" rx="6" fill="#1e1b4b" stroke="#a855f7" stroke-width="1.5"/>
+    <rect x="-5" y="10" width="76" height="16" rx="5" fill="#2e1065" stroke="#7c3aed" stroke-width="1"/>
+    <rect x="30" y="10" width="6" height="60" fill="#a855f7" opacity="0.8"/>
+    <rect x="0" y="10" width="66" height="4" rx="2" fill="#c084fc" opacity="0.5"/>
+    <path d="M30 10 Q15 -8 5 -3 Q10 12 30 10 Z" fill="#ec4899" opacity="0.9"/>
+    <path d="M36 10 Q51 -8 61 -3 Q56 12 36 10 Z" fill="#ec4899" opacity="0.9"/>
+    <circle cx="10" cy="45" r="4" fill="#a855f7" opacity="0.4"/>
+    <circle cx="56" cy="55" r="3" fill="#7c3aed" opacity="0.4"/>
   </g>
 
-  <!-- Main title -->
-  <text x="400" y="175" text-anchor="middle" font-family="Arial Black, Arial, sans-serif" font-size="38" font-weight="900" fill="url(#titleGrad)" filter="url(#glow)">🎁 Gift Cards</text>
-  <text x="400" y="205" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" fill="#ffffff" opacity="0.8">Steam • Google Play • Amazon • PSN • Xbox • Netflix</text>
+  <!-- Main Title -->
+  <text x="400" y="185" text-anchor="middle" font-family="Arial Black, Arial, sans-serif" font-size="40" font-weight="900" fill="url(#titleGrad2)" filter="url(#glow2)">🎁 Gift Cards</text>
 
-  <!-- Subtitle -->
-  <text x="400" y="255" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#a78bfa" opacity="0.9">Digital Gift Cards — Fast Delivery</text>
+  <!-- Subtitle platforms -->
+  <text x="400" y="212" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" fill="#94a3b8" letter-spacing="1">Steam  •  Google Play  •  Amazon  •  PSN  •  Xbox  •  Netflix</text>
 
-  <!-- Shine effect -->
-  <rect x="0" y="0" width="800" height="2" fill="url(#titleGrad)" opacity="0.5"/>
-  <rect x="0" y="298" width="800" height="2" fill="url(#titleGrad)" opacity="0.5"/>
+  <!-- Bottom tagline -->
+  <text x="400" y="250" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" fill="#818cf8" opacity="0.85" letter-spacing="2">⚡ INSTANT DIGITAL DELIVERY — ALL CARDS</text>
+
+  <!-- Corner decorations -->
+  <text x="30" y="35" font-family="Arial, sans-serif" font-size="22" opacity="0.25">💳</text>
+  <text x="738" y="35" font-family="Arial, sans-serif" font-size="22" opacity="0.25">🎁</text>
+  <text x="30" y="285" font-family="Arial, sans-serif" font-size="22" opacity="0.25">🎮</text>
+  <text x="735" y="285" font-family="Arial, sans-serif" font-size="22" opacity="0.25">⭐</text>
 </svg>
