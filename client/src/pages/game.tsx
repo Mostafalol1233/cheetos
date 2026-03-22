@@ -113,75 +113,108 @@ function CurrencyAmountIcon({ amount, gameSlug }: { amount: string; gameSlug: st
   );
 }
 
-const GAME_FAQS: Record<string, Array<{ q: string; a: string }>> = {
+type LangText = { ar: string; en: string };
+type FAQItem = { q: LangText; a: LangText };
+
+const GAME_FAQS: Record<string, FAQItem[]> = {
   'gift-cards': [
-    { q: 'كيف أستلم الكود بعد الشراء؟', a: 'بعد تأكيد الدفع، هيتبعتلك كود الكرت على واتساب فورًا.' },
-    { q: 'هل الكروت أصلية؟', a: 'نعم، جميع الكروت أصلية ومضمونة 100%.' },
-    { q: 'كام بياخد التوصيل؟', a: 'التوصيل فوري بعد تأكيد الدفع، في الغالب أقل من 15 دقيقة.' },
-    { q: 'لو الكود مش شغال أعمل إيه؟', a: 'تواصل معنا على واتساب وهنحل المشكلة فورًا.' },
+    {
+      q: { ar: 'كيف أستلم الكود بعد الشراء؟', en: 'How do I receive the code after purchase?' },
+      a: { ar: 'بعد تأكيد الدفع، هيتبعتلك كود الكرت على واتساب فورًا.', en: 'After payment is confirmed, the gift card code will be sent to you instantly via WhatsApp.' },
+    },
+    {
+      q: { ar: 'هل الكروت أصلية؟', en: 'Are the gift cards genuine?' },
+      a: { ar: 'نعم، جميع الكروت أصلية ومضمونة 100%.', en: 'Yes, all our gift cards are 100% genuine and guaranteed.' },
+    },
+    {
+      q: { ar: 'كام بياخد التوصيل؟', en: 'How long does delivery take?' },
+      a: { ar: 'التوصيل فوري بعد تأكيد الدفع، في الغالب أقل من 15 دقيقة.', en: 'Delivery is instant after payment confirmation, usually within 15 minutes.' },
+    },
+    {
+      q: { ar: 'لو الكود مش شغال أعمل إيه؟', en: 'What if the code doesn\'t work?' },
+      a: { ar: 'تواصل معنا على واتساب وهنحل المشكلة فورًا.', en: 'Contact us on WhatsApp and we will resolve it immediately.' },
+    },
   ],
   'default': [
-    { q: 'كيف يتم الشحن؟', a: 'بعد إتمام الدفع، يتم الشحن مباشرة على حسابك في اللعبة بأسرع وقت.' },
-    { q: 'كام بياخد الشحن؟', a: 'عادةً خلال 5-15 دقيقة بعد تأكيد الدفع.' },
-    { q: 'هل الدفع آمن؟', a: 'نعم، جميع معاملاتنا مؤمّنة وخاضعة للرقابة.' },
-    { q: 'لو عندي مشكلة بعد الشحن؟', a: 'تواصل مع الدعم على واتساب وهنساعدك فورًا.' },
+    {
+      q: { ar: 'كيف يتم الشحن؟', en: 'How does the top-up work?' },
+      a: { ar: 'بعد إتمام الدفع، يتم الشحن مباشرة على حسابك في اللعبة بأسرع وقت.', en: 'After completing payment, the top-up is applied directly to your game account as fast as possible.' },
+    },
+    {
+      q: { ar: 'كام بياخد الشحن؟', en: 'How long does the top-up take?' },
+      a: { ar: 'عادةً خلال 5-15 دقيقة بعد تأكيد الدفع.', en: 'Usually within 5–15 minutes after payment is confirmed.' },
+    },
+    {
+      q: { ar: 'هل الدفع آمن؟', en: 'Is the payment secure?' },
+      a: { ar: 'نعم، جميع معاملاتنا مؤمّنة وخاضعة للرقابة.', en: 'Yes, all our transactions are secure and monitored.' },
+    },
+    {
+      q: { ar: 'لو عندي مشكلة بعد الشحن؟', en: 'What if I have an issue after the top-up?' },
+      a: { ar: 'تواصل مع الدعم على واتساب وهنساعدك فورًا.', en: 'Contact our support on WhatsApp and we will help you right away.' },
+    },
   ],
 };
 
-const REDEEM_STEPS: Record<string, Array<string>> = {
+const REDEEM_STEPS: Record<string, LangText[]> = {
   'steam-wallet': [
-    'افتح تطبيق Steam على جهازك',
-    'اضغط على اسمك في الأعلى يمين → "استرداد كود Steam"',
-    'أدخل الكود المكوّن من 15 خانة',
-    'هيتضاف الرصيد لمحفظتك فورًا',
+    { ar: 'افتح تطبيق Steam على جهازك', en: 'Open the Steam app on your device' },
+    { ar: 'اضغط على اسمك في الأعلى يمين ← "استرداد كود Steam"', en: 'Click your name at the top right → "Redeem a Steam Wallet Code"' },
+    { ar: 'أدخل الكود المكوّن من 15 خانة', en: 'Enter the 15-character code' },
+    { ar: 'هيتضاف الرصيد لمحفظتك فورًا', en: 'The balance will be added to your wallet immediately' },
   ],
   'google-play': [
-    'افتح متجر Google Play على أندرويد',
-    'اضغط على صورتك → الدفع والاشتراكات',
-    'اختر "استرداد رمز الهدية"',
-    'أدخل الكود وهيتضاف الرصيد فورًا',
+    { ar: 'افتح متجر Google Play على أندرويد', en: 'Open the Google Play Store on Android' },
+    { ar: 'اضغط على صورتك ← الدفع والاشتراكات', en: 'Tap your profile picture → Payments & subscriptions' },
+    { ar: 'اختر "استرداد رمز الهدية"', en: 'Select "Redeem gift code"' },
+    { ar: 'أدخل الكود وهيتضاف الرصيد فورًا', en: 'Enter the code and the balance will be added instantly' },
   ],
   'itunes-app-store': [
-    'افتح App Store على iPhone أو iPad',
-    'اضغط على صورتك في الأعلى',
-    'اختر "Redeem Gift Card or Code"',
-    'أدخل الكود وهيتضاف لحسابك',
+    { ar: 'افتح App Store على iPhone أو iPad', en: 'Open the App Store on your iPhone or iPad' },
+    { ar: 'اضغط على صورتك في الأعلى', en: 'Tap your profile picture at the top' },
+    { ar: 'اختر "Redeem Gift Card or Code"', en: 'Select "Redeem Gift Card or Code"' },
+    { ar: 'أدخل الكود وهيتضاف لحسابك', en: 'Enter the code and it will be added to your account' },
   ],
   'playstation-store': [
-    'افتح PlayStation Store على جهازك',
-    'اضغط على ... → Redeem Codes',
-    'أدخل كود الـ 12 خانة',
-    'هيتضاف الرصيد لمحفظة PSN فورًا',
+    { ar: 'افتح PlayStation Store على جهازك', en: 'Open the PlayStation Store on your device' },
+    { ar: 'اضغط على ... ← Redeem Codes', en: 'Tap the ··· menu → Redeem Codes' },
+    { ar: 'أدخل كود الـ 12 خانة', en: 'Enter the 12-character code' },
+    { ar: 'هيتضاف الرصيد لمحفظة PSN فورًا', en: 'The balance will be added to your PSN wallet immediately' },
   ],
   'xbox-gift-card': [
-    'ادخل على account.microsoft.com',
-    'اختر "Redeem a code"',
-    'أدخل كود الـ 25 خانة',
-    'هيتضاف الرصيد لحساب Xbox فورًا',
+    { ar: 'ادخل على account.microsoft.com', en: 'Go to account.microsoft.com' },
+    { ar: 'اختر "Redeem a code"', en: 'Select "Redeem a code"' },
+    { ar: 'أدخل كود الـ 25 خانة', en: 'Enter the 25-character code' },
+    { ar: 'هيتضاف الرصيد لحساب Xbox فورًا', en: 'The balance will be added to your Xbox account immediately' },
   ],
   'amazon-gift-card': [
-    'ادخل على amazon.com وتسجّل الدخول',
-    'اختر "Gift Cards" → "Redeem a Gift Card"',
-    'أدخل الكود',
-    'هيتضاف الرصيد لمحفظة Amazon فورًا',
+    { ar: 'ادخل على amazon.com وتسجّل الدخول', en: 'Go to amazon.com and sign in' },
+    { ar: 'اختر "Gift Cards" ← "Redeem a Gift Card"', en: 'Select "Gift Cards" → "Redeem a Gift Card"' },
+    { ar: 'أدخل الكود', en: 'Enter the code' },
+    { ar: 'هيتضاف الرصيد لمحفظة Amazon فورًا', en: 'The balance will be added to your Amazon wallet immediately' },
   ],
   'netflix-gift-card': [
-    'ادخل على netflix.com/redeem',
-    'سجّل الدخول بحسابك أو أنشئ حساب جديد',
-    'أدخل كود الكرت',
-    'هيتفعّل الاشتراك تلقائيًا',
+    { ar: 'ادخل على netflix.com/redeem', en: 'Go to netflix.com/redeem' },
+    { ar: 'سجّل الدخول بحسابك أو أنشئ حساب جديد', en: 'Sign in to your account or create a new one' },
+    { ar: 'أدخل كود الكرت', en: 'Enter the gift card code' },
+    { ar: 'هيتفعّل الاشتراك تلقائيًا', en: 'Your subscription will be activated automatically' },
   ],
   'spotify-gift-card': [
-    'ادخل على spotify.com/redeem',
-    'سجّل الدخول بحساب Spotify',
-    'أدخل كود الكرت',
-    'هيتفعّل Premium فورًا',
+    { ar: 'ادخل على spotify.com/redeem', en: 'Go to spotify.com/redeem' },
+    { ar: 'سجّل الدخول بحساب Spotify', en: 'Sign in to your Spotify account' },
+    { ar: 'أدخل كود الكرت', en: 'Enter the gift card code' },
+    { ar: 'هيتفعّل Premium فورًا', en: 'Spotify Premium will activate immediately' },
+  ],
+  'discord-nitro': [
+    { ar: 'أكمل الدفع وأرسل الإيصال على واتساب', en: 'Complete payment and send the receipt on WhatsApp' },
+    { ar: 'هنبعتلك لينك تفعيل Discord Nitro', en: 'We will send you a Discord Nitro activation link' },
+    { ar: 'افتح الرابط وسجّل الدخول بحساب Discord', en: 'Open the link and sign in to your Discord account' },
+    { ar: 'هيتفعّل Nitro على حسابك فورًا', en: 'Nitro will be activated on your account immediately' },
   ],
   'default-game': [
-    'أكمل عملية الشراء وادفع',
-    'أرسل لنا إيصال الدفع على واتساب',
-    'أرسل Player ID الخاص بك في اللعبة',
-    'هيتم الشحن خلال 5-15 دقيقة',
+    { ar: 'أكمل عملية الشراء وادفع', en: 'Complete your purchase and pay' },
+    { ar: 'أرسل لنا إيصال الدفع على واتساب', en: 'Send us the payment receipt on WhatsApp' },
+    { ar: 'أرسل Player ID الخاص بك في اللعبة', en: 'Send your in-game Player ID' },
+    { ar: 'هيتم الشحن خلال 5-15 دقيقة', en: 'Top-up will be completed within 5–15 minutes' },
   ],
 };
 
@@ -205,7 +238,7 @@ export default function GamePage() {
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
           <div className="w-16 h-16 border-4 border-gold-primary border-t-transparent rounded-full animate-spin" />
-          <p className="text-muted-foreground">جاري التحميل...</p>
+          <p className="text-muted-foreground">{language === 'ar' ? 'جاري التحميل...' : 'Loading...'}</p>
         </div>
       </div>
     );
@@ -215,8 +248,10 @@ export default function GamePage() {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
-          <h1 className="text-3xl font-bold text-foreground mb-4">اللعبة غير موجودة</h1>
-          <Link href="/"><Button className="btn-gaming">الرئيسية</Button></Link>
+          <h1 className="text-3xl font-bold text-foreground mb-4">
+            {language === 'ar' ? 'اللعبة غير موجودة' : 'Game not found'}
+          </h1>
+          <Link href="/"><Button className="btn-gaming">{language === 'ar' ? 'الرئيسية' : 'Home'}</Button></Link>
         </div>
       </div>
     );
@@ -275,9 +310,13 @@ export default function GamePage() {
   return (
     <>
       <SEO
-        title={`${isGiftCard ? 'كرت' : 'شحن'} ${game.name} - متجر ضياء | Diaa Gaming Store`}
-        description={`${isGiftCard ? 'اشتري كرت' : 'اشحن عملات'} ${game.name} بسهولة في متجر ضياء. خدمة آمنة وسريعة في مصر.`}
-        keywords={[`شحن ${game.name}`, game.name, 'ضياء', 'Diaa', 'شحن ألعاب']}
+        title={language === 'ar'
+          ? `${isGiftCard ? 'كرت' : 'شحن'} ${game.name} - متجر ضياء | Diaa Gaming Store`
+          : `${isGiftCard ? 'Buy' : 'Top Up'} ${game.name} - Diaa Gaming Store Egypt`}
+        description={language === 'ar'
+          ? `${isGiftCard ? 'اشتري كرت' : 'اشحن عملات'} ${game.name} بسهولة في متجر ضياء. خدمة آمنة وسريعة في مصر.`
+          : `${isGiftCard ? 'Buy' : 'Top up'} ${game.name} easily at Diaa Store. Secure and fast service in Egypt.`}
+        keywords={[game.name, 'Diaa Store', 'ضياء', 'gaming top up Egypt', 'شحن ألعاب']}
       />
 
       <div className="min-h-screen bg-background">
@@ -559,8 +598,8 @@ export default function GamePage() {
                           {i + 1}
                         </span>
                         <div>
-                          <p className="font-semibold text-foreground text-sm mb-1">{faq.q}</p>
-                          <p className="text-muted-foreground text-sm leading-relaxed">{faq.a}</p>
+                          <p className="font-semibold text-foreground text-sm mb-1">{language === 'ar' ? faq.q.ar : faq.q.en}</p>
+                          <p className="text-muted-foreground text-sm leading-relaxed">{language === 'ar' ? faq.a.ar : faq.a.en}</p>
                         </div>
                       </div>
                     </div>
@@ -580,7 +619,9 @@ export default function GamePage() {
                           <span className="w-7 h-7 rounded-full bg-gold-primary text-black text-sm font-black flex items-center justify-center shrink-0">
                             {i + 1}
                           </span>
-                          <span className="text-foreground text-sm leading-relaxed pt-0.5">{step}</span>
+                          <span className="text-foreground text-sm leading-relaxed pt-0.5">
+                            {language === 'ar' ? step.ar : step.en}
+                          </span>
                         </li>
                       ))}
                     </ol>
