@@ -5477,6 +5477,24 @@ const startServer = async () => {
       }
     });
 
+    // Serve built React frontend (dist/) as a SPA
+    const distDir = path.join(__dirname, '..', 'dist');
+    if (fs.existsSync(distDir)) {
+      app.use(express.static(distDir));
+      app.get('*', (req, res, next) => {
+        if (req.path.startsWith('/api') || req.path.startsWith('/uploads') ||
+            req.path.startsWith('/media') || req.path.startsWith('/images') ||
+            req.path.startsWith('/payments-images') || req.path.startsWith('/attached_assets') ||
+            req.path.startsWith('/socket.io')) {
+          return next();
+        }
+        res.sendFile(path.join(distDir, 'index.html'));
+      });
+      console.log(`✅ Serving React frontend from ${distDir}`);
+    } else {
+      console.log(`⚠️  Frontend not built yet. Run "npm run build" to build the frontend.`);
+    }
+
     const httpServer = createServer(app);
     initSocket(httpServer);
 

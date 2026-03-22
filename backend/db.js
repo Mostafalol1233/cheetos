@@ -8,8 +8,8 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Always load env from backend/.env so scripts run from repo root still use the correct DB config
-dotenv.config({ path: path.join(__dirname, '.env') });
+// Always load env from backend/.env — override Replit-managed vars so our DB URL is used
+dotenv.config({ path: path.join(__dirname, '.env'), override: true });
 
 const { Pool } = pkg;
 
@@ -18,9 +18,10 @@ function buildPoolConfig() {
   const overrideHost = process.env.PGHOST_IP || '';
   const useObject = Boolean(overrideHost);
 
-  // Determine if SSL should be used based on connection string
-  // Fixed: Replit internal postgres (helium) DOES NOT support SSL.
-  const useSSL = false;
+  // Use SSL for Neon databases, disable for Replit internal postgres (helium)
+  const isNeon = connStr.includes('neon.tech');
+  const isHelium = connStr.includes('helium') || connStr.includes('172.31');
+  const useSSL = isNeon && !isHelium;
   
   if (useObject && connStr) {
     try {
@@ -43,7 +44,7 @@ function buildPoolConfig() {
 
   return {
     connectionString: connStr,
-    ssl: false,
+    ssl: useSSL ? { rejectUnauthorized: false } : false,
     connectionTimeoutMillis: 10000,
     idleTimeoutMillis: 30000,
     max: 20,
