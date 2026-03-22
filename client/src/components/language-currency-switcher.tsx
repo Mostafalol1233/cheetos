@@ -20,7 +20,7 @@ export function LanguageCurrencySwitcher() {
 
   const languages = [
     { code: "en" as const, label: "English", flag: "🇺🇸" },
-    { code: "ar" as const, label: "عربي", flag: "🇸🇦" },
+    { code: "ar" as const, label: "عربي", flag: "🇪🇬" },
   ];
 
   const currentLang = languages.find((l) => l.code === language) || languages[0];

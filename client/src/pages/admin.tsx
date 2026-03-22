@@ -19,6 +19,8 @@ import QRCode from 'qrcode';
 import { normalizeNumericString } from '@/lib/quantity';
 import { AdminThemePanel } from '@/components/admin-theme-panel';
 import { ResponseTemplatesPanel } from '@/components/response-templates-panel';
+import { PromoCodesPanel } from '@/components/admin-promo-codes-panel';
+import { ReviewsPanel } from '@/components/admin-reviews-panel';
 const RichTextEditor = React.lazy(() => import('@/components/rich-text-editor'));
 import { io, Socket } from 'socket.io-client';
 import { HeaderManager } from '@/components/header-manager';
@@ -2277,6 +2279,8 @@ export default function AdminDashboard() {
               <TabsTrigger value="approvals" data-testid="tab-approvals" className="data-[state=active]:bg-green-600 data-[state=active]:text-white px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-green-800 font-semibold">
                 ✅ نموذج الموافقة
               </TabsTrigger>
+              <TabsTrigger value="promo-codes" data-testid="tab-promo-codes" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">🏷️ Promo Codes</TabsTrigger>
+              <TabsTrigger value="reviews" data-testid="tab-reviews" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">⭐ Reviews</TabsTrigger>
             </TabsList>
             <ScrollBar orientation="horizontal" />
           </ScrollArea>
@@ -3431,6 +3435,15 @@ export default function AdminDashboard() {
               </CardContent>
             </Card>
           </TabsContent>
+
+          <TabsContent value="promo-codes" className="space-y-6">
+            <PromoCodesPanel />
+          </TabsContent>
+
+          <TabsContent value="reviews" className="space-y-6">
+            <ReviewsPanel />
+          </TabsContent>
+
         </Tabs>
       </div>
 

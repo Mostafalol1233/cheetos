@@ -300,7 +300,10 @@ router.put('/:id/status', authenticateToken, ensureAdmin, async (req, res) => {
 
   // Notify clients
   const io = getIO();
-  if (io) io.emit('orders_updated');
+  if (io) {
+    io.emit('orders_updated');
+    io.emit('order_status_changed', { orderId: id, status, customerEmail: order.customer_email });
+  }
 
   // Notify user via WhatsApp
   try {

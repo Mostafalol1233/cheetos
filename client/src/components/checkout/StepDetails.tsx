@@ -14,6 +14,7 @@ import { Link } from 'wouter';
 import { User, LogIn, ArrowRight, UserPlus } from 'lucide-react';
 import { useTranslation } from "@/lib/translation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { API_BASE_URL } from '@/lib/queryClient';
 
 const detailsSchema = z.object({
   fullName: z.string().min(2, 'Name must be at least 2 characters'),
@@ -84,17 +85,28 @@ export function StepDetails({ onNext }: StepDetailsProps) {
   });
 
   const onDetailsSubmit = (data: DetailsForm) => {
-    // Ensure we capture the country code if not in data (though it should be)
-    setContact({ 
-      ...contact, 
-      ...data, 
-      deliveryMethod: 'email' 
-    });
-    
-    // Explicitly call onNext
-    if (onNext) {
-        onNext();
-    }
+    setContact({ ...contact, ...data, deliveryMethod: 'email' });
+
+    // Save abandoned cart to backend for recovery tracking
+    try {
+      const checkoutState = useCheckout.getState();
+      const cartItems = checkoutState.cart;
+      if (cartItems.length > 0 && data.email) {
+        fetch(`${API_BASE_URL}/api/abandoned-cart/save`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: data.email,
+            name: data.fullName,
+            phone: data.phone ? `${data.countryCode || '+20'}${data.phone}` : undefined,
+            items: cartItems,
+            total_amount: checkoutState.subtotal(),
+          })
+        }).catch(() => {});
+      }
+    } catch {}
+
+    if (onNext) { onNext(); }
   };
 
   const handleLogin = async (e: React.FormEvent) => {

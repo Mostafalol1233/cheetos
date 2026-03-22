@@ -34,6 +34,9 @@ import responseTemplatesRouter from './routes/response-templates.js';
 import adminUsersRouter from './routes/admin-users.js';
 import cleanupRouter, { startCleanupSchedule } from './routes/cleanup.js';
 import settingsRouter from './routes/settings.js';
+import promoRouter from './routes/promo.js';
+import reviewsRouter from './routes/reviews.js';
+import abandonedCartRouter, { startAbandonedCartSchedule } from './routes/abandoned-cart.js';
 import { authenticateToken, ensureAdmin } from './middleware/auth.js';
 import { sendEmail, sendRawEmail } from './utils/email.js';
 import { generateSitemap } from './utils/sitemap.js';
@@ -98,6 +101,9 @@ try {
 
 // Start automated cleanup schedule for old orders
 startCleanupSchedule();
+
+// Start abandoned cart recovery schedule
+startAbandonedCartSchedule(sendEmail, null);
 
 // Core file cleanup function to prevent disk space issues
 async function deleteCoreFiles(dir) {
@@ -1515,6 +1521,9 @@ app.use('/api/uploads', uploadsRouter);
 app.use('/api/admin/users', adminUsersRouter);
 app.use('/api/admin/cleanup', cleanupRouter);
 app.use('/api/admin/response-templates', responseTemplatesRouter);
+app.use('/api/promo', promoRouter);
+app.use('/api/reviews', reviewsRouter);
+app.use('/api/abandoned-cart', abandonedCartRouter);
 
 // Admin Image Upload Endpoint
 app.post('/api/admin/upload-image', authenticateToken, ensureAdmin, imageUpload.single('file'), async (req, res) => {

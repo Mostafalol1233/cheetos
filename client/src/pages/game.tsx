@@ -1,14 +1,15 @@
 import { useParams, useLocation, Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Zap, Star, ShieldCheck, Clock, HelpCircle, BookOpen, RefreshCw, FileText } from "lucide-react";
+import { ArrowLeft, Zap, Star, ShieldCheck, Clock, HelpCircle, BookOpen, RefreshCw, FileText, Send } from "lucide-react";
 import { motion } from "framer-motion";
 import type { Game, Category } from "@shared/schema";
 import ImageWithFallback from "@/components/image-with-fallback";
 import { useTranslation } from "@/lib/translation";
 import { SEO } from "@/components/SEO";
 import { Footer } from "@/components/footer";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { API_BASE_URL } from "@/lib/queryClient";
 
 const CURRENCY_IMAGES: Record<string, string> = {
   'pubg-mobile': '/images/currency-pubg-uc.png',
@@ -224,6 +225,12 @@ export default function GamePage() {
   const [, setLocation] = useLocation();
   const [selectedPkg, setSelectedPkg] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState<'description' | 'faq' | 'redeem' | 'terms'>('description');
+  const [reviews, setReviews] = useState<any[]>([]);
+  const [reviewStats, setReviewStats] = useState<any>(null);
+  const [reviewForm, setReviewForm] = useState({ user_name: '', user_email: '', rating: 0, comment: '' });
+  const [reviewSubmitting, setReviewSubmitting] = useState(false);
+  const [reviewSubmitted, setReviewSubmitted] = useState(false);
+  const [reviewError, setReviewError] = useState('');
 
   const { data: game, isLoading } = useQuery<Game>({
     queryKey: [`/api/games/${slug}`],
@@ -299,6 +306,44 @@ export default function GamePage() {
 
   const faqs = isGiftCard ? GAME_FAQS['gift-cards'] : GAME_FAQS['default'];
   const redeemSteps = REDEEM_STEPS[gameSlug] || (isGiftCard ? [] : REDEEM_STEPS['default-game']);
+
+  useEffect(() => {
+    if (!gameSlug) return;
+    fetch(`${API_BASE_URL}/api/reviews/game/${gameSlug}`)
+      .then(r => r.json())
+      .then(data => {
+        setReviews(data.reviews || []);
+        setReviewStats(data.stats || null);
+      })
+      .catch(() => {});
+  }, [gameSlug]);
+
+  const handleSubmitReview = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!reviewForm.user_name || reviewForm.rating === 0) {
+      setReviewError(language === 'ar' ? 'الاسم والتقييم مطلوبان' : 'Name and rating are required');
+      return;
+    }
+    setReviewSubmitting(true);
+    setReviewError('');
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/reviews`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ game_slug: gameSlug, ...reviewForm })
+      });
+      if (!res.ok) throw new Error('Failed to submit review');
+      setReviewSubmitted(true);
+      setReviewForm({ user_name: '', user_email: '', rating: 0, comment: '' });
+      const data = await fetch(`${API_BASE_URL}/api/reviews/game/${gameSlug}`).then(r => r.json());
+      setReviews(data.reviews || []);
+      setReviewStats(data.stats || null);
+    } catch {
+      setReviewError(language === 'ar' ? 'فشل إرسال التقييم، حاول مرة أخرى' : 'Failed to submit review. Please try again.');
+    } finally {
+      setReviewSubmitting(false);
+    }
+  };
 
   const tabs = [
     { id: 'description' as const, label: language === 'ar' ? 'وصف المنتج' : 'Description', icon: BookOpen },
@@ -487,7 +532,13 @@ export default function GamePage() {
                       <div className="p-4 sm:p-5 flex flex-col items-center gap-3">
                         <div className="relative flex items-center justify-center">
                           <div className="w-24 h-24 sm:w-28 sm:h-28 flex items-center justify-center">
-                            {pkgImage ? (
+                            {currencyImageUrl ? (
+                              <img
+                                src={currencyImageUrl}
+                                alt={pkgName}
+                                className="w-full h-full object-contain drop-shadow-xl"
+                              />
+                            ) : pkgImage ? (
                               <img
                                 src={pkgImage}
                                 alt={pkgName}
@@ -496,18 +547,10 @@ export default function GamePage() {
                                   const target = e.target as HTMLImageElement;
                                   target.style.display = 'none';
                                   const parent = target.parentElement;
-                                  if (parent && currencyImageUrl) {
-                                    parent.innerHTML = `<img src="${currencyImageUrl}" alt="${pkgName}" style="width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 4px 12px rgba(0,0,0,0.5));" />`;
-                                  } else if (parent) {
+                                  if (parent) {
                                     parent.innerHTML = `<div style="width:96px;height:96px;border-radius:20px;background:linear-gradient(135deg,#D4AF37,#b8962e);display:flex;align-items:center;justify-content:center;"><span style="color:#000;font-weight:900;font-size:13px;text-align:center;padding:8px;">${pkgName}</span></div>`;
                                   }
                                 }}
-                              />
-                            ) : currencyImageUrl ? (
-                              <img
-                                src={currencyImageUrl}
-                                alt={pkgName}
-                                className="w-full h-full object-contain drop-shadow-xl"
                               />
                             ) : (
                               <CurrencyAmountIcon amount={pkgName} gameSlug={gameSlug} />
@@ -664,6 +707,165 @@ export default function GamePage() {
                   </ul>
                 </div>
               )}
+            </div>
+          </section>
+
+          {/* Reviews & Ratings Section */}
+          <section className="mt-12 border-t border-border/30 pt-8">
+            <h2 className="text-xl font-bold text-foreground mb-6 flex items-center gap-2">
+              <span className="w-1.5 h-6 bg-gold-primary rounded-full inline-block" />
+              <Star className="w-5 h-5 text-gold-primary fill-gold-primary" />
+              {language === 'ar' ? 'تقييمات العملاء' : 'Customer Reviews'}
+              {reviewStats && Number(reviewStats.total) > 0 && (
+                <span className="text-sm text-muted-foreground font-normal">
+                  ({reviewStats.total} {language === 'ar' ? 'تقييم' : 'reviews'})
+                </span>
+              )}
+            </h2>
+
+            {reviewStats && Number(reviewStats.total) > 0 && (
+              <div className="flex items-center gap-4 mb-6 p-4 bg-card border border-border/30 rounded-xl">
+                <div className="text-center">
+                  <p className="text-4xl font-black text-gold-primary">{reviewStats.avg_rating || '0'}</p>
+                  <div className="flex gap-0.5 justify-center mt-1">
+                    {[1,2,3,4,5].map(s => (
+                      <Star key={s} className={`w-4 h-4 ${s <= Math.round(Number(reviewStats.avg_rating)) ? 'fill-yellow-400 text-yellow-400' : 'text-gray-600'}`} />
+                    ))}
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">{reviewStats.total} {language === 'ar' ? 'تقييم' : 'reviews'}</p>
+                </div>
+                <div className="flex-1 space-y-1">
+                  {[5,4,3,2,1].map(star => (
+                    <div key={star} className="flex items-center gap-2">
+                      <span className="text-xs w-2 text-muted-foreground">{star}</span>
+                      <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+                      <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-yellow-400 rounded-full"
+                          style={{ width: `${Number(reviewStats.total) > 0 ? (Number(reviewStats[`${star === 5 ? 'five' : star === 4 ? 'four' : star === 3 ? 'three' : star === 2 ? 'two' : 'one'}_star`]) / Number(reviewStats.total)) * 100 : 0}%` }}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="grid gap-4 lg:grid-cols-2">
+              <div className="space-y-4">
+                {reviews.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground bg-card border border-border/30 rounded-xl">
+                    <Star className="w-8 h-8 mx-auto mb-2 text-muted-foreground/50" />
+                    <p>{language === 'ar' ? 'لا توجد تقييمات بعد. كن أول من يقيّم!' : 'No reviews yet. Be the first to review!'}</p>
+                  </div>
+                ) : (
+                  reviews.map((review) => (
+                    <div key={review.id} className="p-4 bg-card border border-border/30 rounded-xl space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="font-semibold text-foreground text-sm">{review.user_name}</span>
+                        <div className="flex gap-0.5">
+                          {[1,2,3,4,5].map(s => (
+                            <Star key={s} className={`w-3.5 h-3.5 ${s <= review.rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-600'}`} />
+                          ))}
+                        </div>
+                      </div>
+                      {review.comment && <p className="text-sm text-muted-foreground leading-relaxed">{review.comment}</p>}
+                      <p className="text-xs text-muted-foreground/60">
+                        {new Date(review.created_at).toLocaleDateString(language === 'ar' ? 'ar-EG' : 'en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
+                      </p>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              <div className="bg-card border border-border/30 rounded-xl p-5">
+                <h3 className="font-bold text-foreground mb-4">
+                  {language === 'ar' ? 'اكتب تقييمك' : 'Write a Review'}
+                </h3>
+                {reviewSubmitted ? (
+                  <div className="text-center py-6 space-y-2">
+                    <div className="text-3xl">⭐</div>
+                    <p className="font-semibold text-green-400">
+                      {language === 'ar' ? 'شكراً على تقييمك!' : 'Thank you for your review!'}
+                    </p>
+                    <button
+                      onClick={() => setReviewSubmitted(false)}
+                      className="text-sm text-muted-foreground hover:text-foreground underline"
+                    >
+                      {language === 'ar' ? 'إضافة تقييم آخر' : 'Write another review'}
+                    </button>
+                  </div>
+                ) : (
+                  <form onSubmit={handleSubmitReview} className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium mb-1">
+                        {language === 'ar' ? 'اختر تقييمك *' : 'Your Rating *'}
+                      </label>
+                      <div className="flex gap-1">
+                        {[1,2,3,4,5].map(star => (
+                          <button
+                            key={star}
+                            type="button"
+                            onClick={() => setReviewForm(f => ({ ...f, rating: star }))}
+                            className="p-1"
+                          >
+                            <Star className={`w-7 h-7 transition-colors ${star <= reviewForm.rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-500 hover:text-yellow-300'}`} />
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-1">
+                        {language === 'ar' ? 'اسمك *' : 'Your Name *'}
+                      </label>
+                      <input
+                        type="text"
+                        value={reviewForm.user_name}
+                        onChange={e => setReviewForm(f => ({ ...f, user_name: e.target.value }))}
+                        placeholder={language === 'ar' ? 'مثال: أحمد محمد' : 'e.g. John Smith'}
+                        className="w-full px-3 py-2 rounded-lg bg-background border border-border text-foreground text-sm focus:outline-none focus:border-gold-primary"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-1">
+                        {language === 'ar' ? 'الإيميل (اختياري)' : 'Email (Optional)'}
+                      </label>
+                      <input
+                        type="email"
+                        value={reviewForm.user_email}
+                        onChange={e => setReviewForm(f => ({ ...f, user_email: e.target.value }))}
+                        placeholder="name@example.com"
+                        className="w-full px-3 py-2 rounded-lg bg-background border border-border text-foreground text-sm focus:outline-none focus:border-gold-primary"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-1">
+                        {language === 'ar' ? 'تعليقك (اختياري)' : 'Your Comment (Optional)'}
+                      </label>
+                      <textarea
+                        value={reviewForm.comment}
+                        onChange={e => setReviewForm(f => ({ ...f, comment: e.target.value }))}
+                        placeholder={language === 'ar' ? 'شاركنا تجربتك...' : 'Share your experience...'}
+                        rows={3}
+                        className="w-full px-3 py-2 rounded-lg bg-background border border-border text-foreground text-sm focus:outline-none focus:border-gold-primary resize-none"
+                      />
+                    </div>
+                    {reviewError && <p className="text-sm text-destructive">{reviewError}</p>}
+                    <button
+                      type="submit"
+                      disabled={reviewSubmitting || reviewForm.rating === 0 || !reviewForm.user_name}
+                      className="w-full flex items-center justify-center gap-2 bg-gold-primary text-black font-bold py-2.5 rounded-lg hover:bg-gold-primary/80 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                    >
+                      {reviewSubmitting ? (
+                        <><span className="animate-spin">⏳</span> {language === 'ar' ? 'جارٍ الإرسال...' : 'Submitting...'}</>
+                      ) : (
+                        <><Send className="w-4 h-4" /> {language === 'ar' ? 'إرسال التقييم' : 'Submit Review'}</>
+                      )}
+                    </button>
+                  </form>
+                )}
+              </div>
             </div>
           </section>
         </div>

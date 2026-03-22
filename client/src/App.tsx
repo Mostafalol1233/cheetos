@@ -61,6 +61,8 @@ function ProtectedAdminRoute() {
 }
 
 import { ScrollToTop } from "@/components/scroll-to-top";
+import { getSocket } from "@/lib/socket";
+import { showOrderStatusNotification, getNotificationPermission } from "@/lib/notification-service";
 
 function Router() {
   return (
@@ -104,6 +106,20 @@ function AppShell() {
     checking: boolean;
     reason?: string;
   }>({ ok: true, checking: true });
+
+  useEffect(() => {
+    try {
+      const socket = getSocket();
+      const handleOrderStatusChanged = (data: { orderId: string; status: string; customerEmail?: string }) => {
+        const userEmail = localStorage.getItem('userEmail');
+        if (getNotificationPermission() === 'granted') {
+          showOrderStatusNotification(data.orderId, data.status);
+        }
+      };
+      socket.on('order_status_changed', handleOrderStatusChanged);
+      return () => { socket.off('order_status_changed', handleOrderStatusChanged); };
+    } catch {}
+  }, []);
 
   const runHealthCheck = async () => {
     setHealthState((s) => ({ ...s, checking: true }));

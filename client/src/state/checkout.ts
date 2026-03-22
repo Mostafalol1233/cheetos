@@ -55,6 +55,8 @@ export interface CheckoutState {
   error?: string;
   generatedPassword?: string;
   availablePaymentMethods: PaymentConfig[];
+  promoCode?: string;
+  promoDiscount: number;
 
   // derived helpers
   subtotal: () => number;
@@ -73,6 +75,7 @@ export interface CheckoutState {
   setOrderMeta: (id?: string, status?: OrderStatus) => void;
   setGeneratedPassword: (p?: string) => void;
   setError: (e?: string) => void;
+  setPromoCode: (code?: string, discount?: number) => void;
   reset: () => void;
   fetchPaymentMethods: () => Promise<void>;
 }
@@ -135,12 +138,14 @@ export const useCheckout = create<CheckoutState>()(
         error: undefined,
         generatedPassword: undefined,
         availablePaymentMethods: [],
+        promoCode: undefined,
+        promoDiscount: 0,
 
         subtotal: () => {
           return get().cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
         },
         total: () => {
-          return get().subtotal();
+          return Math.max(0, get().subtotal() - get().promoDiscount);
         },
 
         setStep: (s) => set({ step: s }),
@@ -162,6 +167,7 @@ export const useCheckout = create<CheckoutState>()(
         })),
         setGeneratedPassword: (p) => set({ generatedPassword: p }),
         setError: (e) => set({ error: e }),
+        setPromoCode: (code, discount) => set({ promoCode: code, promoDiscount: discount ?? 0 }),
         reset: () => {
           clearCheckoutStorage();
           set({
@@ -174,7 +180,9 @@ export const useCheckout = create<CheckoutState>()(
             orderId: undefined,
             orderStatus: 'idle',
             error: undefined,
-            generatedPassword: undefined
+            generatedPassword: undefined,
+            promoCode: undefined,
+            promoDiscount: 0,
           })
         },
         fetchPaymentMethods: async () => {
