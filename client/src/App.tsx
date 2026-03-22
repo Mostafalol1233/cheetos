@@ -263,9 +263,10 @@ function AppShell() {
     };
   }, []);
 
-  if (!healthState.ok && !isAdminRoute) {
-    return <MaintenancePage reason={healthState.reason} onRetry={runHealthCheck} />;
-  }
+  // Maintenance mode disabled
+  // if (!healthState.ok && !isAdminRoute) {
+  //   return <MaintenancePage reason={healthState.reason} onRetry={runHealthCheck} />;
+  // }
 
   return (
     <>

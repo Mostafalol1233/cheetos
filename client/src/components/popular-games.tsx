@@ -6,7 +6,6 @@ import { Link } from "wouter";
 import { ShoppingBag, Star, Flame, Share2, Play, Check } from "lucide-react";
 import { InteractiveGamePreview } from "./interactive-game-preview";
 import ImageWithFallback from "./image-with-fallback";
-import { DynamicLoadingProgress } from "./dynamic-loading-progress";
 import { useTranslation } from "@/lib/translation";
 import { cn } from "@/lib/utils";
 
@@ -19,7 +18,7 @@ export function PopularGames() {
   const [addingItems] = useState<string[]>([]);
 
   if (isLoading) {
-    return <DynamicLoadingProgress isLoading={true} loadingText={t('loading_popular_games')} />;
+    return null;
   }
 
   if (isError || !Array.isArray(games) || games.length === 0) {
