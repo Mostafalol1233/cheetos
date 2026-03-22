@@ -37,6 +37,7 @@ ADMIN_API_KEY = "testkey123"
 CLOUDINARY_CLOUD_NAME = "ddzbutb12"
 CLOUDINARY_API_KEY = "347457217563879"
 ADMIN_EMAIL = "admin@diaaldeen.com"
+SMTP_FROM = "support@diaasadek.com"
 
 [workflows]
 runButton = "Project"

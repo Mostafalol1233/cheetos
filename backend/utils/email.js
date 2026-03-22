@@ -212,7 +212,7 @@ export const sendEmail = async (to, templateName, data) => {
 
   try {
     const info = await transporter.sendMail({
-      from: `"متجر ضياء | Diaa Store" <${process.env.SMTP_FROM || process.env.SMTP_USER}>`,
+      from: `"متجر ضياء الدين | Diaa Sadek Store" <${process.env.SMTP_FROM || 'support@diaasadek.com'}>`,
       to,
       subject,
       text,
@@ -251,9 +251,9 @@ export const sendRawEmail = async (to, subject, text, html) => {
     `;
 
     const info = await transporter.sendMail({
-      from: `"متجر ضياء | Diaa Store" <${process.env.SMTP_FROM || process.env.SMTP_USER}>`,
+      from: `"متجر ضياء الدين | Diaa Sadek Store" <${process.env.SMTP_FROM || 'support@diaasadek.com'}>`,
       to,
-      subject: String(subject || '📩 رسالة من متجر ضياء'),
+      subject: String(subject || '📩 رسالة من متجر ضياء الدين'),
       text: String(text || ''),
       html: deliveryHtml
     });
