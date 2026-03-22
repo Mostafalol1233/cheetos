@@ -172,8 +172,7 @@ if (!fs.existsSync(pgModulePath) || !fs.existsSync(baileysModulePath) || !fs.exi
 }
 
 const app = express();
-const envPort = Number(process.env.PORT || 0);
-const PORT = envPort && envPort !== 5173 ? envPort : 3001;
+const PORT = 3001;
 
 // JWT Configuration
 const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret_key_change_this_in_production';
