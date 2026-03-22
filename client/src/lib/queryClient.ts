@@ -1,0 +1,178 @@
+import { QueryClient, QueryFunction } from "@tanstack/react-query";
+
+// API Configuration
+const ENV_API_URL = import.meta.env.VITE_API_URL as string | undefined;
+export const API_BASE_URL = (() => {
+  if (typeof window === "undefined") return ENV_API_URL || "";
+  const normalizeBaseUrl = (raw: string) => {
+    const s = String(raw || "").trim().replace(/\/$/, "");
+    if (!s) return "";
+    if (/^https?:\/\//i.test(s)) return s;
+    return `http://${s}`;
+  };
+
+  try {
+    const u = new URL(window.location.href);
+    if (u.searchParams.get("mock") === "1") {
+      return window.location.origin;
+    }
+  } catch {}
+  if (!ENV_API_URL) return window.location.origin;
+  const normalized = normalizeBaseUrl(ENV_API_URL);
+  if (window.location.protocol === "https:" && normalized.startsWith("http://")) return window.location.origin;
+  return normalized;
+})();
+
+export function notifyBackendDown(reason?: string) {
+  if (typeof window === "undefined") return;
+  try {
+    window.dispatchEvent(new CustomEvent("backend:down", { detail: { reason } }));
+  } catch {
+    // ignore
+  }
+}
+
+function isBackendDown() {
+  if (typeof window === "undefined") return false;
+  try {
+    return (window as any).__BACKEND_DOWN__ === true;
+  } catch {
+    return false;
+  }
+}
+
+async function throwIfResNotOk(res: Response) {
+  if (!res.ok) {
+    const text = (await res.text()) || res.statusText;
+    throw new Error(`${res.status}: ${text}`);
+  }
+}
+
+export async function apiRequest(
+  method: string,
+  url: string,
+  data?: unknown | undefined,
+): Promise<Response> {
+  const finalUrl = url.startsWith("http") ? url : `${API_BASE_URL}${url}`;
+  const csrf = (() => {
+    try {
+      const m = document.cookie.match(/(?:^|; )csrf_token=([^;]+)/);
+      return m ? decodeURIComponent(m[1]) : "";
+    } catch {
+      return "";
+    }
+  })();
+  let res: Response;
+  try {
+    res = await fetch(finalUrl, {
+      method,
+      headers: {
+        ...(data ? { "Content-Type": "application/json" } : {}),
+        ...(csrf ? { "X-CSRF-Token": csrf } : {}),
+      },
+      body: data ? JSON.stringify(data) : undefined,
+      credentials: "include",
+    });
+  } catch (err: any) {
+    try { (window as any).__BACKEND_DOWN__ = true; } catch { }
+    notifyBackendDown(err?.message || "Network error");
+    throw err;
+  }
+
+  if (res.status >= 500) {
+    try { (window as any).__BACKEND_DOWN__ = true; } catch { }
+    notifyBackendDown(`HTTP ${res.status}`);
+  }
+
+  await throwIfResNotOk(res);
+  return res;
+}
+
+type UnauthorizedBehavior = "returnNull" | "throw";
+export const getQueryFn: <T>(options: {
+  on401: UnauthorizedBehavior;
+}) => QueryFunction<T> =
+  ({ on401: unauthorizedBehavior }) =>
+  async ({ queryKey }) => {
+    const path = queryKey.join("/") as string;
+    const finalUrl = path.startsWith("http") ? path : `${API_BASE_URL}${path}`;
+    const csrf = (() => {
+      try {
+        const m = document.cookie.match(/(?:^|; )csrf_token=([^;]+)/);
+        return m ? decodeURIComponent(m[1]) : "";
+      } catch {
+        return "";
+      }
+    })();
+    let res: Response;
+    try {
+      res = await fetch(finalUrl, {
+        credentials: "include",
+        headers: {
+          ...(csrf ? { "X-CSRF-Token": csrf } : {}),
+        },
+      });
+    } catch (err: any) {
+      try { (window as any).__BACKEND_DOWN__ = true; } catch { }
+      notifyBackendDown(err?.message || "Network error");
+      throw err;
+    }
+
+    if (res.status >= 500) {
+      try { (window as any).__BACKEND_DOWN__ = true; } catch { }
+      notifyBackendDown(`HTTP ${res.status}`);
+    }
+
+    if (unauthorizedBehavior === "returnNull" && res.status === 401) {
+      return null;
+    }
+
+    await throwIfResNotOk(res);
+    const data = await res.json();
+    
+    // Ensure arrays are returned as arrays (handle edge cases)
+    if (Array.isArray(data)) {
+      return data;
+    }
+    
+    const expectsArray =
+      path === '/api/games' ||
+      path === '/api/categories' ||
+      path === '/api/games/popular' ||
+      path.startsWith('/api/games/category/');
+
+    // If expecting an array but got an object, try to unwrap common API shapes
+    if (expectsArray) {
+      const maybeArray =
+        (data && typeof data === 'object' && Array.isArray((data as any).items) && (data as any).items) ||
+        (data && typeof data === 'object' && Array.isArray((data as any).games) && (data as any).games) ||
+        (data && typeof data === 'object' && Array.isArray((data as any).categories) && (data as any).categories) ||
+        (data && typeof data === 'object' && Array.isArray((data as any).data) && (data as any).data);
+
+      if (maybeArray) {
+        return maybeArray;
+      }
+
+      if (!isBackendDown()) {
+        console.warn(`Expected array but got:`, typeof data, data);
+      }
+      return [];
+    }
+    
+    return data;
+  };
+
+export const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      queryFn: getQueryFn({ on401: "throw" }),
+      refetchInterval: false,
+      refetchOnWindowFocus: false,
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      retry: false,
+    },
+    mutations: {
+      retry: false,
+    },
+  },
+});

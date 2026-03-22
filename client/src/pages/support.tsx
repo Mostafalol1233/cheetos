@@ -1,0 +1,217 @@
+import { ArrowLeft, MessageCircle, Phone, Mail, Clock, HelpCircle, Headphones } from "lucide-react";
+import { SiWhatsapp, SiTelegram, SiFacebook } from "react-icons/si";
+import { Link } from "wouter";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { useEffect, useState } from "react";
+
+export default function SupportPage() {
+  const [contactInfo, setContactInfo] = useState<{ instapay: string | null; cash_numbers: string[]; paypal: string | null; etisalat_cash: string | null } | null>(null);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch("/api/contact-info");
+        if (!res.ok) return;
+        const data = await res.json();
+        setContactInfo({
+          instapay: data?.instapay ?? null,
+          cash_numbers: Array.isArray(data?.cash_numbers) ? data.cash_numbers : [],
+          paypal: data?.paypal ?? null,
+          etisalat_cash: data?.etisalat_cash ?? null,
+        });
+      } catch { }
+    })();
+  }, []);
+
+  const formatWhatsAppLink = (): string | null => {
+    const pick = contactInfo?.etisalat_cash || contactInfo?.instapay || contactInfo?.cash_numbers?.[0] || null;
+    if (!pick) return null;
+    const digits = String(pick).replace(/[^\d]/g, "");
+    if (!digits) return null;
+    return `https://wa.me/${digits}`;
+  };
+
+  const whatsappHref = formatWhatsAppLink();
+  const telegramHref = "https://t.me/diaaeldeen1";
+  const facebookHref = "https://www.facebook.com/diaaaeldeen";
+  const etisalatCash = contactInfo?.etisalat_cash || null;
+
+  return (
+    <div className="min-h-screen bg-background text-foreground">
+      <div className="container mx-auto px-4 py-8">
+        {/* Header */}
+        <div className="mb-8">
+          <Link
+            href="/"
+            className="inline-flex items-center text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors mb-4"
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back to Home
+          </Link>
+
+          <div className="text-center mb-8">
+            <div className="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Headphones className="w-8 h-8 text-white" />
+            </div>
+            <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">Customer Support</h1>
+            <p className="text-gray-600 dark:text-gray-300 text-lg">We're here to help you 24/7</p>
+          </div>
+        </div>
+
+        {/* Contact Methods */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <Card className="hover:shadow-lg transition-shadow duration-300">
+            <CardHeader className="text-center">
+              <div className="w-12 h-12 bg-green-600 rounded-full flex items-center justify-center mx-auto mb-2">
+                <SiWhatsapp className="w-6 h-6 text-white" />
+              </div>
+              <CardTitle className="text-lg">WhatsApp</CardTitle>
+            </CardHeader>
+            <CardContent className="text-center">
+              <p className="text-gray-600 dark:text-gray-300 mb-4">Chat with us instantly</p>
+              <a href={whatsappHref ?? "#"} target="_blank" rel="noopener noreferrer" className="block">
+                <Button className="w-full bg-green-600 hover:bg-green-700" disabled={!whatsappHref}>
+                  <SiWhatsapp className="w-4 h-4 mr-2" />
+                  Start Chat
+                </Button>
+              </a>
+              {etisalatCash && (
+                <p className="text-xs text-muted-foreground mt-2">
+                  Etisalat Cash: {etisalatCash}
+                </p>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card className="hover:shadow-lg transition-shadow duration-300">
+            <CardHeader className="text-center">
+              <div className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center mx-auto mb-2">
+                <SiTelegram className="w-6 h-6 text-white" />
+              </div>
+              <CardTitle className="text-lg">Telegram</CardTitle>
+            </CardHeader>
+            <CardContent className="text-center">
+              <p className="text-gray-600 dark:text-gray-300 mb-4">Join our support channel</p>
+              <a href={telegramHref} target="_blank" rel="noopener noreferrer" className="block">
+                <Button className="w-full bg-blue-500 hover:bg-blue-600">
+                  <SiTelegram className="w-4 h-4 mr-2" />
+                  Join Channel
+                </Button>
+              </a>
+            </CardContent>
+          </Card>
+
+          <Card className="hover:shadow-lg transition-shadow duration-300">
+            <CardHeader className="text-center">
+              <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-2">
+                <SiFacebook className="w-6 h-6 text-white" />
+              </div>
+              <CardTitle className="text-lg">Facebook</CardTitle>
+            </CardHeader>
+            <CardContent className="text-center">
+              <p className="text-gray-600 dark:text-gray-300 mb-4">Follow us for updates</p>
+              <a href={facebookHref} target="_blank" rel="noopener noreferrer" className="block">
+                <Button className="w-full bg-blue-600 hover:bg-blue-700">
+                  <SiFacebook className="w-4 h-4 mr-2" />
+                  Follow Us
+                </Button>
+              </a>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Support Hours */}
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <Clock className="w-5 h-5 mr-2" />
+              Support Hours
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <h4 className="font-semibold text-gray-900 dark:text-white mb-2">Live Chat Support</h4>
+                <p className="text-gray-600 dark:text-gray-300">24/7 Available</p>
+              </div>
+              <div>
+                <h4 className="font-semibold text-gray-900 dark:text-white mb-2">Phone Support</h4>
+                <p className="text-gray-600 dark:text-gray-300">Saturday - Thursday: 9 AM - 11 PM (GMT+2)</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* FAQ Section */}
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <HelpCircle className="w-5 h-5 mr-2" />
+              Frequently Asked Questions
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="border-b border-gray-200 dark:border-gray-700 pb-4">
+                <h4 className="font-semibold text-gray-900 dark:text-white mb-2">How do I get my game codes?</h4>
+                <p className="text-gray-600 dark:text-gray-300">After successful payment, you'll receive your game codes instantly via email and SMS.</p>
+              </div>
+              <div className="border-b border-gray-200 dark:border-gray-700 pb-4">
+                <h4 className="font-semibold text-gray-900 dark:text-white mb-2">What payment methods do you accept?</h4>
+                <p className="text-gray-600 dark:text-gray-300">We accept credit cards, mobile wallet, bank transfers, and cryptocurrency.</p>
+              </div>
+              <div className="border-b border-gray-200 dark:border-gray-700 pb-4">
+                <h4 className="font-semibold text-gray-900 dark:text-white mb-2">Can I get a refund?</h4>
+                <p className="text-gray-600 dark:text-gray-300">Refunds are available within 24 hours if the codes haven't been used.</p>
+              </div>
+              <div>
+                <h4 className="font-semibold text-gray-900 dark:text-white mb-2">How long does delivery take?</h4>
+                <p className="text-gray-600 dark:text-gray-300">Most orders are delivered instantly. Some may take up to 5 minutes during peak hours.</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Contact Form */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <MessageCircle className="w-5 h-5 mr-2" />
+              Send us a message
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="name">Name</Label>
+                  <Input id="name" placeholder="Your full name" />
+                </div>
+                <div>
+                  <Label htmlFor="email">Email</Label>
+                  <Input id="email" type="email" placeholder="your@email.com" />
+                </div>
+              </div>
+              <div>
+                <Label htmlFor="subject">Subject</Label>
+                <Input id="subject" placeholder="How can we help you?" />
+              </div>
+              <div>
+                <Label htmlFor="message">Message</Label>
+                <Textarea id="message" placeholder="Describe your issue in detail..." rows={5} />
+              </div>
+              <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700">
+                <Mail className="w-4 h-4 mr-2" />
+                Send Message
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}

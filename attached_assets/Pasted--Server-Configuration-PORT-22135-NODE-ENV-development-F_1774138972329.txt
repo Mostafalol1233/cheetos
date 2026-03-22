@@ -1,0 +1,98 @@
+# Server Configuration
+PORT=22135
+NODE_ENV=development
+FRONTEND_URL=https://diaasadek.com
+
+# CORS Configuration
+CORS_ORIGIN="https://diaasadek.com,http://localhost:5173,http://localhost:3000"
+
+# Security
+SESSION_SECRET="SSNHo7ZC1cWvR2QFJHkQn5Vg5Z3r1P1oO8r7oD6kX2qYwM9bT6pL3r8V2w9z1JgT"
+JWT_SECRET="JWtPq9mZ6yC3xU1lT8vR7nK5bC2dA6eF9gH4jK1lM7pQ2rS8tV6wY3zD9xE4F1G2H"
+
+# Admin Credentials
+ADMIN_EMAIL=admin@diaaldeen.com
+ADMIN_PASSWORD="A!dm1n_2025_Diaa_Secure_#42"
+
+# Database (set real values if rotating)
+PGPORT=5432
+# Recommended for most uses
+DATABASE_URL=postgresql://neondb_owner:npg_SeROBi9kqf5Z@ep-cool-shape-addn86hb-pooler.c-2.us-east-1.aws.neon.tech/neondb?sslmode=require
+
+# For uses requiring a connection without pgbouncer
+DATABASE_URL_UNPOOLED=postgresql://neondb_owner:npg_SeROBi9kqf5Z@ep-cool-shape-addn86hb.c-2.us-east-1.aws.neon.tech/neondb?sslmode=require
+
+# Parameters for constructing your own connection string
+PGHOST=ep-cool-shape-addn86hb-pooler.c-2.us-east-1.aws.neon.tech
+PGHOST_UNPOOLED=ep-cool-shape-addn86hb.c-2.us-east-1.aws.neon.tech
+PGUSER=neondb_owner
+PGDATABASE=neondb
+PGPASSWORD=npg_SeROBi9kqf5Z
+
+# Parameters for Vercel Postgres Templates
+POSTGRES_URL=postgresql://neondb_owner:npg_SeROBi9kqf5Z@ep-cool-shape-addn86hb-pooler.c-2.us-east-1.aws.neon.tech/neondb?sslmode=require
+POSTGRES_URL_NON_POOLING=postgresql://neondb_owner:npg_SeROBi9kqf5Z@ep-cool-shape-addn86hb.c-2.us-east-1.aws.neon.tech/neondb?sslmode=require
+POSTGRES_USER=neondb_owner
+POSTGRES_HOST=ep-cool-shape-addn86hb-pooler.c-2.us-east-1.aws.neon.tech
+POSTGRES_PASSWORD=npg_SeROBi9kqf5Z
+POSTGRES_DATABASE=neondb
+POSTGRES_URL_NO_SSL=postgresql://neondb_owner:npg_SeROBi9kqf5Z@ep-cool-shape-addn86hb-pooler.c-2.us-east-1.aws.neon.tech/neondb
+POSTGRES_PRISMA_URL=postgresql://neondb_owner:npg_SeROBi9kqf5Z@ep-cool-shape-addn86hb-pooler.c-2.us-east-1.aws.neon.tech/neondb?connect_timeout=15&sslmode=require
+
+
+# API Configuration
+API_URL=https://diaasadek.com
+API_PORT=20242
+ADMIN_API_KEY=testkey123
+
+# Cloudinary Configuration
+CLOUDINARY_CLOUD_NAME=ddzbutb12
+CLOUDINARY_API_KEY=347457217563879
+CLOUDINARY_API_SECRET=iMuRIJsfp1ElPzSg2P74TeDdPtI
+
+# File Upload
+UPLOAD_DIR=./uploads
+MAX_FILE_SIZE=52428800
+
+# App Info
+APP_NAME="Diaa Eldeen Gaming Store"
+APP_ENVIRONMENT="development"
+
+# WhatsApp Configuration
+ADMIN_PHONE=+201500302461
+CONNECTED_PHONE=+201500302461
+RESET_WHATSAPP=false
+
+VODAFONE_CASH_NUMBER=01001387284
+VODAFONE_CASH_INSTRUCTIONS=Send the exact amount to this number and upload the receipt.
+
+# 2. Orange Cash
+ORANGE_CASH_NUMBER=01068586636
+ORANGE_CASH_INSTRUCTIONS=Send the exact amount to this number and upload the receipt.
+
+# 3. Etisalat Cash
+ETISALAT_CASH_NUMBER=01068586636
+ETISALAT_CASH_INSTRUCTIONS=Send the exact amount to this number and upload the receipt.
+
+# 4. WE Pay
+WE_PAY_NUMBERS=01070820811
+WE_PAY_INSTRUCTIONS=Send the exact amount to this number and upload the receipt.
+
+# 5. InstaPay
+INSTAPAY_ACCOUNT=01029870810
+INSTAPAY_INSTRUCTIONS=Send to this InstaPay address (IPN) and upload the receipt.
+
+# 6. PayPal / Credit Card
+PAYPAL_EMAIL=matrixdiaa2016@gmail.com
+PAYPAL_INSTRUCTIONS=Send payment to this PayPal email as 'Friends and Family' if possible.
+
+
+
+# Brevo SMTP
+SMTP_HOST=smtp-relay.brevo.com
+SMTP_PORT=587
+SMTP_USER=90160c001@smtp-brevo.com
+SMTP_PASS=xsmtpsib-ccf98c3903dc78347995fb8e77ec0cc9121616e494b40cec645350e5e2c74b8a-0PIiE0UHYYRnku7z
+
+AI_API_KEY=AIzaSyBcxBHc01A2rXHDcovjt_r8qoMtoute6UM
+

@@ -1,0 +1,41 @@
+{
+  "cookies": [
+    {
+      "name": "csrf_token",
+      "value": "44de67706cc79c438fd529d0f588b412",
+      "domain": "localhost",
+      "path": "/",
+      "expires": -1,
+      "httpOnly": false,
+      "secure": true,
+      "sameSite": "None"
+    }
+  ],
+  "origins": [
+    {
+      "origin": "http://localhost:5173",
+      "localStorage": [
+        {
+          "name": "userEmail",
+          "value": "admin@diaaldeen.com"
+        },
+        {
+          "name": "theme",
+          "value": "dark"
+        },
+        {
+          "name": "adminToken",
+          "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImFkbWluQGRpYWFsZGVlbi5jb20iLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3Njc4ODcxNzMsImV4cCI6MTc2Nzk3MzU3M30.UpDQuq3GmgTmYri9ENkRpVdSjby574l2fWAA6DsnOzg"
+        },
+        {
+          "name": "shop_cart_v1",
+          "value": "[]"
+        },
+        {
+          "name": "language",
+          "value": "en"
+        }
+      ]
+    }
+  ]
+}

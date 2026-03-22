@@ -1,0 +1,482 @@
+import { useState, useEffect, useRef } from 'react';
+import { MessageCircle, Send, X, Minimize2, Maximize2, Phone, Facebook, Paperclip } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { useQuery, useMutation } from '@tanstack/react-query';
+import { queryClient, apiRequest, API_BASE_URL } from '@/lib/queryClient';
+import { useSettings } from '@/lib/settings-context';
+import { useUserAuth } from '@/lib/user-auth-context';
+import { io, Socket } from 'socket.io-client';
+
+interface ChatMessage {
+  id: string;
+  sender: 'user' | 'support';
+  message: string;
+  timestamp: number;
+  attachmentUrl?: string;
+  attachmentType?: string;
+}
+
+interface ChatWidgetConfig {
+  enabled: boolean;
+  iconUrl: string;
+  welcomeMessage: string;
+  position: string;
+}
+
+interface LiveChatWidgetProps {
+  embedded?: boolean;
+}
+
+ export function LiveChatWidget({ embedded = false }: LiveChatWidgetProps) {
+  const [isOpen, setIsOpen] = useState(embedded);
+  const [isMinimized, setIsMinimized] = useState(false);
+  const [inputMessage, setInputMessage] = useState('');
+  const [showOptions, setShowOptions] = useState(true);
+  const { settings: siteSettings } = useSettings();
+  const { user, isAuthenticated } = useUserAuth();
+
+  const [sessionId, setSessionId] = useState(() => {
+    try {
+      const userData = localStorage.getItem('userData');
+      if (userData) {
+        try {
+          const parsed = JSON.parse(userData);
+          const uid = parsed?.id;
+          if (uid) return String(uid);
+        } catch { }
+      }
+
+      const sessionKey = 'chat_session_guest';
+      const existing = localStorage.getItem(sessionKey);
+      if (existing) return existing;
+      const sid = `guest_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+      localStorage.setItem(sessionKey, sid);
+      return sid;
+    } catch {
+      return `guest_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+    }
+  });
+
+  useEffect(() => {
+    try {
+      if (isAuthenticated && user?.id) {
+        setSessionId(String(user.id));
+        return;
+      }
+
+      const sessionKey = 'chat_session_guest';
+      const existing = localStorage.getItem(sessionKey);
+      if (existing) {
+        setSessionId(existing);
+        return;
+      }
+      const sid = `guest_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+      localStorage.setItem(sessionKey, sid);
+      setSessionId(sid);
+    } catch { }
+  }, [isAuthenticated, user?.id]);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const socketRef = useRef<Socket | null>(null);
+  const [isUserTyping, setIsUserTyping] = useState(false);
+  const [isSupportTyping, setIsSupportTyping] = useState(false);
+  const [search, setSearch] = useState('');
+
+  // Fetch chat widget config
+  const { data: config } = useQuery<ChatWidgetConfig>({
+    queryKey: ['/api/chat-widget/config'],
+    queryFn: async () => {
+      const res = await fetch(`${API_BASE_URL}/api/chat-widget/config`);
+      return res.json();
+    },
+    staleTime: 60000, // Cache for 1 minute
+  });
+
+  const widgetConfig = config || {
+    enabled: true,
+    iconUrl: '/images/message-icon.svg',
+    welcomeMessage: 'Hello! How can we help you?',
+    position: 'bottom-right'
+  };
+
+  const { data: messages = [] } = useQuery<ChatMessage[]>({
+    queryKey: [`/api/chat/${sessionId}`],
+    enabled: isOpen,
+    queryFn: async () => {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('userToken') : null;
+      const res = await fetch(`${API_BASE_URL}/api/chat/${sessionId}`, {
+        credentials: 'include',
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined
+      });
+      const data = await res.json().catch(() => ([]));
+      if (!res.ok) throw new Error((data as any)?.message || 'Failed to load chat');
+      return Array.isArray(data) ? data : [];
+    }
+  });
+
+  // Auto-reply mutation
+  const autoReplyMutation = useMutation({
+    mutationFn: async (message: string) => {
+      // Simulate support response
+      setIsSupportTyping(true);
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      setIsSupportTyping(false);
+      // Simple triggers for common queries
+      const lc = message.toLowerCase();
+      if (lc.includes('price')) {
+        return 'Our prices are listed on each game page. Look for the "Starting from" label.';
+      }
+      if (lc.includes('delivery') || lc.includes('time')) {
+        return 'Most digital products are delivered instantly after payment confirmation.';
+      }
+      if (lc.includes('payment') || lc.includes('method')) {
+        return 'We accept Vodafone Cash, Orange Cash, Etisalat Cash, WE Pay, InstaPay, Bank Transfer, and PayPal.';
+      }
+      return 'Thank you for contacting Diaa Eldeen! Our support team will get back to you soon. 🎮';
+    },
+    onSuccess: async (replyText) => {
+      // Add auto-reply message
+      await apiRequest('POST', '/api/chat/message', {
+        sender: 'support',
+        message: String(replyText),
+        sessionId
+      });
+      queryClient.invalidateQueries({ queryKey: [`/api/chat/${sessionId}`] });
+    }
+  });
+
+  const sendMutation = useMutation({
+    mutationFn: async (msg: string) => {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('userToken') : null;
+      const res = await fetch(`${API_BASE_URL}/api/chat/message`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({
+          sender: 'user',
+          message: msg,
+          sessionId
+        })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error((data as any)?.message || 'Failed to send');
+      return data;
+    },
+    onSuccess: () => {
+      setInputMessage('');
+      queryClient.invalidateQueries({ queryKey: [`/api/chat/${sessionId}`] });
+    }
+  });
+
+  const handleSendMessage = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (inputMessage.trim()) {
+      sendMutation.mutate(inputMessage);
+    }
+  };
+
+  useEffect(() => {
+    if (!isOpen || !socketRef.current) {
+      if (!inputMessage) setIsUserTyping(false);
+      return;
+    }
+
+    if (!inputMessage) {
+      setIsUserTyping(false);
+      socketRef.current.emit('typing', { sessionId, sender: 'user', isTyping: false });
+      return;
+    }
+
+    setIsUserTyping(true);
+    socketRef.current.emit('typing', { sessionId, sender: 'user', isTyping: true });
+
+    const t = setTimeout(() => {
+      setIsUserTyping(false);
+      socketRef.current?.emit('typing', { sessionId, sender: 'user', isTyping: false });
+    }, 1000);
+
+    return () => clearTimeout(t);
+  }, [inputMessage, isOpen, sessionId]);
+
+  // Auto-scroll to bottom
+  useEffect(() => {
+    if (scrollAreaRef.current) {
+      const scrollElement = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
+      if (scrollElement) {
+        scrollElement.scrollTop = scrollElement.scrollHeight;
+      }
+    }
+  }, [messages]);
+
+  useEffect(() => {
+    if (embedded) return;
+    const handler = () => setIsOpen(true);
+    window.addEventListener('open-live-chat', handler);
+    return () => window.removeEventListener('open-live-chat', handler);
+  }, [embedded]);
+
+  useEffect(() => {
+    if (!isOpen) {
+      if (socketRef.current) {
+        socketRef.current.off('new_message');
+        socketRef.current.off('typing');
+        socketRef.current.disconnect();
+        socketRef.current = null;
+      }
+      return;
+    }
+
+    if (!socketRef.current) {
+      const socket = io(API_BASE_URL, {
+        transports: ['polling'],
+        upgrade: false,
+        reconnection: true,
+        reconnectionAttempts: 5,
+        reconnectionDelay: 1000,
+        path: '/socket.io'
+      });
+      socketRef.current = socket;
+
+      socket.on('connect', () => {
+        socket.emit('join_session', { sessionId });
+      });
+
+      socket.on('new_message', (msg: ChatMessage) => {
+        queryClient.setQueryData<ChatMessage[]>([`/api/chat/${sessionId}`], (old) => {
+          const current = old || [];
+          if (current.some(m => m.id === msg.id)) return current;
+          return [...current, msg];
+        });
+      });
+
+      socket.on('typing', ({ sender, isTyping }: { sender: string; isTyping: boolean }) => {
+        if (sender === 'support' || sender === 'admin') {
+          setIsSupportTyping(Boolean(isTyping));
+        }
+      });
+    } else {
+      socketRef.current.emit('join_session', { sessionId });
+    }
+
+    return () => {
+      if (socketRef.current) {
+        socketRef.current.off('new_message');
+        socketRef.current.off('typing');
+        socketRef.current.disconnect();
+        socketRef.current = null;
+      }
+    };
+  }, [isOpen, sessionId]);
+
+  if (!widgetConfig.enabled && !embedded) {
+    return null;
+  }
+
+  if (!isOpen) {
+    return (
+      <div className={`fixed ${widgetConfig.position === 'bottom-right' ? 'bottom-6 right-6' : 'bottom-6 left-6'} z-40`}>
+        <button
+          onClick={() => {
+            setIsOpen(true);
+            setShowOptions(true);
+          }}
+          className="w-16 h-16 rounded-full bg-gradient-to-r from-gold-primary to-neon-pink hover:scale-110 transition-transform duration-300 shadow-lg flex items-center justify-center relative overflow-hidden"
+        >
+          <MessageCircle className="w-6 h-6 text-white" />
+        </button>
+      </div>
+    );
+  }
+
+  // Check if we have social links
+  const hasSocialLinks = !!(siteSettings?.whatsappNumber || siteSettings?.facebookUrl);
+
+  if (showOptions && hasSocialLinks) {
+    return (
+      <div className="fixed bottom-24 right-6 z-50 flex flex-col gap-4 animate-in slide-in-from-bottom-5 duration-300">
+        {siteSettings?.whatsappNumber && (
+          <a
+            href={`https://wa.me/${siteSettings.whatsappNumber.replace(/[^0-9]/g, '')}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-3 px-6 py-4 bg-[#25D366] hover:bg-[#128C7E] text-white rounded-full shadow-lg transition-transform hover:scale-105"
+          >
+            <Phone className="w-6 h-6" />
+            <span className="font-bold">WhatsApp</span>
+          </a>
+        )}
+
+        {siteSettings?.facebookUrl && (
+          <a
+            href={siteSettings.facebookUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-3 px-6 py-4 bg-[#0084FF] hover:bg-[#0063CC] text-white rounded-full shadow-lg transition-transform hover:scale-105"
+          >
+            <Facebook className="w-6 h-6" />
+            <span className="font-bold">Messenger</span>
+          </a>
+        )}
+
+        <button
+          onClick={() => setShowOptions(false)}
+          className="flex items-center gap-3 px-6 py-4 bg-gradient-to-r from-gold-primary to-neon-pink text-white rounded-full shadow-lg transition-transform hover:scale-105"
+        >
+          <MessageCircle className="w-6 h-6" />
+          <span className="font-bold">Live Chat</span>
+        </button>
+
+        <button
+          onClick={() => setIsOpen(false)}
+          className="self-end p-2 bg-background/80 backdrop-blur rounded-full shadow-md hover:bg-background transition-colors"
+        >
+          <X className="w-5 h-5 text-muted-foreground" />
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className={embedded
+      ? "w-full h-[600px] bg-card border border-gold-primary/30 rounded-2xl shadow-sm flex flex-col overflow-hidden"
+      : "fixed bottom-6 right-6 w-96 bg-card border border-gold-primary/30 rounded-2xl shadow-2xl z-50 flex flex-col h-[600px] overflow-hidden animate-in slide-in-from-bottom-5 duration-300"
+    }>
+      {/* Header */}
+      <div className="bg-gradient-to-r from-gold-primary/20 to-neon-pink/20 border-b border-gold-primary/30 p-4 flex items-center justify-between">
+        <div>
+          <h3 className="font-bold text-foreground">Diaa Eldeen Support</h3>
+          <p className="text-xs text-muted-foreground">{widgetConfig.welcomeMessage || 'We typically reply in minutes'}</p>
+        </div>
+        <div className="flex gap-2">
+          {hasSocialLinks && !embedded && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowOptions(true)}
+              className="hover:bg-gold-primary/10"
+              title="Back to options"
+            >
+              <X className="w-4 h-4 rotate-45" /> {/* Using X rotated as a 'back' or 'close' to options */}
+            </Button>
+          )}
+          {!embedded && (
+            <>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsMinimized(!isMinimized)}
+                className="hover:bg-gold-primary/10"
+              >
+                {isMinimized ? <Maximize2 className="w-4 h-4" /> : <Minimize2 className="w-4 h-4" />}
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsOpen(false)}
+                className="hover:bg-red-500/10"
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            </>
+          )}
+        </div>
+      </div>
+
+      {!isMinimized && (
+        <>
+          {/* Messages Area */}
+          <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
+            <div className="space-y-4">
+              {(messages.filter(m => !search || m.message.toLowerCase().includes(search.toLowerCase()))).length === 0 ? (
+                <div className="text-center text-muted-foreground py-8">
+                  <MessageCircle className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                  <p>Start a conversation with our support team!</p>
+                </div>
+              ) : (
+                messages.filter(m => !search || m.message.toLowerCase().includes(search.toLowerCase())).map((msg: ChatMessage) => (
+                  <div
+                    key={msg.id}
+                    className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+                  >
+                    <div
+                      className={`max-w-xs px-4 py-2 rounded-lg ${msg.sender === 'user'
+                        ? 'bg-gold-primary/30 text-foreground rounded-br-none'
+                        : 'bg-muted/50 text-muted-foreground rounded-bl-none'
+                        }`}
+                    >
+                      {msg.message && (
+                        <p className="text-sm break-words">{msg.message}</p>
+                      )}
+                      {msg.attachmentUrl && (
+                        <div className="mt-1">
+                          {msg.attachmentType === 'image' ? (
+                            <img
+                              src={msg.attachmentUrl}
+                              alt="Attachment"
+                              className="max-w-full max-h-64 rounded"
+                            />
+                          ) : (
+                            <a
+                              href={msg.attachmentUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-xs underline break-all"
+                            >
+                              Open attachment
+                            </a>
+                          )}
+                        </div>
+                      )}
+                      <span className="text-xs opacity-60 mt-1 block">
+                        {new Date(msg.timestamp).toLocaleTimeString([], {
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </span>
+                    </div>
+                  </div>
+                ))
+              )}
+              {(isUserTyping || isSupportTyping) && (
+                <div className="flex justify-start">
+                  <div className="px-4 py-2 rounded-lg bg-muted/50 text-muted-foreground rounded-bl-none">
+                    <span className="inline-flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 bg-current rounded-full animate-bounce" />
+                      <span className="w-1.5 h-1.5 bg-current rounded-full animate-bounce [animation-delay:0.15s]" />
+                      <span className="w-1.5 h-1.5 bg-current rounded-full animate-bounce [animation-delay:0.3s]" />
+                      <span className="text-xs ml-2">{isSupportTyping ? 'Support is typing...' : 'Typing...'}</span>
+                    </span>
+                  </div>
+                </div>
+              )}
+            </div>
+          </ScrollArea>
+
+          {/* Input Area */}
+          <div className="border-t border-gold-primary/30 p-4 bg-muted/20">
+            <form onSubmit={handleSendMessage} className="flex gap-2">
+              <Input
+                value={inputMessage}
+                onChange={(e) => setInputMessage(e.target.value)}
+                placeholder="Type your message..."
+                className="border-gold-primary/30 focus:border-gold-primary"
+                disabled={sendMutation.isPending}
+              />
+              <Button
+                type="submit"
+                disabled={sendMutation.isPending || !inputMessage.trim()}
+                className="bg-gradient-to-r from-gold-primary to-neon-pink hover:opacity-90"
+              >
+                <Send className="w-4 h-4" />
+              </Button>
+            </form>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
