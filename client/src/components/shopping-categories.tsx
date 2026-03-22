@@ -57,7 +57,7 @@ const TAG_MAP: Record<string, string> = {
 const FALLBACK_IMAGES: Record<string, string> = {
   "hot-deals":    "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=600&q=80",
   "mobile-games": "https://images.unsplash.com/photo-1511512578047-dfb367046420?w=600&q=80",
-  "gift-cards":   "/images/category-gift-cards.svg",
+  "gift-cards":   "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=600&q=80",
   "online-games": "https://images.unsplash.com/photo-1593305841991-05c297ba4575?w=600&q=80",
 };
 

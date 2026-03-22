@@ -240,6 +240,18 @@ export default function GamePage() {
     queryKey: ["/api/categories"],
   });
 
+  useEffect(() => {
+    const gameSlug = (game as any)?.slug || '';
+    if (!gameSlug) return;
+    fetch(`${API_BASE_URL}/api/reviews/game/${gameSlug}`)
+      .then(r => r.json())
+      .then(data => {
+        setReviews(data.reviews || []);
+        setReviewStats(data.stats || null);
+      })
+      .catch(() => {});
+  }, [(game as any)?.slug]);
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -306,17 +318,6 @@ export default function GamePage() {
 
   const faqs = isGiftCard ? GAME_FAQS['gift-cards'] : GAME_FAQS['default'];
   const redeemSteps = REDEEM_STEPS[gameSlug] || (isGiftCard ? [] : REDEEM_STEPS['default-game']);
-
-  useEffect(() => {
-    if (!gameSlug) return;
-    fetch(`${API_BASE_URL}/api/reviews/game/${gameSlug}`)
-      .then(r => r.json())
-      .then(data => {
-        setReviews(data.reviews || []);
-        setReviewStats(data.stats || null);
-      })
-      .catch(() => {});
-  }, [gameSlug]);
 
   const handleSubmitReview = async (e: React.FormEvent) => {
     e.preventDefault();
