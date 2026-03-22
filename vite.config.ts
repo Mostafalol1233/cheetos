@@ -33,13 +33,13 @@ export default defineConfig({
       deny: ["**/.*"],
     },
     proxy: {
-      "/api": { target: "http://localhost:3001", changeOrigin: true },
-      "/uploads": { target: "http://localhost:3001", changeOrigin: true },
-      "/media": { target: "http://localhost:3001", changeOrigin: true },
-      "/images": { target: "http://localhost:3001", changeOrigin: true },
-      "/payments-images": { target: "http://localhost:3001", changeOrigin: true },
-      "/attached_assets": { target: "http://localhost:3001", changeOrigin: true },
-      "/socket.io": { target: "http://localhost:3001", changeOrigin: true, ws: true }
+      "/api": { target: "http://localhost:22135", changeOrigin: true },
+      "/uploads": { target: "http://localhost:22135", changeOrigin: true },
+      "/media": { target: "http://localhost:22135", changeOrigin: true },
+      "/images": { target: "http://localhost:22135", changeOrigin: true },
+      "/payments-images": { target: "http://localhost:22135", changeOrigin: true },
+      "/attached_assets": { target: "http://localhost:22135", changeOrigin: true },
+      "/socket.io": { target: "http://localhost:22135", changeOrigin: true, ws: true }
     }
   },
 });
