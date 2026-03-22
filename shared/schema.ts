@@ -18,7 +18,8 @@ export const games = pgTable("games", {
   packages: text("packages").array(),
   packagePrices: text("package_prices").array(),
   discountPrice: decimal("discount_price", { precision: 10, scale: 2 }),
-  packageDiscountPrices: text("package_discount_prices").array()
+  packageDiscountPrices: text("package_discount_prices").array(),
+  bannerImage: text("banner_image"),
 });
 
 // Categories table

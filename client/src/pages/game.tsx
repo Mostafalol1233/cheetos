@@ -71,27 +71,13 @@ const CURRENCY_IMAGES: Record<string, string> = {
 };
 
 const HERO_IMAGES: Record<string, string> = {
-  'free-fire': '/images/freefire-Icon_1_1.webp',
-  'freefire': '/images/freefire-Icon_1_1.webp',
-  'pubg': '/images/pubg-game.png',
-  'pubg-mobile': '/images/pubg-game.png',
-  'crossfire': '/images/crossfire-game.png',
-  'minecraft': '/images/minecraft.webp',
   'honor-of-kings': '/images/hok-main.webp',
   'hok': '/images/hok-main.webp',
-  'valorant': '/images/VALORANT.jpg',
-  'roblox': '/images/roblox.webp',
   'steam': '/images/Steam-Logo-White_4.webp',
-  'xbox': '/images/xbox-live.webp',
-  'xbox-live': '/images/xbox-live.webp',
   'playstation': '/images/ps-store.webp',
   'ps-store': '/images/ps-store.webp',
   'discord': '/images/dis-co.webp',
-  'discord-nitro': '/images/dis-co.webp',
-  'netflix': '/images/netflix_-_Home_1.webp',
-  'google-play': '/images/gplay1-64c83ac2e830f.webp',
   'ea-play': '/images/ea-play-icon-1.webp',
-  'yalla-ludo': '/images/yalla-ludo-2-67563efa1ab95.webp',
 };
 
 function CurrencyAmountIcon({ amount, gameSlug }: { amount: string; gameSlug: string }) {
@@ -279,7 +265,7 @@ export default function GamePage() {
   }
 
   const gameSlug = (game as any).slug || '';
-  const heroImage = HERO_IMAGES[gameSlug] || (game as any).image_url || game.image || '';
+  const heroImage = game.bannerImage || (game as any).banner_image || HERO_IMAGES[gameSlug] || (game as any).image_url || game.image || '';
   const currencyImageUrl = CURRENCY_IMAGES[gameSlug] || null;
 
   const packagesList: any[] = Array.isArray((game as any).packagesList) ? (game as any).packagesList : [];

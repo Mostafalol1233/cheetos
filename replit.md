@@ -21,12 +21,14 @@ A high-end digital store for gaming currencies and vouchers.
 - `client/src/components/dynamic-loading-progress.tsx` — Loading screen component
 
 ## Image Handling
-- All game main images are now hosted on Cloudinary (ddzbutb12) - 100% migrated
-- Image priority order: Cloudinary DB URL → local slug map → DB image URL
-- `getGameImage()` in games.tsx and popular-games.tsx: prefers Cloudinary URLs from DB first
-- Local static images in `client/public/images/` still used for currency icons, hero banners, and fallbacks
+- All game main (logo) images are hosted on Cloudinary (ddzbutb12) in the `image` DB column
+- All game banner/hero images are hosted on Cloudinary in the `banner_image` DB column (22/24 games)
+- Image priority order (game.tsx hero): banner_image (DB) → HERO_IMAGES fallback → image_url (DB) → image (DB)
+- Image priority order (games.tsx / popular-games.tsx): banner_image (DB) → image (DB Cloudinary) → GAME_SLUG_IMAGES fallback → image (DB)
+- TikTok, Wolf Team, e-football fall back to their small logo Cloudinary images (no banner available)
+- Local static images in `client/public/images/` still used for currency icons, hero banners, and GAME_SLUG_IMAGES fallbacks
 - Logo in loading screen uses Cloudinary URL (gamecart/logo.png)
-- GAME_SLUG_IMAGES in games.tsx and popular-games.tsx: still used as fallback for games without Cloudinary DB images
+- `banner_image` column added to games table in DB and to Drizzle schema (shared/schema.ts)
 
 ## Recent Changes
 - Fixed "Image unavailable" by adding `client/public/images/` as static asset dir in backend
