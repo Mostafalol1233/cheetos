@@ -1,4 +1,4 @@
-import { pgTable, text, varchar, boolean, integer, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, boolean, bigint, jsonb } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -12,7 +12,7 @@ export const settings = pgTable("settings", {
   facebookUrl: text("facebook_url"),
   trustBadges: jsonb("trust_badges").$type<string[] | null>().default(null),
   footerText: text("footer_text"),
-  updatedAt: integer("updated_at").default(Date.now())
+  updatedAt: bigint("updated_at", { mode: "number" }).default(Date.now())
 });
 
 export const insertSettingsSchema = createInsertSchema(settings);
