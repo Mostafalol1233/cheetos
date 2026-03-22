@@ -40,3 +40,9 @@ A high-end digital store for gaming currencies and vouchers.
 - Currency images (diamond/UC/etc) now shown in package cards as main image when no pkg image
 - Package image error fallback now shows currency icon before gradient placeholder
 - Popular games grid: 2 columns on mobile (was 1), consistent aspect-[4/3] ratio, hover shadow
+- Added real packages to all gift cards in PostgreSQL DB (Steam, Google Play, Amazon, PSN, Xbox, iTunes, Netflix, Spotify)
+- Updated gift cards category image to a new branded SVG banner (`/images/category-gift-cards.svg`)
+- Moved Fortnite from gift-cards to online-games category
+- Made all gift card games popular and visible on main page
+- game.tsx: Gift cards show "How to receive your code" info box instead of Player ID field
+- game.tsx: Gift card badges show "Gift Card Code" and "Code via WhatsApp" instead of "Direct Top-up"/"Instant Delivery"

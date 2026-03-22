@@ -167,6 +167,7 @@ export default function GamePage() {
       }));
 
   const isOutOfStock = Number(game.stock) <= 0;
+  const isGiftCard = game.category === 'gift-cards';
 
   const getPricing = (pkg: any, index: number) => {
     const base = Number(pkg.price || ((game as any).packagePrices || [])[index] || 0);
@@ -229,11 +230,11 @@ export default function GamePage() {
                 <div className="absolute top-3 left-3 flex flex-col gap-2">
                   <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/70 backdrop-blur-sm text-white text-xs font-bold border border-white/10">
                     <Zap className="w-3 h-3 text-yellow-400" />
-                    Direct Top-up 🚀
+                    {isGiftCard ? 'Gift Card Code 🎁' : 'Direct Top-up 🚀'}
                   </span>
                   <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/70 backdrop-blur-sm text-white text-xs font-bold border border-white/10">
                     <Clock className="w-3 h-3 text-green-400" />
-                    Instant Delivery ⚡
+                    {isGiftCard ? 'Code via WhatsApp ⚡' : 'Instant Delivery ⚡'}
                   </span>
                 </div>
               </div>
@@ -279,27 +280,49 @@ export default function GamePage() {
                 </div>
               )}
 
-              <div className="p-4 rounded-xl bg-card border border-border/30">
-                <label className="flex items-center gap-2 text-sm font-bold text-foreground mb-2">
-                  {language === 'ar' ? 'Player ID' : 'Player ID'}
-                  <span className="text-destructive">*</span>
-                  <button className="text-muted-foreground hover:text-foreground">
-                    <HelpCircle className="w-3.5 h-3.5" />
-                  </button>
-                </label>
-                <input
-                  type="text"
-                  value={playerId}
-                  onChange={e => setPlayerId(e.target.value)}
-                  placeholder={language === 'ar' ? 'أدخل Player ID الخاص بك' : 'Enter your Player ID'}
-                  className="w-full bg-background border border-border rounded-lg px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-gold-primary/60 focus:ring-1 focus:ring-gold-primary/30 transition"
-                />
-                <p className="text-xs text-muted-foreground mt-2">
-                  {language === 'ar'
-                    ? '⚠️ تأكد من إدخال الـ ID الصحيح قبل الشراء'
-                    : '⚠️ Make sure to enter the correct ID before purchasing'}
-                </p>
-              </div>
+              {isGiftCard ? (
+                <div className="p-4 rounded-xl bg-green-500/10 border border-green-500/30">
+                  <div className="flex items-start gap-3">
+                    <span className="text-2xl mt-0.5">🎁</span>
+                    <div>
+                      <p className="text-sm font-bold text-green-400 mb-1">
+                        {language === 'ar' ? 'طريقة استلام الكود' : 'How to receive your code'}
+                      </p>
+                      <p className="text-xs text-muted-foreground leading-relaxed">
+                        {language === 'ar'
+                          ? 'بعد إتمام الدفع، هيتبعتلك كود الكرت على واتساب فورًا. تأكد من إدخال رقم واتسابك الصح في صفحة الدفع.'
+                          : 'After payment is confirmed, your gift card code will be sent to you via WhatsApp instantly. Make sure to enter your correct WhatsApp number at checkout.'}
+                      </p>
+                      <div className="flex items-center gap-2 mt-2">
+                        <span className="text-xs bg-green-500/20 text-green-400 px-2 py-1 rounded-full font-medium">✅ {language === 'ar' ? 'توصيل فوري على واتساب' : 'Instant WhatsApp delivery'}</span>
+                        <span className="text-xs bg-blue-500/20 text-blue-400 px-2 py-1 rounded-full font-medium">🔒 {language === 'ar' ? 'كود أصلي 100%' : '100% Authentic Code'}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="p-4 rounded-xl bg-card border border-border/30">
+                  <label className="flex items-center gap-2 text-sm font-bold text-foreground mb-2">
+                    {language === 'ar' ? 'Player ID' : 'Player ID'}
+                    <span className="text-destructive">*</span>
+                    <button className="text-muted-foreground hover:text-foreground">
+                      <HelpCircle className="w-3.5 h-3.5" />
+                    </button>
+                  </label>
+                  <input
+                    type="text"
+                    value={playerId}
+                    onChange={e => setPlayerId(e.target.value)}
+                    placeholder={language === 'ar' ? 'أدخل Player ID الخاص بك' : 'Enter your Player ID'}
+                    className="w-full bg-background border border-border rounded-lg px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-gold-primary/60 focus:ring-1 focus:ring-gold-primary/30 transition"
+                  />
+                  <p className="text-xs text-muted-foreground mt-2">
+                    {language === 'ar'
+                      ? '⚠️ تأكد من إدخال الـ ID الصحيح قبل الشراء'
+                      : '⚠️ Make sure to enter the correct ID before purchasing'}
+                  </p>
+                </div>
+              )}
             </motion.div>
           </div>
 
