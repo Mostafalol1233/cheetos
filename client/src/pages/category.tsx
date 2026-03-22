@@ -77,7 +77,7 @@ export default function CategoryPage() {
           <p className="text-muted-foreground mb-6">{t('category_not_found_desc')}</p>
           <Link
             href="/"
-            className="inline-flex items-center px-6 py-3 rounded-xl bg-cyan-400/15 border border-cyan-400/30 text-cyan-400 hover:bg-cyan-400/25 transition-colors"
+            className="inline-flex items-center px-6 py-3 rounded-xl bg-gold-primary/15 border border-gold-primary/30 text-gold-primary hover:bg-gold-primary/25 transition-colors"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
             {t('back_to_home')}
@@ -196,7 +196,6 @@ export default function CategoryPage() {
                     const packageDiscount = coerceNumberOrNull(packageDiscountPrices[index]);
                     const gameDiscount = coerceNumberOrNull((game as any)?.discountPrice ?? (game as any)?.discount_price ?? null);
 
-                    // Priority: package discount > game discount > base price
                     let final = base;
                     if (packageDiscount != null && packageDiscount > 0 && packageDiscount < base) {
                       final = packageDiscount;
@@ -263,7 +262,7 @@ export default function CategoryPage() {
                                     {pricing.original != null && (
                                       <span className="text-red-400 line-through text-[10px]">{pricing.base} EGP</span>
                                     )}
-                                    <span className="text-cyan-400 font-bold">{pricing.final} EGP</span>
+                                    <span className="text-gold-primary font-bold">{pricing.final} EGP</span>
                                   </div>
                                 </div>
                               );
@@ -292,7 +291,7 @@ export default function CategoryPage() {
                         )}
 
                         <Link href={`/game/${game.slug}`} className="w-full block">
-                          <Button size="sm" className="w-full bg-gradient-to-r from-gold-primary to-neon-pink hover:shadow-lg text-white disabled:bg-muted disabled:hover:bg-muted transition-all">
+                          <Button size="sm" className="w-full bg-gradient-to-r from-gold-primary to-amber-600 hover:shadow-lg text-background disabled:bg-muted disabled:hover:bg-muted transition-all">
                             <ShoppingCart className="w-4 h-4 mr-2" />
                             {isOutOfStock ? t('out_of_stock') : t('view_packages')}
                           </Button>
@@ -314,7 +313,7 @@ export default function CategoryPage() {
               </p>
               <Link
                 href="/"
-                className="inline-flex items-center px-6 py-3 rounded-xl bg-cyan-400/15 border border-cyan-400/30 text-cyan-400 hover:bg-cyan-400/25 transition-colors"
+                className="inline-flex items-center px-6 py-3 rounded-xl bg-gold-primary/15 border border-gold-primary/30 text-gold-primary hover:bg-gold-primary/25 transition-colors"
               >
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 {t('browse_other_categories')}

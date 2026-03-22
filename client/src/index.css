@@ -197,11 +197,11 @@
   --popover: 220 12% 13%;
   --popover-foreground: 210 20% 92%;
 
-  /* Primary: Cyan/Teal */
-  --primary: 166 100% 70%;
-  /* Bright cyan #64ffda */
-  --primary-foreground: 222 47% 7%;
-  /* Dark navy for contrast */
+  /* Primary: Gold/Amber */
+  --primary: 45 90% 55%;
+  /* Amber gold */
+  --primary-foreground: 220 13% 9%;
+  /* Dark bg for contrast */
 
   /* Secondary: Dark surface */
   --secondary: 220 12% 17%;
@@ -223,8 +223,8 @@
   /* Border & Input */
   --border: 220 12% 20%;
   --input: 220 12% 16%;
-  --ring: 166 100% 70%;
-  /* Cyan ring */
+  --ring: 45 90% 55%;
+  /* Gold ring */
 
   /* Dark mode accent colors - blue family */
   --cyber-blue: 166 100% 70%;
@@ -258,15 +258,17 @@
   --card-bg-alt: 220 42% 14%;
   /* Lighter card */
 
-  /* Gold colors mapped to blue for dark mode */
-  --gold-primary: 166 100% 70%;
-  /* Cyan instead of gold */
-  --gold-secondary: 199 89% 48%;
-  /* Sky blue */
+  /* Gold colors — real gold/amber in dark mode */
+  --gold-primary: 45 90% 55%;
+  /* Amber gold #FFC430 */
+  --gold-secondary: 38 85% 46%;
+  /* Darker amber */
+  --gold-accent: 50 95% 62%;
+  /* Bright gold */
 
-  /* Glassmorphism Dark - blue tinted glass */
+  /* Glassmorphism Dark */
   --glass-bg: 220 42% 10% / 0.8;
-  --glass-border: 166 100% 70% / 0.15;
+  --glass-border: 45 90% 55% / 0.12;
 }
 
 /* ========================================

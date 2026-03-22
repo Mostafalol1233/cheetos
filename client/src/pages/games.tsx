@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, Search, Filter, Star, ShoppingCart, Check } from "lucide-react";
+import { ArrowLeft, Search, Filter, Star, ShoppingCart, Check, Gamepad2 } from "lucide-react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -58,7 +58,6 @@ export default function GamesPage() {
     }, 1000);
   };
 
-  // Filter games based on search and category
   const filteredGames = allGames.filter(game => {
     const matchesSearch = game.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          game.description.toLowerCase().includes(searchTerm.toLowerCase());
@@ -90,20 +89,26 @@ export default function GamesPage() {
     <div className="min-h-screen bg-background text-foreground">
 
       {/* Page Header Banner */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-[#0d1b2a] via-[#1a2a4a] to-[#0a1628] py-12 px-4 mb-8">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_rgba(6,182,212,0.12)_0%,_transparent_60%)]" />
-        <div className="absolute top-0 right-0 w-80 h-80 bg-cyan-500/5 rounded-full blur-3xl" />
+      <div className="relative overflow-hidden bg-gradient-to-br from-background via-card to-background py-12 px-4 mb-8 border-b border-border/40">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_rgba(255,215,0,0.06)_0%,_transparent_60%)]" />
+        <div className="absolute top-0 right-0 w-80 h-80 bg-gold-primary/5 rounded-full blur-3xl" />
+        <div className="absolute bottom-0 left-0 w-60 h-60 bg-gold-primary/3 rounded-full blur-3xl" />
         <div className="container mx-auto relative z-10">
-          <Link href="/" className="inline-flex items-center text-cyan-400/70 hover:text-cyan-400 transition-colors mb-5 text-sm">
+          <Link href="/" className="inline-flex items-center text-muted-foreground hover:text-gold-primary transition-colors mb-5 text-sm">
             <ArrowLeft className="w-4 h-4 mr-2" />
             {t('back_to_home')}
           </Link>
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-            <div>
-              <h1 className="text-4xl md:text-5xl font-black text-white mb-2">{t('games')}</h1>
-              <p className="text-gray-400 text-base">{t('browse_games_desc')}</p>
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 rounded-2xl bg-gold-primary/15 border border-gold-primary/30 flex items-center justify-center">
+                <Gamepad2 className="w-7 h-7 text-gold-primary" />
+              </div>
+              <div>
+                <h1 className="text-4xl md:text-5xl font-black text-foreground mb-1">{t('games')}</h1>
+                <p className="text-muted-foreground text-base">{t('browse_games_desc')}</p>
+              </div>
             </div>
-            <span className="text-sm bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 px-4 py-2 rounded-full font-medium self-start sm:self-auto whitespace-nowrap">
+            <span className="text-sm bg-gold-primary/15 text-gold-primary border border-gold-primary/30 px-4 py-2 rounded-full font-medium self-start sm:self-auto whitespace-nowrap">
               {filteredGames.length} {t('games_found')}
             </span>
           </div>
@@ -119,7 +124,7 @@ export default function GamesPage() {
                 placeholder={`${t('search')}...`}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 bg-card border-border/60 focus:border-cyan-500/50"
+                className="pl-10 bg-card border-border/60 focus:border-gold-primary/50"
               />
             </div>
             <Select value={selectedCategory} onValueChange={setSelectedCategory}>
@@ -147,7 +152,7 @@ export default function GamesPage() {
               
               return (
                 <Link key={game.id} href={`/game/${game.slug}`} className="group block h-full">
-                  <div className="relative h-full flex flex-col rounded-xl overflow-hidden border border-border/60 bg-card hover:border-cyan-500/40 transition-all duration-300 shadow-sm hover:shadow-lg hover:shadow-cyan-500/5 group-hover:-translate-y-0.5">
+                  <div className="relative h-full flex flex-col rounded-xl overflow-hidden border border-border/60 bg-card hover:border-gold-primary/40 transition-all duration-300 shadow-sm hover:shadow-lg hover:shadow-gold-primary/5 group-hover:-translate-y-0.5">
                     <div className="relative aspect-[4/3] overflow-hidden bg-muted/20">
                       <ImageWithFallback
                         src={game.image}
@@ -168,12 +173,12 @@ export default function GamesPage() {
                     </div>
 
                     <div className="p-4 flex flex-col flex-1 gap-2">
-                      <h3 className="text-base font-bold text-foreground group-hover:text-cyan-400 transition-colors line-clamp-1" title={game.name}>
+                      <h3 className="text-base font-bold text-foreground group-hover:text-gold-primary transition-colors line-clamp-1" title={game.name}>
                         {game.name}
                       </h3>
 
                       <div className="mt-auto flex items-center justify-between pt-2">
-                        <span className="text-lg font-black text-cyan-400">
+                        <span className="text-lg font-black text-gold-primary">
                           {Number(game.price) > 0 ? `${Number(game.price).toLocaleString()} EGP` : <span className="text-sm text-muted-foreground">View options</span>}
                         </span>
                         <Button
@@ -182,7 +187,7 @@ export default function GamesPage() {
                           className={`
                             ${isAdding
                               ? "bg-green-600 hover:bg-green-700 text-white"
-                              : "bg-cyan-600 hover:bg-cyan-500 text-white"}
+                              : "bg-gold-primary hover:bg-gold-primary/90 text-background"}
                             transition-colors z-30 shadow-sm
                           `}
                           disabled={isOutOfStock || isAdding}
@@ -204,11 +209,11 @@ export default function GamesPage() {
           </div>
         ) : (
           <div className="text-center py-12">
-            <Search className="w-16 h-16 mx-auto text-gray-400 mb-4" />
-            <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+            <Search className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
+            <h3 className="text-xl font-semibold text-foreground mb-2">
               {t('no_games_found')}
             </h3>
-            <p className="text-gray-600 dark:text-gray-300 mb-6">
+            <p className="text-muted-foreground mb-6">
               {t('try_adjust_search')}
             </p>
             <Button
@@ -216,7 +221,7 @@ export default function GamesPage() {
                 setSearchTerm("");
                 setSelectedCategory("all");
               }}
-              className="bg-blue-600 hover:bg-blue-700"
+              className="bg-gold-primary hover:bg-gold-primary/90 text-background"
             >
               {t('clear_filters')}
             </Button>

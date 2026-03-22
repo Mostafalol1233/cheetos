@@ -43,37 +43,37 @@ export default function SupportPage() {
     <div className="min-h-screen bg-background text-foreground">
 
       {/* Hero Section */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-[#0d1b2a] via-[#1a2a4a] to-[#0a1628] py-16 px-4">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(6,182,212,0.15)_0%,_transparent_70%)]" />
-        <div className="absolute top-0 right-0 w-96 h-96 bg-cyan-500/5 rounded-full blur-3xl" />
-        <div className="absolute bottom-0 left-0 w-72 h-72 bg-purple-500/5 rounded-full blur-3xl" />
+      <div className="relative overflow-hidden bg-gradient-to-br from-background via-card to-background py-16 px-4 border-b border-border/40">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(255,215,0,0.06)_0%,_transparent_70%)]" />
+        <div className="absolute top-0 right-0 w-96 h-96 bg-gold-primary/5 rounded-full blur-3xl" />
+        <div className="absolute bottom-0 left-0 w-72 h-72 bg-amber-500/5 rounded-full blur-3xl" />
 
         <div className="container mx-auto relative z-10">
-          <Link href="/" className="inline-flex items-center text-cyan-400/70 hover:text-cyan-400 transition-colors mb-8 text-sm">
+          <Link href="/" className="inline-flex items-center text-muted-foreground hover:text-gold-primary transition-colors mb-8 text-sm">
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back to Home
           </Link>
 
           <div className="text-center">
-            <div className="w-20 h-20 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg shadow-cyan-500/30">
-              <Headphones className="w-10 h-10 text-white" />
+            <div className="w-20 h-20 bg-gradient-to-br from-gold-primary/30 to-amber-600/20 border border-gold-primary/30 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg shadow-gold-primary/10">
+              <Headphones className="w-10 h-10 text-gold-primary" />
             </div>
-            <h1 className="text-4xl md:text-5xl font-black text-white mb-3">
-              Customer <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-400">Support</span>
+            <h1 className="text-4xl md:text-5xl font-black text-foreground mb-3">
+              Customer <span className="text-transparent bg-clip-text bg-gradient-to-r from-gold-primary to-amber-400">Support</span>
             </h1>
-            <p className="text-gray-400 text-lg max-w-md mx-auto">We're here to help you 24/7 — reach us on any platform</p>
+            <p className="text-muted-foreground text-lg max-w-md mx-auto">We're here to help you 24/7 — reach us on any platform</p>
 
             <div className="flex flex-wrap justify-center gap-6 mt-8">
-              <div className="flex items-center gap-2 text-sm text-gray-400">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
                 Online Now
               </div>
-              <div className="flex items-center gap-2 text-sm text-gray-400">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Zap className="w-4 h-4 text-yellow-400" />
                 Instant Replies
               </div>
-              <div className="flex items-center gap-2 text-sm text-gray-400">
-                <Shield className="w-4 h-4 text-cyan-400" />
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Shield className="w-4 h-4 text-gold-primary" />
                 Secure & Trusted
               </div>
             </div>
@@ -93,11 +93,11 @@ export default function SupportPage() {
               <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-green-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-green-500/30 group-hover:scale-110 transition-transform duration-300">
                 <SiWhatsapp className="w-8 h-8 text-white" />
               </div>
-              <h3 className="text-xl font-bold text-white mb-2">WhatsApp</h3>
-              <p className="text-gray-400 text-sm mb-2">Chat with us instantly</p>
+              <h3 className="text-xl font-bold text-foreground mb-2">WhatsApp</h3>
+              <p className="text-muted-foreground text-sm mb-2">Chat with us instantly</p>
               <span className="inline-block text-xs bg-green-500/20 text-green-400 px-2 py-1 rounded-full mb-4">Fastest Response</span>
               {etisalatCash && (
-                <p className="text-xs text-gray-500 mb-4">{etisalatCash}</p>
+                <p className="text-xs text-muted-foreground mb-4">{etisalatCash}</p>
               )}
               <a href={whatsappHref ?? "#"} target="_blank" rel="noopener noreferrer" className="block">
                 <Button className="w-full bg-green-600 hover:bg-green-500 text-white font-bold shadow-md shadow-green-500/20 transition-all" disabled={!whatsappHref}>
@@ -115,8 +115,8 @@ export default function SupportPage() {
               <div className="w-16 h-16 bg-gradient-to-br from-sky-400 to-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-sky-500/30 group-hover:scale-110 transition-transform duration-300">
                 <SiTelegram className="w-8 h-8 text-white" />
               </div>
-              <h3 className="text-xl font-bold text-white mb-2">Telegram</h3>
-              <p className="text-gray-400 text-sm mb-2">Join our support channel</p>
+              <h3 className="text-xl font-bold text-foreground mb-2">Telegram</h3>
+              <p className="text-muted-foreground text-sm mb-2">Join our support channel</p>
               <span className="inline-block text-xs bg-sky-500/20 text-sky-400 px-2 py-1 rounded-full mb-4">Community Updates</span>
               <a href={telegramHref} target="_blank" rel="noopener noreferrer" className="block mt-6">
                 <Button className="w-full bg-sky-500 hover:bg-sky-400 text-white font-bold shadow-md shadow-sky-500/20 transition-all">
@@ -134,8 +134,8 @@ export default function SupportPage() {
               <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-700 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-blue-500/30 group-hover:scale-110 transition-transform duration-300">
                 <SiFacebook className="w-8 h-8 text-white" />
               </div>
-              <h3 className="text-xl font-bold text-white mb-2">Facebook</h3>
-              <p className="text-gray-400 text-sm mb-2">Follow us for updates</p>
+              <h3 className="text-xl font-bold text-foreground mb-2">Facebook</h3>
+              <p className="text-muted-foreground text-sm mb-2">Follow us for updates</p>
               <span className="inline-block text-xs bg-blue-500/20 text-blue-400 px-2 py-1 rounded-full mb-4">News & Offers</span>
               <a href={facebookHref} target="_blank" rel="noopener noreferrer" className="block mt-6">
                 <Button className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold shadow-md shadow-blue-500/20 transition-all">
@@ -203,8 +203,8 @@ export default function SupportPage() {
         {/* Contact Form */}
         <div className="rounded-2xl border border-border bg-card p-8">
           <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-xl flex items-center justify-center">
-              <MessageCircle className="w-5 h-5 text-white" />
+            <div className="w-10 h-10 bg-gradient-to-br from-gold-primary/30 to-amber-600/20 border border-gold-primary/30 rounded-xl flex items-center justify-center">
+              <MessageCircle className="w-5 h-5 text-gold-primary" />
             </div>
             <div>
               <h2 className="text-lg font-bold text-foreground">Send us a Message</h2>
@@ -216,22 +216,22 @@ export default function SupportPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="name" className="text-sm font-medium mb-1.5 block">Name</Label>
-                <Input id="name" placeholder="Your full name" className="bg-muted/50 border-border/60 focus:border-cyan-500/50" />
+                <Input id="name" placeholder="Your full name" className="bg-muted/50 border-border/60 focus:border-gold-primary/50" />
               </div>
               <div>
                 <Label htmlFor="email" className="text-sm font-medium mb-1.5 block">Email</Label>
-                <Input id="email" type="email" placeholder="your@email.com" className="bg-muted/50 border-border/60 focus:border-cyan-500/50" />
+                <Input id="email" type="email" placeholder="your@email.com" className="bg-muted/50 border-border/60 focus:border-gold-primary/50" />
               </div>
             </div>
             <div>
               <Label htmlFor="subject" className="text-sm font-medium mb-1.5 block">Subject</Label>
-              <Input id="subject" placeholder="How can we help you?" className="bg-muted/50 border-border/60 focus:border-cyan-500/50" />
+              <Input id="subject" placeholder="How can we help you?" className="bg-muted/50 border-border/60 focus:border-gold-primary/50" />
             </div>
             <div>
               <Label htmlFor="message" className="text-sm font-medium mb-1.5 block">Message</Label>
-              <Textarea id="message" placeholder="Describe your issue in detail..." rows={5} className="bg-muted/50 border-border/60 focus:border-cyan-500/50 resize-none" />
+              <Textarea id="message" placeholder="Describe your issue in detail..." rows={5} className="bg-muted/50 border-border/60 focus:border-gold-primary/50 resize-none" />
             </div>
-            <Button type="submit" className="w-full bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-bold shadow-lg shadow-cyan-500/20 transition-all">
+            <Button type="submit" className="w-full bg-gradient-to-r from-gold-primary to-amber-600 hover:opacity-90 text-background font-bold shadow-lg shadow-gold-primary/20 transition-all">
               <Mail className="w-4 h-4 mr-2" />
               Send Message
             </Button>

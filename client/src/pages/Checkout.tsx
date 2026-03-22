@@ -102,8 +102,8 @@ export function CheckoutContent({ isEmbedded = false }: { isEmbedded?: boolean }
     <div className="min-h-screen bg-background">
       {/* Ambient glow */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-0 right-1/4 w-96 h-96 bg-cyan-500/5 rounded-full blur-[120px]" />
-        <div className="absolute bottom-0 left-1/4 w-96 h-96 bg-purple-500/5 rounded-full blur-[120px]" />
+        <div className="absolute top-0 right-1/4 w-96 h-96 bg-gold-primary/4 rounded-full blur-[120px]" />
+        <div className="absolute bottom-0 left-1/4 w-96 h-96 bg-amber-500/3 rounded-full blur-[120px]" />
       </div>
 
       <div className="relative z-10 container mx-auto px-4 py-10 max-w-5xl">
@@ -136,8 +136,8 @@ export function CheckoutContent({ isEmbedded = false }: { isEmbedded?: boolean }
                   <React.Fragment key={s.key}>
                     <div className="flex items-center gap-2">
                       <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-300 ${
-                        isDone    ? 'bg-cyan-400 text-black shadow-[0_0_12px_rgba(100,255,218,0.5)]' :
-                        isCurrent ? 'bg-cyan-400/20 border-2 border-cyan-400 text-cyan-400' :
+                        isDone    ? 'bg-gold-primary text-background shadow-[0_0_12px_rgba(255,215,0,0.4)]' :
+                        isCurrent ? 'bg-gold-primary/20 border-2 border-gold-primary text-gold-primary' :
                                     'bg-white/5 border border-white/15 text-muted-foreground'
                       }`}>
                         {isDone ? '✓' : i + 1}
@@ -147,7 +147,7 @@ export function CheckoutContent({ isEmbedded = false }: { isEmbedded?: boolean }
                       </span>
                     </div>
                     {i < VISIBLE_STEPS.length - 1 && (
-                      <div className={`flex-1 h-px mx-3 transition-all duration-500 ${isDone ? 'bg-cyan-400/50' : 'bg-white/10'}`} />
+                      <div className={`flex-1 h-px mx-3 transition-all duration-500 ${isDone ? 'bg-gold-primary/50' : 'bg-white/10'}`} />
                     )}
                   </React.Fragment>
                 );
@@ -184,7 +184,7 @@ export function CheckoutContent({ isEmbedded = false }: { isEmbedded?: boolean }
             <div className="order-1 lg:order-2">
               <div className="rounded-2xl border border-white/8 bg-card/60 backdrop-blur-sm shadow-xl overflow-hidden sticky top-6">
                 {/* Product image banner */}
-                <div className="relative h-36 bg-gradient-to-br from-[#0d1b2a] to-[#0a1020] overflow-hidden">
+                <div className="relative h-36 bg-gradient-to-br from-card to-muted overflow-hidden">
                   {itemImage ? (
                     <ImageWithFallback
                       src={itemImage}
@@ -193,7 +193,7 @@ export function CheckoutContent({ isEmbedded = false }: { isEmbedded?: boolean }
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
-                      <Package className="w-14 h-14 text-cyan-400/30" />
+                      <Package className="w-14 h-14 text-gold-primary/30" />
                     </div>
                   )}
                   <div className="absolute inset-0 bg-gradient-to-t from-card/90 via-card/20 to-transparent" />
@@ -216,7 +216,7 @@ export function CheckoutContent({ isEmbedded = false }: { isEmbedded?: boolean }
 
                   <div className="flex justify-between items-center border-t border-white/8 pt-4 mb-5">
                     <span className="font-bold text-foreground">Total</span>
-                    <span className="text-xl font-black text-cyan-400">{formatPrice(itemPrice)}</span>
+                    <span className="text-xl font-black text-gold-primary">{formatPrice(itemPrice)}</span>
                   </div>
 
                   {/* Trust badges */}
@@ -227,7 +227,7 @@ export function CheckoutContent({ isEmbedded = false }: { isEmbedded?: boolean }
                       { icon: Clock,       label: '24/7 Support' },
                     ].map(({ icon: Icon, label }) => (
                       <div key={label} className="flex items-center gap-2.5 text-xs text-muted-foreground">
-                        <Icon className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+                        <Icon className="w-3.5 h-3.5 text-gold-primary shrink-0" />
                         {label}
                       </div>
                     ))}

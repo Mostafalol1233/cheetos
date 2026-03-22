@@ -27,24 +27,38 @@ const ICON_MAP: Record<string, React.ElementType> = {
 };
 
 const ACCENT_MAP: Record<string, string> = {
-  "hot-deals":    "from-red-600/80 via-orange-600/60 to-transparent",
-  "mobile-games": "from-purple-700/80 via-pink-600/60 to-transparent",
-  "gift-cards":   "from-emerald-700/80 via-teal-600/60 to-transparent",
-  "online-games": "from-blue-700/80 via-indigo-600/60 to-transparent",
+  "hot-deals":    "from-red-900/70 via-orange-900/40 to-transparent",
+  "mobile-games": "from-purple-900/70 via-pink-900/40 to-transparent",
+  "gift-cards":   "from-emerald-900/70 via-teal-900/40 to-transparent",
+  "online-games": "from-blue-900/70 via-indigo-900/40 to-transparent",
 };
 
 const BORDER_MAP: Record<string, string> = {
-  "hot-deals":    "hover:border-orange-500/60 hover:shadow-orange-500/10",
-  "mobile-games": "hover:border-purple-500/60 hover:shadow-purple-500/10",
-  "gift-cards":   "hover:border-emerald-500/60 hover:shadow-emerald-500/10",
-  "online-games": "hover:border-blue-500/60 hover:shadow-blue-500/10",
+  "hot-deals":    "hover:border-orange-500/50 hover:shadow-orange-500/15",
+  "mobile-games": "hover:border-purple-500/50 hover:shadow-purple-500/15",
+  "gift-cards":   "hover:border-emerald-500/50 hover:shadow-emerald-500/15",
+  "online-games": "hover:border-blue-500/50 hover:shadow-blue-500/15",
 };
 
 const ICON_COLOR_MAP: Record<string, string> = {
-  "hot-deals":    "bg-orange-500/20 text-orange-400 border-orange-500/30",
-  "mobile-games": "bg-purple-500/20 text-purple-400 border-purple-500/30",
-  "gift-cards":   "bg-emerald-500/20 text-emerald-400 border-emerald-500/30",
-  "online-games": "bg-blue-500/20 text-blue-400 border-blue-500/30",
+  "hot-deals":    "bg-orange-500/25 text-orange-300 border-orange-500/40",
+  "mobile-games": "bg-purple-500/25 text-purple-300 border-purple-500/40",
+  "gift-cards":   "bg-emerald-500/25 text-emerald-300 border-emerald-500/40",
+  "online-games": "bg-blue-500/25 text-blue-300 border-blue-500/40",
+};
+
+const TAG_MAP: Record<string, string> = {
+  "hot-deals":    "bg-orange-500/20 text-orange-300 border-orange-500/30",
+  "mobile-games": "bg-purple-500/20 text-purple-300 border-purple-500/30",
+  "gift-cards":   "bg-emerald-500/20 text-emerald-300 border-emerald-500/30",
+  "online-games": "bg-blue-500/20 text-blue-300 border-blue-500/30",
+};
+
+const FALLBACK_IMAGES: Record<string, string> = {
+  "hot-deals":    "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=600&q=80",
+  "mobile-games": "https://images.unsplash.com/photo-1511512578047-dfb367046420?w=600&q=80",
+  "gift-cards":   "https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?w=600&q=80",
+  "online-games": "https://images.unsplash.com/photo-1593305841991-05c297ba4575?w=600&q=80",
 };
 
 export function ShoppingCategories() {
@@ -60,7 +74,7 @@ export function ShoppingCategories() {
         <div className="h-8 bg-white/5 rounded w-52 animate-pulse mb-10" />
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {[1, 2, 3, 4].map(i => (
-            <div key={i} className="h-52 bg-white/5 rounded-2xl animate-pulse" />
+            <div key={i} className="h-56 bg-white/5 rounded-2xl animate-pulse" />
           ))}
         </div>
       </section>
@@ -73,16 +87,19 @@ export function ShoppingCategories() {
     <section className="container mx-auto px-4 py-12">
       {/* Section header */}
       <div className="flex items-center gap-3 mb-8">
-        <div className="w-1 h-7 rounded-full bg-gradient-to-b from-cyan-400 to-blue-500" />
+        <div className="w-1 h-7 rounded-full bg-gradient-to-b from-gold-primary to-amber-600" />
         <h2 className="text-2xl font-bold text-foreground tracking-tight">{t('shopping_categories')}</h2>
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {categories.map((category) => {
           const IconComponent = ICON_MAP[category.icon] || Gift;
-          const accent = ACCENT_MAP[category.slug] || "from-gray-800/80 to-transparent";
+          const accent = ACCENT_MAP[category.slug] || "from-gray-900/70 to-transparent";
           const border = BORDER_MAP[category.slug] || "hover:border-white/20";
           const iconStyle = ICON_COLOR_MAP[category.slug] || "bg-white/10 text-white/60 border-white/20";
+          const tagStyle = TAG_MAP[category.slug] || "bg-white/10 text-white/60 border-white/20";
+          const fallbackImage = FALLBACK_IMAGES[category.slug];
+          const imageToUse = category.image || fallbackImage;
 
           return (
             <Link
@@ -92,41 +109,41 @@ export function ShoppingCategories() {
             >
               <div
                 className={`
-                  relative overflow-hidden rounded-2xl h-52 
-                  border border-white/8 ${border}
-                  shadow-lg hover:shadow-xl
-                  transition-all duration-400 cursor-pointer
+                  relative overflow-hidden rounded-2xl h-56
+                  border border-white/10 ${border}
+                  shadow-md hover:shadow-xl
+                  transition-all duration-300 cursor-pointer
                 `}
               >
                 {/* Full-bleed image */}
                 <ImageWithFallback
-                  src={category.image}
+                  src={imageToUse}
                   alt={category.name}
-                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                 />
 
-                {/* Dark overlay — always */}
-                <div className="absolute inset-0 bg-black/40 group-hover:bg-black/25 transition-all duration-400" />
+                {/* Subtle dark overlay — toned down */}
+                <div className="absolute inset-0 bg-black/35 group-hover:bg-black/20 transition-all duration-300" />
 
-                {/* Gradient overlay from bottom */}
+                {/* Gradient from bottom — stronger at bottom for text readability */}
                 <div className={`absolute inset-0 bg-gradient-to-t ${accent}`} />
 
-                {/* Top-right icon badge */}
-                <div className={`absolute top-3 right-3 w-8 h-8 rounded-xl border flex items-center justify-center backdrop-blur-sm ${iconStyle} transition-all duration-300 group-hover:scale-110`}>
+                {/* Top-right icon badge — no blur */}
+                <div className={`absolute top-3 right-3 w-8 h-8 rounded-xl border flex items-center justify-center ${iconStyle} transition-all duration-300 group-hover:scale-110`}>
                   <IconComponent className="w-4 h-4" />
                 </div>
 
                 {/* Bottom content */}
                 <div className="absolute bottom-0 left-0 right-0 p-4">
-                  <h3 className="text-white font-bold text-base leading-tight mb-0.5 drop-shadow-lg">
+                  <h3 className="text-white font-bold text-base leading-tight mb-1 drop-shadow-lg tracking-wide">
                     {getDisplayName(category.name, category.slug)}
                   </h3>
-                  <p className="text-white/70 text-xs leading-snug line-clamp-2 mb-2 drop-shadow">
+                  <p className="text-white/75 text-xs leading-snug line-clamp-1 mb-2.5 drop-shadow">
                     {category.description}
                   </p>
-                  <div className="flex items-center gap-1 text-white/80 text-xs font-medium">
+                  <div className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full border ${tagStyle} transition-all duration-300 group-hover:gap-2`}>
                     <span>Explore</span>
-                    <ArrowRight className="w-3 h-3 group-hover:translate-x-1 transition-transform duration-300" />
+                    <ArrowRight className="w-3 h-3 transition-transform duration-300 group-hover:translate-x-0.5" />
                   </div>
                 </div>
               </div>

@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { Sun, Moon, Gamepad2, User, LogOut, Menu, X, Home, Grid3X3, MessageCircle, Package, Flame, Smartphone, Gift, Monitor } from "lucide-react";
+import { Sun, Moon, Gamepad2, User, LogOut, Menu, X, Home, Grid3X3, MessageCircle, Package, Flame, Smartphone, Gift, Monitor, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { LanguageCurrencySwitcher } from "@/components/language-currency-switcher";
 import { useTheme } from "@/components/theme-provider";
@@ -34,6 +34,13 @@ const CATEGORY_COLOR_MAP: Record<string, string> = {
   "online-games": "text-blue-400",
 };
 
+const CATEGORY_BG_MAP: Record<string, string> = {
+  "hot-deals":    "bg-orange-500/10 border-orange-500/20 hover:bg-orange-500/20",
+  "mobile-games": "bg-purple-500/10 border-purple-500/20 hover:bg-purple-500/20",
+  "gift-cards":   "bg-emerald-500/10 border-emerald-500/20 hover:bg-emerald-500/20",
+  "online-games": "bg-blue-500/10 border-blue-500/20 hover:bg-blue-500/20",
+};
+
 export function Header() {
   const { theme, setTheme } = useTheme();
   const { user, isAuthenticated, logout } = useUserAuth();
@@ -50,7 +57,6 @@ export function Header() {
     staleTime: 5 * 60 * 1000,
   });
 
-  // Load and sync order notification state
   useEffect(() => {
     const update = () => {
       const notif = localStorage.getItem('order_notification');
@@ -79,7 +85,6 @@ export function Header() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Close mobile menu on route change
   useEffect(() => {
     setIsMobileMenuOpen(false);
   }, [location]);
@@ -120,19 +125,6 @@ export function Header() {
                     alt="GameCart Logo"
                     className="h-full w-auto max-h-24 object-contain hover:scale-105 transition-transform"
                   />
-                </div>
-                <div className="hidden flex items-center gap-3">
-                  <div className="relative">
-                    <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-gold-primary to-gold-secondary flex items-center justify-center shadow-[0_0_20px_rgba(255,215,0,0.5)]">
-                      <Gamepad2 className="w-5 h-5 text-black" />
-                    </div>
-                  </div>
-                  <span className="text-xl md:text-2xl font-bold font-gaming tracking-wider">
-                    <span className="bg-gradient-to-r from-gold-primary via-gold-accent to-gold-secondary bg-clip-text text-transparent drop-shadow-sm">
-                      Diaa
-                    </span>
-                    <span className="text-foreground ml-1">Store</span>
-                  </span>
                 </div>
               </motion.div>
             </Link>
@@ -175,45 +167,50 @@ export function Header() {
               <NavigationMenu>
                 <NavigationMenuList>
                   <NavigationMenuItem>
-                    <NavigationMenuTrigger className="bg-transparent font-gaming tracking-widest text-lg hover:bg-gold-primary/10 hover:text-gold-primary text-muted-foreground data-[state=open]:text-gold-primary">
+                    <NavigationMenuTrigger className="bg-transparent font-gaming tracking-widest text-lg hover:bg-gold-primary/10 hover:text-gold-primary text-muted-foreground data-[state=open]:text-gold-primary data-[state=open]:bg-gold-primary/10">
                       {t('categories')}
                     </NavigationMenuTrigger>
                     <NavigationMenuContent>
-                      <ul className="grid w-[420px] gap-2 p-4 md:w-[520px] md:grid-cols-2 bg-card border border-white/8 rounded-xl shadow-2xl">
+                      <ul className="grid w-[440px] gap-2 p-4 md:w-[540px] md:grid-cols-2 bg-card border border-border/60 rounded-2xl shadow-2xl">
                         {/* All Games shortcut */}
                         <li className="col-span-2">
                           <NavigationMenuLink asChild>
                             <Link
                               href="/games"
-                              className="flex items-center gap-3 select-none rounded-xl bg-cyan-400/8 border border-cyan-400/20 px-4 py-3 no-underline outline-none hover:bg-cyan-400/15 transition-all group"
+                              className="flex items-center gap-3 select-none rounded-xl bg-gold-primary/8 border border-gold-primary/20 px-4 py-3 no-underline outline-none hover:bg-gold-primary/15 transition-all group"
                             >
-                              <div className="w-9 h-9 rounded-lg bg-cyan-400/15 border border-cyan-400/25 flex items-center justify-center shrink-0">
-                                <Gamepad2 className="w-4 h-4 text-cyan-400" />
+                              <div className="w-10 h-10 rounded-xl bg-gold-primary/15 border border-gold-primary/25 flex items-center justify-center shrink-0">
+                                <Gamepad2 className="w-5 h-5 text-gold-primary" />
                               </div>
-                              <div>
-                                <div className="text-sm font-bold text-foreground group-hover:text-cyan-400 transition-colors">All Games</div>
-                                <p className="text-xs text-muted-foreground">Browse our full collection of top-ups</p>
+                              <div className="flex-1">
+                                <div className="text-sm font-bold text-foreground group-hover:text-gold-primary transition-colors">All Games</div>
+                                <p className="text-xs text-muted-foreground mt-0.5">Browse our full collection of top-ups</p>
                               </div>
+                              <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-gold-primary group-hover:translate-x-0.5 transition-all" />
                             </Link>
                           </NavigationMenuLink>
                         </li>
                         {/* Dynamic categories from API */}
                         {navCategories.map((cat) => {
                           const IconComp = CATEGORY_ICON_MAP[cat.slug] || Gift;
-                          const iconColor = CATEGORY_COLOR_MAP[cat.slug] || "text-cyan-400";
+                          const iconColor = CATEGORY_COLOR_MAP[cat.slug] || "text-gold-primary";
+                          const bgStyle = CATEGORY_BG_MAP[cat.slug] || "bg-white/5 border-white/10 hover:bg-white/10";
                           return (
                             <li key={cat.id}>
-                              <Link href={`/category/${cat.slug}`}>
-                                <NavigationMenuLink className="flex items-center gap-3 select-none rounded-xl p-3 leading-none no-underline outline-none hover:bg-white/5 transition-all group">
-                                  <div className={`w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center shrink-0 ${iconColor}`}>
-                                    <IconComp className="w-4 h-4" />
+                              <NavigationMenuLink asChild>
+                                <Link href={`/category/${cat.slug}`}>
+                                  <div className={`flex items-center gap-3 select-none rounded-xl border p-3 leading-none no-underline outline-none transition-all group cursor-pointer ${bgStyle}`}>
+                                    <div className={`w-9 h-9 rounded-lg bg-white/5 flex items-center justify-center shrink-0 ${iconColor}`}>
+                                      <IconComp className="w-4 h-4" />
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                      <div className={`text-sm font-semibold leading-none text-foreground group-hover:${iconColor} transition-colors`}>{cat.name}</div>
+                                      <p className="mt-1 line-clamp-1 text-xs leading-snug text-muted-foreground">{cat.description}</p>
+                                    </div>
+                                    <ChevronRight className={`w-3.5 h-3.5 text-muted-foreground group-hover:${iconColor} group-hover:translate-x-0.5 transition-all opacity-0 group-hover:opacity-100`} />
                                   </div>
-                                  <div>
-                                    <div className={`text-sm font-semibold leading-none text-foreground group-hover:${iconColor} transition-colors`}>{cat.name}</div>
-                                    <p className="mt-1 line-clamp-1 text-xs leading-snug text-muted-foreground">{cat.description}</p>
-                                  </div>
-                                </NavigationMenuLink>
-                              </Link>
+                                </Link>
+                              </NavigationMenuLink>
                             </li>
                           );
                         })}
@@ -291,7 +288,7 @@ export function Header() {
                     </Button>
                   </Link>
                   <Link href="/login">
-                    <Button className="rounded-xl px-6 bg-gold-primary text-background hover:bg-gold-accent transition-colors">
+                    <Button className="rounded-xl px-6 bg-gold-primary text-background hover:bg-gold-primary/90 transition-colors font-semibold">
                       Sign In
                     </Button>
                   </Link>
@@ -344,7 +341,7 @@ export function Header() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setIsMobileMenuOpen(false)}
-              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden"
+              className="fixed inset-0 bg-black/70 backdrop-blur-sm z-40 lg:hidden"
             />
 
             {/* Menu Panel */}
@@ -353,23 +350,30 @@ export function Header() {
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
               transition={{ type: "spring", damping: 25, stiffness: 200 }}
-              className="fixed top-0 right-0 h-full w-80 max-w-[85vw] glass z-50 lg:hidden overflow-y-auto"
+              className="fixed top-0 right-0 h-full w-80 max-w-[85vw] bg-card border-l border-border/60 z-50 lg:hidden overflow-y-auto shadow-2xl"
             >
-              <div className="p-6">
-                {/* Close Button */}
-                <div className="flex justify-end mb-8">
+              <div className="p-5">
+                {/* Header */}
+                <div className="flex items-center justify-between mb-7">
+                  <div className="flex items-center gap-2">
+                    <img
+                      src="https://files.catbox.moe/brmkrj.png"
+                      alt="Logo"
+                      className="h-9 w-auto object-contain"
+                    />
+                  </div>
                   <Button
                     variant="ghost"
                     size="icon"
                     onClick={() => setIsMobileMenuOpen(false)}
-                    className="rounded-xl hover:bg-cyber-blue/10"
+                    className="rounded-xl hover:bg-gold-primary/10 hover:text-gold-primary"
                   >
-                    <X className="h-6 w-6" />
+                    <X className="h-5 w-5" />
                   </Button>
                 </div>
 
                 {/* Navigation Links */}
-                <nav className="space-y-2">
+                <nav className="space-y-1">
                   {navLinks.map((link, index) => {
                     const Icon = link.icon;
                     const isActive = location === link.href;
@@ -378,54 +382,80 @@ export function Header() {
                         key={link.href}
                         initial={{ opacity: 0, x: 20 }}
                         animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: index * 0.1 }}
+                        transition={{ delay: index * 0.07 }}
                       >
                         <Link href={link.href}>
                           <div
                             className={cn(
-                              "flex items-center gap-4 px-4 py-4 rounded-xl transition-all duration-300",
+                              "flex items-center gap-3 px-4 py-3.5 rounded-xl transition-all duration-200",
                               isActive
-                                ? "bg-cyber-blue/20 text-cyber-blue border border-cyber-blue/30"
+                                ? "bg-gold-primary/15 text-gold-primary border border-gold-primary/30"
                                 : "hover:bg-muted text-foreground"
                             )}
                           >
-                            <Icon className="w-5 h-5" />
-                            <span className="font-medium flex items-center">
+                            <div className={cn(
+                              "w-8 h-8 rounded-lg flex items-center justify-center shrink-0",
+                              isActive ? "bg-gold-primary/20" : "bg-muted"
+                            )}>
+                              <Icon className="w-4 h-4" />
+                            </div>
+                            <span className="font-medium flex items-center flex-1">
                               {link.label}
                               {link.href === "/track-order" && hasOrderNotification && (
                                 <span className="ml-2 inline-flex h-2.5 w-2.5 rounded-full bg-red-500 shadow-[0_0_0_3px_rgba(248,113,113,0.4)]" />
                               )}
                             </span>
+                            {isActive && <ChevronRight className="w-4 h-4 text-gold-primary" />}
                           </div>
                         </Link>
                       </motion.div>
                     );
                   })}
 
-                  {/* Categories Section — dynamic from API */}
+                  {/* Categories Section */}
                   <motion.div
                     initial={{ opacity: 0, x: 20 }}
                     animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.4 }}
-                    className="pt-4 border-t border-border mt-4"
+                    transition={{ delay: 0.28 }}
+                    className="pt-5"
                   >
-                    <p className="text-sm font-semibold text-muted-foreground px-4 mb-2">Categories</p>
+                    <div className="flex items-center gap-2 px-4 mb-3">
+                      <div className="w-4 h-0.5 rounded-full bg-gold-primary/50" />
+                      <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Categories</p>
+                    </div>
+
+                    {/* All Games */}
                     <Link href="/games">
-                      <div className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-muted transition-all text-foreground">
-                        <Gamepad2 className="w-4 h-4 text-cyan-400" />
-                        All Games
+                      <div className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-gold-primary/10 hover:text-gold-primary transition-all text-foreground group mb-1">
+                        <div className="w-8 h-8 rounded-lg bg-gold-primary/10 flex items-center justify-center shrink-0">
+                          <Gamepad2 className="w-4 h-4 text-gold-primary" />
+                        </div>
+                        <span className="font-medium flex-1">All Games</span>
+                        <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-gold-primary opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" />
                       </div>
                     </Link>
-                    {navCategories.map((cat) => {
+
+                    {navCategories.map((cat, idx) => {
                       const IconComp = CATEGORY_ICON_MAP[cat.slug] || Gift;
-                      const iconColor = CATEGORY_COLOR_MAP[cat.slug] || "text-cyan-400";
+                      const iconColor = CATEGORY_COLOR_MAP[cat.slug] || "text-gold-primary";
+                      const bgStyle = CATEGORY_BG_MAP[cat.slug] || "bg-white/5 border-white/10 hover:bg-white/10";
                       return (
-                        <Link key={cat.id} href={`/category/${cat.slug}`}>
-                          <div className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-muted transition-all text-foreground">
-                            <IconComp className={`w-4 h-4 ${iconColor}`} />
-                            {cat.name}
-                          </div>
-                        </Link>
+                        <motion.div
+                          key={cat.id}
+                          initial={{ opacity: 0, x: 20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: 0.32 + idx * 0.06 }}
+                        >
+                          <Link href={`/category/${cat.slug}`}>
+                            <div className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-muted transition-all text-foreground group mb-1">
+                              <div className={`w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center shrink-0 ${iconColor}`}>
+                                <IconComp className="w-4 h-4" />
+                              </div>
+                              <span className="font-medium flex-1">{cat.name}</span>
+                              <ChevronRight className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" />
+                            </div>
+                          </Link>
+                        </motion.div>
                       );
                     })}
                   </motion.div>
@@ -436,14 +466,19 @@ export function Header() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.5 }}
-                  className="mt-8 pt-4 border-t border-border"
+                  className="mt-6 pt-5 border-t border-border"
                 >
                   {isAuthenticated ? (
                     <div className="space-y-2">
                       <Link href="/profile">
-                        <div className="flex items-center gap-4 px-4 py-4 rounded-xl hover:bg-muted transition-all text-foreground relative">
-                          <User className="w-5 h-5" />
-                          <span className="font-medium">{user?.name || "Profile"}</span>
+                        <div className="flex items-center gap-3 px-4 py-3.5 rounded-xl hover:bg-muted transition-all text-foreground relative group">
+                          <div className="w-9 h-9 rounded-xl bg-gold-primary/15 border border-gold-primary/30 flex items-center justify-center">
+                            <User className="w-4 h-4 text-gold-primary" />
+                          </div>
+                          <div>
+                            <p className="font-semibold text-sm">{user?.name || "Profile"}</p>
+                            <p className="text-xs text-muted-foreground">View profile</p>
+                          </div>
                           {hasOrderNotification && (
                             <span className="absolute top-3 right-3 inline-flex h-2.5 w-2.5 rounded-full bg-red-500 shadow-[0_0_0_3px_rgba(248,113,113,0.4)]" />
                           )}
@@ -451,21 +486,23 @@ export function Header() {
                       </Link>
                       <button
                         onClick={logout}
-                        className="flex items-center gap-4 px-4 py-4 rounded-xl hover:bg-destructive/10 text-destructive w-full transition-all"
+                        className="flex items-center gap-3 px-4 py-3.5 rounded-xl hover:bg-destructive/10 text-destructive w-full transition-all"
                       >
-                        <LogOut className="w-5 h-5" />
+                        <div className="w-8 h-8 rounded-lg bg-destructive/10 flex items-center justify-center">
+                          <LogOut className="w-4 h-4" />
+                        </div>
                         <span className="font-medium">Sign Out</span>
                       </button>
                     </div>
                   ) : (
                     <div className="space-y-3">
                       <Link href="/login">
-                        <Button className="w-full btn-gaming rounded-xl py-4">
+                        <Button className="w-full rounded-xl py-5 bg-gold-primary text-background hover:bg-gold-primary/90 font-semibold text-base">
                           Sign In
                         </Button>
                       </Link>
                       <Link href="/login?tab=register">
-                        <Button variant="outline" className="w-full rounded-xl py-4 border-gold-primary text-gold-primary hover:bg-gold-primary/10">
+                        <Button variant="outline" className="w-full rounded-xl py-5 border-gold-primary/40 text-gold-primary hover:bg-gold-primary/10 font-medium text-base">
                           Sign Up
                         </Button>
                       </Link>
