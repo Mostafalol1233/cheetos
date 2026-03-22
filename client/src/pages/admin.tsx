@@ -4687,88 +4687,209 @@ function CheckoutTemplatesPanel() {
 }
 
 function WhatsAppConnectionPanel() {
-  const { data: status, refetch } = useQuery<{ qr: string | null; connected: boolean; status: string }>({
+  const token = typeof window !== 'undefined' ? localStorage.getItem('adminToken') : null;
+  const authHeaders = token ? { Authorization: `Bearer ${token}` } : {};
+
+  const { data: status, refetch, isError, isFetching } = useQuery<{ qr: string | null; connected: boolean; status: string }>({
     queryKey: ['/api/admin/whatsapp/qr'],
-    refetchInterval: 3000,
+    refetchInterval: (data) => {
+      if ((data as any)?.connected) return 10000;
+      return 3000;
+    },
+    retry: 2,
     queryFn: async () => {
-      const token = localStorage.getItem('adminToken');
-      const res = await fetch(apiPath('/api/admin/whatsapp/qr'), {
-        headers: token ? { Authorization: `Bearer ${token}` } : {}
-      });
-      if (!res.ok) throw new Error('Failed to fetch WhatsApp status');
+      const res = await fetch(apiPath('/api/admin/whatsapp/qr'), { headers: authHeaders });
+      if (!res.ok) throw new Error('فشل الاتصال بالسيرفر');
       return res.json();
     }
   });
 
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
+  const [resetLoading, setResetLoading] = useState(false);
+  const [resetMsg, setResetMsg] = useState<string | null>(null);
+  const [sendResult, setSendResult] = useState<{ ok: boolean; msg: string } | null>(null);
 
   useEffect(() => {
     if (status?.qr) {
-      QRCode.toDataURL(status.qr)
+      QRCode.toDataURL(status.qr, { width: 280, margin: 2 })
         .then((url: string) => setQrDataUrl(url))
-        .catch((err: unknown) => console.error(err));
+        .catch(() => setQrDataUrl(null));
     } else {
       setQrDataUrl(null);
     }
   }, [status?.qr]);
 
   const [to, setTo] = useState('');
-  const [text, setText] = useState('Hello from GameCart!');
+  const [text, setText] = useState('مرحباً من متجر ضياء! 👋');
 
   const sendMutation = useMutation({
     mutationFn: async () => {
-      const token = localStorage.getItem('adminToken');
       const res = await fetch(apiPath('/api/admin/whatsapp/send'), {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        headers: { 'Content-Type': 'application/json', ...authHeaders },
         body: JSON.stringify({ to, text })
       });
-      return res.json();
-    }
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'فشل الإرسال');
+      return data;
+    },
+    onSuccess: () => setSendResult({ ok: true, msg: '✅ تم الإرسال بنجاح!' }),
+    onError: (err: Error) => setSendResult({ ok: false, msg: `❌ ${err.message}` }),
   });
+
+  const handleReset = async () => {
+    if (!confirm('هتقطع الاتصال وتبدأ من أول. هتضطر تعمل Scan للـ QR كمان مرة. متأكد؟')) return;
+    setResetLoading(true);
+    setResetMsg(null);
+    try {
+      const res = await fetch(apiPath('/api/admin/whatsapp/reset-auth'), {
+        method: 'POST',
+        headers: authHeaders,
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setResetMsg('✅ تم إعادة الضبط. انتظر ظهور QR جديد...');
+        setTimeout(() => refetch(), 2000);
+      } else {
+        setResetMsg(`❌ ${data.message || 'فشلت إعادة الضبط'}`);
+      }
+    } catch {
+      setResetMsg('❌ حدث خطأ في الاتصال بالسيرفر');
+    } finally {
+      setResetLoading(false);
+    }
+  };
+
+  const isConnected = status?.connected;
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col md:flex-row gap-8 items-start">
-        <div className="space-y-4 flex-1">
-          <div>
-            <h3 className="text-lg font-medium mb-2">Status</h3>
-            <div className="flex items-center gap-2">
-              <div className={`w-3 h-3 rounded-full ${status?.connected ? 'bg-green-500' : 'bg-red-500'}`} />
-              <span className="font-semibold">{status?.connected ? 'Connected' : 'Disconnected'}</span>
-              <span className="text-sm text-muted-foreground">({status?.status || 'unknown'})</span>
+      {/* Status Card */}
+      <div className={`rounded-2xl border p-5 ${isConnected ? 'bg-green-500/10 border-green-500/30' : 'bg-orange-500/10 border-orange-500/30'}`}>
+        <div className="flex items-center justify-between gap-4 flex-wrap">
+          <div className="flex items-center gap-3">
+            <div className={`relative w-4 h-4 rounded-full ${isConnected ? 'bg-green-500' : 'bg-orange-400'}`}>
+              {!isConnected && <span className="absolute inset-0 rounded-full bg-orange-400 animate-ping opacity-60" />}
+            </div>
+            <div>
+              <p className="font-bold text-foreground text-base">
+                {isConnected ? '✅ متصل بواتساب' : '⏳ غير متصل'}
+              </p>
+              <p className="text-xs text-muted-foreground capitalize mt-0.5">
+                {status?.status || 'جاري التحقق...'} {isFetching && '· يتحقق...'}
+              </p>
             </div>
           </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => refetch()}
+              className="text-xs gap-1.5"
+            >
+              🔄 تحديث
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleReset}
+              disabled={resetLoading}
+              className="text-xs gap-1.5 border-red-500/30 text-red-400 hover:bg-red-500/10"
+            >
+              {resetLoading ? '⏳ جاري...' : '🔁 إعادة ربط الواتساب'}
+            </Button>
+          </div>
+        </div>
+        {resetMsg && (
+          <p className={`mt-3 text-sm px-3 py-2 rounded-xl ${resetMsg.startsWith('✅') ? 'bg-green-500/15 text-green-400' : 'bg-red-500/15 text-red-400'}`}>
+            {resetMsg}
+          </p>
+        )}
+        {isError && (
+          <p className="mt-3 text-sm text-red-400 bg-red-500/10 px-3 py-2 rounded-xl">
+            ❌ تعذّر الاتصال بالسيرفر. تأكد من تشغيل الـ Backend.
+          </p>
+        )}
+      </div>
 
-          {!status?.connected && status?.qr && (
-            <div className="bg-white p-4 rounded-lg inline-block">
-              {qrDataUrl ? (
-                <img src={qrDataUrl} alt="WhatsApp QR Code" className="w-64 h-64" />
-              ) : (
-                <div className="w-64 h-64 flex items-center justify-center text-black">Generating QR...</div>
-              )}
-              <p className="text-center text-black mt-2 text-sm">Scan with WhatsApp</p>
+      <div className="grid md:grid-cols-2 gap-6">
+        {/* QR Code Section */}
+        <div className="space-y-4">
+          <h3 className="font-semibold text-foreground flex items-center gap-2">
+            📱 ربط الواتساب بالـ QR Code
+          </h3>
+          {isConnected ? (
+            <div className="bg-green-500/10 border border-green-500/20 rounded-2xl p-6 text-center">
+              <div className="text-5xl mb-3">✅</div>
+              <p className="font-bold text-green-400">واتساب متصل ويعمل!</p>
+              <p className="text-sm text-muted-foreground mt-1">الإرسال التلقائي شغّال 🚀</p>
             </div>
-          )}
-
-          {!status?.connected && !status?.qr && (
-            <div className="text-sm text-muted-foreground">Waiting for QR code... (Check backend logs if stuck)</div>
+          ) : status?.qr ? (
+            <div className="space-y-3">
+              <p className="text-sm text-muted-foreground">
+                افتح واتساب على موبايلك ← المزيد ← الأجهزة المرتبطة ← ربط جهاز ← امسح الـ QR
+              </p>
+              <div className="bg-white rounded-2xl p-4 inline-block shadow-xl">
+                {qrDataUrl ? (
+                  <img src={qrDataUrl} alt="WhatsApp QR Code" className="w-64 h-64 block" />
+                ) : (
+                  <div className="w-64 h-64 flex items-center justify-center text-black text-sm">جاري توليد QR...</div>
+                )}
+              </div>
+              <p className="text-xs text-muted-foreground">⏳ الـ QR بيتجدد تلقائياً كل 30 ثانية</p>
+            </div>
+          ) : (
+            <div className="bg-card border border-border/40 rounded-2xl p-6 text-center space-y-3">
+              <div className="text-4xl animate-pulse">⏳</div>
+              <p className="text-muted-foreground text-sm">في انتظار الـ QR Code من السيرفر...</p>
+              <Button variant="outline" size="sm" onClick={() => refetch()}>
+                🔄 تحديث
+              </Button>
+            </div>
           )}
         </div>
 
-        <div className="flex-1 space-y-4 w-full max-w-md">
-          <h3 className="text-lg font-medium">Test Message</h3>
-          <div className="space-y-2">
-            <Label>Recipient Phone</Label>
-            <Input placeholder="e.g. 201xxxxxxxxx" value={to} onChange={(e) => setTo(e.target.value)} />
+        {/* Test Message Section */}
+        <div className="space-y-4">
+          <h3 className="font-semibold text-foreground flex items-center gap-2">
+            💬 إرسال رسالة اختبار
+          </h3>
+          <div className="space-y-3">
+            <div className="space-y-1.5">
+              <Label className="text-sm">رقم الواتساب (مع كود الدولة)</Label>
+              <Input
+                placeholder="مثال: 201012345678"
+                value={to}
+                onChange={(e) => setTo(e.target.value)}
+                dir="ltr"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-sm">نص الرسالة</Label>
+              <textarea
+                className="w-full bg-background border border-border rounded-xl px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-gold-primary/60 resize-none"
+                rows={3}
+                placeholder="اكتب الرسالة هنا..."
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+              />
+            </div>
+            <Button
+              onClick={() => { setSendResult(null); sendMutation.mutate(); }}
+              disabled={!to || !text || !isConnected || sendMutation.isPending}
+              className="bg-green-600 hover:bg-green-700 text-white w-full gap-2"
+            >
+              {sendMutation.isPending ? '⏳ جاري الإرسال...' : '📤 إرسال رسالة تجريبية'}
+            </Button>
+            {!isConnected && (
+              <p className="text-xs text-orange-400 text-center">⚠️ يجب ربط الواتساب أولاً</p>
+            )}
+            {sendResult && (
+              <div className={`text-sm text-center py-2 px-3 rounded-xl ${sendResult.ok ? 'bg-green-500/15 text-green-400' : 'bg-red-500/15 text-red-400'}`}>
+                {sendResult.msg}
+              </div>
+            )}
           </div>
-          <div className="space-y-2">
-            <Label>Message</Label>
-            <Input placeholder="Message" value={text} onChange={(e) => setText(e.target.value)} />
-          </div>
-          <Button onClick={() => sendMutation.mutate()} disabled={!to || !text || !status?.connected} className="bg-gold-primary w-full">
-            Send Test Message
-          </Button>
         </div>
       </div>
     </div>

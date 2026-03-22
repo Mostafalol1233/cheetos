@@ -46,3 +46,10 @@ A high-end digital store for gaming currencies and vouchers.
 - Made all gift card games popular and visible on main page
 - game.tsx: Gift cards show "How to receive your code" info box instead of Player ID field
 - game.tsx: Gift card badges show "Gift Card Code" and "Code via WhatsApp" instead of "Direct Top-up"/"Instant Delivery"
+- game.tsx: Removed Player ID field from ALL games (not just gift cards) - no longer needed
+- game.tsx: Added 4 info tabs at bottom of each game page (Description, FAQs, How to redeem, Terms & Conditions)
+- game.tsx: Tabs use pill-style buttons with gold active state
+- header.tsx: Navigation menu redesigned - cleaner, more professional (removed font-gaming/tracking-widest), now uses subtle underline for active links
+- Discord Nitro added to database with 4 packages (1/3/6/12 month subscriptions)
+- admin.tsx: WhatsAppConnectionPanel completely rewritten with better UI, reconnect/disconnect buttons, error states, Arabic text, animated connection indicator
+- backend/index.js: Core file cleanup improved - runs immediately on startup, checks every 2min, covers /tmp and /home/runner dirs, uses regex pattern for core files

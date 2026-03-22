@@ -1,8 +1,8 @@
 import { useParams, useLocation, Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Zap, HelpCircle, Star, ShieldCheck, Clock } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { ArrowLeft, Zap, Star, ShieldCheck, Clock, HelpCircle, BookOpen, RefreshCw, FileText } from "lucide-react";
+import { motion } from "framer-motion";
 import type { Game, Category } from "@shared/schema";
 import ImageWithFallback from "@/components/image-with-fallback";
 import { useTranslation } from "@/lib/translation";
@@ -106,7 +106,6 @@ function CurrencyAmountIcon({ amount, gameSlug }: { amount: string; gameSlug: st
     'default': 'from-gold-primary to-orange-500',
   };
   const bg = bgColors[gameSlug] || bgColors['default'];
-
   return (
     <div className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${bg} flex items-center justify-center shadow-lg`}>
       <span className="text-white font-black text-xs text-center leading-tight px-1">{amount}</span>
@@ -114,12 +113,84 @@ function CurrencyAmountIcon({ amount, gameSlug }: { amount: string; gameSlug: st
   );
 }
 
+const GAME_FAQS: Record<string, Array<{ q: string; a: string }>> = {
+  'gift-cards': [
+    { q: 'كيف أستلم الكود بعد الشراء؟', a: 'بعد تأكيد الدفع، هيتبعتلك كود الكرت على واتساب فورًا.' },
+    { q: 'هل الكروت أصلية؟', a: 'نعم، جميع الكروت أصلية ومضمونة 100%.' },
+    { q: 'كام بياخد التوصيل؟', a: 'التوصيل فوري بعد تأكيد الدفع، في الغالب أقل من 15 دقيقة.' },
+    { q: 'لو الكود مش شغال أعمل إيه؟', a: 'تواصل معنا على واتساب وهنحل المشكلة فورًا.' },
+  ],
+  'default': [
+    { q: 'كيف يتم الشحن؟', a: 'بعد إتمام الدفع، يتم الشحن مباشرة على حسابك في اللعبة بأسرع وقت.' },
+    { q: 'كام بياخد الشحن؟', a: 'عادةً خلال 5-15 دقيقة بعد تأكيد الدفع.' },
+    { q: 'هل الدفع آمن؟', a: 'نعم، جميع معاملاتنا مؤمّنة وخاضعة للرقابة.' },
+    { q: 'لو عندي مشكلة بعد الشحن؟', a: 'تواصل مع الدعم على واتساب وهنساعدك فورًا.' },
+  ],
+};
+
+const REDEEM_STEPS: Record<string, Array<string>> = {
+  'steam-wallet': [
+    'افتح تطبيق Steam على جهازك',
+    'اضغط على اسمك في الأعلى يمين → "استرداد كود Steam"',
+    'أدخل الكود المكوّن من 15 خانة',
+    'هيتضاف الرصيد لمحفظتك فورًا',
+  ],
+  'google-play': [
+    'افتح متجر Google Play على أندرويد',
+    'اضغط على صورتك → الدفع والاشتراكات',
+    'اختر "استرداد رمز الهدية"',
+    'أدخل الكود وهيتضاف الرصيد فورًا',
+  ],
+  'itunes-app-store': [
+    'افتح App Store على iPhone أو iPad',
+    'اضغط على صورتك في الأعلى',
+    'اختر "Redeem Gift Card or Code"',
+    'أدخل الكود وهيتضاف لحسابك',
+  ],
+  'playstation-store': [
+    'افتح PlayStation Store على جهازك',
+    'اضغط على ... → Redeem Codes',
+    'أدخل كود الـ 12 خانة',
+    'هيتضاف الرصيد لمحفظة PSN فورًا',
+  ],
+  'xbox-gift-card': [
+    'ادخل على account.microsoft.com',
+    'اختر "Redeem a code"',
+    'أدخل كود الـ 25 خانة',
+    'هيتضاف الرصيد لحساب Xbox فورًا',
+  ],
+  'amazon-gift-card': [
+    'ادخل على amazon.com وتسجّل الدخول',
+    'اختر "Gift Cards" → "Redeem a Gift Card"',
+    'أدخل الكود',
+    'هيتضاف الرصيد لمحفظة Amazon فورًا',
+  ],
+  'netflix-gift-card': [
+    'ادخل على netflix.com/redeem',
+    'سجّل الدخول بحسابك أو أنشئ حساب جديد',
+    'أدخل كود الكرت',
+    'هيتفعّل الاشتراك تلقائيًا',
+  ],
+  'spotify-gift-card': [
+    'ادخل على spotify.com/redeem',
+    'سجّل الدخول بحساب Spotify',
+    'أدخل كود الكرت',
+    'هيتفعّل Premium فورًا',
+  ],
+  'default-game': [
+    'أكمل عملية الشراء وادفع',
+    'أرسل لنا إيصال الدفع على واتساب',
+    'أرسل Player ID الخاص بك في اللعبة',
+    'هيتم الشحن خلال 5-15 دقيقة',
+  ],
+};
+
 export default function GamePage() {
   const { slug } = useParams();
   const { language } = useTranslation();
   const [, setLocation] = useLocation();
-  const [playerId, setPlayerId] = useState('');
   const [selectedPkg, setSelectedPkg] = useState<number | null>(null);
+  const [activeTab, setActiveTab] = useState<'description' | 'faq' | 'redeem' | 'terms'>('description');
 
   const { data: game, isLoading } = useQuery<Game>({
     queryKey: [`/api/games/${slug}`],
@@ -191,11 +262,21 @@ export default function GamePage() {
     ? categories.find((c) => c.slug === game.category)
     : undefined;
 
+  const faqs = isGiftCard ? GAME_FAQS['gift-cards'] : GAME_FAQS['default'];
+  const redeemSteps = REDEEM_STEPS[gameSlug] || (isGiftCard ? [] : REDEEM_STEPS['default-game']);
+
+  const tabs = [
+    { id: 'description' as const, label: language === 'ar' ? 'وصف المنتج' : 'Description', icon: BookOpen },
+    { id: 'faq' as const, label: language === 'ar' ? 'الأسئلة الشائعة' : 'FAQs', icon: HelpCircle },
+    { id: 'redeem' as const, label: language === 'ar' ? 'طريقة الاستخدام' : 'How to redeem?', icon: RefreshCw },
+    { id: 'terms' as const, label: language === 'ar' ? 'الشروط والأحكام' : 'Terms & Conditions', icon: FileText },
+  ];
+
   return (
     <>
       <SEO
-        title={`شحن ${game.name} - متجر ضياء | Diaa Gaming Top Up`}
-        description={`اشحن عملات ${game.name} بسهولة في متجر ضياء. خدمة شحن آمنة وسريعة في مصر.`}
+        title={`${isGiftCard ? 'كرت' : 'شحن'} ${game.name} - متجر ضياء | Diaa Gaming Store`}
+        description={`${isGiftCard ? 'اشتري كرت' : 'اشحن عملات'} ${game.name} بسهولة في متجر ضياء. خدمة آمنة وسريعة في مصر.`}
         keywords={[`شحن ${game.name}`, game.name, 'ضياء', 'Diaa', 'شحن ألعاب']}
       />
 
@@ -280,7 +361,7 @@ export default function GamePage() {
                 </div>
               )}
 
-              {isGiftCard ? (
+              {isGiftCard && (
                 <div className="p-4 rounded-xl bg-green-500/10 border border-green-500/30">
                   <div className="flex items-start gap-3">
                     <span className="text-2xl mt-0.5">🎁</span>
@@ -291,38 +372,25 @@ export default function GamePage() {
                       <p className="text-xs text-muted-foreground leading-relaxed">
                         {language === 'ar'
                           ? 'بعد إتمام الدفع، هيتبعتلك كود الكرت على واتساب فورًا. تأكد من إدخال رقم واتسابك الصح في صفحة الدفع.'
-                          : 'After payment is confirmed, your gift card code will be sent to you via WhatsApp instantly. Make sure to enter your correct WhatsApp number at checkout.'}
+                          : 'After payment is confirmed, your gift card code will be sent to you via WhatsApp instantly.'}
                       </p>
-                      <div className="flex items-center gap-2 mt-2">
-                        <span className="text-xs bg-green-500/20 text-green-400 px-2 py-1 rounded-full font-medium">✅ {language === 'ar' ? 'توصيل فوري على واتساب' : 'Instant WhatsApp delivery'}</span>
-                        <span className="text-xs bg-blue-500/20 text-blue-400 px-2 py-1 rounded-full font-medium">🔒 {language === 'ar' ? 'كود أصلي 100%' : '100% Authentic Code'}</span>
+                      <div className="flex items-center gap-2 mt-2 flex-wrap">
+                        <span className="text-xs bg-green-500/20 text-green-400 px-2 py-1 rounded-full font-medium">✅ {language === 'ar' ? 'توصيل فوري' : 'Instant delivery'}</span>
+                        <span className="text-xs bg-blue-500/20 text-blue-400 px-2 py-1 rounded-full font-medium">🔒 {language === 'ar' ? 'كود أصلي 100%' : '100% Authentic'}</span>
                       </div>
                     </div>
                   </div>
                 </div>
-              ) : (
-                <div className="p-4 rounded-xl bg-card border border-border/30">
-                  <label className="flex items-center gap-2 text-sm font-bold text-foreground mb-2">
-                    {language === 'ar' ? 'Player ID' : 'Player ID'}
-                    <span className="text-destructive">*</span>
-                    <button className="text-muted-foreground hover:text-foreground">
-                      <HelpCircle className="w-3.5 h-3.5" />
-                    </button>
-                  </label>
-                  <input
-                    type="text"
-                    value={playerId}
-                    onChange={e => setPlayerId(e.target.value)}
-                    placeholder={language === 'ar' ? 'أدخل Player ID الخاص بك' : 'Enter your Player ID'}
-                    className="w-full bg-background border border-border rounded-lg px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-gold-primary/60 focus:ring-1 focus:ring-gold-primary/30 transition"
-                  />
-                  <p className="text-xs text-muted-foreground mt-2">
-                    {language === 'ar'
-                      ? '⚠️ تأكد من إدخال الـ ID الصحيح قبل الشراء'
-                      : '⚠️ Make sure to enter the correct ID before purchasing'}
-                  </p>
-                </div>
               )}
+
+              <div className="p-4 rounded-xl bg-card border border-border/30">
+                <p className="text-sm text-muted-foreground flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-gold-primary" />
+                  {isGiftCard
+                    ? (language === 'ar' ? 'الكود هيوصلك على واتساب بعد الدفع مباشرة' : 'Code sent via WhatsApp right after payment')
+                    : (language === 'ar' ? 'الشحن فوري على حسابك بعد تأكيد الدفع' : 'Top-up goes directly to your account after payment')}
+                </p>
+              </div>
             </motion.div>
           </div>
 
@@ -378,7 +446,6 @@ export default function GamePage() {
                       )}
 
                       <div className="p-4 sm:p-5 flex flex-col items-center gap-3">
-                        {/* Package image + currency badge */}
                         <div className="relative flex items-center justify-center">
                           <div className="w-24 h-24 sm:w-28 sm:h-28 flex items-center justify-center">
                             {pkgImage ? (
@@ -446,6 +513,118 @@ export default function GamePage() {
               )}
             </section>
           )}
+
+          {/* Info Tabs Section */}
+          <section className="mt-12 border-t border-border/30 pt-8">
+            {/* Tab Buttons */}
+            <div className="flex flex-wrap gap-2 mb-6">
+              {tabs.map((tab) => {
+                const Icon = tab.icon;
+                const isActive = activeTab === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold transition-all duration-200 border
+                      ${isActive
+                        ? 'bg-gold-primary text-black border-gold-primary shadow-md'
+                        : 'bg-card text-muted-foreground border-border/40 hover:border-gold-primary/50 hover:text-foreground'
+                      }`}
+                  >
+                    <Icon className="w-3.5 h-3.5" />
+                    {tab.label}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Tab Content */}
+            <div className="bg-card border border-border/30 rounded-2xl p-6">
+              {activeTab === 'description' && (
+                <div
+                  className="prose prose-sm max-w-none dark:prose-invert text-foreground leading-relaxed"
+                  dangerouslySetInnerHTML={{ __html: game.description || (language === 'ar' ? 'لا يوجد وصف متاح.' : 'No description available.') }}
+                />
+              )}
+
+              {activeTab === 'faq' && (
+                <div className="space-y-4">
+                  <h3 className="text-lg font-bold text-foreground mb-4">
+                    {language === 'ar' ? 'الأسئلة الشائعة' : 'Frequently Asked Questions'}
+                  </h3>
+                  {faqs.map((faq, i) => (
+                    <div key={i} className="border border-border/30 rounded-xl overflow-hidden">
+                      <div className="flex items-start gap-3 p-4">
+                        <span className="w-6 h-6 rounded-full bg-gold-primary/20 text-gold-primary text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">
+                          {i + 1}
+                        </span>
+                        <div>
+                          <p className="font-semibold text-foreground text-sm mb-1">{faq.q}</p>
+                          <p className="text-muted-foreground text-sm leading-relaxed">{faq.a}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {activeTab === 'redeem' && (
+                <div className="space-y-4">
+                  <h3 className="text-lg font-bold text-foreground mb-4">
+                    {language === 'ar' ? 'طريقة الاستخدام' : 'How to Redeem'}
+                  </h3>
+                  {redeemSteps.length > 0 ? (
+                    <ol className="space-y-3">
+                      {redeemSteps.map((step, i) => (
+                        <li key={i} className="flex items-start gap-3">
+                          <span className="w-7 h-7 rounded-full bg-gold-primary text-black text-sm font-black flex items-center justify-center shrink-0">
+                            {i + 1}
+                          </span>
+                          <span className="text-foreground text-sm leading-relaxed pt-0.5">{step}</span>
+                        </li>
+                      ))}
+                    </ol>
+                  ) : (
+                    <p className="text-muted-foreground text-sm">
+                      {language === 'ar'
+                        ? 'تواصل معنا على واتساب لمعرفة طريقة الاستخدام.'
+                        : 'Contact us on WhatsApp for redemption instructions.'}
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {activeTab === 'terms' && (
+                <div className="space-y-4 text-sm text-muted-foreground leading-relaxed">
+                  <h3 className="text-lg font-bold text-foreground mb-4">
+                    {language === 'ar' ? 'الشروط والأحكام' : 'Terms & Conditions'}
+                  </h3>
+                  <ul className="space-y-3">
+                    {(language === 'ar' ? [
+                      'جميع المبيعات نهائية وغير قابلة للاسترداد بعد إرسال الكود أو تنفيذ الشحن.',
+                      'يجب التأكد من صحة بيانات الحساب (Player ID أو الإيميل) قبل إتمام الشراء.',
+                      'لن نتحمل مسؤولية الأموال المفقودة بسبب بيانات خاطئة.',
+                      'في حالة وجود مشكلة، يجب التواصل معنا خلال 24 ساعة من الشراء.',
+                      'نحتفظ بالحق في رفض أي طلب يبدو مشبوهاً أو احتيالياً.',
+                      'الأسعار قابلة للتغيير دون إشعار مسبق.',
+                    ] : [
+                      'All sales are final and non-refundable once the code has been sent or top-up executed.',
+                      'Ensure your account details (Player ID or email) are correct before purchase.',
+                      'We are not responsible for funds lost due to incorrect information.',
+                      'Any issues must be reported within 24 hours of purchase.',
+                      'We reserve the right to refuse any suspicious or fraudulent orders.',
+                      'Prices are subject to change without prior notice.',
+                    ]).map((term, i) => (
+                      <li key={i} className="flex items-start gap-2">
+                        <span className="text-gold-primary mt-0.5">•</span>
+                        <span>{term}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          </section>
         </div>
 
         <Footer />

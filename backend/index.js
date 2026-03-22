@@ -100,49 +100,44 @@ try {
 startCleanupSchedule();
 
 // Core file cleanup function to prevent disk space issues
-function startCoreFileCleanup() {
-  const cleanupInterval = 5 * 60 * 1000; // 5 minutes
-
-  setInterval(async () => {
-    try {
-      const currentDir = process.cwd();
-      const backendDir = __dirname;
-
-      // Check both current directory and backend directory
-      const dirsToCheck = [currentDir, backendDir];
-
-      for (const dir of dirsToCheck) {
+async function deleteCoreFiles(dir) {
+  try {
+    const files = await fs.promises.readdir(dir);
+    for (const file of files) {
+      if (file === 'core' || /^core\.\d+$/.test(file) || file.startsWith('core.')) {
+        const filePath = path.join(dir, file);
         try {
-          const files = await fs.promises.readdir(dir);
-
-          for (const file of files) {
-            // Check for core files (core, core.<pid>, or any file starting with core)
-            if (file === 'core' || file.startsWith('core.')) {
-              const filePath = path.join(dir, file);
-
-              try {
-                // Get file stats to check size
-                const stats = await fs.promises.stat(filePath);
-                const fileSizeMB = stats.size / (1024 * 1024);
-
-                // Delete the core file
-                await fs.promises.unlink(filePath);
-                // console.log(`🗑️ Deleted core file: ${filePath} (${fileSizeMB.toFixed(2)} MB)`);
-              } catch (deleteErr) {
-                // console.warn(`⚠️ Failed to delete core file ${filePath}:`, deleteErr.message);
-              }
-            }
+          const stats = await fs.promises.stat(filePath);
+          if (stats.isFile()) {
+            await fs.promises.unlink(filePath);
+            console.log(`🗑️ Deleted core file: ${filePath} (${(stats.size / 1024 / 1024).toFixed(1)} MB)`);
           }
-        } catch (dirErr) {
-          // Silently ignore directory read errors (directory might not exist)
-        }
+        } catch (_) {}
       }
-    } catch (err) {
-      // console.warn('⚠️ Error during core file cleanup:', err.message);
     }
-  }, cleanupInterval);
+  } catch (_) {}
+}
 
-  // console.log('🧹 Core file cleanup monitor started (checks every 5 minutes)');
+function startCoreFileCleanup() {
+  const dirsToCheck = [
+    process.cwd(),
+    path.dirname(process.execPath),
+    '/tmp',
+    '/home/runner',
+    '/home/runner/workspace',
+  ];
+
+  const runCleanup = () => {
+    for (const dir of dirsToCheck) {
+      deleteCoreFiles(dir).catch(() => {});
+    }
+  };
+
+  // Run immediately on startup, then every 2 minutes
+  runCleanup();
+  setInterval(runCleanup, 2 * 60 * 1000);
+
+  console.log('🧹 Core file cleanup monitor started (checks every 2 minutes)');
 }
 
 const __filename = fileURLToPath(import.meta.url);

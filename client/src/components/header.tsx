@@ -139,20 +139,19 @@ export function Header() {
             </Link>
 
             {/* Desktop Navigation */}
-            <nav className="hidden lg:flex items-center gap-4">
+            <nav className="hidden lg:flex items-center gap-1">
               {navLinks.map((link) => {
                 const isActive = location === link.href;
                 return (
                   <Link key={link.href} href={link.href}>
                     <motion.div
                       className={cn(
-                        "relative px-4 py-2 rounded-xl font-gaming tracking-widest text-lg transition-all duration-300 flex items-center gap-2",
+                        "relative px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-2",
                         isActive
-                          ? "text-gold-primary"
-                          : "text-muted-foreground hover:text-gold-primary hover:tracking-[0.2em]"
+                          ? "text-foreground bg-white/8"
+                          : "text-muted-foreground hover:text-foreground hover:bg-white/5"
                       )}
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
+                      whileTap={{ scale: 0.97 }}
                     >
                       <span className="relative inline-flex items-center">
                         {link.label}
@@ -163,8 +162,8 @@ export function Header() {
                       {isActive && (
                         <motion.div
                           layoutId="activeTab"
-                          className="absolute inset-0 bg-gold-primary/10 border border-gold-primary/40 rounded-xl -z-10"
-                          transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                          className="absolute bottom-0 left-3 right-3 h-0.5 bg-gold-primary rounded-full"
+                          transition={{ type: "spring", bounce: 0.2, duration: 0.4 }}
                         />
                       )}
                     </motion.div>
@@ -176,7 +175,7 @@ export function Header() {
               <NavigationMenu>
                 <NavigationMenuList>
                   <NavigationMenuItem>
-                    <NavigationMenuTrigger className="bg-transparent font-gaming tracking-widest text-lg hover:bg-gold-primary/10 hover:text-gold-primary text-muted-foreground data-[state=open]:text-gold-primary data-[state=open]:bg-gold-primary/10">
+                    <NavigationMenuTrigger className="bg-transparent text-sm font-medium hover:bg-white/5 hover:text-foreground text-muted-foreground data-[state=open]:text-foreground data-[state=open]:bg-white/5 rounded-lg px-4 py-2 h-auto">
                       {t('categories')}
                     </NavigationMenuTrigger>
                     <NavigationMenuContent>
