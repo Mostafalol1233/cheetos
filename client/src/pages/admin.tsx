@@ -2274,6 +2274,9 @@ export default function AdminDashboard() {
               <TabsTrigger value="advanced-editor" data-testid="tab-advanced-editor" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Advanced Editor</TabsTrigger>
               <TabsTrigger value="content" data-testid="tab-content" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Content</TabsTrigger>
               <TabsTrigger value="theme" data-testid="tab-theme" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Theme</TabsTrigger>
+              <TabsTrigger value="approvals" data-testid="tab-approvals" className="data-[state=active]:bg-green-600 data-[state=active]:text-white px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-green-800 font-semibold">
+                ✅ نموذج الموافقة
+              </TabsTrigger>
             </TabsList>
             <ScrollBar orientation="horizontal" />
           </ScrollArea>
@@ -2467,6 +2470,11 @@ export default function AdminDashboard() {
 
           <TabsContent value="theme" className="space-y-6">
             <AdminThemePanel />
+          </TabsContent>
+
+          {/* Approvals Tab - نموذج الموافقة */}
+          <TabsContent value="approvals" className="space-y-6">
+            <ApprovalsPanel />
           </TabsContent>
 
           <TabsContent value="templates" className="space-y-6">
@@ -4812,6 +4820,323 @@ function SellerAlertsPanel() {
             </div>
           </div>
         ))
+      )}
+    </div>
+  );
+}
+
+function ApprovalsPanel() {
+  const { toast } = useToast();
+  const token = typeof window !== 'undefined' ? localStorage.getItem('adminToken') : null;
+
+  const [filterStatus, setFilterStatus] = useState<string>('pending');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedOrder, setSelectedOrder] = useState<any>(null);
+  const [approvalNote, setApprovalNote] = useState('');
+  const [rejectionReason, setRejectionReason] = useState('');
+  const [showForm, setShowForm] = useState(false);
+  const [formAction, setFormAction] = useState<'approve' | 'reject'>('approve');
+
+  const { data: ordersData, refetch, isLoading } = useQuery<{ orders: any[] }>({
+    queryKey: ['/api/admin/orders', filterStatus],
+    refetchInterval: 15000,
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (filterStatus && filterStatus !== 'all') params.set('status', filterStatus);
+      const res = await fetch(apiPath(`/api/admin/orders?${params.toString()}`), {
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+      });
+      if (!res.ok) throw new Error('Failed to fetch orders');
+      return res.json();
+    }
+  });
+
+  const orders = (ordersData?.orders || []).filter((o: any) => {
+    if (!searchTerm) return true;
+    const s = searchTerm.toLowerCase();
+    return (
+      String(o.id || '').toLowerCase().includes(s) ||
+      String(o.customer_name || o.name || '').toLowerCase().includes(s) ||
+      String(o.phone || '').toLowerCase().includes(s) ||
+      String(o.game_name || '').toLowerCase().includes(s)
+    );
+  });
+
+  const updateOrderMutation = useMutation({
+    mutationFn: async ({ id, status, note }: { id: string; status: string; note?: string }) => {
+      const res = await fetch(apiPath(`/api/admin/orders/${id}`), {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({ status, adminNote: note })
+      });
+      if (!res.ok) throw new Error('Failed to update order');
+      return res.json();
+    },
+    onSuccess: (_, vars) => {
+      toast({
+        title: vars.status === 'approved' ? 'تمت الموافقة ✅' : 'تم الرفض ❌',
+        description: vars.status === 'approved' ? 'تمت الموافقة على الطلب بنجاح' : 'تم رفض الطلب',
+        duration: 2500
+      });
+      setShowForm(false);
+      setSelectedOrder(null);
+      setApprovalNote('');
+      setRejectionReason('');
+      refetch();
+    },
+    onError: (err: any) => {
+      toast({ title: 'خطأ', description: err?.message || 'فشل التحديث', variant: 'destructive' });
+    }
+  });
+
+  const openApprove = (order: any) => {
+    setSelectedOrder(order);
+    setFormAction('approve');
+    setApprovalNote('');
+    setRejectionReason('');
+    setShowForm(true);
+  };
+
+  const openReject = (order: any) => {
+    setSelectedOrder(order);
+    setFormAction('reject');
+    setApprovalNote('');
+    setRejectionReason('');
+    setShowForm(true);
+  };
+
+  const handleSubmitForm = () => {
+    if (!selectedOrder) return;
+    if (formAction === 'reject' && !rejectionReason.trim()) {
+      toast({ title: 'مطلوب', description: 'الرجاء إدخال سبب الرفض', variant: 'destructive' });
+      return;
+    }
+    updateOrderMutation.mutate({
+      id: selectedOrder.id,
+      status: formAction === 'approve' ? 'approved' : 'rejected',
+      note: formAction === 'approve' ? approvalNote : rejectionReason
+    });
+  };
+
+  const statusColor: Record<string, string> = {
+    pending: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/40',
+    approved: 'bg-green-500/20 text-green-400 border-green-500/40',
+    rejected: 'bg-red-500/20 text-red-400 border-red-500/40',
+    completed: 'bg-blue-500/20 text-blue-400 border-blue-500/40',
+    cancelled: 'bg-gray-500/20 text-gray-400 border-gray-500/40'
+  };
+  const statusLabel: Record<string, string> = {
+    pending: 'قيد الانتظار',
+    approved: 'موافق عليه',
+    rejected: 'مرفوض',
+    completed: 'مكتمل',
+    cancelled: 'ملغي'
+  };
+
+  const pendingCount = (ordersData?.orders || []).filter((o: any) => o.status === 'pending').length;
+
+  return (
+    <div className="space-y-6" dir="rtl">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div>
+          <h2 className="text-2xl font-bold text-foreground">نموذج الموافقة على الطلبات</h2>
+          <p className="text-muted-foreground text-sm mt-1">مراجعة وإدارة طلبات العملاء والموافقة عليها أو رفضها</p>
+        </div>
+        {pendingCount > 0 && (
+          <div className="bg-yellow-500/20 border border-yellow-500/40 rounded-lg px-4 py-2 text-yellow-400 font-semibold text-sm">
+            ⚠️ {pendingCount} طلب بانتظار المراجعة
+          </div>
+        )}
+      </div>
+
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {(['all', 'pending', 'approved', 'rejected'] as const).map((s) => {
+          const count = s === 'all'
+            ? (ordersData?.orders || []).length
+            : (ordersData?.orders || []).filter((o: any) => o.status === s).length;
+          const isActive = filterStatus === s;
+          return (
+            <button
+              key={s}
+              onClick={() => setFilterStatus(s)}
+              className={`rounded-lg border p-3 text-center transition-all ${isActive ? 'border-gold-primary bg-gold-primary/20 text-gold-primary' : 'border-border bg-card/40 text-muted-foreground hover:border-gold-primary/50'}`}
+            >
+              <div className="text-xl font-bold">{count}</div>
+              <div className="text-xs mt-1">
+                {s === 'all' ? 'الكل' : statusLabel[s] || s}
+              </div>
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="flex gap-3 flex-wrap items-center">
+        <Input
+          placeholder="بحث بالاسم أو رقم الطلب أو الهاتف..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="max-w-sm text-right"
+          dir="rtl"
+        />
+        <Button variant="outline" size="sm" onClick={() => refetch()}>تحديث</Button>
+      </div>
+
+      {isLoading ? (
+        <div className="p-12 text-center">
+          <div className="animate-spin h-8 w-8 border-4 border-gold-primary border-t-transparent rounded-full mx-auto mb-4"></div>
+          <p className="text-muted-foreground">جارٍ تحميل الطلبات...</p>
+        </div>
+      ) : orders.length === 0 ? (
+        <Card className="bg-card/50 border-gold-primary/30 p-12 text-center">
+          <div className="text-5xl mb-4">📋</div>
+          <p className="text-muted-foreground">لا توجد طلبات تطابق الفلتر المحدد</p>
+        </Card>
+      ) : (
+        <div className="space-y-3">
+          {orders.map((order: any) => (
+            <Card key={order.id} className="bg-card/50 border-gold-primary/20 hover:border-gold-primary/40 transition-colors">
+              <CardContent className="p-4">
+                <div className="flex flex-col sm:flex-row justify-between gap-4">
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-3 flex-wrap">
+                      <span className="font-mono text-sm text-muted-foreground">#{String(order.id).slice(-8)}</span>
+                      <span className={`text-xs px-2 py-0.5 rounded-full border font-medium ${statusColor[order.status] || 'bg-gray-500/20 text-gray-400'}`}>
+                        {statusLabel[order.status] || order.status}
+                      </span>
+                      {order.total && (
+                        <span className="text-sm font-bold text-gold-primary">{Number(order.total).toFixed(2)} ج.م</span>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-1 text-sm">
+                      {(order.customer_name || order.name) && (
+                        <div><span className="text-muted-foreground">العميل: </span><span className="font-medium">{order.customer_name || order.name}</span></div>
+                      )}
+                      {order.phone && (
+                        <div><span className="text-muted-foreground">الهاتف: </span><span className="font-medium">{order.phone}</span></div>
+                      )}
+                      {order.game_name && (
+                        <div><span className="text-muted-foreground">اللعبة: </span><span className="font-medium">{order.game_name}</span></div>
+                      )}
+                      {order.player_id && (
+                        <div><span className="text-muted-foreground">معرف اللاعب: </span><span className="font-mono text-xs">{order.player_id}</span></div>
+                      )}
+                      {order.created_at && (
+                        <div className="text-muted-foreground text-xs">{new Date(order.created_at).toLocaleString('ar-EG')}</div>
+                      )}
+                    </div>
+                    {order.admin_note && (
+                      <div className="text-xs bg-muted/40 border rounded px-2 py-1">
+                        <span className="text-muted-foreground">ملاحظة الإدارة: </span>{order.admin_note}
+                      </div>
+                    )}
+                  </div>
+                  {order.status === 'pending' && (
+                    <div className="flex flex-row sm:flex-col gap-2 justify-end shrink-0">
+                      <Button
+                        size="sm"
+                        className="bg-green-600 hover:bg-green-700 text-white"
+                        onClick={() => openApprove(order)}
+                      >
+                        ✅ موافقة
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={() => openReject(order)}
+                      >
+                        ❌ رفض
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {showForm && selectedOrder && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+          <Card className="bg-card border-gold-primary/30 w-full max-w-lg shadow-2xl" dir="rtl">
+            <CardHeader className="border-b border-border pb-4">
+              <CardTitle className={`text-xl ${formAction === 'approve' ? 'text-green-400' : 'text-red-400'}`}>
+                {formAction === 'approve' ? '✅ نموذج الموافقة' : '❌ نموذج الرفض'}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-5 pt-5">
+              <div className="bg-muted/30 rounded-lg p-4 space-y-2 text-sm border border-border">
+                <div className="font-semibold text-base mb-2">تفاصيل الطلب</div>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-1">
+                  <div><span className="text-muted-foreground">رقم الطلب: </span><span className="font-mono">#{String(selectedOrder.id).slice(-8)}</span></div>
+                  <div><span className="text-muted-foreground">الإجمالي: </span><span className="font-bold text-gold-primary">{Number(selectedOrder.total || 0).toFixed(2)} ج.م</span></div>
+                  {(selectedOrder.customer_name || selectedOrder.name) && (
+                    <div><span className="text-muted-foreground">العميل: </span><span>{selectedOrder.customer_name || selectedOrder.name}</span></div>
+                  )}
+                  {selectedOrder.phone && (
+                    <div><span className="text-muted-foreground">الهاتف: </span><span>{selectedOrder.phone}</span></div>
+                  )}
+                  {selectedOrder.game_name && (
+                    <div className="col-span-2"><span className="text-muted-foreground">اللعبة: </span><span>{selectedOrder.game_name}</span></div>
+                  )}
+                  {selectedOrder.player_id && (
+                    <div className="col-span-2"><span className="text-muted-foreground">معرف اللاعب: </span><span className="font-mono">{selectedOrder.player_id}</span></div>
+                  )}
+                </div>
+              </div>
+
+              {formAction === 'approve' ? (
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">ملاحظة للموافقة (اختياري)</Label>
+                  <Textarea
+                    value={approvalNote}
+                    onChange={(e) => setApprovalNote(e.target.value)}
+                    placeholder="مثال: تمت المعالجة بنجاح، سيتم شحن العملة خلال 24 ساعة..."
+                    className="h-28 text-right resize-none"
+                    dir="rtl"
+                  />
+                  <p className="text-xs text-muted-foreground">سيتم إرسال هذه الملاحظة للعميل مع تأكيد الموافقة</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">سبب الرفض <span className="text-red-500">*</span></Label>
+                  <Textarea
+                    value={rejectionReason}
+                    onChange={(e) => setRejectionReason(e.target.value)}
+                    placeholder="مثال: معرف اللاعب غير صحيح / الرصيد غير كافٍ / طلب مكرر..."
+                    className="h-28 text-right resize-none border-red-500/40 focus:border-red-500"
+                    dir="rtl"
+                  />
+                  <p className="text-xs text-muted-foreground">سيتم إرسال سبب الرفض للعميل — يرجى التوضيح الدقيق</p>
+                </div>
+              )}
+
+              <div className="flex gap-3 pt-2">
+                <Button
+                  onClick={handleSubmitForm}
+                  disabled={updateOrderMutation.isPending}
+                  className={`flex-1 ${formAction === 'approve' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'} text-white`}
+                >
+                  {updateOrderMutation.isPending
+                    ? 'جارٍ التحديث...'
+                    : formAction === 'approve'
+                      ? '✅ تأكيد الموافقة'
+                      : '❌ تأكيد الرفض'}
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => { setShowForm(false); setSelectedOrder(null); }}
+                  disabled={updateOrderMutation.isPending}
+                  className="flex-1"
+                >
+                  إلغاء
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       )}
     </div>
   );

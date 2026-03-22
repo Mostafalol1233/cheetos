@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <defs>
+    <linearGradient id="gemGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#6EDE8A;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#30C25A;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1A8A3A;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="shimmer" x1="0%" y1="0%" x2="60%" y2="60%">
+      <stop offset="0%" style="stop-color:#FFFFFF;stop-opacity:0.7" />
+      <stop offset="100%" style="stop-color:#FFFFFF;stop-opacity:0" />
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
+      <feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  <polygon points="100,15 145,45 160,100 145,155 100,185 55,155 40,100 55,45" fill="url(#gemGrad)" filter="url(#glow)" stroke="#0D5C26" stroke-width="2"/>
+  <polygon points="100,15 145,45 100,80 55,45" fill="url(#shimmer)" opacity="0.8"/>
+  <polygon points="55,45 100,80 40,100" fill="#FFFFFF" opacity="0.15"/>
+  <polygon points="145,45 160,100 100,80" fill="#FFFFFF" opacity="0.1"/>
+  <text x="100" y="140" text-anchor="middle" font-family="Arial Black, sans-serif" font-size="28" font-weight="900" fill="#FFFFFF" opacity="0.9">GEMS</text>
+</svg>
