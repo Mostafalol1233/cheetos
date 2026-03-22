@@ -278,16 +278,15 @@ router.put('/:id/status', authenticateToken, ensureAdmin, async (req, res) => {
 // Respond to Order (Admin)
 router.post('/:id/respond', authenticateToken, ensureAdmin, async (req, res) => {
   const { id } = req.params;
-  const { status, message } = req.body; // status: 'confirmed' | 'rejected'
+  const { status, message, delivery_message } = req.body; // status: 'confirmed' | 'rejected' | 'completed'
 
-  if (!['confirmed', 'rejected'].includes(status)) {
-    return res.status(400).json({ message: 'Invalid status. Must be confirmed or rejected.' });
+  if (!['confirmed', 'rejected', 'completed', 'delivered'].includes(status)) {
+    return res.status(400).json({ message: 'Invalid status.' });
   }
 
   let order = null;
+  const newStatus = status;
   try {
-    // Update DB
-    const newStatus = status === 'confirmed' ? 'confirmed' : 'rejected'; // Map to DB status enum if needed
     const result = await pool.query('UPDATE orders SET status = $1, updated_at = NOW() WHERE id = $2 RETURNING *', [newStatus, id]);
     if (result.rows.length > 0) {
       order = result.rows[0];
@@ -300,35 +299,51 @@ router.post('/:id/respond', authenticateToken, ensureAdmin, async (req, res) => 
   const orders = readOrders();
   const idx = orders.findIndex(o => o.id === id);
   if (idx !== -1) {
-    orders[idx].status = status === 'confirmed' ? 'confirmed' : 'rejected';
+    orders[idx].status = newStatus;
     orders[idx].updated_at = new Date().toISOString();
+    if (delivery_message) orders[idx].delivery_message = delivery_message;
     writeOrders(orders);
     if (!order) order = orders[idx];
   }
 
   if (!order) return res.status(404).json({ message: 'Order not found' });
 
+  if (delivery_message) order.delivery_message = delivery_message;
+
   // Notify clients
   const io = getIO();
   if (io) io.emit('orders_updated');
 
-  // Send Message
-  if (message) {
-    // WhatsApp
-    if (order.customer_phone) {
-      try {
-        await sendWhatsAppMessage(order.customer_phone, message);
-      } catch (e) {
-        console.error('Failed to send WhatsApp response:', e.message);
-      }
+  // If completed/delivered, send delivery email with the code/message
+  const isDelivery = ['completed', 'delivered'].includes(status);
+
+  // Send delivery message via WhatsApp
+  const msgToSend = delivery_message || message;
+  if (msgToSend && order.customer_phone) {
+    try {
+      const waMsg = `*متجر ضياء 🎮*\n\nأهلاً ${order.customer_name || ''}،\n\n${isDelivery ? '✅ تم تنفيذ طلبك بنجاح!\n\n' : ''}${msgToSend}\n\nرقم الطلب: ${id}`;
+      await sendWhatsAppMessage(order.customer_phone, waMsg);
+    } catch (e) {
+      console.error('Failed to send WhatsApp response:', e.message);
     }
-    // Email
-    if (order.customer_email) {
-      try {
-        await sendRawEmail(order.customer_email, `Update on Order #${id}`, message);
-      } catch (e) {
-        console.error('Failed to send Email response:', e.message);
+  }
+
+  // Send email
+  if (order.customer_email) {
+    try {
+      if (isDelivery) {
+        await sendEmail(order.customer_email, 'orderDelivery', { ...order, delivery_message: msgToSend });
+      } else if (msgToSend) {
+        await sendRawEmail(
+          order.customer_email,
+          `📩 تحديث على طلبك #${id} | Order Update`,
+          msgToSend
+        );
+      } else {
+        await sendEmail(order.customer_email, 'orderStatusUpdate', order);
       }
+    } catch (e) {
+      console.error('Failed to send Email response:', e.message);
     }
   }
 
