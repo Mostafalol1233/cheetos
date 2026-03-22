@@ -6,11 +6,11 @@ import ImageWithFallback from "./image-with-fallback";
 import { useTranslation } from "@/lib/translation";
 
 const GAME_SLUG_IMAGES: Record<string, string> = {
-  'free-fire': '/images/free-fire-game.png',
-  'freefire': '/images/free-fire-game.png',
-  'pubg': '/images/pubg-game.png',
-  'pubg-mobile': '/images/pubg-game.png',
-  'crossfire': '/images/crossfire-game.png',
+  'free-fire': '/images/banner-free-fire.png',
+  'freefire': '/images/banner-free-fire.png',
+  'pubg': '/images/banner-pubg.png',
+  'pubg-mobile': '/images/banner-pubg.png',
+  'crossfire': '/images/banner-crossfire.png',
   'minecraft': '/images/minecraft.webp',
   'honor-of-kings': '/images/hok-main.webp',
   'hok': '/images/hok-main.webp',
@@ -84,12 +84,12 @@ export function PopularGames() {
           <h2 className="text-3xl font-black text-foreground tracking-tight">{t('popular_games')}</h2>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
           {games.map((game) => {
             const gradient = getGameGradient(game.slug);
             return (
               <Link key={game.id} href={`/game/${game.slug}`} className="block group">
-                <div className="relative overflow-hidden rounded-2xl aspect-[3/4] border border-white/10 hover:border-gold-primary/50 shadow-md hover:shadow-xl hover:shadow-gold-primary/10 transition-all duration-300 cursor-pointer bg-gray-900">
+                <div className="relative overflow-hidden rounded-2xl border border-white/10 hover:border-gold-primary/50 shadow-md hover:shadow-xl hover:shadow-gold-primary/10 transition-all duration-300 cursor-pointer bg-gray-900" style={{ aspectRatio: '4/3' }}>
                   <ImageWithFallback
                     src={getGameImage(game)}
                     alt={game.name}
@@ -97,14 +97,13 @@ export function PopularGames() {
                   />
 
                   <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-all duration-300" />
-
                   <div className={`absolute inset-0 bg-gradient-to-t ${gradient}`} />
 
                   <div className="absolute bottom-0 left-0 right-0 p-3">
                     <h3 className="text-white font-bold text-sm leading-tight drop-shadow-lg line-clamp-2 mb-1.5 tracking-wide">
                       {game.name}
                     </h3>
-                    <div className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-gold-primary/20 border border-gold-primary/40 text-gold-primary transition-all duration-300 group-hover:bg-gold-primary group-hover:text-black group-hover:border-gold-primary">
+                    <div className="inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1 rounded-full bg-gold-primary/20 border border-gold-primary/40 text-gold-primary transition-all duration-300 group-hover:bg-gold-primary group-hover:text-black group-hover:border-gold-primary">
                       <span>{t('view_details')}</span>
                       <ArrowRight className="w-2.5 h-2.5 transition-transform duration-300 group-hover:translate-x-0.5" />
                     </div>
