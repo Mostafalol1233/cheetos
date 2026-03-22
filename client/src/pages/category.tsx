@@ -291,7 +291,7 @@ export default function CategoryPage() {
                         )}
 
                         <Link href={`/game/${game.slug}`} className="w-full block">
-                          <Button size="sm" className="w-full bg-gradient-to-r from-gold-primary to-amber-600 hover:shadow-lg text-background disabled:bg-muted disabled:hover:bg-muted transition-all">
+                          <Button size="sm" className="w-full bg-gold-primary hover:bg-gold-primary/90 text-white disabled:bg-muted disabled:hover:bg-muted transition-all">
                             <ShoppingCart className="w-4 h-4 mr-2" />
                             {isOutOfStock ? t('out_of_stock') : t('view_packages')}
                           </Button>

@@ -103,7 +103,7 @@ export function CheckoutContent({ isEmbedded = false }: { isEmbedded?: boolean }
       {/* Ambient glow */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
         <div className="absolute top-0 right-1/4 w-96 h-96 bg-gold-primary/4 rounded-full blur-[120px]" />
-        <div className="absolute bottom-0 left-1/4 w-96 h-96 bg-amber-500/3 rounded-full blur-[120px]" />
+        <div className="absolute bottom-0 left-1/4 w-96 h-96 bg-gold-primary/3 rounded-full blur-[120px]" />
       </div>
 
       <div className="relative z-10 container mx-auto px-4 py-10 max-w-5xl">

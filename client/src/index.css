@@ -79,16 +79,16 @@
   /* #a855f7 */
   --electric-green: 155 85% 50%;
   /* #10b981 */
-  --cyber-gold: 45 100% 50%;
-  /* #ffd700 */
+  --cyber-gold: 0 85% 58%;
+  /* Red #f73131 */
   --neon-pink: 330 90% 60%;
   /* #ec4899 */
   --plasma-orange: 25 95% 55%;
   /* #f97316 */
 
-  /* Legacy Gold (kept for compatibility) */
-  --gold-primary: 45 90% 55%;
-  --gold-secondary: 45 90% 45%;
+  /* Legacy Gold — now red */
+  --gold-primary: 0 85% 58%;
+  --gold-secondary: 0 70% 45%;
 
   /* Background Layers */
   --dark-bg: 230 15% 8%;
@@ -117,11 +117,11 @@
   --popover: 0 0% 100%;
   --popover-foreground: 222 15% 15%;
 
-  /* Primary: Royal Gold */
-  --primary: 45 100% 50%;
-  /* Pure gold #FFD700 */
-  --primary-foreground: 0 0% 5%;
-  /* Near black for contrast */
+  /* Primary: Red */
+  --primary: 0 78% 50%;
+  /* Vivid red */
+  --primary-foreground: 0 0% 100%;
+  /* White for contrast */
 
   /* Secondary: Soft neutral */
   --secondary: 48 30% 96%;
@@ -147,28 +147,28 @@
   --border: 48 15% 82%;
   /* Soft border */
   --input: 0 0% 100%;
-  --ring: 45 100% 50%;
-  /* Gold ring */
+  --ring: 0 78% 50%;
+  /* Red ring */
 
-  /* Light mode accent colors - gold variants */
-  --cyber-blue: 45 100% 50%;
-  /* Gold replaces blue */
-  --neon-purple: 43 96% 56%;
-  /* Amber gold */
-  --electric-green: 50 90% 45%;
-  /* Yellow gold */
-  --cyber-gold: 45 100% 50%;
-  /* Pure gold */
-  --neon-pink: 35 100% 55%;
-  /* Orange gold */
+  /* Light mode accent colors - red variants */
+  --cyber-blue: 0 78% 50%;
+  /* Red */
+  --neon-purple: 0 70% 55%;
+  /* Slightly lighter red */
+  --electric-green: 0 60% 45%;
+  /* Darker red */
+  --cyber-gold: 0 78% 50%;
+  /* Red */
+  --neon-pink: 0 80% 55%;
+  /* Bright red */
 
-  /* Gold palette */
-  --gold-primary: 45 100% 50%;
-  /* #FFD700 */
-  --gold-secondary: 43 96% 40%;
-  /* Darker gold */
-  --gold-accent: 48 100% 60%;
-  /* Bright gold */
+  /* Red palette */
+  --gold-primary: 0 78% 50%;
+  /* vivid red */
+  --gold-secondary: 0 65% 40%;
+  /* Darker red */
+  --gold-accent: 0 85% 62%;
+  /* Brighter red */
 
   /* Background Layers */
   --dark-bg: 48 40% 97%;
@@ -197,11 +197,11 @@
   --popover: 220 12% 13%;
   --popover-foreground: 210 20% 92%;
 
-  /* Primary: Gold/Amber */
-  --primary: 45 90% 55%;
-  /* Amber gold */
-  --primary-foreground: 220 13% 9%;
-  /* Dark bg for contrast */
+  /* Primary: Red */
+  --primary: 0 85% 58%;
+  /* Vivid red */
+  --primary-foreground: 0 0% 100%;
+  /* White for contrast */
 
   /* Secondary: Dark surface */
   --secondary: 220 12% 17%;
@@ -223,30 +223,30 @@
   /* Border & Input */
   --border: 220 12% 20%;
   --input: 220 12% 16%;
-  --ring: 45 90% 55%;
-  /* Gold ring */
+  --ring: 0 85% 58%;
+  /* Red ring */
 
-  /* Dark mode accent colors - blue family */
-  --cyber-blue: 166 100% 70%;
-  /* Cyan #64ffda */
-  --neon-purple: 199 89% 48%;
-  /* Sky blue #0ea5e9 */
-  --electric-green: 172 66% 50%;
-  /* Teal #14b8a6 */
-  --cyber-gold: 166 100% 70%;
-  /* Use cyan as gold alternative */
-  --neon-pink: 217 91% 60%;
-  /* Blue #3b82f6 */
-  --plasma-orange: 199 89% 48%;
-  /* Sky blue */
+  /* Dark mode accent colors */
+  --cyber-blue: 0 85% 58%;
+  /* Red */
+  --neon-purple: 0 75% 52%;
+  /* Slightly darker red */
+  --electric-green: 0 65% 48%;
+  /* Mid red */
+  --cyber-gold: 0 85% 58%;
+  /* Red */
+  --neon-pink: 0 80% 62%;
+  /* Brighter red */
+  --plasma-orange: 0 80% 55%;
+  /* Red-orange */
 
-  /* Blue palette */
-  --blue-primary: 166 100% 70%;
-  /* Cyan */
-  --blue-secondary: 199 89% 48%;
-  /* Sky */
-  --blue-accent: 217 91% 60%;
-  /* Bright blue */
+  /* Red palette */
+  --blue-primary: 0 85% 58%;
+  /* Red */
+  --blue-secondary: 0 75% 52%;
+  /* Mid red */
+  --blue-accent: 0 80% 62%;
+  /* Bright red */
 
   /* Background Layers */
   --dark-bg: 222 47% 7%;
@@ -258,17 +258,17 @@
   --card-bg-alt: 220 42% 14%;
   /* Lighter card */
 
-  /* Gold colors — real gold/amber in dark mode */
-  --gold-primary: 45 90% 55%;
-  /* Amber gold #FFC430 */
-  --gold-secondary: 38 85% 46%;
-  /* Darker amber */
-  --gold-accent: 50 95% 62%;
-  /* Bright gold */
+  /* Red colors in dark mode */
+  --gold-primary: 0 85% 58%;
+  /* Vivid red */
+  --gold-secondary: 0 70% 42%;
+  /* Darker red */
+  --gold-accent: 0 90% 65%;
+  /* Bright red */
 
   /* Glassmorphism Dark */
   --glass-bg: 220 42% 10% / 0.8;
-  --glass-border: 45 90% 55% / 0.12;
+  --glass-border: 0 85% 58% / 0.12;
 }
 
 /* ========================================

@@ -46,7 +46,7 @@ export default function SupportPage() {
       <div className="relative overflow-hidden bg-gradient-to-br from-background via-card to-background py-16 px-4 border-b border-border/40">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(255,215,0,0.06)_0%,_transparent_70%)]" />
         <div className="absolute top-0 right-0 w-96 h-96 bg-gold-primary/5 rounded-full blur-3xl" />
-        <div className="absolute bottom-0 left-0 w-72 h-72 bg-amber-500/5 rounded-full blur-3xl" />
+        <div className="absolute bottom-0 left-0 w-72 h-72 bg-red-500/5 rounded-full blur-3xl" />
 
         <div className="container mx-auto relative z-10">
           <Link href="/" className="inline-flex items-center text-muted-foreground hover:text-gold-primary transition-colors mb-8 text-sm">
@@ -55,11 +55,11 @@ export default function SupportPage() {
           </Link>
 
           <div className="text-center">
-            <div className="w-20 h-20 bg-gradient-to-br from-gold-primary/30 to-amber-600/20 border border-gold-primary/30 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg shadow-gold-primary/10">
+            <div className="w-20 h-20 bg-gradient-to-br from-gold-primary/20 to-red-900/10 border border-gold-primary/30 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg shadow-gold-primary/10">
               <Headphones className="w-10 h-10 text-gold-primary" />
             </div>
             <h1 className="text-4xl md:text-5xl font-black text-foreground mb-3">
-              Customer <span className="text-transparent bg-clip-text bg-gradient-to-r from-gold-primary to-amber-400">Support</span>
+              Customer <span className="text-gold-primary">Support</span>
             </h1>
             <p className="text-muted-foreground text-lg max-w-md mx-auto">We're here to help you 24/7 — reach us on any platform</p>
 
@@ -153,8 +153,8 @@ export default function SupportPage() {
           {/* Support Hours */}
           <div className="rounded-2xl border border-border bg-card p-6">
             <div className="flex items-center gap-3 mb-5">
-              <div className="w-10 h-10 bg-gradient-to-br from-amber-500 to-orange-500 rounded-xl flex items-center justify-center">
-                <Clock className="w-5 h-5 text-white" />
+              <div className="w-10 h-10 bg-gradient-to-br from-gold-primary/20 to-red-900/10 border border-gold-primary/30 rounded-xl flex items-center justify-center">
+                <Clock className="w-5 h-5 text-gold-primary" />
               </div>
               <h2 className="text-lg font-bold text-foreground">Support Hours</h2>
             </div>
@@ -171,7 +171,7 @@ export default function SupportPage() {
                   <p className="font-semibold text-foreground text-sm">Phone Support</p>
                   <p className="text-xs text-muted-foreground">Sat – Thu</p>
                 </div>
-                <span className="text-xs bg-amber-500/20 text-amber-400 px-2 py-1 rounded-full font-medium">9 AM – 11 PM</span>
+                <span className="text-xs bg-gold-primary/15 text-gold-primary px-2 py-1 rounded-full font-medium">9 AM – 11 PM</span>
               </div>
             </div>
           </div>
@@ -203,7 +203,7 @@ export default function SupportPage() {
         {/* Contact Form */}
         <div className="rounded-2xl border border-border bg-card p-8">
           <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 bg-gradient-to-br from-gold-primary/30 to-amber-600/20 border border-gold-primary/30 rounded-xl flex items-center justify-center">
+            <div className="w-10 h-10 bg-gradient-to-br from-gold-primary/20 to-red-900/10 border border-gold-primary/30 rounded-xl flex items-center justify-center">
               <MessageCircle className="w-5 h-5 text-gold-primary" />
             </div>
             <div>
@@ -231,7 +231,7 @@ export default function SupportPage() {
               <Label htmlFor="message" className="text-sm font-medium mb-1.5 block">Message</Label>
               <Textarea id="message" placeholder="Describe your issue in detail..." rows={5} className="bg-muted/50 border-border/60 focus:border-gold-primary/50 resize-none" />
             </div>
-            <Button type="submit" className="w-full bg-gradient-to-r from-gold-primary to-amber-600 hover:opacity-90 text-background font-bold shadow-lg shadow-gold-primary/20 transition-all">
+            <Button type="submit" className="w-full bg-gold-primary hover:bg-gold-primary/90 text-white font-bold shadow-lg shadow-gold-primary/20 transition-all">
               <Mail className="w-4 h-4 mr-2" />
               Send Message
             </Button>

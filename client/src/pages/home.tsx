@@ -89,9 +89,8 @@ export default function Home() {
         <section className="relative">
           {/* Background Effects */}
           <div className="absolute inset-0 overflow-hidden pointer-events-none">
-            <div className="absolute top-20 left-10 w-72 h-72 bg-cyber-blue/20 rounded-full blur-[100px]" />
-            <div className="absolute top-40 right-20 w-96 h-96 bg-neon-purple/15 rounded-full blur-[120px]" />
-            <div className="absolute bottom-20 left-1/3 w-80 h-80 bg-neon-pink/10 rounded-full blur-[100px]" />
+            <div className="absolute top-20 left-10 w-72 h-72 bg-gold-primary/8 rounded-full blur-[100px]" />
+            <div className="absolute top-40 right-20 w-96 h-96 bg-gold-primary/5 rounded-full blur-[120px]" />
           </div>
 
           <div className="container mx-auto px-4 pt-8 relative z-10">
@@ -117,7 +116,7 @@ export default function Home() {
             viewport={{ once: true }}
           >
             <h2 className="text-3xl md:text-4xl font-bold mb-4">
-              Why Choose <span className="text-cyber-blue">Diaa</span> Store?
+              Why Choose <span className="text-gold-primary">Diaa</span> Store?
             </h2>
             <p className="text-muted-foreground max-w-2xl mx-auto">
               Experience the best gaming top-up service with unmatched speed, security, and support.
@@ -135,10 +134,10 @@ export default function Home() {
                 whileHover={{ y: -5 }}
                 className="group"
               >
-                <div className="relative p-6 rounded-2xl glass border border-white/5 hover:border-cyber-blue/30 transition-all duration-300">
+                <div className="relative p-6 rounded-2xl glass border border-white/5 hover:border-gold-primary/30 transition-all duration-300">
                   {/* Icon */}
-                  <div className={`w-14 h-14 rounded-xl bg-gradient-to-br ${feature.gradient} flex items-center justify-center mb-4 shadow-lg group-hover:scale-110 transition-transform duration-300`}>
-                    <feature.icon className="w-7 h-7 text-white" />
+                  <div className="w-14 h-14 rounded-xl bg-gold-primary/15 border border-gold-primary/25 flex items-center justify-center mb-4 shadow-lg group-hover:scale-110 transition-transform duration-300">
+                    <feature.icon className="w-7 h-7 text-gold-primary" />
                   </div>
 
                   {/* Content */}
@@ -146,7 +145,7 @@ export default function Home() {
                   <p className="text-sm text-muted-foreground">{feature.description}</p>
 
                   {/* Hover Glow */}
-                  <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-cyber-blue/5 to-neon-purple/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 -z-10" />
+                  <div className="absolute inset-0 rounded-2xl bg-gold-primary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 -z-10" />
                 </div>
               </motion.div>
             ))}
@@ -159,9 +158,9 @@ export default function Home() {
         <section className="container mx-auto px-4 py-20">
           <div className="relative rounded-3xl overflow-hidden">
             {/* Background */}
-            <div className="absolute inset-0 bg-gradient-to-br from-gold-primary/10 via-amber-100/60 to-gold-secondary/20 dark:from-card dark:via-card dark:to-muted/20" />
-            <div className="absolute top-0 right-0 w-96 h-96 bg-cyber-blue/10 rounded-full blur-3xl" />
-            <div className="absolute bottom-0 left-0 w-80 h-80 bg-neon-purple/10 rounded-full blur-3xl" />
+            <div className="absolute inset-0 bg-gradient-to-br from-gold-primary/5 to-transparent dark:from-card dark:via-card dark:to-muted/20" />
+            <div className="absolute top-0 right-0 w-96 h-96 bg-gold-primary/5 rounded-full blur-3xl" />
+            <div className="absolute bottom-0 left-0 w-80 h-80 bg-gold-primary/3 rounded-full blur-3xl" />
 
             <div className="relative p-8 md:p-12 lg:p-16">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
@@ -173,7 +172,7 @@ export default function Home() {
                   viewport={{ once: true }}
                 >
                   <h2 className="text-3xl md:text-4xl font-bold mb-6">
-                    Welcome to <span className="bg-gradient-to-r from-cyber-blue via-neon-purple to-neon-pink bg-clip-text text-transparent">Diaa Store</span>
+                    Welcome to <span className="text-gold-primary">Diaa Store</span>
                   </h2>
                   <p className="text-muted-foreground text-lg mb-4">
                     {t('about_p1') || "Your trusted partner for gaming top-ups in Egypt. We offer fast, secure, and affordable services for all your favorite games."}
@@ -193,8 +192,8 @@ export default function Home() {
                         viewport={{ once: true }}
                         className="text-center p-4 rounded-xl glass border border-white/5"
                       >
-                        <stat.icon className="w-6 h-6 text-cyber-blue mx-auto mb-2" />
-                        <p className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-cyber-blue to-neon-purple bg-clip-text text-transparent">
+                        <stat.icon className="w-6 h-6 text-gold-primary mx-auto mb-2" />
+                        <p className="text-2xl md:text-3xl font-bold text-gold-primary">
                           {stat.value}
                         </p>
                         <p className="text-xs text-muted-foreground">{stat.label}</p>
@@ -220,7 +219,7 @@ export default function Home() {
                   className="relative"
                 >
                   <div className="relative rounded-2xl overflow-hidden glass border border-white/10 p-8">
-                    <div className="absolute inset-0 bg-gradient-to-br from-cyber-blue/10 via-neon-purple/10 to-neon-pink/10 animate-gradient" style={{ backgroundSize: "200% 200%" }} />
+                    <div className="absolute inset-0 bg-gradient-to-br from-gold-primary/5 to-transparent" />
                     <img
                       src="https://i.postimg.cc/zG8jHjqS/large-image-logo.png"
                       alt="Diaa Store Logo"
@@ -243,7 +242,7 @@ export default function Home() {
             viewport={{ once: true }}
           >
             <h2 className="text-3xl md:text-4xl font-bold mb-4">
-              What Our <span className="text-neon-purple">Customers</span> Say
+              What Our <span className="text-gold-primary">Customers</span> Say
             </h2>
             <p className="text-muted-foreground">Trusted by thousands of gamers across Egypt</p>
           </motion.div>
@@ -257,10 +256,10 @@ export default function Home() {
                 transition={{ duration: 0.5, delay: index * 0.1 }}
                 viewport={{ once: true }}
                 whileHover={{ y: -5 }}
-                className="p-6 rounded-2xl glass border border-white/5 hover:border-neon-purple/30 transition-all duration-300"
+                className="p-6 rounded-2xl glass border border-white/5 hover:border-gold-primary/30 transition-all duration-300"
               >
                 <div className="flex items-center gap-4 mb-4">
-                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-cyber-blue to-neon-purple flex items-center justify-center text-white font-bold text-lg">
+                  <div className="w-12 h-12 rounded-full bg-gold-primary flex items-center justify-center text-white font-bold text-lg">
                     {review.initial}
                   </div>
                   <div>

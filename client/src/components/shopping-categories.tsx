@@ -87,7 +87,7 @@ export function ShoppingCategories() {
     <section className="container mx-auto px-4 py-12">
       {/* Section header */}
       <div className="flex items-center gap-3 mb-8">
-        <div className="w-1 h-7 rounded-full bg-gradient-to-b from-gold-primary to-amber-600" />
+        <div className="w-1 h-7 rounded-full bg-gold-primary" />
         <h2 className="text-2xl font-bold text-foreground tracking-tight">{t('shopping_categories')}</h2>
       </div>
 
