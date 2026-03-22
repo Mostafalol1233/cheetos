@@ -88,33 +88,42 @@ export default function GamesPage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <div className="container mx-auto px-4 py-8">
-        <div className="mb-8">
-          <Link
-            href="/"
-            className="inline-flex items-center text-muted-foreground hover:text-primary transition-colors mb-4"
-          >
+
+      {/* Page Header Banner */}
+      <div className="relative overflow-hidden bg-gradient-to-br from-[#0d1b2a] via-[#1a2a4a] to-[#0a1628] py-12 px-4 mb-8">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_rgba(6,182,212,0.12)_0%,_transparent_60%)]" />
+        <div className="absolute top-0 right-0 w-80 h-80 bg-cyan-500/5 rounded-full blur-3xl" />
+        <div className="container mx-auto relative z-10">
+          <Link href="/" className="inline-flex items-center text-cyan-400/70 hover:text-cyan-400 transition-colors mb-5 text-sm">
             <ArrowLeft className="w-4 h-4 mr-2" />
             {t('back_to_home')}
           </Link>
-          
-          <div className="mb-6">
-            <h1 className="text-4xl font-bold mb-2">{t('games')}</h1>
-            <p className="text-muted-foreground text-lg">{t('browse_games_desc')}</p>
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+            <div>
+              <h1 className="text-4xl md:text-5xl font-black text-white mb-2">{t('games')}</h1>
+              <p className="text-gray-400 text-base">{t('browse_games_desc')}</p>
+            </div>
+            <span className="text-sm bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 px-4 py-2 rounded-full font-medium self-start sm:self-auto whitespace-nowrap">
+              {filteredGames.length} {t('games_found')}
+            </span>
           </div>
+        </div>
+      </div>
 
-          <div className="flex flex-col sm:flex-row gap-4 mb-6">
+      <div className="container mx-auto px-4 pb-12">
+        <div className="mb-8">
+          <div className="flex flex-col sm:flex-row gap-4 mb-4">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
               <Input
                 placeholder={`${t('search')}...`}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
+                className="pl-10 bg-card border-border/60 focus:border-cyan-500/50"
               />
             </div>
             <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-              <SelectTrigger className="w-full sm:w-[200px]">
+              <SelectTrigger className="w-full sm:w-[200px] bg-card border-border/60">
                 <Filter className="w-4 h-4 mr-2" />
                 <SelectValue placeholder={t('all_categories')} />
               </SelectTrigger>
@@ -128,12 +137,6 @@ export default function GamesPage() {
               </SelectContent>
             </Select>
           </div>
-
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold">
-              {filteredGames.length} {t('games_found')}
-            </h2>
-          </div>
         </div>
 
         {filteredGames.length > 0 ? (
@@ -144,7 +147,7 @@ export default function GamesPage() {
               
               return (
                 <Link key={game.id} href={`/game/${game.slug}`} className="group block h-full">
-                  <div className="relative h-full flex flex-col rounded-xl overflow-hidden border border-border bg-card hover:bg-accent/50 hover:border-primary/50 transition-all duration-300 shadow-sm hover:shadow-md">
+                  <div className="relative h-full flex flex-col rounded-xl overflow-hidden border border-border/60 bg-card hover:border-cyan-500/40 transition-all duration-300 shadow-sm hover:shadow-lg hover:shadow-cyan-500/5 group-hover:-translate-y-0.5">
                     <div className="relative aspect-[4/3] overflow-hidden bg-muted/20">
                       <ImageWithFallback
                         src={game.image}
@@ -152,32 +155,35 @@ export default function GamesPage() {
                         className="w-full h-full object-contain p-4 transition-transform duration-500 group-hover:scale-110"
                       />
                       {game.isPopular && (
-                        <div className="absolute top-2 right-2 bg-gradient-to-r from-gold-primary to-neon-pink text-white px-2 py-1 rounded-full text-xs font-bold flex items-center shadow-lg z-10">
-                          <Star className="w-3 h-3 mr-1" />
+                        <div className="absolute top-2 right-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white px-2 py-1 rounded-full text-xs font-bold flex items-center shadow-lg z-10">
+                          <Star className="w-3 h-3 mr-1 fill-white" />
                           {t('hot')}
                         </div>
                       )}
                       {isOutOfStock && (
                          <div className="absolute inset-0 bg-background/80 flex items-center justify-center z-20">
-                            <span className="text-destructive-foreground font-bold px-3 py-1 bg-destructive rounded-full">{t('out_of_stock')}</span>
+                            <span className="text-destructive-foreground font-bold px-3 py-1 bg-destructive rounded-full text-sm">{t('out_of_stock')}</span>
                          </div>
                       )}
                     </div>
 
                     <div className="p-4 flex flex-col flex-1 gap-2">
-                      <h3 className="text-lg font-bold text-foreground group-hover:text-primary transition-colors line-clamp-1" title={game.name}>
+                      <h3 className="text-base font-bold text-foreground group-hover:text-cyan-400 transition-colors line-clamp-1" title={game.name}>
                         {game.name}
                       </h3>
-                      
+
                       <div className="mt-auto flex items-center justify-between pt-2">
+                        <span className="text-lg font-black text-cyan-400">
+                          {Number(game.price) > 0 ? `${Number(game.price).toLocaleString()} EGP` : <span className="text-sm text-muted-foreground">View options</span>}
+                        </span>
                         <Button
                           size="sm"
                           variant={isAdding ? "secondary" : "default"}
                           className={`
-                            ${isAdding 
-                              ? "bg-green-600 hover:bg-green-700 text-white" 
-                              : ""} 
-                            transition-colors z-30
+                            ${isAdding
+                              ? "bg-green-600 hover:bg-green-700 text-white"
+                              : "bg-cyan-600 hover:bg-cyan-500 text-white"}
+                            transition-colors z-30 shadow-sm
                           `}
                           disabled={isOutOfStock || isAdding}
                           onClick={(e) => handleAddToCart(e, game)}

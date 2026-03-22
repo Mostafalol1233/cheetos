@@ -45,7 +45,14 @@ export function HeroCarousel() {
   const slides = (activeHeaders && activeHeaders.length > 0) ? activeHeaders : [defaultSlide];
 
   return (
-    <div className="relative w-full overflow-hidden rounded-2xl h-[260px] md:h-[400px] lg:h-[480px] bg-transparent border border-border/50 shadow-2xl group">
+    <div className="relative w-full overflow-hidden rounded-2xl h-[260px] md:h-[400px] lg:h-[480px] bg-gradient-to-br from-[#0d1b2a] via-[#1a2a4a] to-[#0a1628] border border-border/50 shadow-2xl group">
+
+      {/* Decorative background elements (visible when image is loading/absent) */}
+      <div className="absolute inset-0 z-0 pointer-events-none">
+        <div className="absolute top-[-20%] right-[-5%] w-72 h-72 bg-cyan-500/10 rounded-full blur-3xl" />
+        <div className="absolute bottom-[-10%] left-[-5%] w-60 h-60 bg-purple-500/10 rounded-full blur-3xl" />
+        <div className="absolute top-[30%] left-[40%] w-40 h-40 bg-blue-500/8 rounded-full blur-2xl" />
+      </div>
 
       {/* Carousel Viewport */}
       <div className="h-full w-full" ref={emblaRef}>
@@ -60,8 +67,8 @@ export function HeroCarousel() {
                 className="absolute inset-0 w-full h-full object-fill z-10"
               />
 
-              {/* Gradient Overlay Removed per user request */}
-              {/* <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent z-20" /> */}
+              {/* Gradient Overlay for text readability */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent z-20" />
 
               {/* Content Overlay */}
               <div className="absolute bottom-0 left-0 w-full p-4 md:p-6 z-30 flex flex-col items-start gap-2">
