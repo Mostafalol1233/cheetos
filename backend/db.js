@@ -125,12 +125,12 @@ pool.on('connect', () => {
  * @param {number} retries - Number of retries
  * @param {number} delay - Delay in ms between retries
  */
-export const checkConnection = async (retries = 5, delay = 3000) => {
+export const checkConnection = async (retries = 5, delay = 3000, silent = false) => {
   const host = process.env.PGHOST || (() => {
     try { return new URL(process.env.DATABASE_URL || '').hostname; } catch { return ''; }
   })();
 
-  if (host) {
+  if (host && !silent) {
     await new Promise(resolve => {
       dns.lookup(host, (err, address, family) => {
         if (err) {
@@ -148,20 +148,20 @@ export const checkConnection = async (retries = 5, delay = 3000) => {
     try {
       client = await pool.connect();
       const res = await client.query('SELECT NOW()');
-      console.log(`✅ Database connected successfully at ${res.rows[0].now}`);
+      if (!silent) console.log(`✅ Database connected successfully at ${res.rows[0].now}`);
       client.release();
       return true;
     } catch (err) {
-      console.error(`⚠️ Database connection attempt ${i + 1}/${retries} failed: ${err.message}`);
+      if (!silent) console.error(`⚠️ Database connection attempt ${i + 1}/${retries} failed: ${err.message}`);
       if (client) client.release();
       
       if (i < retries - 1) {
-        console.log(`⏳ Retrying in ${delay/1000}s...`);
+        if (!silent) console.log(`⏳ Retrying in ${delay/1000}s...`);
         await new Promise(resolve => setTimeout(resolve, delay));
       }
     }
   }
-  console.error('❌ Could not establish database connection after multiple attempts.');
+  if (!silent) console.error('❌ Could not establish database connection after multiple attempts.');
   return false;
 };
 

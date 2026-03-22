@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { SiWhatsapp } from "react-icons/si";
 import { useSettings } from "@/lib/settings-context";
+import { motion } from "framer-motion";
 
 type Position =
   | "bottom-right"
@@ -31,12 +32,12 @@ export function FloatingWhatsAppButton({
 
   const positionClasses =
     position === "bottom-right"
-      ? "right-4 bottom-4"
+      ? "right-5 bottom-5"
       : position === "bottom-left"
-      ? "left-4 bottom-4"
+      ? "left-5 bottom-5"
       : position === "top-right"
-      ? "right-4 top-4"
-      : "left-4 top-4";
+      ? "right-5 top-5"
+      : "left-5 top-5";
 
   return (
     <a
@@ -44,18 +45,29 @@ export function FloatingWhatsAppButton({
       target="_blank"
       rel="noopener noreferrer"
       aria-label="Chat on WhatsApp"
-      className={`fixed z-50 ${positionClasses} group`}
+      className={`fixed z-50 ${positionClasses}`}
     >
-      <div className="relative">
-        <div className="absolute inset-0 rounded-full bg-green-500/40 blur-lg opacity-80 group-hover:opacity-100 transition-opacity duration-300" />
-        <button
-          type="button"
-          className="relative flex items-center justify-center w-14 h-14 rounded-full bg-green-500 text-white shadow-xl shadow-green-500/40 hover:bg-green-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-green-400 focus-visible:ring-offset-background transform transition-transform duration-200 group-hover:scale-110"
+      <motion.div
+        whileHover={{ scale: 1.12 }}
+        whileTap={{ scale: 0.95 }}
+        className="relative"
+      >
+        <motion.div
+          animate={{ scale: [1, 1.3, 1], opacity: [0.5, 0.2, 0.5] }}
+          transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+          className="absolute inset-0 rounded-full"
+          style={{ backgroundColor: '#25D366' }}
+        />
+        <div
+          className="relative flex items-center justify-center w-14 h-14 rounded-full shadow-2xl"
+          style={{
+            backgroundColor: '#25D366',
+            boxShadow: '0 4px 24px 0 rgba(37,211,102,0.5)',
+          }}
         >
-          <SiWhatsapp className="w-7 h-7" />
-        </button>
-      </div>
+          <SiWhatsapp className="w-7 h-7 text-white" />
+        </div>
+      </motion.div>
     </a>
   );
 }
-

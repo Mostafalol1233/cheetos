@@ -1007,7 +1007,7 @@ app.get('/manifest.webmanifest', (req, res) => {
 
 app.get('/api/health', async (req, res) => {
   try {
-    const dbOk = await checkConnection(1, 1);
+    const dbOk = await checkConnection(1, 1, true);
     const statusCode = dbOk ? 200 : 503;
     res.status(statusCode).json({
       status: dbOk ? 'ok' : 'maintenance',

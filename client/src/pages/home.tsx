@@ -16,47 +16,67 @@ const features = [
   {
     icon: Zap,
     title: "Fast Delivery",
+    titleAr: "تسليم سريع",
     description: "Instant delivery within minutes",
+    descAr: "تسليم فوري خلال دقائق",
     gradient: "from-cyber-blue to-neon-purple",
+    color: "text-yellow-400",
+    bg: "bg-yellow-500/15 border-yellow-500/25",
     delay: 0,
+    animType: "bounce",
   },
   {
     icon: Headphones,
     title: "24/7 Support",
+    titleAr: "دعم على مدار الساعة",
     description: "Always here to help you",
+    descAr: "دائماً هنا لمساعدتك",
     gradient: "from-neon-purple to-neon-pink",
+    color: "text-purple-400",
+    bg: "bg-purple-500/15 border-purple-500/25",
     delay: 0.1,
+    animType: "spin",
   },
   {
     icon: Shield,
     title: "Secure Payment",
+    titleAr: "دفع آمن",
     description: "100% safe transactions",
+    descAr: "معاملات آمنة 100%",
     gradient: "from-electric-green to-cyber-blue",
+    color: "text-emerald-400",
+    bg: "bg-emerald-500/15 border-emerald-500/25",
     delay: 0.2,
+    animType: "pulse",
   },
   {
     icon: Tag,
     title: "Best Prices",
+    titleAr: "أفضل الأسعار",
     description: "Competitive rates guaranteed",
+    descAr: "أسعار تنافسية مضمونة",
     gradient: "from-cyber-gold to-plasma-orange",
+    color: "text-gold-primary",
+    bg: "bg-gold-primary/15 border-gold-primary/25",
     delay: 0.3,
+    animType: "shake",
   },
 ];
 
 const stats = [
-  { value: "10K+", label: "Happy Customers", icon: Trophy },
-  { value: "50K+", label: "Orders Completed", icon: Sparkles },
-  { value: "24/7", label: "Customer Support", icon: Clock },
+  { value: "10K+", label: "Happy Customers", labelAr: "عميل سعيد", icon: Trophy },
+  { value: "50K+", label: "Orders Completed", labelAr: "طلب مكتمل", icon: Sparkles },
+  { value: "24/7", label: "Customer Support", labelAr: "دعم العملاء", icon: Clock },
 ];
 
 const reviews = [
-  { name: "Ahmed Hassan", initial: "A", text: "Fast delivery and great prices! Best gaming store in Egypt.", rating: 5 },
-  { name: "Mohamed Ali", initial: "M", text: "Best gaming store 10/10. Highly recommended!", rating: 5 },
-  { name: "Karim Mohamed", initial: "K", text: "Competitive prices and instant delivery. My go-to store!", rating: 5 },
+  { name: "Ahmed Hassan", initial: "A", text: "Fast delivery and great prices! Best gaming store in Egypt.", textAr: "تسليم سريع وأسعار رائعة! أفضل متجر ألعاب في مصر.", rating: 5 },
+  { name: "Mohamed Ali", initial: "M", text: "Best gaming store 10/10. Highly recommended!", textAr: "أفضل متجر ألعاب 10/10. أنصح بشدة!", rating: 5 },
+  { name: "Karim Mohamed", initial: "K", text: "Competitive prices and instant delivery. My go-to store!", textAr: "أسعار تنافسية وتسليم فوري. متجري المفضل!", rating: 5 },
 ];
 
 export default function Home() {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
 
   return (
     <>
@@ -106,7 +126,7 @@ export default function Home() {
         {/* Most Popular Games */}
         <PopularGames />
 
-        {/* Features Section - Moved Here */}
+        {/* Features Section - Why Choose Diaa Store */}
         <section className="container mx-auto px-4 py-20">
           <motion.div
             className="text-center mb-12"
@@ -116,10 +136,17 @@ export default function Home() {
             viewport={{ once: true }}
           >
             <h2 className="text-3xl md:text-4xl font-bold mb-4">
-              Why Choose <span className="text-gold-primary">Diaa</span> Store?
+              {language === 'ar' ? (
+                <>لماذا تختار متجر <span className="text-gold-primary">ضياء</span>؟</>
+              ) : (
+                <>Why Choose <span className="text-gold-primary">Diaa</span> Store?</>
+              )}
             </h2>
             <p className="text-muted-foreground max-w-2xl mx-auto">
-              Experience the best gaming top-up service with unmatched speed, security, and support.
+              {language === 'ar'
+                ? 'استمتع بأفضل خدمة شحن ألعاب بسرعة وأمان ودعم لا مثيل له.'
+                : 'Experience the best gaming top-up service with unmatched speed, security, and support.'
+              }
             </p>
           </motion.div>
 
@@ -131,21 +158,42 @@ export default function Home() {
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: feature.delay }}
                 viewport={{ once: true }}
-                whileHover={{ y: -5 }}
+                whileHover={{ y: -8, scale: 1.02 }}
                 className="group"
               >
-                <div className="relative p-6 rounded-2xl glass border border-white/5 hover:border-gold-primary/30 transition-all duration-300">
-                  {/* Icon */}
-                  <div className="w-14 h-14 rounded-xl bg-gold-primary/15 border border-gold-primary/25 flex items-center justify-center mb-4 shadow-lg group-hover:scale-110 transition-transform duration-300">
-                    <feature.icon className="w-7 h-7 text-gold-primary" />
-                  </div>
+                <div className="relative p-6 rounded-2xl glass border border-white/5 hover:border-gold-primary/30 transition-all duration-300 overflow-hidden">
+                  {/* Icon with animation */}
+                  <motion.div
+                    className={`w-16 h-16 rounded-2xl ${feature.bg} border flex items-center justify-center mb-5 shadow-lg`}
+                    animate={
+                      feature.animType === 'bounce'
+                        ? { y: [0, -6, 0] }
+                        : feature.animType === 'spin'
+                        ? { rotate: [0, 15, -15, 0] }
+                        : feature.animType === 'pulse'
+                        ? { scale: [1, 1.12, 1] }
+                        : { x: [0, -4, 4, -4, 0] }
+                    }
+                    transition={{
+                      duration: feature.animType === 'spin' ? 2.5 : feature.animType === 'bounce' ? 2 : 1.8,
+                      repeat: Infinity,
+                      ease: "easeInOut",
+                      repeatDelay: 1,
+                    }}
+                  >
+                    <feature.icon className={`w-8 h-8 ${feature.color}`} />
+                  </motion.div>
 
                   {/* Content */}
-                  <h3 className="text-lg font-bold text-foreground mb-2">{feature.title}</h3>
-                  <p className="text-sm text-muted-foreground">{feature.description}</p>
+                  <h3 className="text-lg font-bold text-foreground mb-2 group-hover:text-gold-primary transition-colors">
+                    {language === 'ar' ? feature.titleAr : feature.title}
+                  </h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    {language === 'ar' ? feature.descAr : feature.description}
+                  </p>
 
                   {/* Hover Glow */}
-                  <div className="absolute inset-0 rounded-2xl bg-gold-primary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 -z-10" />
+                  <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-gold-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 -z-10" />
                 </div>
               </motion.div>
             ))}
@@ -172,13 +220,17 @@ export default function Home() {
                   viewport={{ once: true }}
                 >
                   <h2 className="text-3xl md:text-4xl font-bold mb-6">
-                    Welcome to <span className="text-gold-primary">Diaa Store</span>
+                    {language === 'ar' ? (
+                      <>مرحباً بك في <span className="text-gold-primary">متجر ضياء</span></>
+                    ) : (
+                      <>Welcome to <span className="text-gold-primary">Diaa Store</span></>
+                    )}
                   </h2>
                   <p className="text-muted-foreground text-lg mb-4">
-                    {t('about_p1') || "Your trusted partner for gaming top-ups in Egypt. We offer fast, secure, and affordable services for all your favorite games."}
+                    {t('about_p1')}
                   </p>
                   <p className="text-muted-foreground text-lg mb-8">
-                    {t('about_p2') || "Join thousands of happy gamers who trust Diaa Store for their gaming currency needs."}
+                    {t('about_p2')}
                   </p>
 
                   {/* Stats */}
@@ -196,7 +248,9 @@ export default function Home() {
                         <p className="text-2xl md:text-3xl font-bold text-gold-primary">
                           {stat.value}
                         </p>
-                        <p className="text-xs text-muted-foreground">{stat.label}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {language === 'ar' ? stat.labelAr : stat.label}
+                        </p>
                       </motion.div>
                     ))}
                   </div>
@@ -204,7 +258,7 @@ export default function Home() {
                   {/* CTA */}
                   <Link href="/games">
                     <Button className="mt-8 btn-gaming group">
-                      Browse All Games
+                      {language === 'ar' ? 'تصفح كل الألعاب' : 'Browse All Games'}
                       <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
                     </Button>
                   </Link>
@@ -242,9 +296,15 @@ export default function Home() {
             viewport={{ once: true }}
           >
             <h2 className="text-3xl md:text-4xl font-bold mb-4">
-              What Our <span className="text-gold-primary">Customers</span> Say
+              {language === 'ar' ? (
+                <>ماذا يقول <span className="text-gold-primary">عملاؤنا</span></>
+              ) : (
+                <>What Our <span className="text-gold-primary">Customers</span> Say</>
+              )}
             </h2>
-            <p className="text-muted-foreground">Trusted by thousands of gamers across Egypt</p>
+            <p className="text-muted-foreground">
+              {language === 'ar' ? 'موثوق من آلاف اللاعبين في مصر والعالم العربي' : 'Trusted by thousands of gamers across Egypt'}
+            </p>
           </motion.div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -271,7 +331,7 @@ export default function Home() {
                     </div>
                   </div>
                 </div>
-                <p className="text-muted-foreground">{review.text}</p>
+                <p className="text-muted-foreground">{language === 'ar' ? review.textAr : review.text}</p>
               </motion.div>
             ))}
           </div>

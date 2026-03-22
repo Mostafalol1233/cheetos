@@ -152,7 +152,7 @@ export default function GamesPage() {
                   transition={{ duration: 0.3, delay: Math.min(index * 0.03, 0.4) }}
                 >
                   <Link href={`/game/${game.slug}`} className="group block h-full">
-                    <div className="relative flex flex-col rounded-2xl overflow-hidden border border-border/50 bg-card hover:border-gold-primary/40 transition-all duration-300 shadow-sm hover:shadow-xl hover:shadow-gold-primary/8 hover:-translate-y-1 h-full">
+                    <div className="relative flex flex-col rounded-2xl overflow-hidden border border-border/50 bg-card hover:border-gold-primary/40 transition-all duration-300 shadow-sm hover:shadow-xl hover:shadow-gold-primary/8 hover:-translate-y-1 h-full shimmer-card">
 
                       {/* Image area */}
                       <div className="relative aspect-square overflow-hidden bg-gray-900 flex items-center justify-center">

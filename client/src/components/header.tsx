@@ -104,26 +104,35 @@ export function Header() {
       {/* Main Header */}
       <header
         className={cn(
-          "fixed w-full top-0 z-50 transition-all duration-500 bg-black/95 border-b border-white/10",
+          "fixed w-full top-0 z-50 transition-all duration-500",
           isScrolled
-            ? "py-2 shadow-lg shadow-black/30"
-            : "py-3"
+            ? "py-1.5 shadow-xl shadow-black/40 bg-black/98 border-b border-gold-primary/20"
+            : "py-2 bg-gradient-to-b from-black/90 to-black/80 border-b border-white/8"
         )}
+        style={{
+          backdropFilter: 'none',
+        }}
       >
+        {/* Gold accent line at top */}
+        <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-gold-primary/60 to-transparent" />
+        
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between">
             {/* Logo */}
             <Link href="/">
               <motion.div
                 className="flex items-center gap-3 cursor-pointer group"
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 1.98 }}
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
               >
-                <div className="h-24 w-auto flex items-center">
+                <div className={cn("flex items-center transition-all duration-300", isScrolled ? "h-14" : "h-16")}>
                   <img
-                    src="https://files.catbox.moe/brmkrj.png"
-                    alt="GameCart Logo"
-                    className="h-full w-auto max-h-24 object-contain hover:scale-105 transition-transform"
+                    src="/images/diaa-logo-new.png"
+                    alt="Diaa Store Logo"
+                    className="h-full w-auto object-contain drop-shadow-[0_0_8px_rgba(212,175,55,0.4)] group-hover:drop-shadow-[0_0_12px_rgba(212,175,55,0.7)] transition-all duration-300"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = "https://files.catbox.moe/brmkrj.png";
+                    }}
                   />
                 </div>
               </motion.div>
@@ -341,7 +350,7 @@ export function Header() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setIsMobileMenuOpen(false)}
-              className="fixed inset-0 bg-black/70 backdrop-blur-sm z-40 lg:hidden"
+              className="fixed inset-0 bg-black/60 z-40 lg:hidden"
             />
 
             {/* Menu Panel */}
@@ -357,9 +366,10 @@ export function Header() {
                 <div className="flex items-center justify-between mb-7">
                   <div className="flex items-center gap-2">
                     <img
-                      src="https://files.catbox.moe/brmkrj.png"
-                      alt="Logo"
-                      className="h-9 w-auto object-contain"
+                      src="/images/diaa-logo-new.png"
+                      alt="Diaa Store Logo"
+                      className="h-11 w-auto object-contain"
+                      onError={(e) => { (e.target as HTMLImageElement).src = "https://files.catbox.moe/brmkrj.png"; }}
                     />
                   </div>
                   <Button
