@@ -234,7 +234,7 @@
     "description": "<p><strong>V-Bucks</strong> هي العملة الرسمية في لعبة Fortnite من Epic Games، أشهر لعبة Battle Royale على مستوى العالم.</p><h4>🎮 استخدامات الـ V-Bucks:</h4><ul><li>شراء الـ Battle Pass الموسمي</li><li>شراء السكانات الحصرية (Skins) للشخصيات</li><li>شراء الرقصات والـ Emotes المميزة</li><li>شراء الـ Pickaxes والـ Gliders</li><li>فتح الـ Bundles الحصرية</li></ul><h4>🛒 طريقة الشراء:</h4><ol><li>اختر باقة الـ V-Bucks المناسبة</li><li>ادخل اسم حسابك في Epic Games</li><li>أتم عملية الدفع</li><li>هيتواصل معك فريقنا لتوصيل الـ V-Bucks لحسابك</li></ol><h4>⚡ ملاحظة:</h4><p>الـ V-Bucks مشتركة بين كل الأجهزة (PC، PS، Xbox، موبايل) إذا كان الحساب موحد. تأكد من إدخال اسم الحساب الصحيح.</p>",
     "price": "450",
     "currency": "EGP",
-    "image": "https://res.cloudinary.com/ddzbutb12/image/upload/v1774178337/gamecart/games/fortnite.png",
+    "image": "https://res.cloudinary.com/ddzbutb12/image/upload/v1774178628/gamecart/games/fortnite-logo.png",
     "category": "shooters",
     "isPopular": true,
     "stock": 100,
@@ -258,7 +258,7 @@
     ],
     "discountPrice": "550",
     "packageDiscountPrices": [],
-    "image_url": "https://res.cloudinary.com/ddzbutb12/image/upload/v1774178337/gamecart/games/fortnite.png"
+    "image_url": "https://res.cloudinary.com/ddzbutb12/image/upload/v1774178628/gamecart/games/fortnite-logo.png"
   },
   {
     "id": "game_1766467677945_pieag",
@@ -267,7 +267,7 @@
     "description": "<p><strong>RP (Riot Points)</strong> هي العملة الرسمية في لعبة League of Legends من Riot Games، أشهر لعبة MOBA في العالم.</p><h4>🎮 استخدامات الـ RP:</h4><ul><li>شراء السكانات الرائعة للشخصيات (Champion Skins)</li><li>شراء الأبطال الجدد (Champions)</li><li>فتح الـ Loot Boxes للحصول على جوائز</li><li>شراء الـ Emotes والـ Ward Skins</li></ul><h4>🛒 طريقة الشراء:</h4><ol><li>اختر كمية الـ RP المناسبة</li><li>ادخل اسم الحساب (Summoner Name) في League of Legends</li><li>حدد الـ Region بتاعك (EUNE, EUW, NA, إلخ)</li><li>أتم عملية الدفع وهيتواصل معك فريقنا</li></ol><h4>⚡ ملاحظة مهمة:</h4><p>لازم تحدد الـ Region الصحيح لأن الـ RP مرتبطة بحساب معين في Region محدد. مش ممكن نحول الـ RP بين Regions مختلفة.</p>",
     "price": "330",
     "currency": "EGP",
-    "image": "https://res.cloudinary.com/ddzbutb12/image/upload/v1774178336/gamecart/games/league-of-legends.png",
+    "image": "https://res.cloudinary.com/ddzbutb12/image/upload/v1774178627/gamecart/games/league-of-legends-logo.png",
     "category": "casual",
     "isPopular": true,
     "stock": 100,
@@ -294,7 +294,7 @@
     ],
     "discountPrice": "430",
     "packageDiscountPrices": [],
-    "image_url": "https://res.cloudinary.com/ddzbutb12/image/upload/v1774178336/gamecart/games/league-of-legends.png"
+    "image_url": "https://res.cloudinary.com/ddzbutb12/image/upload/v1774178627/gamecart/games/league-of-legends-logo.png"
   },
   {
     "id": "game_1766467677973_fny99",
@@ -381,7 +381,7 @@
     "description": "<p><strong>CP (COD Points)</strong> هي العملة الرسمية في لعبة Call of Duty Mobile من Activision، اللعبة الشوتر الأشهر على الموبايل.</p><h4>🎮 استخدامات الـ CP:</h4><ul><li>شراء الـ Battle Pass الموسمي وترقيته</li><li>شراء الـ Blueprints للأسلحة (سكانات كاملة)</li><li>شراء الـ Operator Skins للشخصيات</li><li>فتح الـ Lucky Draw للحصول على آيتمات نادرة</li><li>شراء العربات والطائرات المزخرفة</li></ul><h4>🛒 طريقة الشراء:</h4><ol><li>اختر عدد الـ CP المناسب</li><li>ادخل الـ Player ID بتاعك (UID)</li><li>أتم عملية الدفع</li><li>هيتم شحن الـ CP على حسابك فوراً</li></ol><h4>⚡ كيف أعرف الـ Player ID:</h4><p>افتح اللعبة ← ملف الشخصية ← الـ UID هو الرقم تحت اسمك مباشرةً. احتاجه لتوصيل الشحن الصحيح.</p>",
     "price": "40",
     "currency": "EGP",
-    "image": "https://res.cloudinary.com/ddzbutb12/image/upload/v1774178338/gamecart/games/call-of-duty.png",
+    "image": "https://res.cloudinary.com/ddzbutb12/image/upload/v1774178628/gamecart/games/call-of-duty-logo.png",
     "category": "shooters",
     "isPopular": true,
     "stock": 100,
@@ -410,7 +410,7 @@
       "2600"
     ],
     "discountPrice": "140",
-    "image_url": "https://res.cloudinary.com/ddzbutb12/image/upload/v1774178338/gamecart/games/call-of-duty.png"
+    "image_url": "https://res.cloudinary.com/ddzbutb12/image/upload/v1774178628/gamecart/games/call-of-duty-logo.png"
   },
   {
     "id": "game_1766468555321_lmwsa",
