@@ -182,20 +182,20 @@
 }
 
 /* ========================================
-   DARK MODE THEME - DEEP BLUE OCEAN
+   DARK MODE THEME - PREMIUM NEAR-BLACK
    ======================================== */
 .dark {
-  /* Core: Deep ocean blue backgrounds */
-  --background: 222 47% 7%;
-  /* Deep navy #0a192f */
-  --foreground: 208 100% 97%;
-  /* Bright white-blue #F0F8FF */
+  /* Core: Near-black premium backgrounds (like Epic Games / PlayStation Store) */
+  --background: 220 13% 9%;
+  /* Deep near-black #0f1219 */
+  --foreground: 210 20% 92%;
+  /* Soft white */
 
-  --card: 220 42% 10%;
-  /* Navy card #112240 */
-  --card-foreground: 208 100% 97%;
-  --popover: 220 42% 10%;
-  --popover-foreground: 208 100% 97%;
+  --card: 220 12% 13%;
+  /* Slightly lifted near-black card #181e28 */
+  --card-foreground: 210 20% 92%;
+  --popover: 220 12% 13%;
+  --popover-foreground: 210 20% 92%;
 
   /* Primary: Cyan/Teal */
   --primary: 166 100% 70%;
@@ -203,16 +203,13 @@
   --primary-foreground: 222 47% 7%;
   /* Dark navy for contrast */
 
-  /* Secondary: Slate blue */
-  --secondary: 220 30% 18%;
-  /* Darker slate */
-  --secondary-foreground: 219 14% 63%;
-  /* Slate gray #8892b0 */
+  /* Secondary: Dark surface */
+  --secondary: 220 12% 17%;
+  --secondary-foreground: 215 15% 65%;
 
-  /* Muted: Navy gray */
-  --muted: 220 30% 15%;
-  --muted-foreground: 219 14% 63%;
-  /* Slate text */
+  /* Muted: Subtle surface */
+  --muted: 220 12% 15%;
+  --muted-foreground: 215 15% 58%;
 
   /* Accent: Light blue */
   --accent: 199 89% 48%;
@@ -224,9 +221,8 @@
   --destructive-foreground: 0 0% 100%;
 
   /* Border & Input */
-  --border: 220 30% 20%;
-  /* Blue tinted border */
-  --input: 220 42% 12%;
+  --border: 220 12% 20%;
+  --input: 220 12% 16%;
   --ring: 166 100% 70%;
   /* Cyan ring */
 
