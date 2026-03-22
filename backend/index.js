@@ -652,6 +652,7 @@ const allowedOrigins = [
   'https://diaasadek.com',
   'https://www.diaasadek.com',
   'https://diaaa.vercel.app',
+  ...(process.env.REPLIT_DOMAINS ? process.env.REPLIT_DOMAINS.split(',').map(d => `https://${d.trim()}`) : []),
 ].filter(Boolean);
 
 app.use(cors({
@@ -662,6 +663,10 @@ app.use(cors({
       if (allowedOrigins.includes(origin)) return cb(null, true);
       const u = new URL(origin);
       if (u.hostname.endsWith('.vercel.app')) return cb(null, true);
+      if (u.hostname.endsWith('.replit.dev')) return cb(null, true);
+      if (u.hostname.endsWith('.replit.app')) return cb(null, true);
+      if (u.hostname.endsWith('.riker.replit.dev')) return cb(null, true);
+      if (u.hostname === 'localhost') return cb(null, true);
       return cb(new Error('Not allowed by CORS'));
     } catch {
       return cb(new Error('Not allowed by CORS'));

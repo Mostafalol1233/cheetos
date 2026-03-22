@@ -282,7 +282,7 @@ export default function GamePage() {
                 </span>
               </h2>
 
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
                 {packagesArr.map((pkg: any, index: number) => {
                   const pricing = getPricing(pkg, index);
                   const pkgName = pkg.name || pkg;
@@ -297,45 +297,45 @@ export default function GamePage() {
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.3, delay: index * 0.04 }}
-                      whileHover={{ y: -4, scale: 1.02 }}
+                      whileHover={{ y: -5, scale: 1.03 }}
                       whileTap={{ scale: 0.97 }}
                       onClick={() => !isOutOfStock && (setSelectedPkg(index), handleBuyNow(index))}
-                      className={`relative cursor-pointer rounded-xl border transition-all duration-200 overflow-hidden
+                      className={`relative cursor-pointer rounded-2xl border-2 transition-all duration-200 overflow-hidden
                         ${isOutOfStock ? 'opacity-40 cursor-not-allowed' : ''}
                         ${isSelected
-                          ? 'border-gold-primary bg-gold-primary/10 shadow-lg shadow-gold-primary/20'
-                          : 'border-border/40 bg-card hover:border-gold-primary/50 hover:bg-card/80'}
+                          ? 'border-gold-primary bg-gold-primary/10 shadow-xl shadow-gold-primary/25'
+                          : 'border-border/40 bg-card hover:border-gold-primary/60 hover:bg-card/80 hover:shadow-lg'}
                       `}
                     >
                       {isHot && (
-                        <div className="absolute top-2 left-2 z-10">
-                          <span className="bg-red-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider">
-                            HOT
+                        <div className="absolute top-2.5 left-2.5 z-10">
+                          <span className="bg-red-500 text-white text-xs font-black px-2.5 py-1 rounded-full uppercase tracking-wide shadow-md">
+                            🔥 HOT
                           </span>
                         </div>
                       )}
 
                       {pricing.pct > 0 && (
-                        <div className="absolute top-2 right-2 z-10">
-                          <span className="bg-red-600/90 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                        <div className="absolute top-2.5 right-2.5 z-10">
+                          <span className="bg-red-600 text-white text-xs font-bold px-2 py-0.5 rounded-full shadow-md">
                             -{pricing.pct}%
                           </span>
                         </div>
                       )}
 
-                      <div className="p-4 flex flex-col items-center gap-2">
-                        <div className="w-16 h-16 flex items-center justify-center">
+                      <div className="p-5 flex flex-col items-center gap-3">
+                        <div className="w-20 h-20 flex items-center justify-center">
                           {pkgImage ? (
                             <img
                               src={pkgImage}
                               alt={pkgName}
-                              className="w-full h-full object-contain drop-shadow-lg"
+                              className="w-full h-full object-contain drop-shadow-xl"
                               onError={(e) => {
                                 const target = e.target as HTMLImageElement;
                                 target.style.display = 'none';
                                 const parent = target.parentElement;
                                 if (parent) {
-                                  parent.innerHTML = `<div style="width:64px;height:64px;border-radius:12px;background:linear-gradient(135deg,#D4AF37,#b8962e);display:flex;align-items:center;justify-content:center;"><span style="color:#000;font-weight:900;font-size:10px;text-align:center;padding:4px;">${pkgName}</span></div>`;
+                                  parent.innerHTML = `<div style="width:80px;height:80px;border-radius:16px;background:linear-gradient(135deg,#D4AF37,#b8962e);display:flex;align-items:center;justify-content:center;"><span style="color:#000;font-weight:900;font-size:12px;text-align:center;padding:6px;">${pkgName}</span></div>`;
                                 }
                               }}
                             />
@@ -344,21 +344,21 @@ export default function GamePage() {
                           )}
                         </div>
 
-                        <div className="text-center">
-                          <p className="text-xs font-bold text-foreground leading-tight mb-1">
+                        <div className="text-center w-full">
+                          <p className="text-sm font-bold text-foreground leading-tight mb-1.5">
                             {pkgName}
                           </p>
                           {bonus && (
-                            <p className="text-[10px] font-bold text-gold-primary mb-1">
-                              +{bonus} Bonus
+                            <p className="text-xs font-bold text-gold-primary mb-1.5">
+                              +{bonus} Bonus 🎁
                             </p>
                           )}
                           {pricing.original !== null && (
-                            <p className="text-[10px] text-muted-foreground line-through">
+                            <p className="text-xs text-muted-foreground line-through mb-0.5">
                               {formatEGP(pricing.original)}
                             </p>
                           )}
-                          <p className={`text-sm font-black ${pricing.original !== null ? 'text-red-400' : 'text-foreground'}`}>
+                          <p className={`text-base font-black ${pricing.original !== null ? 'text-red-400' : 'text-foreground'}`}>
                             {formatEGP(pricing.final)}
                           </p>
                         </div>
