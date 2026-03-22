@@ -13,6 +13,16 @@ import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "@/lib/translation";
 import { SEO } from "@/components/SEO";
 
+const SLUG_DISPLAY_NAMES: Record<string, string> = {
+  "hot-deals":    "Hot Deals",
+  "mobile-games": "Mobile Games",
+  "gift-cards":   "Gift Cards",
+  "online-games": "Online Games",
+};
+
+const getDisplayName = (name: string, slug: string) =>
+  name && name.length > 3 ? name : (SLUG_DISPLAY_NAMES[slug] || name);
+
 export default function CategoryPage() {
   const { slug } = useParams<{ slug: string }>();
   const { addToCart } = useCart();
@@ -40,7 +50,7 @@ export default function CategoryPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-900 dark:via-blue-900 dark:to-purple-900">
+      <div className="min-h-screen bg-background">
         <div className="container mx-auto px-4 py-8">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {[...Array(8)].map((_, i) => (
@@ -60,20 +70,18 @@ export default function CategoryPage() {
 
   if (!category) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-900 dark:via-blue-900 dark:to-purple-900">
-        <div className="container mx-auto px-4 py-8">
-          <div className="text-center">
-            <Package className="w-16 h-16 mx-auto text-gray-400 mb-4" />
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">{t('category_not_found')}</h1>
-            <p className="text-gray-600 dark:text-gray-300 mb-6">{t('category_not_found_desc')}</p>
-            <Link
-              href="/"
-              className="inline-flex items-center px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              {t('back_to_home')}
-            </Link>
-          </div>
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <Package className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
+          <h1 className="text-2xl font-bold text-foreground mb-2">{t('category_not_found')}</h1>
+          <p className="text-muted-foreground mb-6">{t('category_not_found_desc')}</p>
+          <Link
+            href="/"
+            className="inline-flex items-center px-6 py-3 rounded-xl bg-cyan-400/15 border border-cyan-400/30 text-cyan-400 hover:bg-cyan-400/25 transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            {t('back_to_home')}
+          </Link>
         </div>
       </div>
     );
@@ -139,16 +147,16 @@ export default function CategoryPage() {
               {t('back_to_home')}
             </Link>
 
-            <div className={`relative overflow-hidden rounded-3xl bg-gradient-to-br ${category.gradient} p-12 mb-8 shadow-xl`}>
-              <div className="absolute inset-0 bg-black/30"></div>
+            <div className={`relative overflow-hidden rounded-2xl bg-gradient-to-br ${category.gradient} h-52 mb-8 shadow-2xl`}>
               <ImageWithFallback
                 src={category.image}
                 alt={`${category.name} category`}
-                className="absolute inset-0 w-full h-full object-contain opacity-60"
+                className="absolute inset-0 w-full h-full object-cover opacity-70 scale-105"
               />
-              <div className="relative z-10">
-                <h1 className="text-5xl font-black text-white mb-3 drop-shadow-lg">{category.name}</h1>
-                <p className="text-white/95 text-lg drop-shadow">{category.description}</p>
+              <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/30 to-transparent" />
+              <div className="relative z-10 h-full flex flex-col justify-end p-8">
+                <h1 className="text-4xl md:text-5xl font-black text-white mb-2 drop-shadow-lg">{getDisplayName(category.name, category.slug)}</h1>
+                <p className="text-white/85 text-base drop-shadow">{category.description}</p>
               </div>
             </div>
           </div>
@@ -250,18 +258,18 @@ export default function CategoryPage() {
 
                               return (
                                 <div key={idx} className="flex items-center justify-between text-xs">
-                                  <span className="text-gray-600 dark:text-gray-300">{pkg}</span>
+                                  <span className="text-muted-foreground">{pkg}</span>
                                   <div className="flex items-center gap-1">
                                     {pricing.original != null && (
-                                      <span className="text-red-500 line-through text-[10px]">{pricing.base} EGP</span>
+                                      <span className="text-red-400 line-through text-[10px]">{pricing.base} EGP</span>
                                     )}
-                                    <span className="text-blue-600 dark:text-blue-400 font-bold">{pricing.final} EGP</span>
+                                    <span className="text-cyan-400 font-bold">{pricing.final} EGP</span>
                                   </div>
                                 </div>
                               );
                             })}
                             {packages.length > 2 && (
-                              <div className="text-xs text-gray-500 dark:text-gray-400">+{packages.length - 2} {t('more_packages')}</div>
+                              <div className="text-xs text-muted-foreground">+{packages.length - 2} {t('more_packages')}</div>
                             )}
                           </div>
                         ) : (
@@ -296,17 +304,17 @@ export default function CategoryPage() {
               </div>
             </div>
           ) : (
-            <div className="text-center py-12">
-              <Package className="w-16 h-16 mx-auto text-gray-400 mb-4" />
-              <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+            <div className="text-center py-16">
+              <Package className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
+              <h3 className="text-xl font-semibold text-foreground mb-2">
                 {t('no_games_available')}
               </h3>
-              <p className="text-gray-600 dark:text-gray-300 mb-6">
+              <p className="text-muted-foreground mb-6">
                 {t('no_games_in_category')}
               </p>
               <Link
                 href="/"
-                className="inline-flex items-center px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                className="inline-flex items-center px-6 py-3 rounded-xl bg-cyan-400/15 border border-cyan-400/30 text-cyan-400 hover:bg-cyan-400/25 transition-colors"
               >
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 {t('browse_other_categories')}

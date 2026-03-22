@@ -1,16 +1,50 @@
 import { useQuery } from "@tanstack/react-query";
 import { Category } from "@shared/schema";
-import { Flame, Globe, Smartphone, Gift, Clock } from "lucide-react";
 import { Link } from "wouter";
 import ImageWithFallback from "./image-with-fallback";
 import { useTranslation } from "@/lib/translation";
+import { ArrowRight, Flame, Smartphone, Gift, Monitor, Zap } from "lucide-react";
 
-const iconMap = {
+const SLUG_DISPLAY_NAMES: Record<string, string> = {
+  "hot-deals":    "Hot Deals",
+  "mobile-games": "Mobile Games",
+  "gift-cards":   "Gift Cards",
+  "online-games": "Online Games",
+};
+
+const getDisplayName = (name: string, slug: string) =>
+  name && name.length > 3 ? name : (SLUG_DISPLAY_NAMES[slug] || name);
+
+const ICON_MAP: Record<string, React.ElementType> = {
   fire: Flame,
-  globe: Globe,
+  Zap: Zap,
   smartphone: Smartphone,
+  Smartphone: Smartphone,
   gift: Gift,
-  clock: Clock
+  Gift: Gift,
+  Monitor: Monitor,
+  globe: Monitor,
+};
+
+const ACCENT_MAP: Record<string, string> = {
+  "hot-deals":    "from-red-600/80 via-orange-600/60 to-transparent",
+  "mobile-games": "from-purple-700/80 via-pink-600/60 to-transparent",
+  "gift-cards":   "from-emerald-700/80 via-teal-600/60 to-transparent",
+  "online-games": "from-blue-700/80 via-indigo-600/60 to-transparent",
+};
+
+const BORDER_MAP: Record<string, string> = {
+  "hot-deals":    "hover:border-orange-500/60 hover:shadow-orange-500/10",
+  "mobile-games": "hover:border-purple-500/60 hover:shadow-purple-500/10",
+  "gift-cards":   "hover:border-emerald-500/60 hover:shadow-emerald-500/10",
+  "online-games": "hover:border-blue-500/60 hover:shadow-blue-500/10",
+};
+
+const ICON_COLOR_MAP: Record<string, string> = {
+  "hot-deals":    "bg-orange-500/20 text-orange-400 border-orange-500/30",
+  "mobile-games": "bg-purple-500/20 text-purple-400 border-purple-500/30",
+  "gift-cards":   "bg-emerald-500/20 text-emerald-400 border-emerald-500/30",
+  "online-games": "bg-blue-500/20 text-blue-400 border-blue-500/30",
 };
 
 export function ShoppingCategories() {
@@ -23,60 +57,76 @@ export function ShoppingCategories() {
   if (isLoading) {
     return (
       <section className="container mx-auto px-4 py-12">
-        <div className="flex items-center mb-8">
-          <div className="w-6 h-6 bg-gold-primary rounded mr-3 animate-pulse"></div>
-          <div className="h-6 bg-gray-300 rounded w-48 animate-pulse"></div>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-6xl mx-auto">
+        <div className="h-8 bg-white/5 rounded w-52 animate-pulse mb-10" />
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {[1, 2, 3, 4].map(i => (
-            <div key={i} className="h-64 bg-card-bg rounded-3xl animate-pulse"></div>
+            <div key={i} className="h-52 bg-white/5 rounded-2xl animate-pulse" />
           ))}
         </div>
       </section>
     );
   }
 
-  if (isError || !Array.isArray(categories) || categories.length === 0) {
-    return null;
-  }
+  if (isError || !Array.isArray(categories) || categories.length === 0) return null;
 
   return (
     <section className="container mx-auto px-4 py-12">
-      <div className="flex items-center mb-12">
-        <div className="w-6 h-6 bg-gradient-to-r from-gold-primary to-neon-pink rounded-full flex items-center justify-center mr-3 shadow-lg">
-          <div className="w-2 h-2 bg-darker-bg rounded-full"></div>
-        </div>
-        <h2 className="text-3xl font-bold bg-gradient-to-r from-gold-primary to-neon-pink bg-clip-text text-transparent">{t('shopping_categories')}</h2>
+      {/* Section header */}
+      <div className="flex items-center gap-3 mb-8">
+        <div className="w-1 h-7 rounded-full bg-gradient-to-b from-cyan-400 to-blue-500" />
+        <h2 className="text-2xl font-bold text-foreground tracking-tight">{t('shopping_categories')}</h2>
       </div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
-        {Array.isArray(categories) && categories.map((category) => {
-          const IconComponent = iconMap[category.icon as keyof typeof iconMap] || Gift;
-          
+
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {categories.map((category) => {
+          const IconComponent = ICON_MAP[category.icon] || Gift;
+          const accent = ACCENT_MAP[category.slug] || "from-gray-800/80 to-transparent";
+          const border = BORDER_MAP[category.slug] || "hover:border-white/20";
+          const iconStyle = ICON_COLOR_MAP[category.slug] || "bg-white/10 text-white/60 border-white/20";
+
           return (
             <Link
               key={category.id}
               href={`/category/${category.slug}`}
-              className="block"
+              className="block group"
             >
-              <div className={`relative overflow-hidden rounded-2xl bg-gradient-to-br ${category.gradient} p-6 h-64 card-hover transition-all duration-500 cursor-pointer group`}>
-                <div className="absolute inset-0 bg-black/30 group-hover:bg-black/20 transition-all"></div>
+              <div
+                className={`
+                  relative overflow-hidden rounded-2xl h-52 
+                  border border-white/8 ${border}
+                  shadow-lg hover:shadow-xl
+                  transition-all duration-400 cursor-pointer
+                `}
+              >
+                {/* Full-bleed image */}
                 <ImageWithFallback
                   src={category.image}
-                  alt={`${category.name} category`}
-                  className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                  alt={category.name}
+                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                 />
-                <div className="relative z-10 h-full flex flex-col justify-between">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-lg font-bold text-white drop-shadow-lg">{category.name}</h3>
-                    <IconComponent className="w-6 h-6 text-white animate-pulse drop-shadow" />
-                  </div>
-                  <div>
-                    <p className="text-white/90 mb-3 text-sm drop-shadow">{category.description}</p>
-                    <div className="flex items-center text-white/90 group-hover:text-white transition-colors">
-                      <div className="w-2 h-2 bg-white rounded-full mr-2"></div>
-                      <span className="text-sm">{t('explore_now')}</span>
-                    </div>
+
+                {/* Dark overlay — always */}
+                <div className="absolute inset-0 bg-black/40 group-hover:bg-black/25 transition-all duration-400" />
+
+                {/* Gradient overlay from bottom */}
+                <div className={`absolute inset-0 bg-gradient-to-t ${accent}`} />
+
+                {/* Top-right icon badge */}
+                <div className={`absolute top-3 right-3 w-8 h-8 rounded-xl border flex items-center justify-center backdrop-blur-sm ${iconStyle} transition-all duration-300 group-hover:scale-110`}>
+                  <IconComponent className="w-4 h-4" />
+                </div>
+
+                {/* Bottom content */}
+                <div className="absolute bottom-0 left-0 right-0 p-4">
+                  <h3 className="text-white font-bold text-base leading-tight mb-0.5 drop-shadow-lg">
+                    {getDisplayName(category.name, category.slug)}
+                  </h3>
+                  <p className="text-white/70 text-xs leading-snug line-clamp-2 mb-2 drop-shadow">
+                    {category.description}
+                  </p>
+                  <div className="flex items-center gap-1 text-white/80 text-xs font-medium">
+                    <span>Explore</span>
+                    <ArrowRight className="w-3 h-3 group-hover:translate-x-1 transition-transform duration-300" />
                   </div>
                 </div>
               </div>

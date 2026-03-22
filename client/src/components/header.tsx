@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { Sun, Moon, Gamepad2, User, LogOut, Menu, X, Home, Grid3X3, MessageCircle, Package } from "lucide-react";
+import { Sun, Moon, Gamepad2, User, LogOut, Menu, X, Home, Grid3X3, MessageCircle, Package, Flame, Smartphone, Gift, Monitor } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { LanguageCurrencySwitcher } from "@/components/language-currency-switcher";
 import { useTheme } from "@/components/theme-provider";
@@ -9,6 +9,8 @@ import { useTranslation } from "@/lib/translation";
 import { useSettings } from "@/lib/settings-context";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
+import { useQuery } from "@tanstack/react-query";
+import type { Category } from "@shared/schema";
 import {
   NavigationMenu,
   NavigationMenuContent,
@@ -17,6 +19,20 @@ import {
   NavigationMenuList,
   NavigationMenuTrigger,
 } from "@/components/ui/navigation-menu";
+
+const CATEGORY_ICON_MAP: Record<string, React.ElementType> = {
+  "hot-deals":    Flame,
+  "mobile-games": Smartphone,
+  "gift-cards":   Gift,
+  "online-games": Monitor,
+};
+
+const CATEGORY_COLOR_MAP: Record<string, string> = {
+  "hot-deals":    "text-orange-400",
+  "mobile-games": "text-purple-400",
+  "gift-cards":   "text-emerald-400",
+  "online-games": "text-blue-400",
+};
 
 export function Header() {
   const { theme, setTheme } = useTheme();
@@ -27,6 +43,12 @@ export function Header() {
   const [location] = useLocation();
   const { settings } = useSettings();
   const [hasOrderNotification, setHasOrderNotification] = useState(false);
+
+  const { data: navCategories = [] } = useQuery<Category[]>({
+    queryKey: ["/api/categories"],
+    queryFn: () => fetch("/api/categories").then(r => r.json()),
+    staleTime: 5 * 60 * 1000,
+  });
 
   // Load and sync order notification state
   useEffect(() => {
@@ -149,7 +171,7 @@ export function Header() {
                 );
               })}
 
-              {/* Categories Dropdown */}
+              {/* Categories Dropdown — dynamic from API */}
               <NavigationMenu>
                 <NavigationMenuList>
                   <NavigationMenuItem>
@@ -157,50 +179,44 @@ export function Header() {
                       {t('categories')}
                     </NavigationMenuTrigger>
                     <NavigationMenuContent>
-                      <ul className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 glass border-cyber-blue/20">
-                        <li className="row-span-3">
+                      <ul className="grid w-[420px] gap-2 p-4 md:w-[520px] md:grid-cols-2 bg-card border border-white/8 rounded-xl shadow-2xl">
+                        {/* All Games shortcut */}
+                        <li className="col-span-2">
                           <NavigationMenuLink asChild>
-                            <Link href="/games" className="flex h-full w-full select-none flex-col justify-end rounded-xl bg-gradient-to-b from-muted to-muted/50 p-6 no-underline outline-none focus:shadow-md hover:shadow-lg hover:border-gold-primary/50 border border-transparent transition-all group">
-                              <Gamepad2 className="h-8 w-8 text-gold-primary group-hover:scale-110 transition-transform" />
-                              <div className="mb-2 mt-4 text-lg font-bold text-foreground">
-                                All Games
+                            <Link
+                              href="/games"
+                              className="flex items-center gap-3 select-none rounded-xl bg-cyan-400/8 border border-cyan-400/20 px-4 py-3 no-underline outline-none hover:bg-cyan-400/15 transition-all group"
+                            >
+                              <div className="w-9 h-9 rounded-lg bg-cyan-400/15 border border-cyan-400/25 flex items-center justify-center shrink-0">
+                                <Gamepad2 className="w-4 h-4 text-cyan-400" />
                               </div>
-                              <p className="text-sm leading-tight text-muted-foreground">
-                                Browse our full collection of games and top-ups
-                              </p>
+                              <div>
+                                <div className="text-sm font-bold text-foreground group-hover:text-cyan-400 transition-colors">All Games</div>
+                                <p className="text-xs text-muted-foreground">Browse our full collection of top-ups</p>
+                              </div>
                             </Link>
                           </NavigationMenuLink>
                         </li>
-                        <li>
-                          <Link href="/category/mobile-games">
-                            <NavigationMenuLink className="block select-none space-y-1 rounded-xl p-3 leading-none no-underline outline-none transition-all hover:bg-gold-primary/10 hover:text-gold-primary">
-                              <div className="text-sm font-semibold leading-none">Mobile Games</div>
-                              <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
-                                PUBG, Free Fire, Mobile Legends
-                              </p>
-                            </NavigationMenuLink>
-                          </Link>
-                        </li>
-                        <li>
-                          <Link href="/category/pc-games">
-                            <NavigationMenuLink className="block select-none space-y-1 rounded-xl p-3 leading-none no-underline outline-none transition-all hover:bg-gold-primary/10 hover:text-gold-primary">
-                              <div className="text-sm font-semibold leading-none">PC Games</div>
-                              <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
-                                Steam, Valorant, League of Legends
-                              </p>
-                            </NavigationMenuLink>
-                          </Link>
-                        </li>
-                        <li>
-                          <Link href="/category/gift-cards">
-                            <NavigationMenuLink className="block select-none space-y-1 rounded-xl p-3 leading-none no-underline outline-none transition-all hover:bg-gold-primary/10 hover:text-gold-primary">
-                              <div className="text-sm font-semibold leading-none">Gift Cards</div>
-                              <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
-                                iTunes, Google Play, PlayStation
-                              </p>
-                            </NavigationMenuLink>
-                          </Link>
-                        </li>
+                        {/* Dynamic categories from API */}
+                        {navCategories.map((cat) => {
+                          const IconComp = CATEGORY_ICON_MAP[cat.slug] || Gift;
+                          const iconColor = CATEGORY_COLOR_MAP[cat.slug] || "text-cyan-400";
+                          return (
+                            <li key={cat.id}>
+                              <Link href={`/category/${cat.slug}`}>
+                                <NavigationMenuLink className="flex items-center gap-3 select-none rounded-xl p-3 leading-none no-underline outline-none hover:bg-white/5 transition-all group">
+                                  <div className={`w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center shrink-0 ${iconColor}`}>
+                                    <IconComp className="w-4 h-4" />
+                                  </div>
+                                  <div>
+                                    <div className={`text-sm font-semibold leading-none text-foreground group-hover:${iconColor} transition-colors`}>{cat.name}</div>
+                                    <p className="mt-1 line-clamp-1 text-xs leading-snug text-muted-foreground">{cat.description}</p>
+                                  </div>
+                                </NavigationMenuLink>
+                              </Link>
+                            </li>
+                          );
+                        })}
                       </ul>
                     </NavigationMenuContent>
                   </NavigationMenuItem>
@@ -386,7 +402,7 @@ export function Header() {
                     );
                   })}
 
-                  {/* Categories Section */}
+                  {/* Categories Section — dynamic from API */}
                   <motion.div
                     initial={{ opacity: 0, x: 20 }}
                     animate={{ opacity: 1, x: 0 }}
@@ -394,21 +410,24 @@ export function Header() {
                     className="pt-4 border-t border-border mt-4"
                   >
                     <p className="text-sm font-semibold text-muted-foreground px-4 mb-2">Categories</p>
-                    <Link href="/category/mobile-games">
-                      <div className="flex items-center gap-4 px-4 py-3 rounded-xl hover:bg-muted transition-all text-foreground">
-                        Mobile Games
+                    <Link href="/games">
+                      <div className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-muted transition-all text-foreground">
+                        <Gamepad2 className="w-4 h-4 text-cyan-400" />
+                        All Games
                       </div>
                     </Link>
-                    <Link href="/category/pc-games">
-                      <div className="flex items-center gap-4 px-4 py-3 rounded-xl hover:bg-muted transition-all text-foreground">
-                        PC Games
-                      </div>
-                    </Link>
-                    <Link href="/category/gift-cards">
-                      <div className="flex items-center gap-4 px-4 py-3 rounded-xl hover:bg-muted transition-all text-foreground">
-                        Gift Cards
-                      </div>
-                    </Link>
+                    {navCategories.map((cat) => {
+                      const IconComp = CATEGORY_ICON_MAP[cat.slug] || Gift;
+                      const iconColor = CATEGORY_COLOR_MAP[cat.slug] || "text-cyan-400";
+                      return (
+                        <Link key={cat.id} href={`/category/${cat.slug}`}>
+                          <div className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-muted transition-all text-foreground">
+                            <IconComp className={`w-4 h-4 ${iconColor}`} />
+                            {cat.name}
+                          </div>
+                        </Link>
+                      );
+                    })}
                   </motion.div>
                 </nav>
 
