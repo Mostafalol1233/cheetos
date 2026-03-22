@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Trash2, CheckCircle, XCircle, Star } from 'lucide-react';
+import { Trash2, CheckCircle, XCircle, Star, Mail, Copy } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { API_BASE_URL } from '@/lib/queryClient';
 
@@ -74,6 +74,12 @@ export function ReviewsPanel() {
     }
   });
 
+  const copyEmail = (email: string) => {
+    navigator.clipboard.writeText(email).then(() => {
+      toast({ title: 'Email copied!', description: email });
+    });
+  };
+
   const approved = reviews.filter(r => r.is_approved);
   const pending = reviews.filter(r => !r.is_approved);
 
@@ -84,7 +90,7 @@ export function ReviewsPanel() {
         <p className="text-sm text-muted-foreground">Moderate customer reviews across all products</p>
       </div>
 
-      <div className="flex gap-4 text-sm">
+      <div className="flex gap-4 text-sm flex-wrap">
         <span className="bg-green-500/20 text-green-400 px-3 py-1 rounded-full">✓ Approved: {approved.length}</span>
         <span className="bg-yellow-500/20 text-yellow-400 px-3 py-1 rounded-full">⏳ Pending: {pending.length}</span>
         <span className="bg-muted text-muted-foreground px-3 py-1 rounded-full">Total: {reviews.length}</span>
@@ -105,7 +111,7 @@ export function ReviewsPanel() {
               <CardContent className="py-4">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap mb-1">
+                    <div className="flex items-center gap-2 flex-wrap mb-2">
                       <span className="font-semibold text-foreground">{review.user_name}</span>
                       <Badge variant="outline" className="text-xs">{review.game_slug}</Badge>
                       <Badge variant={review.is_approved ? 'default' : 'secondary'} className="text-xs">
@@ -113,11 +119,23 @@ export function ReviewsPanel() {
                       </Badge>
                       <StarDisplay rating={review.rating} />
                     </div>
+
                     {review.user_email && (
-                      <p className="text-xs text-muted-foreground mb-1">{review.user_email}</p>
+                      <div className="flex items-center gap-2 mb-2 bg-blue-500/10 border border-blue-500/25 rounded-lg px-3 py-1.5 w-fit max-w-full">
+                        <Mail className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+                        <span className="text-sm text-blue-300 font-mono truncate">{review.user_email}</span>
+                        <button
+                          onClick={() => copyEmail(review.user_email)}
+                          className="text-blue-400 hover:text-blue-200 transition-colors shrink-0"
+                          title="Copy email"
+                        >
+                          <Copy className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     )}
+
                     {review.comment && (
-                      <p className="text-sm text-foreground/80 mt-1">{review.comment}</p>
+                      <p className="text-sm text-foreground/80 mt-1 leading-relaxed">{review.comment}</p>
                     )}
                     <p className="text-xs text-muted-foreground mt-2">
                       {new Date(review.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
@@ -134,6 +152,7 @@ export function ReviewsPanel() {
                     <button
                       onClick={() => { if (confirm('Delete this review?')) deleteMutation.mutate(review.id); }}
                       className="text-red-400 hover:text-red-300"
+                      title="Delete review"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>

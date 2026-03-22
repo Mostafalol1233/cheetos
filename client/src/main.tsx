@@ -15,7 +15,7 @@ createRoot(document.getElementById("root")!).render(
 const loader = document.getElementById("app-loader");
 if (loader) {
   loader.classList.add("app-loader--hide");
-  window.setTimeout(() => loader.remove(), 450);
+  window.setTimeout(() => loader.remove(), 150);
 }
 
 if ('serviceWorker' in navigator) {

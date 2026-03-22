@@ -56,6 +56,15 @@ router.post('/', async (req, res) => {
     return res.status(400).json({ message: 'Rating must be between 1 and 5' });
   }
   try {
+    if (user_email) {
+      const spamCheck = await pool.query(
+        'SELECT COUNT(*) as count FROM reviews WHERE game_slug = $1 AND user_email = $2',
+        [game_slug, user_email]
+      );
+      if (parseInt(spamCheck.rows[0].count) >= 2) {
+        return res.status(429).json({ message: 'You have already submitted the maximum number of reviews for this product.' });
+      }
+    }
     const result = await pool.query(
       `INSERT INTO reviews (game_slug, user_name, user_email, rating, comment)
        VALUES ($1, $2, $3, $4, $5) RETURNING *`,

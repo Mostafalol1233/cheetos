@@ -29,7 +29,7 @@ const ICON_MAP: Record<string, React.ElementType> = {
 const ACCENT_MAP: Record<string, string> = {
   "hot-deals":    "from-red-900/70 via-orange-900/40 to-transparent",
   "mobile-games": "from-purple-900/70 via-pink-900/40 to-transparent",
-  "gift-cards":   "from-emerald-900/70 via-teal-900/40 to-transparent",
+  "gift-cards":   "from-emerald-900/80 via-teal-900/50 to-transparent",
   "online-games": "from-blue-900/70 via-indigo-900/40 to-transparent",
 };
 
@@ -61,6 +61,41 @@ const FALLBACK_IMAGES: Record<string, string> = {
   "online-games": "https://images.unsplash.com/photo-1593305841991-05c297ba4575?w=600&q=80",
 };
 
+const GIFT_CARD_LOGOS = [
+  { src: "/images/giftcard-steam.svg", alt: "Steam" },
+  { src: "/images/giftcard-amazon.svg", alt: "Amazon" },
+  { src: "/images/giftcard-google-play.svg", alt: "Google Play" },
+  { src: "/images/giftcard-psn.svg", alt: "PlayStation" },
+  { src: "/images/giftcard-xbox.svg", alt: "Xbox" },
+  { src: "/images/giftcard-netflix.svg", alt: "Netflix" },
+  { src: "/images/giftcard-itunes.svg", alt: "iTunes" },
+  { src: "/images/giftcard-spotify.svg", alt: "Spotify" },
+];
+
+function GiftCardMosaic() {
+  return (
+    <div className="absolute inset-0 bg-gradient-to-br from-[#0a1f14] via-[#0d2b1e] to-[#071a10]">
+      <div className="absolute inset-0 grid grid-cols-4 grid-rows-2 gap-0">
+        {GIFT_CARD_LOGOS.map((logo, i) => (
+          <div
+            key={i}
+            className="relative flex items-center justify-center overflow-hidden"
+            style={{ background: i % 2 === 0 ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.15)' }}
+          >
+            <img
+              src={logo.src}
+              alt={logo.alt}
+              className="w-12 h-12 object-contain opacity-60 drop-shadow-lg"
+              onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+            />
+          </div>
+        ))}
+      </div>
+      <div className="absolute inset-0 bg-gradient-to-br from-emerald-900/30 via-transparent to-teal-900/20" />
+    </div>
+  );
+}
+
 export function ShoppingCategories() {
   const { t } = useTranslation();
   const { data: categories = [], isLoading, isError } = useQuery({
@@ -85,7 +120,6 @@ export function ShoppingCategories() {
 
   return (
     <section className="container mx-auto px-4 py-12">
-      {/* Section header */}
       <div className="flex items-center gap-3 mb-8">
         <div className="w-1 h-7 rounded-full bg-gold-primary" />
         <h2 className="text-2xl font-bold text-foreground tracking-tight">{t('shopping_categories')}</h2>
@@ -100,6 +134,7 @@ export function ShoppingCategories() {
           const tagStyle = TAG_MAP[category.slug] || "bg-white/10 text-white/60 border-white/20";
           const fallbackImage = FALLBACK_IMAGES[category.slug];
           const imageToUse = category.image || fallbackImage;
+          const isGiftCards = category.slug === "gift-cards";
 
           return (
             <Link
@@ -115,25 +150,36 @@ export function ShoppingCategories() {
                   transition-all duration-300 cursor-pointer
                 `}
               >
-                {/* Full-bleed image */}
-                <ImageWithFallback
-                  src={imageToUse}
-                  alt={category.name}
-                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                />
+                {isGiftCards ? (
+                  <GiftCardMosaic />
+                ) : (
+                  <ImageWithFallback
+                    src={imageToUse}
+                    alt={category.name}
+                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  />
+                )}
 
-                {/* Subtle dark overlay — toned down */}
-                <div className="absolute inset-0 bg-black/35 group-hover:bg-black/20 transition-all duration-300" />
+                {!isGiftCards && (
+                  <div className="absolute inset-0 bg-black/35 group-hover:bg-black/20 transition-all duration-300" />
+                )}
 
-                {/* Gradient from bottom — stronger at bottom for text readability */}
                 <div className={`absolute inset-0 bg-gradient-to-t ${accent}`} />
 
-                {/* Top-right icon badge — no blur */}
                 <div className={`absolute top-3 right-3 w-8 h-8 rounded-xl border flex items-center justify-center ${iconStyle} transition-all duration-300 group-hover:scale-110`}>
                   <IconComponent className="w-4 h-4" />
                 </div>
 
-                {/* Bottom content */}
+                {isGiftCards && (
+                  <div className="absolute top-3 left-3 flex gap-1 flex-wrap max-w-[55%]">
+                    {GIFT_CARD_LOGOS.slice(0, 4).map((logo, i) => (
+                      <div key={i} className="w-6 h-6 rounded bg-white/10 border border-white/20 flex items-center justify-center">
+                        <img src={logo.src} alt={logo.alt} className="w-4 h-4 object-contain" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                      </div>
+                    ))}
+                  </div>
+                )}
+
                 <div className="absolute bottom-0 left-0 right-0 p-4">
                   <h3 className="text-white font-bold text-base leading-tight mb-1 drop-shadow-lg tracking-wide">
                     {getDisplayName(category.name, category.slug)}

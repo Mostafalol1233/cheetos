@@ -1,13 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { Game } from "@shared/schema";
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
-import { ShoppingBag, Star, Flame, Share2, Play, Check } from "lucide-react";
-import { InteractiveGamePreview } from "./interactive-game-preview";
+import { Flame, ArrowRight } from "lucide-react";
 import ImageWithFallback from "./image-with-fallback";
 import { useTranslation } from "@/lib/translation";
-import { cn } from "@/lib/utils";
 
 const GAME_SLUG_IMAGES: Record<string, string> = {
   'free-fire': '/images/free-fire-game.png',
@@ -34,10 +30,37 @@ const GAME_SLUG_IMAGES: Record<string, string> = {
   'yalla-ludo': '/images/yalla-ludo-2-67563efa1ab95.webp',
 };
 
+const GAME_GRADIENT_MAP: Record<string, string> = {
+  'free-fire': 'from-orange-900/80 via-red-900/50 to-transparent',
+  'freefire': 'from-orange-900/80 via-red-900/50 to-transparent',
+  'pubg': 'from-yellow-900/80 via-amber-900/50 to-transparent',
+  'pubg-mobile': 'from-yellow-900/80 via-amber-900/50 to-transparent',
+  'crossfire': 'from-gray-900/80 via-slate-900/50 to-transparent',
+  'minecraft': 'from-green-900/80 via-emerald-900/50 to-transparent',
+  'valorant': 'from-red-900/80 via-rose-900/50 to-transparent',
+  'roblox': 'from-red-900/80 via-pink-900/50 to-transparent',
+  'steam': 'from-blue-900/80 via-slate-900/50 to-transparent',
+  'xbox': 'from-green-900/80 via-lime-900/50 to-transparent',
+  'xbox-live': 'from-green-900/80 via-lime-900/50 to-transparent',
+  'playstation': 'from-blue-900/80 via-indigo-900/50 to-transparent',
+  'ps-store': 'from-blue-900/80 via-indigo-900/50 to-transparent',
+  'discord': 'from-indigo-900/80 via-purple-900/50 to-transparent',
+  'discord-nitro': 'from-indigo-900/80 via-purple-900/50 to-transparent',
+  'netflix': 'from-red-900/80 via-black to-transparent',
+  'google-play': 'from-teal-900/80 via-cyan-900/50 to-transparent',
+  'honor-of-kings': 'from-purple-900/80 via-pink-900/50 to-transparent',
+  'hok': 'from-purple-900/80 via-pink-900/50 to-transparent',
+  'yalla-ludo': 'from-yellow-900/80 via-amber-900/50 to-transparent',
+};
+
 function getGameImage(game: Game): string {
   if (GAME_SLUG_IMAGES[game.slug]) return GAME_SLUG_IMAGES[game.slug];
   if (game.image) return game.image;
   return '';
+}
+
+function getGameGradient(slug: string): string {
+  return GAME_GRADIENT_MAP[slug] || 'from-gray-900/80 via-gray-800/50 to-transparent';
 }
 
 export function PopularGames() {
@@ -46,21 +69,12 @@ export function PopularGames() {
     queryKey: ["/api/games/popular"],
   });
 
-  const [addingItems] = useState<string[]>([]);
-
-  if (isLoading) {
-    return null;
-  }
-
-  if (isError || !Array.isArray(games) || games.length === 0) {
-    return null;
-  }
+  if (isLoading) return null;
+  if (isError || !Array.isArray(games) || games.length === 0) return null;
 
   return (
     <section className="py-12 relative overflow-hidden">
-      {/* Dynamic Background */}
-      <div className="absolute inset-0 bg-gradient-to-b from-white to-muted/30 dark:from-background dark:to-muted/20 z-0"></div>
-      <div className="absolute inset-0 opacity-40 dark:opacity-20 pointer-events-none bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-gold-primary/18 via-transparent to-transparent"></div>
+      <div className="absolute inset-0 bg-gradient-to-b from-background via-background to-muted/10 z-0" />
 
       <div className="container relative z-10 mx-auto px-4">
         <div className="flex items-center mb-8">
@@ -70,39 +84,33 @@ export function PopularGames() {
           <h2 className="text-3xl font-black text-foreground tracking-tight">{t('popular_games')}</h2>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-5 lg:gap-6">
-          {Array.isArray(games) && games.map((game) => {
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+          {games.map((game) => {
+            const gradient = getGameGradient(game.slug);
             return (
-              <div key={game.id} className="relative group perspective h-full">
-                <Link href={`/game/${game.slug}`} className="block h-full">
-                  <div className="relative h-full flex flex-col rounded-2xl bg-gray-900 border border-white/10 hover:border-gold-primary/60 transition-all duration-300 overflow-hidden shadow-lg hover:shadow-gold-primary/20 hover:shadow-xl">
-                    {/* High-tech Border Effect */}
-                    <div className="absolute inset-0 pointer-events-none rounded-2xl shadow-[0_12px_30px_rgba(0,0,0,0.25)]" />
+              <Link key={game.id} href={`/game/${game.slug}`} className="block group">
+                <div className="relative overflow-hidden rounded-2xl aspect-[3/4] border border-white/10 hover:border-gold-primary/50 shadow-md hover:shadow-xl hover:shadow-gold-primary/10 transition-all duration-300 cursor-pointer bg-gray-900">
+                  <ImageWithFallback
+                    src={getGameImage(game)}
+                    alt={game.name}
+                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                  />
 
-                    {/* Game Image */}
-                    <div className="relative w-full overflow-hidden rounded-t-2xl bg-[#0e1a2b] aspect-[4/3]">
-                      <ImageWithFallback
-                        src={getGameImage(game)}
-                        alt={game.name}
-                        className="w-full h-full object-contain transition-transform duration-700 group-hover:scale-105"
-                      />
-                    </div>
+                  <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-all duration-300" />
 
-                    {/* Game Info */}
-                    <div className="relative z-10 flex-1 flex flex-col px-4 py-3 sm:px-5 sm:py-4">
-                      <h3 className="font-bold text-foreground mb-3 text-base sm:text-lg line-clamp-1 group-hover:text-gold-primary transition-colors">
-                        {game.name}
-                      </h3>
+                  <div className={`absolute inset-0 bg-gradient-to-t ${gradient}`} />
 
-                      <div className="mt-auto flex items-center justify-between">
-                        <span className="text-sm px-3 py-1.5 rounded-full text-gold-primary bg-gold-primary/10 group-hover:bg-gold-primary group-hover:text-black transition-colors font-semibold">
-                          {t('view_details')}
-                        </span>
-                      </div>
+                  <div className="absolute bottom-0 left-0 right-0 p-3">
+                    <h3 className="text-white font-bold text-sm leading-tight drop-shadow-lg line-clamp-2 mb-1.5 tracking-wide">
+                      {game.name}
+                    </h3>
+                    <div className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-gold-primary/20 border border-gold-primary/40 text-gold-primary transition-all duration-300 group-hover:bg-gold-primary group-hover:text-black group-hover:border-gold-primary">
+                      <span>{t('view_details')}</span>
+                      <ArrowRight className="w-2.5 h-2.5 transition-transform duration-300 group-hover:translate-x-0.5" />
                     </div>
                   </div>
-                </Link>
-              </div>
+                </div>
+              </Link>
             );
           })}
         </div>
