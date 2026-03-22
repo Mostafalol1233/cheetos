@@ -1,5 +1,6 @@
 import { db } from "./db";
 import { settings, type Settings } from "@shared/settings-schema";
+import { eq } from "drizzle-orm";
 
 export async function getSingleSettings(): Promise<Settings | null> {
   const rows = await db.select().from(settings).limit(1);
@@ -30,7 +31,7 @@ export async function updateSettings(payload: Partial<Settings>): Promise<Settin
       target: settings.id,
       set: { ...payload, updatedAt } as any
     });
-  const rows = await db.select().from(settings).where(settings.id.eq(id)).limit(1);
+  const rows = await db.select().from(settings).where(eq(settings.id, id)).limit(1);
   return rows[0] as Settings;
 }
 

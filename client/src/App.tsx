@@ -207,10 +207,6 @@ function AppShell() {
   const isProfileRoute = location === "/profile";
   const isHomeRoute = location === "/" || location.startsWith("/#");
 
-  if (!healthState.ok && !isAdminRoute) {
-    return <MaintenancePage reason={healthState.reason} onRetry={runHealthCheck} />;
-  }
-
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       const target = (e.target as HTMLElement)?.closest("button, a, [role=button]") as HTMLElement | null;
@@ -266,6 +262,10 @@ function AppShell() {
       document.removeEventListener("visibilitychange", vis);
     };
   }, []);
+
+  if (!healthState.ok && !isAdminRoute) {
+    return <MaintenancePage reason={healthState.reason} onRetry={runHealthCheck} />;
+  }
 
   return (
     <>

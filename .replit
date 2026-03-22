@@ -1,3 +1,4 @@
+modules = ["nodejs-20"]
 [agent]
 expertMode = true
 
@@ -31,8 +32,36 @@ SMTP_HOST = "smtp-relay.brevo.com"
 SMTP_PORT = "587"
 SMTP_USER = "90160c001@smtp-brevo.com"
 API_URL = "https://diaasadek.com"
-API_PORT = "20242"
+API_PORT = "5000"
 ADMIN_API_KEY = "testkey123"
 CLOUDINARY_CLOUD_NAME = "ddzbutb12"
 CLOUDINARY_API_KEY = "347457217563879"
 ADMIN_EMAIL = "admin@diaaldeen.com"
+
+[workflows]
+runButton = "Project"
+
+[[workflows.workflow]]
+name = "Project"
+mode = "parallel"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Start application"
+
+[[workflows.workflow]]
+name = "Start application"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npm run dev"
+waitForPort = 5000
+
+[workflows.workflow.metadata]
+outputType = "webview"
+
+[[ports]]
+localPort = 5000
+externalPort = 80
