@@ -602,6 +602,21 @@
   will-change: transform;
 }
 
+@keyframes scroll-reviews {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.animate-scroll-reviews {
+  animation: scroll-reviews 35s linear infinite;
+  will-change: transform;
+  display: flex;
+}
+
+.animate-scroll-reviews:hover {
+  animation-play-state: paused;
+}
+
 /* Glow */
 @keyframes glow {
   from {

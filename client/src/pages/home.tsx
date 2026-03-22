@@ -12,6 +12,7 @@ import { useTranslation } from "@/lib/translation";
 import { SEO } from "@/components/SEO";
 import { Button } from "@/components/ui/button";
 import { WelcomeConfetti } from "@/components/confetti-celebration";
+import { ReviewsMarquee } from "@/components/reviews-marquee";
 
 const features = [
   {
@@ -411,55 +412,29 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Customer Reviews */}
-        <section className="container mx-auto px-4 py-20">
-          <motion.div
-            className="text-center mb-12"
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            viewport={{ once: true }}
-          >
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">
-              {language === 'ar' ? (
-                <>ماذا يقول <span className="text-gold-primary">عملاؤنا</span></>
-              ) : (
-                <>What Our <span className="text-gold-primary">Customers</span> Say</>
-              )}
-            </h2>
-            <p className="text-muted-foreground">
-              {language === 'ar' ? 'موثوق من آلاف اللاعبين في مصر والعالم العربي' : 'Trusted by thousands of gamers across Egypt'}
-            </p>
-          </motion.div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {reviews.map((review, index) => (
-              <motion.div
-                key={review.name}
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: index * 0.1 }}
-                viewport={{ once: true }}
-                whileHover={{ y: -5 }}
-                className="p-6 rounded-2xl glass border border-white/5 hover:border-gold-primary/30 transition-all duration-300"
-              >
-                <div className="flex items-center gap-4 mb-4">
-                  <div className="w-12 h-12 rounded-full bg-gold-primary flex items-center justify-center text-white font-bold text-lg">
-                    {review.initial}
-                  </div>
-                  <div>
-                    <p className="font-bold text-foreground">{review.name}</p>
-                    <div className="flex text-cyber-gold">
-                      {Array.from({ length: review.rating }).map((_, i) => (
-                        <span key={i}>⭐</span>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-                <p className="text-muted-foreground">{language === 'ar' ? review.textAr : review.text}</p>
-              </motion.div>
-            ))}
+        {/* Customer Reviews - Scrolling Marquee */}
+        <section className="py-16 overflow-hidden">
+          <div className="container mx-auto px-4 mb-8">
+            <motion.div
+              className="text-center"
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+              viewport={{ once: true }}
+            >
+              <h2 className="text-3xl md:text-4xl font-bold mb-3">
+                {language === 'ar' ? (
+                  <>ماذا يقول <span className="text-gold-primary">عملاؤنا</span></>
+                ) : (
+                  <>What Our <span className="text-gold-primary">Customers</span> Say</>
+                )}
+              </h2>
+              <p className="text-muted-foreground">
+                {language === 'ar' ? 'موثوق من آلاف اللاعبين في مصر والعالم العربي' : 'Trusted by thousands of gamers across Egypt'}
+              </p>
+            </motion.div>
           </div>
+          <ReviewsMarquee />
         </section>
 
         {/* Payment Methods */}

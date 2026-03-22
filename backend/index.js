@@ -33,6 +33,7 @@ import uploadsRouter from './routes/uploads.js';
 import responseTemplatesRouter from './routes/response-templates.js';
 import adminUsersRouter from './routes/admin-users.js';
 import cleanupRouter, { startCleanupSchedule } from './routes/cleanup.js';
+import { startAutoReviewSchedule } from './routes/auto-reviews.js';
 import settingsRouter from './routes/settings.js';
 import promoRouter from './routes/promo.js';
 import reviewsRouter from './routes/reviews.js';
@@ -101,6 +102,7 @@ try {
 
 // Start automated cleanup schedule for old orders
 startCleanupSchedule();
+startAutoReviewSchedule();
 
 // Start abandoned cart recovery schedule
 startAbandonedCartSchedule(sendEmail, null);

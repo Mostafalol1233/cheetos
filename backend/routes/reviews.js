@@ -20,6 +20,20 @@ const initTable = async () => {
 };
 initTable().catch(console.error);
 
+router.get('/recent', async (req, res) => {
+  try {
+    const limit = Math.min(parseInt(req.query.limit) || 20, 50);
+    const result = await pool.query(
+      'SELECT id, game_slug, user_name, rating, comment, created_at FROM reviews WHERE is_approved = true ORDER BY created_at DESC LIMIT $1',
+      [limit]
+    );
+    res.json(result.rows);
+  } catch (err) {
+    console.error('Recent reviews error:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 router.get('/game/:slug', async (req, res) => {
   const { slug } = req.params;
   try {
