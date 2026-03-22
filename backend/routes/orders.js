@@ -3,7 +3,7 @@ import pool from '../db.js';
 import { authenticateToken, optionalAuthenticateToken, ensureAdmin } from '../middleware/auth.js';
 import { sendWhatsAppMessage } from '../whatsapp.js';
 import { logAudit } from '../utils/audit.js';
-import { sendEmail } from '../utils/email.js';
+import { sendEmail, sendRawEmail } from '../utils/email.js';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
