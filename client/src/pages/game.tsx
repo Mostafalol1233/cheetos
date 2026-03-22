@@ -156,12 +156,18 @@ export default function GamePage() {
                 transition={{ duration: 0.5 }}
                 className="relative"
               >
-                <div className="relative rounded-3xl overflow-hidden glass border border-white/10">
-                  <ImageWithFallback
-                    src={getHeroImage()}
-                    alt={game.name}
-                    className="w-full h-auto object-contain bg-black/10"
-                  />
+                <div className="relative rounded-3xl overflow-hidden glass border border-white/10 aspect-[4/3]">
+                  {getHeroImage() ? (
+                    <img
+                      src={getHeroImage()}
+                      alt={game.name}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-gray-900 text-gray-500">
+                      No image
+                    </div>
+                  )}
 
                   <div className="absolute top-4 left-4 flex flex-col gap-2">
                     {game.isPopular && (

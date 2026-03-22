@@ -47,7 +47,7 @@ export function PopularGames() {
             return (
               <div key={game.id} className="relative group perspective h-full">
                 <Link href={`/game/${game.slug}`} className="block h-full">
-                  <div className="relative h-full flex flex-col rounded-2xl bg-blue-950 border border-blue-700/50 hover:border-gold-primary/60 transition-all duration-300 overflow-hidden">
+                  <div className="relative h-full flex flex-col rounded-2xl bg-gray-900 border border-white/10 hover:border-gold-primary/60 transition-all duration-300 overflow-hidden">
                     {/* High-tech Border Effect */}
                     <div className="absolute inset-0 pointer-events-none rounded-2xl shadow-[0_12px_30px_rgba(0,0,0,0.25)]" />
 

@@ -7,6 +7,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -23,7 +24,9 @@ import {
   ArrowLeft,
   Eye,
   Download,
-  Copy
+  Copy,
+  Lock,
+  Pencil
 } from "lucide-react";
 import { io } from "socket.io-client";
 import { LiveChatWidget } from "@/components/live-chat-widget";
@@ -91,6 +94,87 @@ export default function UserProfilePage() {
 
   const [showNewUserModal, setShowNewUserModal] = useState(false);
   const [newUserCreds, setNewUserCreds] = useState<{ email: string, password: string } | null>(null);
+
+  const [showEditProfile, setShowEditProfile] = useState(false);
+  const [editName, setEditName] = useState('');
+  const [editPhone, setEditPhone] = useState('');
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
+
+  const [showChangePassword, setShowChangePassword] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+
+  const handleOpenEditProfile = () => {
+    setEditName(user?.name || '');
+    setEditPhone(user?.phone || '');
+    setShowEditProfile(true);
+  };
+
+  const handleSaveProfile = async () => {
+    if (!editName.trim()) {
+      toast({ title: "Error", description: "Name is required", variant: "destructive" });
+      return;
+    }
+    setIsSavingProfile(true);
+    try {
+      const token = localStorage.getItem('userToken');
+      const response = await fetch(`${API_BASE_URL}/api/user/profile`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ name: editName, phone: editPhone }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || 'Update failed');
+      toast({ title: "Profile Updated", description: "Your profile has been updated successfully" });
+      setShowEditProfile(false);
+      const userData = localStorage.getItem('userData');
+      if (userData) {
+        const parsed = JSON.parse(userData);
+        localStorage.setItem('userData', JSON.stringify({ ...parsed, name: editName, phone: editPhone }));
+      }
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    } finally {
+      setIsSavingProfile(false);
+    }
+  };
+
+  const handleChangePassword = async () => {
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      toast({ title: "Error", description: "All fields are required", variant: "destructive" });
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      toast({ title: "Error", description: "New passwords don't match", variant: "destructive" });
+      return;
+    }
+    if (newPassword.length < 6) {
+      toast({ title: "Error", description: "Password must be at least 6 characters", variant: "destructive" });
+      return;
+    }
+    setIsChangingPassword(true);
+    try {
+      const token = localStorage.getItem('userToken');
+      const response = await fetch(`${API_BASE_URL}/api/user/change-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ currentPassword, newPassword }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || 'Failed to change password');
+      toast({ title: "Password Changed", description: "Your password has been changed successfully" });
+      setShowChangePassword(false);
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    } finally {
+      setIsChangingPassword(false);
+    }
+  };
 
   useEffect(() => {
     // Check for new user credentials from guest checkout
@@ -416,7 +500,8 @@ export default function UserProfilePage() {
                         </p>
                       </div>
                     </div>
-                    <Button variant="outline" className="border-gold-primary/50 text-gold-primary hover:bg-gold-primary/10">
+                    <Button onClick={handleOpenEditProfile} variant="outline" className="border-gold-primary/50 text-gold-primary hover:bg-gold-primary/10">
+                      <Pencil className="w-4 h-4 mr-2" />
                       Edit Profile
                     </Button>
                   </CardContent>
@@ -425,14 +510,15 @@ export default function UserProfilePage() {
                 <Card className="bg-gradient-to-br from-card-bg/80 to-card-bg/60 border-gold-primary/20">
                   <CardHeader>
                     <CardTitle className="text-white flex items-center gap-2">
-                      <CreditCard className="w-5 h-5 text-gold-primary" />
-                      Payment Methods
+                      <Lock className="w-5 h-5 text-gold-primary" />
+                      Security
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-gray-400 mb-4">Manage your saved payment methods</p>
-                    <Button variant="outline" className="border-gold-primary/50 text-gold-primary hover:bg-gold-primary/10">
-                      Add Payment Method
+                    <p className="text-gray-400 mb-4">Change your account password</p>
+                    <Button onClick={() => setShowChangePassword(true)} variant="outline" className="border-gold-primary/50 text-gold-primary hover:bg-gold-primary/10">
+                      <Lock className="w-4 h-4 mr-2" />
+                      Change Password
                     </Button>
                   </CardContent>
                 </Card>
@@ -441,6 +527,98 @@ export default function UserProfilePage() {
           </div>
         </div>
       </div>
+
+      {/* Edit Profile Dialog */}
+      <Dialog open={showEditProfile} onOpenChange={setShowEditProfile}>
+        <DialogContent className="bg-gradient-to-br from-gray-900 to-black border-gold-primary text-white sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-gold-primary">Edit Profile</DialogTitle>
+            <DialogDescription className="text-gray-400">Update your name and phone number</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label className="text-gray-300">Name</Label>
+              <Input
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+                className="bg-gray-800 border-gray-600 text-white"
+                placeholder="Your full name"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-gray-300">Phone</Label>
+              <Input
+                value={editPhone}
+                onChange={(e) => setEditPhone(e.target.value)}
+                className="bg-gray-800 border-gray-600 text-white"
+                placeholder="+20 10X XXXX XXXX"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowEditProfile(false)} className="border-gray-600 text-gray-300">Cancel</Button>
+            <Button
+              onClick={handleSaveProfile}
+              disabled={isSavingProfile}
+              className="bg-gradient-to-r from-gold-primary to-yellow-500 text-black font-bold hover:from-gold-secondary hover:to-yellow-400"
+            >
+              {isSavingProfile ? 'Saving...' : 'Save Changes'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Change Password Dialog */}
+      <Dialog open={showChangePassword} onOpenChange={setShowChangePassword}>
+        <DialogContent className="bg-gradient-to-br from-gray-900 to-black border-gold-primary text-white sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-gold-primary">Change Password</DialogTitle>
+            <DialogDescription className="text-gray-400">Enter your current and new password</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label className="text-gray-300">Current Password</Label>
+              <Input
+                type="password"
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+                className="bg-gray-800 border-gray-600 text-white"
+                placeholder="Your current password"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-gray-300">New Password</Label>
+              <Input
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                className="bg-gray-800 border-gray-600 text-white"
+                placeholder="At least 6 characters"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-gray-300">Confirm New Password</Label>
+              <Input
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className="bg-gray-800 border-gray-600 text-white"
+                placeholder="Repeat new password"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowChangePassword(false)} className="border-gray-600 text-gray-300">Cancel</Button>
+            <Button
+              onClick={handleChangePassword}
+              disabled={isChangingPassword}
+              className="bg-gradient-to-r from-gold-primary to-yellow-500 text-black font-bold"
+            >
+              {isChangingPassword ? 'Changing...' : 'Change Password'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={showNewUserModal} onOpenChange={handleCloseNewUserModal}>
         <DialogContent className="bg-gradient-to-br from-gray-900 to-black border-gold-primary text-white sm:max-w-md">

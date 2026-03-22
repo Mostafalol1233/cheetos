@@ -132,6 +132,85 @@ router.get('/profile', getUserFromToken, async (req, res) => {
   }
 });
 
+// Update user profile
+router.put('/profile', getUserFromToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { name, phone } = req.body;
+
+    if (!name || name.trim() === '') {
+      return res.status(400).json({ message: 'Name is required' });
+    }
+
+    const result = await pool.query(
+      'UPDATE users SET name = $1, phone = $2 WHERE id = $3 RETURNING id, name, email, phone, role, created_at',
+      [name.trim(), phone ? phone.trim() : null, userId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    res.json({ user: result.rows[0], message: 'Profile updated successfully' });
+  } catch (err) {
+    console.error('Error updating profile:', err);
+    res.status(500).json({ message: 'Failed to update profile' });
+  }
+});
+
+// Change password
+router.post('/change-password', getUserFromToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ message: 'Current and new passwords are required' });
+    }
+    if (newPassword.length < 6) {
+      return res.status(400).json({ message: 'New password must be at least 6 characters' });
+    }
+
+    const userResult = await pool.query('SELECT password_hash FROM users WHERE id = $1', [userId]);
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const { createHash } = await import('crypto');
+    const currentHash = createHash('sha256').update(currentPassword).digest('hex');
+    
+    let bcrypt;
+    try { bcrypt = await import('bcrypt'); } catch {}
+    
+    const storedHash = userResult.rows[0].password_hash;
+    let isValid = false;
+    
+    if (bcrypt && storedHash && storedHash.startsWith('$2')) {
+      isValid = await bcrypt.default.compare(currentPassword, storedHash);
+    } else {
+      isValid = storedHash === currentHash;
+    }
+
+    if (!isValid) {
+      return res.status(401).json({ message: 'Current password is incorrect' });
+    }
+
+    let newHash;
+    if (bcrypt) {
+      newHash = await bcrypt.default.hash(newPassword, 10);
+    } else {
+      newHash = createHash('sha256').update(newPassword).digest('hex');
+    }
+
+    await pool.query('UPDATE users SET password_hash = $1 WHERE id = $2', [newHash, userId]);
+
+    res.json({ message: 'Password changed successfully' });
+  } catch (err) {
+    console.error('Error changing password:', err);
+    res.status(500).json({ message: 'Failed to change password' });
+  }
+});
+
 // Get chat history
 router.get('/chat/history', getUserFromToken, async (req, res) => {
   try {

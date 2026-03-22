@@ -48,7 +48,29 @@ export function registerRoutes(app: Express): Server {
   });
 
   // --- Stub routes for non-critical endpoints ---
-  app.get("/api/header-images/active", (_req, res) => res.json([]));
+  app.get("/api/header-images/active", (_req, res) => res.json([
+    {
+      id: "slide-1",
+      image_url: "/images/hero-free-fire.png",
+      heading_text: "Free Fire - Top Up Diamonds",
+      button_text: "Shop Now",
+      button_url: "/game/free-fire"
+    },
+    {
+      id: "slide-2",
+      image_url: "/images/hero-pubg.png",
+      heading_text: "PUBG Mobile - UC Top Up",
+      button_text: "Shop Now",
+      button_url: "/game/pubg-mobile"
+    },
+    {
+      id: "slide-3",
+      image_url: "/images/hero-crossfire.png",
+      heading_text: "CrossFire - ZP Top Up",
+      button_text: "Shop Now",
+      button_url: "/game/crossfire"
+    }
+  ]));
   app.get("/api/localization/detect", (_req, res) => res.json({ currency: "EGP", locale: "ar-EG" }));
   app.post("/api/metrics/interaction", (_req, res) => res.json({ ok: true }));
   app.post("/api/metrics/perf", (_req, res) => res.json({ ok: true }));

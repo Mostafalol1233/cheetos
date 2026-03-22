@@ -81,15 +81,13 @@ export default function ImageWithFallback({ src, alt, className, width, height, 
         src={normalizedSrc} 
         alt={alt} 
         className={`${className}`} 
-        loading="lazy" 
+        loading="eager"
         decoding="async"
-        referrerPolicy="no-referrer"
         width={width}
         height={height}
         sizes={sizes}
         onLoad={onLoad}
         onError={onError}
-        crossOrigin="anonymous"
         data-testid="game-image"
         data-src={src}
       />
