@@ -1,0 +1,8 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "ZuqfEHg3SRIyn9YHU_Yji"
+uri = "file://backend-clean.zip"
+type = "unspecified"
+title = "Backend Clean (no node_modules, no old zips)"

@@ -703,8 +703,8 @@ app.use('/api/admin', adminRateLimiter);
 // Static file serving
 const uploadDir = path.join(__dirname, 'uploads');
 const publicDir = path.join(__dirname, 'public'); // Changed from ../public to ./public
-// Images directory from root
-const imagesDir = path.join(__dirname, '..', 'images');
+// Images directory inside backend folder
+const imagesDir = path.join(__dirname, 'images');
 
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });

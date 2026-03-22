@@ -64,7 +64,7 @@ export function PopularGames() {
                 <ImageWithFallback
                   src={getGameImage(game)}
                   alt={game.name}
-                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                  className="absolute inset-0 w-full h-full object-contain transition-transform duration-500 scale-90 group-hover:scale-100"
                 />
 
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
