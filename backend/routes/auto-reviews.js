@@ -1,11 +1,12 @@
 import pool from '../db.js';
 
 const ARABIC_NAMES = [
-  'محمد أحمد', 'أحمد محمود', 'عمر حسين', 'علي حسن', 'يوسف إبراهيم',
-  'خالد محمد', 'مصطفى علي', 'تامر عبدالله', 'كريم سامي', 'هشام نبيل',
-  'سارة محمد', 'نور أحمد', 'ريم علي', 'دينا حسن', 'منى إبراهيم',
-  'ياسمين خالد', 'مريم سامي', 'إيمان عمر', 'رانيا تامر', 'هبة مصطفى',
-  'زياد أحمد', 'عبدالرحمن محمد', 'سيف الدين', 'أسامة كريم', 'باسل حسين',
+  'محمد احمد', 'احمد محمود', 'عمر حسين', 'علي حسن', 'يوسف ابراهيم',
+  'خالد محمد', 'مصطفي علي', 'تامر عبدالله', 'كريم سامي', 'هشام نبيل',
+  'سارة محمد', 'نور احمد', 'ريم علي', 'دينا حسن', 'منى ابراهيم',
+  'ياسمين خالد', 'مريم سامي', 'ايمان عمر', 'رانيا تامر', 'هبه مصطفي',
+  'زياد احمد', 'عبدالرحمن محمد', 'سيف الدين', 'اسامه كريم', 'باسل حسين',
+  'شيماء ماجد', 'محمود رامي', 'حسن فتحي', 'عمرو صلاح', 'ادم سمير',
 ];
 
 const ENGLISH_NAMES = [
@@ -17,116 +18,140 @@ const ENGLISH_NAMES = [
 const GAME_TEMPLATES = {
   'free-fire': {
     ar: [
-      'Free Fire أحسن لعبة شحنت فيها الماسات من متجر ضياء، التسليم كان فوري وما في مشاكل خالص',
-      'شحنت Free Fire diamonds من هنا وجالتني على طول، الأسعار كمان معقولة جداً',
-      'متجر ضياء أحسن متجر لشحن ألعاب، اشتريت ماسات Free Fire ووصلت في ثواني',
-      'بشحن Free Fire من ضياء دايماً، ما فيش أحسن منه في مصر كلها',
-      'الخدمة ممتازة وسعر ماسات Free Fire بخصم حلو',
+      'والله عم ضياء عم الدنيا كلها، شحنت ماسات free fire وجات في ثواني مش بتصدق',
+      'الراجل ده تمام التمام، بشحن free fire منه وما بتحصلش مشكله خالص',
+      'جربت حاجات كتير بس صراحه المكان ده مش زيه، ماسات ff وصلت علطول',
+      'بشحن فري فاير من هنا من زمان والحمدلله ما اتعبتش خالص',
+      'سريع جداً والاسعار بتريح، ماسات free fire جت بسرعه',
     ],
     en: [
-      'Bought Free Fire diamonds here and got them instantly! Great service from Diaa store.',
-      'Amazing deal on Free Fire diamonds, delivery was super fast. Highly recommended!',
-      'Diaa is the best place to top up Free Fire in Egypt. Fast and reliable.',
+      'Bought Free Fire diamonds and got them instantly! Great service.',
+      'Amazing deal on FF diamonds, delivery was super fast. Highly recommended!',
+      'Best place to top up Free Fire in Egypt. Fast and reliable.',
+      'Got my FF diamonds in seconds, no issues at all. Love it!',
     ],
   },
   'pubg-mobile': {
     ar: [
-      'اشتريت UC لـ PUBG Mobile من ضياء وجاتلي فوراً، أحسن متجر في مصر',
-      'كل ما بشحن PUBG بروح لمتجر ضياء، سريع وبسعر كويس',
-      'PUBG UC وصلت في دقيقة واحدة بس! الخدمة دي مش بتتلاقاش في أي مكان تاني',
-      'شحنت UC لـ PUBG واستمتعت بالسيزون الجديد، شكراً ضياء',
+      'ياسلام عم ضياء ده راجل محترم اوي، UC جه في دقيقه وانا متصدقتش',
+      'بشحن pubg منه بقاله وقت وما تعبتش، سريع وبسعر كويس',
+      'UC وصلت وانا لسه مسجلش خروج من الصفحه، سرعتهم دي مش طبيعيه',
+      'الحمدلله لقيت المكان ده، بشحن pubg وما بفكرش في حاجه تانيه',
     ],
     en: [
       'Got my PUBG Mobile UC instantly! Best gaming store in Egypt, no doubt.',
       'Bought PUBG UC here, fast delivery and great prices. Will definitely come back!',
-      'Super fast top up for PUBG Mobile. Diaa Store is the best!',
+      'Super fast top up for PUBG Mobile. Absolutely recommend this place.',
     ],
   },
   'valorant': {
     ar: [
-      'شحنت Valorant Points وجاتلي على طول، أحسن خدمة',
-      'VP لـ Valorant وصلت فوراً وباعت سكن جديد، عالي جداً',
-      'متجر ضياء رائع لشحن Valorant، الأسعار مناسبة والتسليم سريع',
+      'VP جات في ثواني، عم ضياء مش بيخذل والله',
+      'اشتريت Valorant points ولقيتها في حسابي على طول، عجبني جداً',
+      'افضل مكان لشحن valorant، سريع والاسعار تمام',
     ],
     en: [
       'Purchased Valorant Points and received them instantly. Excellent service!',
       'Best place to buy VP in Egypt. Fast, cheap, and reliable.',
-      'Got my Valorant Points in seconds. Diaa Store never disappoints!',
+      'Got my Valorant Points in seconds. Never disappointed here.',
     ],
   },
   'spotify-gift-card': {
     ar: [
-      'اشتريت Spotify Premium وشغّلته في نص دقيقة، تجربة رائعة',
-      'Spotify شهر كامل بثمن بخس من ضياء، أنصح بيه جداً',
-      'اشتريت Spotify 3 Months وما في أي مشكلة، التفعيل سهل وسريع',
+      'اشتريت spotify وشغلته في نص دقيقه بالظبط، تجربه حلوه',
+      'spotify شهر كامل بسعر كويس، الكود جه على طول والحمدلله',
+      'الكود جه وانا مفكرتش والله، سريعين جداً وما عنديش اي شكوي',
     ],
     en: [
-      'Bought Spotify Premium from Diaa and activated it instantly. Great deal!',
+      'Bought Spotify Premium and activated it instantly. Great deal!',
       'Spotify 1 Month subscription at a great price. Fast delivery too!',
       'Excellent service! Got my Spotify gift card in no time.',
     ],
   },
   'discord-nitro': {
     ar: [
-      'اشتريت Discord Nitro من ضياء، وصل فوراً وفعّلته بسهولة',
-      'Nitro جالي في أقل من دقيقة، سعره كمان أوفر من المواقع التانية',
-      'تجربة ممتازة مع Discord Nitro من متجر ضياء',
+      'discord nitro جاني في اقل من دقيقه، عم ضياء عم الدنيا',
+      'nitro وصل بسرعه وسعره اوفر من اي مكان تاني، مرسي',
+      'جربت discord nitro من هنا وتجربه ممتازه، هرجع تاني',
     ],
     en: [
-      'Got my Discord Nitro instantly from Diaa Store. The best!',
+      'Got my Discord Nitro instantly. The best place for this!',
       'Discord Nitro at great price, super fast activation. Loved it!',
-      'Bought Discord Nitro here, easy and fast. Totally recommend Diaa Store.',
+      'Bought Discord Nitro here, easy and fast. Totally recommend.',
     ],
   },
   'roblox': {
     ar: [
-      'اشتريت Robux لـ Roblox وجاتلي على طول، أولادي مبسوطين جداً',
-      'Robux وصلت في ثواني، والخدمة ممتازة من ضياء',
-      'بشتري Roblox Robux من ضياء دايماً، سريع وآمن',
+      'اولادي طلبوا robux وجاتلهم علطول، فرحانين جداً',
+      'robux وصلت في ثواني والعيال بيلعبوا دلوقتي، تمام بجد',
+      'بشتري roblox من هنا دايماً، سريع وما فيش مشاكل',
     ],
     en: [
       'Got Roblox Robux instantly for my kid! Amazing service.',
       'Best place to buy Robux in Egypt. Fast and safe!',
-      'Bought Roblox gift card and it worked perfectly. Great store!',
+      'Bought Roblox gift card and it worked perfectly.',
     ],
   },
   'crossfire': {
     ar: [
-      'شحنت ZP لـ CrossFire وجاتلي فوراً، أحسن تجربة',
-      'CrossFire ZP بسعر حلو من ضياء، شكراً',
-      'تسليم سريع لـ CrossFire ZP، أنصح بمتجر ضياء',
+      'ZP لـ crossfire جاتلي علطول، تجربه ممتازه',
+      'crossfire ZP بسعر كويس والتوصيل سريع، شكراً',
+      'دايما بشحن crossfire من هنا، ما بتعبتش خالص',
     ],
     en: [
-      'CrossFire ZP delivered instantly! Great prices at Diaa Store.',
+      'CrossFire ZP delivered instantly! Great prices here.',
       'Bought CrossFire credits here, fast and reliable. Recommended!',
     ],
   },
   'minecraft': {
     ar: [
-      'اشتريت Minecraft من ضياء وفعّلته بسهولة، خدمة ممتازة',
-      'Minecraft Coins جات بسرعة وبسعر كويس، شكراً ضياء',
+      'اشتريت minecraft وفعلته بسهوله، خدمه ممتازه',
+      'minecraft coins جات بسرعه وبسعر كويس، تمام',
     ],
     en: [
-      'Got Minecraft quickly from Diaa Store. Excellent experience!',
+      'Got Minecraft quickly from here. Excellent experience!',
       'Bought Minecraft credits here. Fast delivery and fair price.',
+    ],
+  },
+  'mobile-legends': {
+    ar: [
+      'diamonds لـ mobile legends وصلتلي في دقيقه، كنت مستعجل وما اتاخرش',
+      'عم ضياء ده واد محترم والله، اشتريت ml diamonds وما في اي مشكله',
+      'بشحن mobile legends من هنا من زمان، ما اتغيرتش عنه',
+    ],
+    en: [
+      'Mobile Legends diamonds arrived instantly! Great service.',
+      'Bought ML diamonds here, super fast. Recommended!',
+    ],
+  },
+  'google-play': {
+    ar: [
+      'اشتريت google play card وشغلته علطول، سهل وسريع',
+      'بطاقه google play وصلت في دقيقه، ما في اي تعقيد',
+    ],
+    en: [
+      'Google Play card worked instantly! Great experience.',
+      'Bought Google Play gift card here. Fast and easy.',
     ],
   },
 };
 
 const DEFAULT_TEMPLATES = {
   ar: [
-    'خدمة ممتازة من متجر ضياء، التسليم كان سريع جداً وما في مشاكل',
-    'أنصح بمتجر ضياء لأي حاجة محتاجها للألعاب، أسعار كويسة وخدمة رائعة',
-    'من أفضل المتاجر في مصر، بشري منهم دايماً وما بيخذلوش',
-    'الخدمة سريعة والأسعار منافسة، شكراً لمتجر ضياء',
-    'جربت متاجر كتير بس ضياء أحسنهم كلهم، التسليم فوري والدعم متاح',
+    'خدمه سريعه وما في اي مشاكل، الحمدلله لقيت المكان ده',
+    'الراجل ده امين وشاطر، بشتري منه وما بقلقش علي حاجه',
+    'عم ضياء عم الدنيا كلها، راجل محترم ومضمون',
+    'سريع وبسعر كويس، مش هلاقي احسن من كده',
+    'بشري من هنا دايماً والحمدلله ما اتعبتش خالص',
+    'اشتريت وجالي علطول، بجد تجربه حلوه',
+    'ما قدرتش الاقي غيره، الخدمه دي مش بتتلاقاش في كل مكان',
   ],
   en: [
-    'Amazing service from Diaa Store! Fast delivery and great prices.',
+    'Amazing service! Fast delivery and great prices.',
     'Best gaming store in Egypt. Always reliable and fast!',
-    'Highly recommend Diaa Store for all your gaming needs. 5 stars!',
-    'Excellent prices and instant delivery. Will shop again for sure.',
-    'Diaa Store never disappoints. Fast, safe, and affordable!',
+    'Highly recommend for all your gaming needs. 5 stars!',
+    'Excellent prices and instant delivery. Will shop again.',
+    'Fast, safe, and affordable. Really happy with my purchase.',
   ],
 };
 

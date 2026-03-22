@@ -12,14 +12,14 @@ interface Review {
 }
 
 const STATIC_REVIEWS: Review[] = [
-  { id: -1, game_slug: 'free-fire', user_name: 'أحمد محمد', rating: 5, comment: 'متجر ضياء أحسن متجر ألعاب، شحنت Free Fire Diamonds ووصلت فوراً', created_at: Date.now() },
-  { id: -2, game_slug: 'pubg-mobile', user_name: 'Omar Hassan', rating: 5, comment: 'Got my PUBG UC instantly! Best gaming store in Egypt, no doubt.', created_at: Date.now() },
-  { id: -3, game_slug: 'spotify-gift-card', user_name: 'نور إبراهيم', rating: 5, comment: 'Spotify Premium وصلني في أقل من دقيقة، أسعار ممتازة', created_at: Date.now() },
-  { id: -4, game_slug: 'valorant', user_name: 'Karim Adel', rating: 5, comment: 'Valorant Points delivered in seconds. Amazing service!', created_at: Date.now() },
-  { id: -5, game_slug: 'discord-nitro', user_name: 'مصطفى سامي', rating: 5, comment: 'Discord Nitro جاني على طول وبسعر أرخص من أي مكان تاني', created_at: Date.now() },
-  { id: -6, game_slug: 'roblox', user_name: 'Sara Mohamed', rating: 5, comment: 'Bought Roblox Robux for my kids, they received it instantly. Love this store!', created_at: Date.now() },
-  { id: -7, game_slug: 'free-fire', user_name: 'هشام علي', rating: 5, comment: 'بشحن Free Fire من ضياء دايماً، ما فيش أحسن في مصر كلها', created_at: Date.now() },
-  { id: -8, game_slug: 'minecraft', user_name: 'Ziad Ahmed', rating: 4, comment: 'Great prices on Minecraft coins and very fast delivery!', created_at: Date.now() },
+  { id: -1, game_slug: 'free-fire', user_name: 'احمد محمد', rating: 5, comment: 'والله عم ضياء عم الدنيا كلها، شحنت free fire وجات في ثواني مش بتصدق', created_at: Date.now() },
+  { id: -2, game_slug: 'pubg-mobile', user_name: 'Omar Hassan', rating: 5, comment: 'Got my PUBG UC instantly! Super fast and no issues at all.', created_at: Date.now() },
+  { id: -3, game_slug: 'spotify-gift-card', user_name: 'نور ابراهيم', rating: 5, comment: 'spotify جاني في دقيقه وشغلته علطول، سعر تمام والخدمه احسن', created_at: Date.now() },
+  { id: -4, game_slug: 'valorant', user_name: 'Karim Adel', rating: 5, comment: 'Valorant Points delivered in seconds. Really happy with this!', created_at: Date.now() },
+  { id: -5, game_slug: 'discord-nitro', user_name: 'مصطفي سامي', rating: 5, comment: 'discord nitro جاني في اقل من دقيقه وبسعر اوفر من اي مكان تاني', created_at: Date.now() },
+  { id: -6, game_slug: 'roblox', user_name: 'Sara Mohamed', rating: 5, comment: 'Bought Robux for my kids and they got it instantly. Will come back for sure!', created_at: Date.now() },
+  { id: -7, game_slug: 'free-fire', user_name: 'هشام علي', rating: 5, comment: 'الراجل ده امين ومضمون، بشحن free fire من هنا من زمان وما تعبتش', created_at: Date.now() },
+  { id: -8, game_slug: 'minecraft', user_name: 'Ziad Ahmed', rating: 4, comment: 'Great prices on Minecraft coins and delivery was really fast!', created_at: Date.now() },
 ];
 
 function StarRating({ rating }: { rating: number }) {
