@@ -35,3 +35,8 @@ A high-end digital store for gaming currencies and vouchers.
 - Fixed game card image display: square aspect ratio with object-contain
 - Image priority fixed: local slug images always take precedence over broken DB CDN URLs
 - Removed non-existent file references from GAME_SLUG_IMAGES mappings
+- Made registration logAudit non-blocking (prevents potential timeout/500 errors)
+- Increased game package card sizes: image 96x96 (sm:112x112), price text lg/xl for mobile
+- Currency images (diamond/UC/etc) now shown in package cards as main image when no pkg image
+- Package image error fallback now shows currency icon before gradient placeholder
+- Popular games grid: 2 columns on mobile (was 1), consistent aspect-[4/3] ratio, hover shadow

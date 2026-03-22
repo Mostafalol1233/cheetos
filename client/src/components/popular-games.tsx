@@ -70,20 +70,17 @@ export function PopularGames() {
           <h2 className="text-3xl font-black text-foreground tracking-tight">{t('popular_games')}</h2>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5 sm:gap-6 lg:gap-8">
+        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-5 lg:gap-6">
           {Array.isArray(games) && games.map((game) => {
-            const isAdding = addingItems.includes(game.id);
-            const isOutOfStock = false;
-
             return (
               <div key={game.id} className="relative group perspective h-full">
                 <Link href={`/game/${game.slug}`} className="block h-full">
-                  <div className="relative h-full flex flex-col rounded-2xl bg-gray-900 border border-white/10 hover:border-gold-primary/60 transition-all duration-300 overflow-hidden">
+                  <div className="relative h-full flex flex-col rounded-2xl bg-gray-900 border border-white/10 hover:border-gold-primary/60 transition-all duration-300 overflow-hidden shadow-lg hover:shadow-gold-primary/20 hover:shadow-xl">
                     {/* High-tech Border Effect */}
                     <div className="absolute inset-0 pointer-events-none rounded-2xl shadow-[0_12px_30px_rgba(0,0,0,0.25)]" />
 
                     {/* Game Image */}
-                    <div className="relative mb-3 w-full overflow-hidden rounded-t-2xl bg-[#0e1a2b] aspect-[4/3] sm:aspect-[16/9]">
+                    <div className="relative w-full overflow-hidden rounded-t-2xl bg-[#0e1a2b] aspect-[4/3]">
                       <ImageWithFallback
                         src={getGameImage(game)}
                         alt={game.name}
@@ -92,13 +89,13 @@ export function PopularGames() {
                     </div>
 
                     {/* Game Info */}
-                    <div className="relative z-10 flex-1 flex flex-col px-3 pb-3 sm:px-4 sm:pb-4">
+                    <div className="relative z-10 flex-1 flex flex-col px-4 py-3 sm:px-5 sm:py-4">
                       <h3 className="font-bold text-foreground mb-3 text-base sm:text-lg line-clamp-1 group-hover:text-gold-primary transition-colors">
                         {game.name}
                       </h3>
 
                       <div className="mt-auto flex items-center justify-between">
-                        <span className="text-xs px-2 py-1 rounded-full text-gold-primary bg-gold-primary/10 group-hover:bg-gold-primary group-hover:text-black transition-colors font-medium">
+                        <span className="text-sm px-3 py-1.5 rounded-full text-gold-primary bg-gold-primary/10 group-hover:bg-gold-primary group-hover:text-black transition-colors font-semibold">
                           {t('view_details')}
                         </span>
                       </div>

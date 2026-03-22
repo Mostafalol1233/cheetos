@@ -179,8 +179,8 @@ export default function GamePage() {
           </Button>
         </div>
 
-        <div className="container mx-auto px-4 pb-8">
-          <div className="grid lg:grid-cols-2 gap-8 items-start">
+        <div className="container mx-auto px-3 sm:px-4 pb-8">
+          <div className="grid lg:grid-cols-2 gap-5 sm:gap-8 items-start">
             <motion.div
               initial={{ opacity: 0, scale: 0.97 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -282,14 +282,14 @@ export default function GamePage() {
                 </span>
               </h2>
 
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-5">
                 {packagesArr.map((pkg: any, index: number) => {
                   const pricing = getPricing(pkg, index);
                   const pkgName = pkg.name || pkg;
                   const bonus = pkg.bonus;
                   const isHot = index < 2 || pkg.hot_deal;
                   const isSelected = selectedPkg === index;
-                  const pkgImage = pkg.image || currencyImageUrl || null;
+                  const pkgImage = pkg.image || null;
 
                   return (
                     <motion.div
@@ -297,7 +297,7 @@ export default function GamePage() {
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.3, delay: index * 0.04 }}
-                      whileHover={{ y: -5, scale: 1.03 }}
+                      whileHover={{ y: -6, scale: 1.03 }}
                       whileTap={{ scale: 0.97 }}
                       onClick={() => !isOutOfStock && (setSelectedPkg(index), handleBuyNow(index))}
                       className={`relative cursor-pointer rounded-2xl border-2 transition-all duration-200 overflow-hidden
@@ -308,7 +308,7 @@ export default function GamePage() {
                       `}
                     >
                       {isHot && (
-                        <div className="absolute top-2.5 left-2.5 z-10">
+                        <div className="absolute top-3 left-3 z-10">
                           <span className="bg-red-500 text-white text-xs font-black px-2.5 py-1 rounded-full uppercase tracking-wide shadow-md">
                             🔥 HOT
                           </span>
@@ -316,49 +316,60 @@ export default function GamePage() {
                       )}
 
                       {pricing.pct > 0 && (
-                        <div className="absolute top-2.5 right-2.5 z-10">
-                          <span className="bg-red-600 text-white text-xs font-bold px-2 py-0.5 rounded-full shadow-md">
+                        <div className="absolute top-3 right-3 z-10">
+                          <span className="bg-red-600 text-white text-xs font-bold px-2.5 py-1 rounded-full shadow-md">
                             -{pricing.pct}%
                           </span>
                         </div>
                       )}
 
-                      <div className="p-5 flex flex-col items-center gap-3">
-                        <div className="w-20 h-20 flex items-center justify-center">
-                          {pkgImage ? (
-                            <img
-                              src={pkgImage}
-                              alt={pkgName}
-                              className="w-full h-full object-contain drop-shadow-xl"
-                              onError={(e) => {
-                                const target = e.target as HTMLImageElement;
-                                target.style.display = 'none';
-                                const parent = target.parentElement;
-                                if (parent) {
-                                  parent.innerHTML = `<div style="width:80px;height:80px;border-radius:16px;background:linear-gradient(135deg,#D4AF37,#b8962e);display:flex;align-items:center;justify-content:center;"><span style="color:#000;font-weight:900;font-size:12px;text-align:center;padding:6px;">${pkgName}</span></div>`;
-                                }
-                              }}
-                            />
-                          ) : (
-                            <CurrencyAmountIcon amount={pkgName} gameSlug={gameSlug} />
-                          )}
+                      <div className="p-4 sm:p-5 flex flex-col items-center gap-3">
+                        {/* Package image + currency badge */}
+                        <div className="relative flex items-center justify-center">
+                          <div className="w-24 h-24 sm:w-28 sm:h-28 flex items-center justify-center">
+                            {pkgImage ? (
+                              <img
+                                src={pkgImage}
+                                alt={pkgName}
+                                className="w-full h-full object-contain drop-shadow-xl"
+                                onError={(e) => {
+                                  const target = e.target as HTMLImageElement;
+                                  target.style.display = 'none';
+                                  const parent = target.parentElement;
+                                  if (parent && currencyImageUrl) {
+                                    parent.innerHTML = `<img src="${currencyImageUrl}" alt="${pkgName}" style="width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 4px 12px rgba(0,0,0,0.5));" />`;
+                                  } else if (parent) {
+                                    parent.innerHTML = `<div style="width:96px;height:96px;border-radius:20px;background:linear-gradient(135deg,#D4AF37,#b8962e);display:flex;align-items:center;justify-content:center;"><span style="color:#000;font-weight:900;font-size:13px;text-align:center;padding:8px;">${pkgName}</span></div>`;
+                                  }
+                                }}
+                              />
+                            ) : currencyImageUrl ? (
+                              <img
+                                src={currencyImageUrl}
+                                alt={pkgName}
+                                className="w-full h-full object-contain drop-shadow-xl"
+                              />
+                            ) : (
+                              <CurrencyAmountIcon amount={pkgName} gameSlug={gameSlug} />
+                            )}
+                          </div>
                         </div>
 
-                        <div className="text-center w-full">
-                          <p className="text-sm font-bold text-foreground leading-tight mb-1.5">
+                        <div className="text-center w-full space-y-1.5">
+                          <p className="text-sm sm:text-base font-bold text-foreground leading-tight">
                             {pkgName}
                           </p>
                           {bonus && (
-                            <p className="text-xs font-bold text-gold-primary mb-1.5">
+                            <p className="text-xs sm:text-sm font-bold text-gold-primary">
                               +{bonus} Bonus 🎁
                             </p>
                           )}
                           {pricing.original !== null && (
-                            <p className="text-xs text-muted-foreground line-through mb-0.5">
+                            <p className="text-xs sm:text-sm text-muted-foreground line-through">
                               {formatEGP(pricing.original)}
                             </p>
                           )}
-                          <p className={`text-base font-black ${pricing.original !== null ? 'text-red-400' : 'text-foreground'}`}>
+                          <p className={`text-lg sm:text-xl font-black ${pricing.original !== null ? 'text-red-400' : 'text-foreground'}`}>
                             {formatEGP(pricing.final)}
                           </p>
                         </div>

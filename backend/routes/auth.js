@@ -146,8 +146,8 @@ router.post('/register', async (req, res) => {
 
     const token = jwt.sign({ id: userId, name, email, role: 'user' }, JWT_SECRET, { expiresIn: '30d' });
 
-    // Log audit event (safe)
-    await logAudit('user_register', `New user registered: ${email}`, { id: userId, email, name });
+    // Log audit event (safe, non-blocking)
+    logAudit('user_register', `New user registered: ${email}`, { id: userId, email, name }).catch(() => {});
 
     res.status(201).json({ token, user: { id: userId, name, email, role: 'user' } });
   } catch (err) {
