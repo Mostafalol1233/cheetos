@@ -5,24 +5,21 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ProductPackGrid } from "@/components/product-pack-card";
 import { useCart } from "@/lib/cart-context";
-import ImageWithFallback from "@/components/image-with-fallback";
+import { useTranslation } from "@/lib/translation";
+import { SEO } from "@/components/SEO";
+import { Footer } from "@/components/footer";
+import { Gift, Package, ArrowLeft, ShoppingBag } from "lucide-react";
+import { motion } from "framer-motion";
 
 export default function PacksPage() {
-  const { data: games = [], isLoading } = useQuery<any[]>({ queryKey: ["/api/games"] });
+  const { data: gamesRaw = [], isLoading } = useQuery<any>({ queryKey: ["/api/games"] });
+  const games: any[] = Array.isArray(gamesRaw) ? gamesRaw : (gamesRaw?.items || []);
   const { addToCart } = useCart();
+  const { language } = useTranslation();
 
-  const computeDiscount = (base: number) => {
-    if (!Number.isFinite(base) || base < 50) return null;
-    const d = base - 100;
-    if (!Number.isFinite(d) || d <= 0) return null;
-    if (d >= base) return null;
-    return d;
-  };
-
-  // Aggregate packs from all games for demo; adapt to /api/packs if available
   const packs = React.useMemo(() => {
     const out: any[] = [];
-    (games || ([] as any[])).forEach((g: any) => {
+    (games || []).forEach((g: any) => {
       const packages = Array.isArray(g.packages) ? g.packages : [];
       const packagesList = Array.isArray(g.packagesList) ? g.packagesList : [];
 
@@ -47,12 +44,13 @@ export default function PacksPage() {
           out.push({
             id: `${g.id}-pkg-${idx}`,
             name: pkg.name || pkg,
+            gameName: g.name,
             originalPrice: hasDiscount ? base : null,
             finalPrice: final,
             currency: "EGP",
             image: pkg.image || g.image,
             bonus: pkg.bonus || null,
-            href: `/packages/${pkg.slug || (pkg.name || pkg).toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
+            href: `/package/${g.slug}/${idx}`,
           });
         });
       }
@@ -61,44 +59,79 @@ export default function PacksPage() {
   }, [games]);
 
   const handleSelect = (id: string) => {
-    // naive add: find pack and add to cart
     const p = packs.find((x) => x.id === id);
     if (!p) return;
-    addToCart({ id: p.id, name: p.name, price: Number(p.finalPrice), image: p.image });
+    addToCart({ id: p.id, name: `${p.gameName} - ${p.name}`, price: Number(p.finalPrice), image: p.image });
   };
 
   return (
-    <div className="min-h-screen bg-background py-8">
-      <div className="container mx-auto px-4">
-        <header className="mb-6">
-          <h1 className="text-3xl font-bold text-foreground">Packages & Gift Cards</h1>
-        </header>
+    <>
+      <SEO
+        title={language === 'ar' ? "الباقات وبطاقات الهدايا - متجر ضياء" : "Packages & Gift Cards - Diaa Store"}
+        description={language === 'ar'
+          ? "تصفح جميع باقات الشحن وبطاقات الهدايا لأشهر الألعاب بأفضل الأسعار في مصر"
+          : "Browse all top-up packages and gift cards for the most popular games at the best prices in Egypt"}
+      />
 
-        {isLoading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {[...Array(8)].map((_, i) => (
-              <div key={i} className="space-y-3">
-                <Skeleton className="h-[160px] w-full rounded-xl bg-gray-200" />
-                <Skeleton className="h-4 w-3/4" />
-                <Skeleton className="h-4 w-1/2" />
-              </div>
-            ))}
+      <div className="min-h-screen bg-background">
+        <div className="container mx-auto px-4 py-8">
+
+          <div className="mb-2">
+            <Link href="/">
+              <button className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors text-sm">
+                <ArrowLeft className="w-4 h-4" />
+                {language === 'ar' ? 'العودة للرئيسية' : 'Back to Home'}
+              </button>
+            </Link>
           </div>
-        ) : (
-          <section>
-            <ProductPackGrid packs={packs} onSelectPack={handleSelect} />
-          </section>
-        )}
-      </div>
 
-      {/* Sticky CTA for mobile */}
-      <div className="fixed left-0 right-0 bottom-0 z-50 p-4 bg-gradient-to-t from-background/80 to-transparent backdrop-blur sm:hidden">
-        <div className="container mx-auto px-4">
-          <Button className="w-full bg-destructive text-destructive-foreground py-3 font-bold flex items-center justify-center gap-2">
-            ⚡ Buy Now
-          </Button>
+          <motion.div
+            className="mb-8"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
+          >
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-10 h-10 rounded-xl bg-gold-primary/15 border border-gold-primary/25 flex items-center justify-center">
+                <Gift className="w-5 h-5 text-gold-primary" />
+              </div>
+              <h1 className="text-3xl font-bold text-foreground">
+                {language === 'ar' ? 'الباقات وبطاقات الهدايا' : 'Packages & Gift Cards'}
+              </h1>
+            </div>
+            <p className="text-muted-foreground text-sm mr-13">
+              {language === 'ar'
+                ? `${packs.length} باقة متاحة من جميع الألعاب`
+                : `${packs.length} packages available across all games`}
+            </p>
+          </motion.div>
+
+          {isLoading ? (
+            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              {[...Array(8)].map((_, i) => (
+                <div key={i} className="space-y-3">
+                  <Skeleton className="h-[160px] w-full rounded-xl" />
+                  <Skeleton className="h-4 w-3/4" />
+                  <Skeleton className="h-4 w-1/2" />
+                </div>
+              ))}
+            </div>
+          ) : packs.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-24 text-center">
+              <Package className="w-16 h-16 text-muted-foreground/30 mb-4" />
+              <p className="text-muted-foreground">
+                {language === 'ar' ? 'لا توجد باقات متاحة حالياً' : 'No packages available at the moment'}
+              </p>
+            </div>
+          ) : (
+            <section>
+              <ProductPackGrid packs={packs} onSelectPack={handleSelect} />
+            </section>
+          )}
         </div>
+
+        <Footer />
       </div>
-    </div>
+    </>
   );
 }
