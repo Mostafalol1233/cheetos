@@ -146,14 +146,61 @@ router.post('/', optionalAuthenticateToken, async (req, res) => {
 
   // Send notifications (customer + admin/connected numbers)
   try {
-    const itemsList = items.map(i => `- ${i.title || i.name || i.id} (x${i.quantity})`).join('\n');
-    const waText = `*New Order #${orderId}*\nTotal: ${total_amount} EGP\nCustomer: ${customer_name} (${customer_phone})\nEmail: ${customer_email || 'N/A'}\nItems:\n${itemsList}\n\nStatus: Pending Approval`;
+    const itemsList = items.map(i => {
+      const name = i.title || i.name || i.id || 'Unknown Item';
+      const qty = i.quantity || 1;
+      const price = i.price != null ? ` - ${Number(i.price).toLocaleString('en-EG')} EGP` : '';
+      const pkg = i.package || i.packageName || '';
+      return `  • ${name}${pkg ? ` (${pkg})` : ''} x${qty}${price}`;
+    }).join('\n');
+
+    const orderDate = new Date().toLocaleString('en-EG', { dateStyle: 'medium', timeStyle: 'short' });
+
+    const waText = [
+      `🛒 *طلب جديد | New Order*`,
+      `━━━━━━━━━━━━━━━━━━━━`,
+      `📋 *Order ID:* ${orderId}`,
+      `📅 *Date:* ${orderDate}`,
+      ``,
+      `👤 *Customer Details:*`,
+      `  • Name: ${customer_name || 'N/A'}`,
+      `  • Phone: ${customer_phone || 'N/A'}`,
+      `  • Email: ${customer_email || 'N/A'}`,
+      ...(player_id ? [`  • Player ID: ${player_id}`] : []),
+      ``,
+      `🎮 *Items Ordered:*`,
+      itemsList,
+      ``,
+      `💳 *Payment:*`,
+      `  • Method: ${payment_method || 'N/A'}`,
+      `  • Total: *${Number(total_amount).toLocaleString('en-EG')} EGP*`,
+      ...(notes ? [``, `📝 *Notes:* ${notes}`] : []),
+      ...(receipt_url ? [``, `🧾 *Receipt:* ${receipt_url}`] : []),
+      ``,
+      `⏳ *Status:* Pending Approval`,
+      `━━━━━━━━━━━━━━━━━━━━`,
+    ].join('\n');
 
     // Notify customer (client can pass `deliver_via` = 'whatsapp' to force WhatsApp delivery)
     const deliverVia = req.body.deliver_via || 'email';
-    let customerMsg = `Thank you for your order #${orderId}! We are processing it. Status: Pending Approval.`;
+    const customerWaMsg = [
+      `✅ *تم استلام طلبك! | Order Received*`,
+      `━━━━━━━━━━━━━━━━━━━━`,
+      `شكراً لثقتك في متجر ضياء 🎮`,
+      `Thank you for your order at Diaa Gaming Store!`,
+      ``,
+      `📋 *Order ID:* ${orderId}`,
+      `💰 *Total:* ${Number(total_amount).toLocaleString('en-EG')} EGP`,
+      `⏳ *Status:* Pending Approval`,
+      ``,
+      `سيتم تنفيذ طلبك في أقرب وقت ممكن ✨`,
+      `Your order will be processed as soon as possible.`,
+      `━━━━━━━━━━━━━━━━━━━━`,
+    ].join('\n');
+
+    let customerMsg = customerWaMsg;
     if (generatedPassword) {
-      customerMsg += `\n\nAn account has been created for you.\nUsername: ${userData.name}\nPassword: ${generatedPassword}\nYou can change this in your account settings.`;
+      customerMsg += `\n\n🔑 *Account Created:*\nUsername: ${userData.name}\nPassword: ${generatedPassword}\nPlease change your password after logging in.`;
     }
 
     if (deliverVia === 'whatsapp') {

@@ -11,5 +11,5 @@
   <text x="100" y="60" text-anchor="middle" font-family="Arial,sans-serif" font-size="11" fill="#ffffff" letter-spacing="2" opacity="0.85">GIFT CARD</text>
   <polygon points="30,75 30,100 52,87" fill="#ffffff" opacity="0.9"/>
   <rect x="20" y="78" width="160" height="1.5" rx="1" fill="#ffffff" opacity="0.2"/>
-  <text x="100" y="115" text-anchor="middle" font-family="Arial,sans-serif" font-size="10" fill="#ffffff" opacity="0.8">بطاقة جوجل بلاي</text>
+  <text x="100" y="115" text-anchor="middle" font-family="Arial,sans-serif" font-size="10" fill="#ffffff" opacity="0.8">Google Play Gift Card</text>
 </svg>
