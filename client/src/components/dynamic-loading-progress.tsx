@@ -103,7 +103,7 @@ export function DynamicLoadingProgress({
           <div className="text-center mb-8">
             <div className="w-24 h-24 mx-auto mb-4 flex items-center justify-center">
               <img
-                src="https://files.catbox.moe/brmkrj.png"
+                src="https://res.cloudinary.com/ddzbutb12/image/upload/v1774173479/gamecart/logo.png"
                 alt="GameCart Logo"
                 className="w-full h-full object-contain animate-pulse"
               />

@@ -21,12 +21,12 @@ A high-end digital store for gaming currencies and vouchers.
 - `client/src/components/dynamic-loading-progress.tsx` — Loading screen component
 
 ## Image Handling
-- Game images stored in `client/public/images/` (static files)
-- Backend serves `/images/*` from root `images/` dir AND `client/public/images/` (fallback)
-- Image priority order: local slug map → DB image URL → slug-based path
-- Generated AI banner images: `banner-free-fire.png`, `banner-pubg.png`, `banner-crossfire.png`
-- Fortnite uses AI-generated local image (`fortnite-game.png`) since external URL was blocked
-- GAME_SLUG_IMAGES maps game slugs to local image files in game.tsx, games.tsx, popular-games.tsx
+- All game main images are now hosted on Cloudinary (ddzbutb12) - 100% migrated
+- Image priority order: Cloudinary DB URL → local slug map → DB image URL
+- `getGameImage()` in games.tsx and popular-games.tsx: prefers Cloudinary URLs from DB first
+- Local static images in `client/public/images/` still used for currency icons, hero banners, and fallbacks
+- Logo in loading screen uses Cloudinary URL (gamecart/logo.png)
+- GAME_SLUG_IMAGES in games.tsx and popular-games.tsx: still used as fallback for games without Cloudinary DB images
 
 ## Recent Changes
 - Fixed "Image unavailable" by adding `client/public/images/` as static asset dir in backend
@@ -53,3 +53,7 @@ A high-end digital store for gaming currencies and vouchers.
 - Discord Nitro added to database with 4 packages (1/3/6/12 month subscriptions)
 - admin.tsx: WhatsAppConnectionPanel completely rewritten with better UI, reconnect/disconnect buttons, error states, Arabic text, animated connection indicator
 - backend/index.js: Core file cleanup improved - runs immediately on startup, checks every 2min, covers /tmp and /home/runner dirs, uses regex pattern for core files
+- Migrated ALL 14 broken local /images/ game images to Cloudinary: fortnite, crossfire, pubg, free-fire, all gift cards, discord-nitro, COD mobile
+- Updated getGameImage() in games.tsx and popular-games.tsx to prefer Cloudinary DB URLs over local slug map
+- Loading screen logo updated from catbox.moe to Cloudinary
+- Popular games cards changed to aspect-ratio 3/4, object-cover, hover scale-105 for better visual

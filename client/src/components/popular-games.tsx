@@ -31,6 +31,7 @@ const GAME_SLUG_IMAGES: Record<string, string> = {
 };
 
 function getGameImage(game: Game): string {
+  if (game.image && game.image.startsWith('https://res.cloudinary.com')) return game.image;
   if (GAME_SLUG_IMAGES[game.slug]) return GAME_SLUG_IMAGES[game.slug];
   if (game.image) return game.image;
   return '';
@@ -60,11 +61,11 @@ export function PopularGames() {
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
           {games.map((game) => (
             <Link key={game.id} href={`/game/${game.slug}`} className="block group">
-              <div className="relative overflow-hidden rounded-2xl border border-white/10 hover:border-gold-primary/50 shadow-md hover:shadow-xl hover:shadow-gold-primary/10 transition-all duration-300 cursor-pointer bg-gray-900" style={{ aspectRatio: '4/3' }}>
+              <div className="relative overflow-hidden rounded-2xl border border-white/10 hover:border-gold-primary/50 shadow-md hover:shadow-xl hover:shadow-gold-primary/10 transition-all duration-300 cursor-pointer bg-gray-900" style={{ aspectRatio: '3/4' }}>
                 <ImageWithFallback
                   src={getGameImage(game)}
                   alt={game.name}
-                  className="absolute inset-0 w-full h-full object-contain transition-transform duration-500 scale-90 group-hover:scale-100"
+                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                 />
 
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
