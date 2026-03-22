@@ -5420,6 +5420,118 @@ app.put('/api/admin/transactions/:id/status', authenticateToken, async (req, res
 
 
 
+// ─── Admin Orders Routes ────────────────────────────────────────────────────
+
+// GET /api/admin/orders — fetch all orders with optional ?status= filter
+app.get('/api/admin/orders', authenticateToken, ensureAdmin, async (req, res) => {
+  try {
+    const { status } = req.query;
+    let orders = [];
+    try {
+      const q = status && status !== 'all'
+        ? 'SELECT * FROM orders WHERE status = $1 ORDER BY created_at DESC'
+        : 'SELECT * FROM orders ORDER BY created_at DESC';
+      const result = await pool.query(q, status && status !== 'all' ? [status] : []);
+      orders = result.rows;
+    } catch (dbErr) {
+      console.error('DB fetch failed:', dbErr.message);
+    }
+    // Merge JSON fallback
+    try {
+      const { readFileSync } = await import('fs');
+      const { join } = await import('path');
+      const jsonPath = join(process.cwd(), 'backend', 'data', 'orders.json');
+      if (existsSync(jsonPath)) {
+        const jsonOrders = JSON.parse(readFileSync(jsonPath, 'utf8'));
+        const dbIds = new Set(orders.map(o => o.id));
+        const extra = jsonOrders.filter(o => !dbIds.has(o.id) && (!status || status === 'all' || o.status === status));
+        orders = [...orders, ...extra].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+      }
+    } catch (_) {}
+    res.json({ orders });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// PUT /api/admin/orders/:id — approve / reject / deliver an order
+app.put('/api/admin/orders/:id', authenticateToken, ensureAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status, adminNote, delivery_message } = req.body;
+
+    if (!['approved', 'rejected', 'completed', 'delivered'].includes(status)) {
+      return res.status(400).json({ message: 'Invalid status' });
+    }
+
+    // Update DB
+    let order = null;
+    try {
+      const result = await pool.query(
+        'UPDATE orders SET status = $1, updated_at = NOW() WHERE id = $2 RETURNING *',
+        [status, id]
+      );
+      if (result.rows.length > 0) order = result.rows[0];
+    } catch (dbErr) {
+      console.error('DB update failed:', dbErr.message);
+    }
+
+    // JSON fallback
+    try {
+      const { readFileSync, writeFileSync, existsSync: ef } = await import('fs');
+      const { join: j } = await import('path');
+      const p = j(process.cwd(), 'backend', 'data', 'orders.json');
+      if (ef(p)) {
+        const orders = JSON.parse(readFileSync(p, 'utf8'));
+        const idx = orders.findIndex(o => o.id === id);
+        if (idx !== -1) {
+          orders[idx].status = status;
+          orders[idx].updated_at = new Date().toISOString();
+          if (delivery_message) orders[idx].delivery_message = delivery_message;
+          writeFileSync(p, JSON.stringify(orders, null, 2));
+          if (!order) order = orders[idx];
+        }
+      }
+    } catch (_) {}
+
+    if (!order) return res.status(404).json({ message: 'Order not found' });
+    if (delivery_message) order.delivery_message = delivery_message;
+
+    // Notify via Socket
+    const io = getIO();
+    if (io) io.emit('orders_updated');
+
+    // Send appropriate email
+    if (order.customer_email) {
+      try {
+        const isDelivery = ['completed', 'delivered'].includes(status);
+        if (isDelivery && delivery_message) {
+          await sendEmail(order.customer_email, 'orderDelivery', { ...order, delivery_message });
+        } else if (status === 'approved') {
+          await sendEmail(order.customer_email, 'orderStatusUpdate', { ...order, status: 'تم تأكيد الدفع ✅' });
+        } else if (status === 'rejected') {
+          await sendRawEmail(
+            order.customer_email,
+            `❌ بخصوص طلبك #${id} — متجر ضياء صادق`,
+            adminNote
+              ? `عزيزنا العميل،\n\nنأسف لإبلاغك أنه لم يتم قبول طلبك رقم #${id}.\n\nالسبب: ${adminNote}\n\nللاستفسار تواصل معنا على support@diaasadek.com\n\nمع تحياتنا،\nفريق متجر ضياء صادق`
+              : `عزيزنا العميل،\n\nنأسف لإبلاغك أنه لم يتم قبول طلبك رقم #${id}.\n\nللاستفسار تواصل معنا على support@diaasadek.com`
+          );
+        }
+      } catch (emailErr) {
+        console.error('Email send failed:', emailErr.message);
+      }
+    }
+
+    await logAudit('admin_order_update', `Order ${id} status set to ${status}`, req.user);
+    res.json({ ok: true, order });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// ────────────────────────────────────────────────────────────────────────────
+
 // API Info
 app.get('/', (req, res) => {
   res.json({

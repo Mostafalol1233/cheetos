@@ -12,7 +12,7 @@ const transporter = nodemailer.createTransport({
   }
 });
 
-const STORE_NAME    = 'متجر ضياء السادة';
+const STORE_NAME    = 'متجر ضياء صادق';
 const STORE_NAME_EN = 'Diaa Sadek Store';
 const SITE_URL      = process.env.FRONTEND_URL || 'https://diaasadek.com';
 const LOGO_URL      = 'https://res.cloudinary.com/ddzbutb12/image/upload/v1774173479/gamecart/logo.png';
