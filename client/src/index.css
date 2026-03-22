@@ -102,41 +102,38 @@
 }
 
 /* ========================================
-   LIGHT MODE THEME - BLACK & GOLD LUXURY
+   LIGHT MODE THEME - PREMIUM WHITE & RED
    ======================================== */
 .light {
-  /* Core: Light backgrounds with gold accents */
-  --background: 48 100% 98%;
-  /* Soft cream */
-  --foreground: 222 15% 15%;
-  /* Dark text for contrast */
+  /* Core: Clean white backgrounds */
+  --background: 0 0% 97%;
+  /* Near-white */
+  --foreground: 222 20% 12%;
+  /* Deep dark text */
 
   --card: 0 0% 100%;
   /* Pure white cards */
-  --card-foreground: 222 15% 15%;
+  --card-foreground: 222 20% 12%;
   --popover: 0 0% 100%;
-  --popover-foreground: 222 15% 15%;
+  --popover-foreground: 222 20% 12%;
 
-  /* Primary: Red */
-  --primary: 0 78% 50%;
+  /* Primary: Brand Red */
+  --primary: 0 80% 50%;
   /* Vivid red */
   --primary-foreground: 0 0% 100%;
-  /* White for contrast */
+  /* White on red */
 
-  /* Secondary: Soft neutral */
-  --secondary: 48 30% 96%;
-  /* Light neutral */
-  --secondary-foreground: 222 15% 25%;
-  /* Darker text */
+  /* Secondary: Light gray */
+  --secondary: 220 14% 93%;
+  --secondary-foreground: 222 20% 20%;
 
-  /* Muted: Pale neutral */
-  --muted: 48 40% 96%;
-  --muted-foreground: 222 10% 40%;
-  /* Muted text */
+  /* Muted: Pale gray */
+  --muted: 220 14% 93%;
+  --muted-foreground: 222 10% 45%;
 
-  /* Accent: Bright Gold */
-  --accent: 43 96% 56%;
-  /* Bright amber gold #F5B800 */
+  /* Accent: Warm amber */
+  --accent: 38 92% 50%;
+  /* Amber #F59E0B */
   --accent-foreground: 0 0% 5%;
 
   /* Destructive */
@@ -144,41 +141,41 @@
   --destructive-foreground: 0 0% 100%;
 
   /* Border & Input */
-  --border: 48 15% 82%;
-  /* Soft border */
+  --border: 220 13% 88%;
   --input: 0 0% 100%;
-  --ring: 0 78% 50%;
-  /* Red ring */
+  --ring: 0 80% 50%;
 
-  /* Light mode accent colors - red variants */
-  --cyber-blue: 0 78% 50%;
-  /* Red */
-  --neon-purple: 0 70% 55%;
-  /* Slightly lighter red */
-  --electric-green: 0 60% 45%;
-  /* Darker red */
-  --cyber-gold: 0 78% 50%;
-  /* Red */
-  --neon-pink: 0 80% 55%;
-  /* Bright red */
+  /* Light mode gaming accent colors - coordinated palette */
+  --cyber-blue: 210 90% 45%;
+  /* Blue */
+  --neon-purple: 270 75% 55%;
+  /* Purple */
+  --electric-green: 150 80% 35%;
+  /* Green */
+  --cyber-gold: 38 92% 50%;
+  /* Amber */
+  --neon-pink: 330 80% 55%;
+  /* Pink */
+  --plasma-orange: 25 90% 50%;
+  /* Orange */
 
-  /* Red palette */
-  --gold-primary: 0 78% 50%;
-  /* vivid red */
+  /* Brand red palette */
+  --gold-primary: 0 80% 50%;
+  /* Brand red */
   --gold-secondary: 0 65% 40%;
   /* Darker red */
-  --gold-accent: 0 85% 62%;
+  --gold-accent: 0 85% 60%;
   /* Brighter red */
 
   /* Background Layers */
-  --dark-bg: 48 40% 97%;
-  --darker-bg: 48 40% 94%;
+  --dark-bg: 220 14% 93%;
+  --darker-bg: 220 14% 88%;
   --card-bg: 0 0% 100%;
-  --card-bg-alt: 48 40% 95%;
+  --card-bg-alt: 220 14% 97%;
 
-  /* Glassmorphism Light - subtle light glass with gold tint */
-  --glass-bg: 0 0% 100% / 0.85;
-  --glass-border: 45 100% 50% / 0.15;
+  /* Glassmorphism Light */
+  --glass-bg: 0 0% 100% / 0.90;
+  --glass-border: 220 13% 88% / 0.60;
 }
 
 /* ========================================
@@ -309,8 +306,8 @@
   .light h1,
   .light h2,
   .light h3 {
-    color: hsl(45 100% 50%);
-    /* Gold headings for light mode */
+    color: hsl(222 20% 10%);
+    /* Dark headings for light mode readability */
   }
 
   /* Ensure all text is readable */
