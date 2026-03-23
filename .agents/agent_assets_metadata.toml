@@ -84,3 +84,9 @@ id = "y521WDtQwCJIYcMMoLrCV"
 uri = "file://client/public/logo-v5-nobg.png"
 type = "image"
 title = "Version 5 — Green Cyber (no background)"
+
+[[outputs]]
+id = "80ri0X-tm8N-tt2G8WsOR"
+uri = "file://client/public/logo-new.png"
+type = "image"
+title = "Your Ninja D Logo — Background Removed"
