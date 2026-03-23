@@ -124,6 +124,78 @@ const GAME_FAQS: Record<string, FAQItem[]> = {
       a: { ar: 'تواصل معنا على واتساب وهنحل المشكلة فورًا.', en: 'Contact us on WhatsApp and we will resolve it immediately.' },
     },
   ],
+  'tiktok': [
+    {
+      q: { ar: 'كيف أستلم كود الشحن بعد الشراء؟', en: 'How do I receive the recharge code after purchase?' },
+      a: { ar: 'بعد تأكيد الدفع، هيتبعتلك الكود على واتساب فورًا خلال دقائق.', en: 'After payment is confirmed, the code will be sent to you via WhatsApp within minutes.' },
+    },
+    {
+      q: { ar: 'هل أحتاج Player ID عشان أشحن؟', en: 'Do I need a Player ID to top up?' },
+      a: { ar: 'لا، TikTok Coins بتشحن عن طريق كود — مش محتاج تبعت ID.', en: 'No, TikTok Coins are recharged using a code — no ID needed.' },
+    },
+    {
+      q: { ar: 'كام بياخد الشحن؟', en: 'How long does the top-up take?' },
+      a: { ar: 'بعد تأكيد الدفع، الكود بييجيلك على واتساب خلال 5-15 دقيقة.', en: 'After payment confirmation, you\'ll receive the code on WhatsApp within 5–15 minutes.' },
+    },
+    {
+      q: { ar: 'لو الكود مش شغال أعمل إيه؟', en: 'What if the code doesn\'t work?' },
+      a: { ar: 'تواصل معنا على واتساب فورًا وهنحل المشكلة.', en: 'Contact us on WhatsApp immediately and we will resolve the issue.' },
+    },
+  ],
+  'tiktok-coins': [
+    {
+      q: { ar: 'كيف أستلم كود الشحن بعد الشراء؟', en: 'How do I receive the recharge code after purchase?' },
+      a: { ar: 'بعد تأكيد الدفع، هيتبعتلك الكود على واتساب فورًا خلال دقائق.', en: 'After payment is confirmed, the code will be sent to you via WhatsApp within minutes.' },
+    },
+    {
+      q: { ar: 'هل أحتاج Player ID عشان أشحن؟', en: 'Do I need a Player ID to top up?' },
+      a: { ar: 'لا، TikTok Coins بتشحن عن طريق كود — مش محتاج تبعت ID.', en: 'No, TikTok Coins are recharged using a code — no ID needed.' },
+    },
+    {
+      q: { ar: 'كام بياخد الشحن؟', en: 'How long does the top-up take?' },
+      a: { ar: 'بعد تأكيد الدفع، الكود بييجيلك على واتساب خلال 5-15 دقيقة.', en: 'After payment confirmation, you\'ll receive the code on WhatsApp within 5–15 minutes.' },
+    },
+    {
+      q: { ar: 'لو الكود مش شغال أعمل إيه؟', en: 'What if the code doesn\'t work?' },
+      a: { ar: 'تواصل معنا على واتساب فورًا وهنحل المشكلة.', en: 'Contact us on WhatsApp immediately and we will resolve the issue.' },
+    },
+  ],
+  'discord-nitro': [
+    {
+      q: { ar: 'كيف أستلم تفعيل Discord Nitro؟', en: 'How do I receive my Discord Nitro activation?' },
+      a: { ar: 'بعد تأكيد الدفع، هنبعتلك لينك التفعيل على واتساب خلال دقائق.', en: 'After payment confirmation, we will send you the activation link on WhatsApp within minutes.' },
+    },
+    {
+      q: { ar: 'هل أحتاج Discord ID أو Player ID؟', en: 'Do I need a Discord ID or Player ID?' },
+      a: { ar: 'لا، مش محتاج — بنبعتلك لينك تفعيل مباشر، بس سجّل الدخول بحسابك.', en: 'No, you don\'t need one — we send you a direct activation link, just sign in to your Discord account.' },
+    },
+    {
+      q: { ar: 'هل التفعيل فوري؟', en: 'Is activation instant?' },
+      a: { ar: 'نعم، بمجرد فتح اللينك وتسجيل الدخول، هيتفعّل Nitro فورًا.', en: 'Yes, once you open the link and sign in, Nitro activates immediately.' },
+    },
+    {
+      q: { ar: 'لو اللينك مش شغال أعمل إيه؟', en: 'What if the link doesn\'t work?' },
+      a: { ar: 'تواصل معنا على واتساب وهنحل المشكلة فورًا.', en: 'Contact us on WhatsApp and we will resolve it immediately.' },
+    },
+  ],
+  'discord': [
+    {
+      q: { ar: 'كيف أستلم تفعيل Discord Nitro؟', en: 'How do I receive my Discord Nitro activation?' },
+      a: { ar: 'بعد تأكيد الدفع، هنبعتلك لينك التفعيل على واتساب خلال دقائق.', en: 'After payment confirmation, we will send you the activation link on WhatsApp within minutes.' },
+    },
+    {
+      q: { ar: 'هل أحتاج Discord ID أو Player ID؟', en: 'Do I need a Discord ID or Player ID?' },
+      a: { ar: 'لا، مش محتاج — بنبعتلك لينك تفعيل مباشر، بس سجّل الدخول بحسابك.', en: 'No, you don\'t need one — we send you a direct activation link, just sign in to your Discord account.' },
+    },
+    {
+      q: { ar: 'هل التفعيل فوري؟', en: 'Is activation instant?' },
+      a: { ar: 'نعم، بمجرد فتح اللينك وتسجيل الدخول، هيتفعّل Nitro فورًا.', en: 'Yes, once you open the link and sign in, Nitro activates immediately.' },
+    },
+    {
+      q: { ar: 'لو اللينك مش شغال أعمل إيه؟', en: 'What if the link doesn\'t work?' },
+      a: { ar: 'تواصل معنا على واتساب وهنحل المشكلة فورًا.', en: 'Contact us on WhatsApp and we will resolve it immediately.' },
+    },
+  ],
   'default': [
     {
       q: { ar: 'كيف يتم الشحن؟', en: 'How does the top-up work?' },
@@ -194,10 +266,34 @@ const REDEEM_STEPS: Record<string, LangText[]> = {
     { ar: 'هيتفعّل Premium فورًا', en: 'Spotify Premium will activate immediately' },
   ],
   'discord-nitro': [
-    { ar: 'أكمل الدفع وأرسل الإيصال على واتساب', en: 'Complete payment and send the receipt on WhatsApp' },
-    { ar: 'هنبعتلك لينك تفعيل Discord Nitro', en: 'We will send you a Discord Nitro activation link' },
-    { ar: 'افتح الرابط وسجّل الدخول بحساب Discord', en: 'Open the link and sign in to your Discord account' },
+    { ar: 'أكمل عملية الشراء وادفع', en: 'Complete your purchase and pay' },
+    { ar: 'أرسل إيصال الدفع على واتساب', en: 'Send the payment receipt on WhatsApp' },
+    { ar: 'هنبعتلك لينك تفعيل Discord Nitro خلال دقائق', en: 'We will send you a Discord Nitro activation link within minutes' },
+    { ar: 'افتح الرابط وسجّل الدخول بحساب Discord بتاعك', en: 'Open the link and sign in with your Discord account' },
     { ar: 'هيتفعّل Nitro على حسابك فورًا', en: 'Nitro will be activated on your account immediately' },
+  ],
+  'discord': [
+    { ar: 'أكمل عملية الشراء وادفع', en: 'Complete your purchase and pay' },
+    { ar: 'أرسل إيصال الدفع على واتساب', en: 'Send the payment receipt on WhatsApp' },
+    { ar: 'هنبعتلك لينك تفعيل Discord Nitro خلال دقائق', en: 'We will send you a Discord Nitro activation link within minutes' },
+    { ar: 'افتح الرابط وسجّل الدخول بحساب Discord بتاعك', en: 'Open the link and sign in with your Discord account' },
+    { ar: 'هيتفعّل Nitro على حسابك فورًا', en: 'Nitro will be activated on your account immediately' },
+  ],
+  'tiktok': [
+    { ar: 'أكمل عملية الشراء وادفع', en: 'Complete your purchase and pay' },
+    { ar: 'أرسل إيصال الدفع على واتساب', en: 'Send the payment receipt on WhatsApp' },
+    { ar: 'هنبعتلك كود شحن TikTok Coins خلال دقائق', en: 'We will send you a TikTok Coins recharge code within minutes' },
+    { ar: 'افتح تطبيق TikTok ← الملف الشخصي ← "إعادة الشحن"', en: 'Open TikTok app → Profile → "Recharge"' },
+    { ar: 'اختر "استخدام الكود" وأدخل الكود المرسل إليك', en: 'Choose "Use Code" and enter the code we sent you' },
+    { ar: 'هيتضاف الرصيد لحسابك فورًا', en: 'The balance will be added to your account immediately' },
+  ],
+  'tiktok-coins': [
+    { ar: 'أكمل عملية الشراء وادفع', en: 'Complete your purchase and pay' },
+    { ar: 'أرسل إيصال الدفع على واتساب', en: 'Send the payment receipt on WhatsApp' },
+    { ar: 'هنبعتلك كود شحن TikTok Coins خلال دقائق', en: 'We will send you a TikTok Coins recharge code within minutes' },
+    { ar: 'افتح تطبيق TikTok ← الملف الشخصي ← "إعادة الشحن"', en: 'Open TikTok app → Profile → "Recharge"' },
+    { ar: 'اختر "استخدام الكود" وأدخل الكود المرسل إليك', en: 'Choose "Use Code" and enter the code we sent you' },
+    { ar: 'هيتضاف الرصيد لحسابك فورًا', en: 'The balance will be added to your account immediately' },
   ],
   'default-game': [
     { ar: 'أكمل عملية الشراء وادفع', en: 'Complete your purchase and pay' },
@@ -304,7 +400,7 @@ export default function GamePage() {
     ? categories.find((c) => c.slug === game.category)
     : undefined;
 
-  const faqs = isGiftCard ? GAME_FAQS['gift-cards'] : GAME_FAQS['default'];
+  const faqs = GAME_FAQS[gameSlug] || (isGiftCard ? GAME_FAQS['gift-cards'] : GAME_FAQS['default']);
   const redeemSteps = REDEEM_STEPS[gameSlug] || (isGiftCard ? [] : REDEEM_STEPS['default-game']);
 
   const handleSubmitReview = async (e: React.FormEvent) => {
