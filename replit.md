@@ -59,3 +59,13 @@ A high-end digital store for gaming currencies and vouchers.
 - Updated getGameImage() in games.tsx and popular-games.tsx to prefer Cloudinary DB URLs over local slug map
 - Loading screen logo updated from catbox.moe to Cloudinary
 - Popular games cards changed to aspect-ratio 3/4, object-cover, hover scale-105 for better visual
+- Receipt upload limit increased from 5MB to 20MB (backend/index.js receiptUpload)
+- Admin orders table scroll position now preserved across data refetches (useRef in OrdersPanel)
+- ADMIN_PASSWORD moved from hardcoded default to required env secret; login blocked if not set
+- Login rate limiting added: max 10 attempts per 15 min (backend/routes/auth.js loginRateLimiter)
+- ENCRYPTION_KEY env var added for AES-256-GCM code encryption (game_card_codes table)
+- Admin panel tabs completely reorganized: 27 tabs → 22, grouped logically (Sales/Products/Support/Design/System)
+- Tabs renamed to Arabic with emoji icons for clarity
+- Removed useless tabs: Interactions, Catbox Upload, Image Manager, Advanced Editor, Home Preview
+- Default admin tab changed from 'games' to 'orders'
+- Added description banner to Digital Codes tab explaining how auto-delivery works

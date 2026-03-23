@@ -792,7 +792,7 @@ function ArrangementPanel() {
 
 
 export default function AdminDashboard() {
-  const [activeTab, setActiveTab] = useState('games');
+  const [activeTab, setActiveTab] = useState('orders');
   const [searchGameTerm, setSearchGameTerm] = useState('');
   const [editingGame, setEditingGame] = useState<Game | null>(null);
   const [packagesGameId, setPackagesGameId] = useState<string | null>(null);
@@ -2258,43 +2258,42 @@ export default function AdminDashboard() {
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <ScrollArea className="w-full whitespace-nowrap rounded-md border">
             <TabsList className="flex w-full justify-start p-0 h-auto bg-transparent overflow-x-auto whitespace-nowrap">
-              <TabsTrigger value="templates" data-testid="tab-templates" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Response Templates</TabsTrigger>
-              <TabsTrigger value="games" data-testid="tab-games" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Games & Products</TabsTrigger>
-              <TabsTrigger value="discounts" data-testid="tab-discounts" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Discounts</TabsTrigger>
-              <TabsTrigger value="users" data-testid="tab-users" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Users</TabsTrigger>
-              <TabsTrigger value="packages" data-testid="tab-packages" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Packages</TabsTrigger>
-              <TabsTrigger value="categories" data-testid="tab-categories" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Categories</TabsTrigger>
-              <TabsTrigger value="cards" data-testid="tab-cards" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Game Cards</TabsTrigger>
-              <TabsTrigger value="orders" data-testid="tab-orders" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Orders</TabsTrigger>
-              <TabsTrigger value="arrangement" data-testid="tab-arrangement" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Arrangement</TabsTrigger>
-              <TabsTrigger value="chats" data-testid="tab-chats" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Support Chat</TabsTrigger>
-
-              <TabsTrigger value="interactions" data-testid="tab-interactions" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Interactions</TabsTrigger>
-              <TabsTrigger value="chat-widget" data-testid="tab-chat-widget" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Chat Widget</TabsTrigger>
-              <TabsTrigger value="logo" data-testid="tab-logo" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Logo</TabsTrigger>
-              <TabsTrigger value="whatsapp" data-testid="tab-whatsapp" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">WhatsApp</TabsTrigger>
-
-              <TabsTrigger value="preview-home" data-testid="tab-preview-home" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Home Preview</TabsTrigger>
-              <TabsTrigger value="main-content" data-testid="tab-main-content" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Main Page Content</TabsTrigger>
+              {/* ── SALES ── */}
+              <TabsTrigger value="orders" data-testid="tab-orders" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">📦 الطلبات</TabsTrigger>
+              <TabsTrigger value="approvals" data-testid="tab-approvals" className="data-[state=active]:bg-green-600 data-[state=active]:text-white px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-green-800 font-semibold">✅ الموافقات</TabsTrigger>
+              <TabsTrigger value="cards" data-testid="tab-cards" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">🔑 الأكواد الرقمية</TabsTrigger>
+              <TabsTrigger value="abandoned-carts" data-testid="tab-abandoned-carts" className="data-[state=active]:bg-yellow-500 data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-yellow-700">🛒 عربات مهجورة</TabsTrigger>
+              <span className="mx-2 self-stretch w-px bg-border/50 my-1" />
+              {/* ── PRODUCTS ── */}
+              <TabsTrigger value="games" data-testid="tab-games" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">🎮 الألعاب</TabsTrigger>
+              <TabsTrigger value="packages" data-testid="tab-packages" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">📋 الباقات</TabsTrigger>
+              <TabsTrigger value="categories" data-testid="tab-categories" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">🗂 الفئات</TabsTrigger>
+              <TabsTrigger value="discounts" data-testid="tab-discounts" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">💰 الخصومات</TabsTrigger>
+              <TabsTrigger value="promo-codes" data-testid="tab-promo-codes" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">🏷️ أكواد الخصم</TabsTrigger>
+              <TabsTrigger value="arrangement" data-testid="tab-arrangement" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">📐 الترتيب</TabsTrigger>
+              <span className="mx-2 self-stretch w-px bg-border/50 my-1" />
+              {/* ── CUSTOMERS & SUPPORT ── */}
+              <TabsTrigger value="users" data-testid="tab-users" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">👥 العملاء</TabsTrigger>
+              <TabsTrigger value="chats" data-testid="tab-chats" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">💬 الدعم الفني</TabsTrigger>
+              <TabsTrigger value="whatsapp" data-testid="tab-whatsapp" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">📱 واتساب</TabsTrigger>
+              <TabsTrigger value="templates" data-testid="tab-templates" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">📩 قوالب الرد</TabsTrigger>
+              <span className="mx-2 self-stretch w-px bg-border/50 my-1" />
+              {/* ── CONTENT & DESIGN ── */}
+              <TabsTrigger value="header-images" data-testid="tab-header-images" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">🖼 الصور الرئيسية</TabsTrigger>
+              <TabsTrigger value="logo" data-testid="tab-logo" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">🎨 الشعار</TabsTrigger>
+              <TabsTrigger value="content" data-testid="tab-content" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">📝 نص الصفحة</TabsTrigger>
+              <TabsTrigger value="theme" data-testid="tab-theme" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">🎨 الألوان</TabsTrigger>
+              <TabsTrigger value="og-images" data-testid="tab-og-images" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">🔍 معاينة المشاركة</TabsTrigger>
+              <TabsTrigger value="chat-widget" data-testid="tab-chat-widget" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">💬 أداة الدردشة</TabsTrigger>
+              <span className="mx-2 self-stretch w-px bg-border/50 my-1" />
+              {/* ── SYSTEM ── */}
+              <TabsTrigger value="reviews" data-testid="tab-reviews" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">⭐ التقييمات</TabsTrigger>
               <TabsTrigger value="alerts" data-testid="tab-alerts" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">
-                Alerts
+                🔔 التنبيهات
                 {alerts.some(a => !a.read) && (
                   <span className="ml-2 w-2 h-2 bg-red-500 rounded-full animate-pulse" />
                 )}
               </TabsTrigger>
-              <TabsTrigger value="catbox-upload" data-testid="tab-catbox-upload" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Catbox Image Upload</TabsTrigger>
-              <TabsTrigger value="header-images" data-testid="tab-header-images" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Header Images</TabsTrigger>
-              <TabsTrigger value="image-manager" data-testid="tab-image-manager" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Image Manager</TabsTrigger>
-              <TabsTrigger value="og-images" data-testid="tab-og-images" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">OG Images</TabsTrigger>
-              <TabsTrigger value="advanced-editor" data-testid="tab-advanced-editor" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Advanced Editor</TabsTrigger>
-              <TabsTrigger value="content" data-testid="tab-content" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Content</TabsTrigger>
-              <TabsTrigger value="theme" data-testid="tab-theme" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">Theme</TabsTrigger>
-              <TabsTrigger value="approvals" data-testid="tab-approvals" className="data-[state=active]:bg-green-600 data-[state=active]:text-white px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-green-800 font-semibold">
-                ✅ نموذج الموافقة
-              </TabsTrigger>
-              <TabsTrigger value="promo-codes" data-testid="tab-promo-codes" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">🏷️ Promo Codes</TabsTrigger>
-              <TabsTrigger value="reviews" data-testid="tab-reviews" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">⭐ Reviews</TabsTrigger>
-              <TabsTrigger value="abandoned-carts" data-testid="tab-abandoned-carts" className="data-[state=active]:bg-yellow-500 data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-yellow-700">🛒 Abandoned Carts</TabsTrigger>
             </TabsList>
             <ScrollBar orientation="horizontal" />
           </ScrollArea>
@@ -2846,8 +2845,12 @@ export default function AdminDashboard() {
 
           {/* Game Cards Tab */}
           <TabsContent value="cards" className="space-y-6">
+            <div className="mb-4 p-4 rounded-lg border border-gold-primary/30 bg-gold-primary/5 text-sm text-muted-foreground">
+              <p className="font-medium text-foreground mb-1">🔑 الأكواد الرقمية — كيف تعمل؟</p>
+              <p>هنا بتحفظ الأكواد الرقمية (Gift Cards / Game Codes) لكل لعبة. لما العميل بيشتري ويتأكد الدفع، النظام بياخد الكود تلقائياً ويبعته على إيميله. الأكواد بتتحفظ مشفرة في قاعدة البيانات ومش ظاهرة لحد.</p>
+            </div>
             <div className="flex justify-between items-center">
-              <h2 className="text-2xl font-bold text-foreground">Manage Game Cards</h2>
+              <h2 className="text-2xl font-bold text-foreground">إدارة الأكواد الرقمية</h2>
               <div className="flex items-center gap-2">
                 <Select value={newCardGameId} onValueChange={setNewCardGameId}>
                   <SelectTrigger className="w-48">
