@@ -54,3 +54,33 @@ id = "qJEiMoi_RGqNcMkZ23RsR"
 uri = "file://client/public/logo-v5.png"
 type = "image"
 title = "Version 5 — Ice Blue/White Frost"
+
+[[outputs]]
+id = "hkRCjJ6xS6zZeg5otzDwK"
+uri = "file://client/public/logo-v1-nobg.png"
+type = "image"
+title = "Version 1 — Cyan/Teal (no background)"
+
+[[outputs]]
+id = "bUPUCgEWnsLb94KSeyZGh"
+uri = "file://client/public/logo-v2-nobg.png"
+type = "image"
+title = "Version 2 — Gold & Orange (no background)"
+
+[[outputs]]
+id = "Hf156lu8GSU5XZFEXB1v9"
+uri = "file://client/public/logo-v3-nobg.png"
+type = "image"
+title = "Version 3 — Purple (no background)"
+
+[[outputs]]
+id = "xDyhQsVufPBiWRqXSGjwz"
+uri = "file://client/public/logo-v4-nobg.png"
+type = "image"
+title = "Version 4 — Red Crimson (no background)"
+
+[[outputs]]
+id = "y521WDtQwCJIYcMMoLrCV"
+uri = "file://client/public/logo-v5-nobg.png"
+type = "image"
+title = "Version 5 — Green Cyber (no background)"
