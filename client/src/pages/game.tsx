@@ -199,10 +199,40 @@ const REDEEM_STEPS: Record<string, LangText[]> = {
     { ar: 'افتح الرابط وسجّل الدخول بحساب Discord', en: 'Open the link and sign in to your Discord account' },
     { ar: 'هيتفعّل Nitro على حسابك فورًا', en: 'Nitro will be activated on your account immediately' },
   ],
+  'tiktok': [
+    { ar: 'أكمل عملية الشراء وادفع', en: 'Complete your purchase and pay' },
+    { ar: 'أرسل لنا إيصال الدفع على واتساب', en: 'Send us the payment receipt on WhatsApp' },
+    { ar: 'أرسل اسم حسابك على TikTok أو رابط الملف الشخصي', en: 'Send your TikTok username or profile link' },
+    { ar: 'هيتم شحن الكوينز على حسابك خلال 5-15 دقيقة', en: 'Your TikTok Coins will be added within 5–15 minutes' },
+  ],
+  'yalla-ludo': [
+    { ar: 'أكمل عملية الشراء وادفع', en: 'Complete your purchase and pay' },
+    { ar: 'أرسل لنا إيصال الدفع على واتساب', en: 'Send us the payment receipt on WhatsApp' },
+    { ar: 'أرسل Yalla ID الخاص بك (يلاقيه في الملف الشخصي داخل التطبيق)', en: 'Send your Yalla ID (found in your profile inside the app)' },
+    { ar: 'هيتم شحن الداياموند خلال 5-15 دقيقة', en: 'Diamonds will be added to your account within 5–15 minutes' },
+  ],
+  'mobile-legends': [
+    { ar: 'أكمل عملية الشراء وادفع', en: 'Complete your purchase and pay' },
+    { ar: 'أرسل لنا إيصال الدفع على واتساب', en: 'Send us the payment receipt on WhatsApp' },
+    { ar: 'أرسل ML ID الخاص بك + Zone ID (يلاقيها في الملف الشخصي داخل اللعبة)', en: 'Send your ML ID + Zone ID (found in your in-game profile)' },
+    { ar: 'هيتم شحن الداياموند خلال 5-15 دقيقة', en: 'Diamonds will be added to your account within 5–15 minutes' },
+  ],
+  'wolf-team': [
+    { ar: 'أكمل عملية الشراء وادفع', en: 'Complete your purchase and pay' },
+    { ar: 'أرسل لنا إيصال الدفع على واتساب', en: 'Send us the payment receipt on WhatsApp' },
+    { ar: 'أرسل اسم المستخدم الخاص بك في Wolf Team', en: 'Send your Wolf Team username' },
+    { ar: 'هيتم شحن الـ ZCoins خلال 5-15 دقيقة', en: 'ZCoins will be added to your account within 5–15 minutes' },
+  ],
+  'e-football': [
+    { ar: 'أكمل عملية الشراء وادفع', en: 'Complete your purchase and pay' },
+    { ar: 'أرسل لنا إيصال الدفع على واتساب', en: 'Send us the payment receipt on WhatsApp' },
+    { ar: 'أرسل eFootball ID الخاص بك (يلاقيه في الإعدادات داخل اللعبة)', en: 'Send your eFootball ID (found in the game settings)' },
+    { ar: 'هيتم شحن الكوينز خلال 5-15 دقيقة', en: 'Coins will be added to your account within 5–15 minutes' },
+  ],
   'default-game': [
     { ar: 'أكمل عملية الشراء وادفع', en: 'Complete your purchase and pay' },
     { ar: 'أرسل لنا إيصال الدفع على واتساب', en: 'Send us the payment receipt on WhatsApp' },
-    { ar: 'أرسل Player ID الخاص بك في اللعبة', en: 'Send your in-game Player ID' },
+    { ar: 'أرسل Game ID الخاص بك في اللعبة', en: 'Send your in-game ID' },
     { ar: 'هيتم الشحن خلال 5-15 دقيقة', en: 'Top-up will be completed within 5–15 minutes' },
   ],
 };
