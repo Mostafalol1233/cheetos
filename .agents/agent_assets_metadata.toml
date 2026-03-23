@@ -18,3 +18,9 @@ id = "chJHqwdv1-v8xc1DhbPpM"
 uri = "file://client/public/logo-d-alt.png"
 type = "image"
 title = "Logo Option 2 - Badge Style D with Flame"
+
+[[outputs]]
+id = "HvaBLoInfJNjV1V-Lweb6"
+uri = "file://client/public/logo-ninja-d.png"
+type = "image"
+title = "Ninja D Esports Logo"
