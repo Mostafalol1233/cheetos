@@ -3725,7 +3725,7 @@ app.get('/api/track/:code', async (req, res) => {
 
 const receiptUpload = multer({
   storage,
-  limits: { fileSize: 5 * 1024 * 1024 },
+  limits: { fileSize: 20 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
     const allowed = ['.jpg', '.jpeg', '.png', '.pdf'];
     const ext = path.extname(file.originalname).toLowerCase();

@@ -1217,6 +1217,8 @@ export default function AdminDashboard() {
     const [selectedOrder, setSelectedOrder] = useState<any>(null);
     const [responseMessage, setResponseMessage] = useState('');
     const [showResponseModal, setShowResponseModal] = useState(false);
+    const tableScrollRef = useRef<HTMLDivElement>(null);
+    const savedScrollLeft = useRef(0);
 
     const { data: orders = [], isLoading, isError, refetch } = useQuery<Array<{ 
       id: string; 
@@ -1321,6 +1323,12 @@ export default function AdminDashboard() {
       }
     };
 
+    useEffect(() => {
+      if (tableScrollRef.current) {
+        tableScrollRef.current.scrollLeft = savedScrollLeft.current;
+      }
+    }, [orders]);
+
     if (isLoading) {
       return (
         <div className="p-8 text-center space-y-4">
@@ -1348,7 +1356,11 @@ export default function AdminDashboard() {
             <p className="text-sm text-muted-foreground">Manage customer orders and communicate with users</p>
           </CardHeader>
           <CardContent>
-            <div className="overflow-x-auto">
+            <div
+              className="overflow-x-auto"
+              ref={tableScrollRef}
+              onScroll={(e) => { savedScrollLeft.current = (e.currentTarget as HTMLDivElement).scrollLeft; }}
+            >
               <table className="w-full text-sm">
                 <thead>
                   <tr className="text-left">

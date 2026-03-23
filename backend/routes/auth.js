@@ -18,9 +18,33 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret_key_change_this_in_production';
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@diaaldeen.com';
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
+
+if (!ADMIN_PASSWORD) {
+  console.error('[SECURITY] ADMIN_PASSWORD environment variable is not set! Admin login is disabled until it is configured.');
+}
 
 const qrSessions = new Map();
+
+const loginAttempts = new Map();
+const LOGIN_WINDOW_MS = 15 * 60 * 1000;
+const LOGIN_MAX_ATTEMPTS = 10;
+
+function loginRateLimiter(req, res, next) {
+  const ip = req.headers['x-forwarded-for']?.split(',')[0] || req.socket.remoteAddress || 'unknown';
+  const now = Date.now();
+  const entry = loginAttempts.get(ip) || { count: 0, resetAt: now + LOGIN_WINDOW_MS };
+  if (now > entry.resetAt) {
+    entry.count = 0;
+    entry.resetAt = now + LOGIN_WINDOW_MS;
+  }
+  entry.count += 1;
+  loginAttempts.set(ip, entry);
+  if (entry.count > LOGIN_MAX_ATTEMPTS) {
+    return res.status(429).json({ message: 'Too many login attempts. Please try again later.' });
+  }
+  next();
+}
 
 // JSON fallback for users
 const getUsersFile = () => path.join(__dirname, '../data/users.json');
@@ -44,8 +68,12 @@ const writeUsers = (users) => {
 // ===================== ADMIN AUTH =====================
 
 // Admin Login
-router.post('/admin/login', async (req, res) => {
+router.post('/admin/login', loginRateLimiter, async (req, res) => {
   try {
+    if (!ADMIN_PASSWORD) {
+      return res.status(503).json({ message: 'Admin login is not configured. Please set ADMIN_PASSWORD.' });
+    }
+
     const { email, password } = req.body;
 
     if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
