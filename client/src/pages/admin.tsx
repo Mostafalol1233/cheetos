@@ -2294,6 +2294,8 @@ export default function AdminDashboard() {
                   <span className="ml-2 w-2 h-2 bg-red-500 rounded-full animate-pulse" />
                 )}
               </TabsTrigger>
+              <TabsTrigger value="advanced-editor" data-testid="tab-advanced-editor" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">🛠 Advanced Editor</TabsTrigger>
+              <TabsTrigger value="preview-home" data-testid="tab-preview-home" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">👁 Home Preview</TabsTrigger>
             </TabsList>
             <ScrollBar orientation="horizontal" />
           </ScrollArea>

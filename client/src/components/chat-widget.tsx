@@ -232,10 +232,7 @@ export function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
                           </div>
                           <p>{message.text}</p>
                           <p className="text-xs opacity-50 mt-1">
-                            {message.timestamp.toLocaleTimeString([], {
-                              hour: '2-digit',
-                              minute: '2-digit'
-                            })}
+                            {(() => { const d = message.timestamp instanceof Date && !isNaN(message.timestamp.getTime()) ? message.timestamp : null; return d ? d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''; })()}
                           </p>
                         </div>
                       </div>

@@ -880,7 +880,7 @@ export default function GamePage() {
                       </div>
                       {review.comment && <p className="text-sm text-muted-foreground leading-relaxed">{review.comment}</p>}
                       <p className="text-xs text-muted-foreground/60">
-                        {new Date(review.created_at).toLocaleDateString(language === 'ar' ? 'ar-EG' : 'en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
+                        {(() => { const d = review.created_at ? new Date(review.created_at) : null; return d && !isNaN(d.getTime()) ? d.toLocaleDateString(language === 'ar' ? 'ar-EG' : 'en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : '—'; })()}
                       </p>
                     </div>
                   ))

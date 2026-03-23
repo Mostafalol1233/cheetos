@@ -218,7 +218,7 @@ export function PromoCodesPanel() {
                 <div className="flex items-center gap-3 text-sm text-muted-foreground">
                   <span>Used: {promo.used_count}{promo.max_uses ? `/${promo.max_uses}` : ''}</span>
                   {promo.expires_at && (
-                    <span>Expires: {new Date(promo.expires_at).toLocaleDateString()}</span>
+                    <span>Expires: {(() => { const d = promo.expires_at ? new Date(promo.expires_at) : null; return d && !isNaN(d.getTime()) ? d.toLocaleDateString('en-GB') : '—'; })()}</span>
                   )}
                   <button
                     onClick={() => toggleMutation.mutate({ id: promo.id, is_active: !promo.is_active })}

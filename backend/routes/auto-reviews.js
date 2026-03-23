@@ -210,6 +210,6 @@ export async function generateAutoReviews() {
 
 export function startAutoReviewSchedule() {
   generateAutoReviews();
-  setInterval(generateAutoReviews, 60 * 60 * 1000);
-  console.log('[AutoReviews] Scheduled auto-review generation every hour');
+  setInterval(generateAutoReviews, 24 * 60 * 60 * 1000);
+  console.log('[AutoReviews] Scheduled auto-review generation every 24 hours');
 }

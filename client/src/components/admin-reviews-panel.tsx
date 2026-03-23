@@ -138,7 +138,7 @@ export function ReviewsPanel() {
                       <p className="text-sm text-foreground/80 mt-1 leading-relaxed">{review.comment}</p>
                     )}
                     <p className="text-xs text-muted-foreground mt-2">
-                      {new Date(review.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
+                      {(() => { const d = review.created_at ? new Date(review.created_at) : null; return d && !isNaN(d.getTime()) ? d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : '—'; })()}
                     </p>
                   </div>
                   <div className="flex gap-2 shrink-0">

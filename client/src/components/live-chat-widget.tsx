@@ -432,10 +432,7 @@ interface LiveChatWidgetProps {
                         </div>
                       )}
                       <span className="text-xs opacity-60 mt-1 block">
-                        {new Date(msg.timestamp).toLocaleTimeString([], {
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        })}
+                        {(() => { const d = msg.timestamp ? new Date(msg.timestamp) : null; return d && !isNaN(d.getTime()) ? d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''; })()}
                       </span>
                     </div>
                   </div>
