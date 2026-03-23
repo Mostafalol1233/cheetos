@@ -130,6 +130,13 @@ export function CheckoutContent({ isEmbedded = false }: { isEmbedded?: boolean }
   const currentStep = ALL_STEPS[currentStepIndex] || ALL_STEPS[0];
   const visibleStepIndex = VISIBLE_STEPS.findIndex(s => s.key === step);
 
+  // If user is NOT authenticated and is past the details step, send them back to authenticate
+  useEffect(() => {
+    if (!isAuthenticated && (step === 'payment' || step === 'review' || step === 'processing')) {
+      setStep('details');
+    }
+  }, [isAuthenticated, step, setStep]);
+
   useEffect(() => {
     if (cart.length === 0 && !localStorage.getItem('checkout_package')) {
       if (step !== 'details' && step !== 'result') setStep('details');

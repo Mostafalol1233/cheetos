@@ -35,7 +35,8 @@
       "4900"
     ],
     "discountPrice": "260",
-    "packageDiscountPrices": []
+    "packageDiscountPrices": [],
+    "image_url": "https://res.cloudinary.com/ddzbutb12/image/upload/v1774229715/gamecart/games/valorant-logo.png"
   },
   {
     "id": "game_3",
@@ -71,7 +72,8 @@
       "0"
     ],
     "discountPrice": "0",
-    "packageDiscountPrices": []
+    "packageDiscountPrices": [],
+    "image_url": "https://res.cloudinary.com/ddzbutb12/image/upload/v1774229709/gamecart/games/crossfire-logo.png"
   },
   {
     "id": "game_4",
@@ -112,7 +114,8 @@
       "1160"
     ],
     "discountPrice": "128",
-    "packageDiscountPrices": []
+    "packageDiscountPrices": [],
+    "image_url": "https://res.cloudinary.com/ddzbutb12/image/upload/v1774229714/gamecart/games/roblox-logo.png"
   },
   {
     "id": "game_5",
@@ -152,7 +155,8 @@
       "4300"
     ],
     "discountPrice": "150",
-    "packageDiscountPrices": []
+    "packageDiscountPrices": [],
+    "image_url": "https://res.cloudinary.com/ddzbutb12/image/upload/v1774229713/gamecart/games/pubg-logo.png"
   },
   {
     "id": "game_6",
@@ -193,7 +197,8 @@
       "2200"
     ],
     "discountPrice": "104",
-    "packageDiscountPrices": []
+    "packageDiscountPrices": [],
+    "image_url": "https://res.cloudinary.com/ddzbutb12/image/upload/v1774229710/gamecart/games/free-fire-logo.png"
   },
   {
     "id": "game_7",
@@ -225,7 +230,8 @@
       "980"
     ],
     "discountPrice": "156",
-    "packageDiscountPrices": []
+    "packageDiscountPrices": [],
+    "image_url": "https://res.cloudinary.com/ddzbutb12/image/upload/v1774229711/gamecart/games/minecraft-logo.png"
   },
   {
     "id": "game_1766467677924_bg0j3",

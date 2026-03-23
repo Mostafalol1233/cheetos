@@ -149,7 +149,7 @@ router.post('/register', async (req, res) => {
     // Log audit event (safe, non-blocking)
     logAudit('user_register', `New user registered: ${email}`, { id: userId, email, name }).catch(() => {});
 
-    res.status(201).json({ token, user: { id: userId, name, email, role: 'user' } });
+    res.status(201).json({ token, user: { id: userId, name, email, phone: phone || '', role: 'user' } });
   } catch (err) {
     if (err.code === '23505') { // Unique violation
       return res.status(409).json({ message: 'Email already registered. Please login instead.' });

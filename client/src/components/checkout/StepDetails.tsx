@@ -144,14 +144,20 @@ export function StepDetails({ onNext }: StepDetailsProps) {
         deliveryMethod: 'email'
       });
 
-      // Move to next step immediately
+      // Pre-fill the authenticated details form fields in case the step guard brings them back
+      setValueDetails('fullName', data.fullName);
+      setValueDetails('email', data.email);
+      setValueDetails('phone', data.phone);
+      setValueDetails('countryCode', data.countryCode);
+
+      // Move to next step
       onNext?.();
     } catch (err: any) {
       const msg = err.message || 'Registration failed';
-      setSignupError(msg);
-      // If user exists, we could auto-switch to login tab, but showing the error is safer for now.
       if (msg.includes('already registered') || msg.includes('409')) {
-         setSignupError("This email is already registered. Please sign in instead.");
+        setSignupError("This email is already registered. Please sign in instead.");
+      } else {
+        setSignupError(msg);
       }
     } finally {
       setIsSigningUp(false);

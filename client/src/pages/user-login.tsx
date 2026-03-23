@@ -76,31 +76,29 @@ export default function UserLoginPage() {
 
   // Check for auto-login from guest checkout (auto-generated account) - RUN AFTER PRE-FILL
   useEffect(() => {
-    // Only auto-redirect if credentials were already shown for a moment
-    const timer = setTimeout(() => {
+    const timer = setTimeout(async () => {
       const autoLoginData = localStorage.getItem('auto_login_data');
       if (autoLoginData && generatedPasswordData) {
         try {
-          const { token, user } = JSON.parse(autoLoginData);
-          // Auto-login by setting token and user in localStorage
-          localStorage.setItem('userToken', token);
-          localStorage.setItem('userData', JSON.stringify(user));
-          
-          // Clean up
-          localStorage.removeItem('auto_login_data');
-          
-          // Redirect to profile page
-          setTimeout(() => {
-            window.location.href = redirectUrl || '/profile';
-          }, 2000);
+          const { email, password } = JSON.parse(autoLoginData);
+          if (email && password) {
+            // Use the proper login function to update auth context state
+            await login(email, password);
+            localStorage.removeItem('auto_login_data');
+            // Redirect after successful login
+            setTimeout(() => {
+              setLocation(redirectUrl || '/profile');
+            }, 500);
+          }
         } catch (err) {
+          // Auto-login failed silently — user can manually click "Quick Login"
           console.error('Auto-login failed:', err);
         }
       }
-    }, 2000); // Wait 2 seconds before auto-redirect
+    }, 2000);
     
     return () => clearTimeout(timer);
-  }, [generatedPasswordData, redirectUrl]);
+  }, [generatedPasswordData, redirectUrl, login, setLocation]);
 
 
 
