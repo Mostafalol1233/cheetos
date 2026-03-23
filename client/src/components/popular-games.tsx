@@ -43,6 +43,7 @@ export function PopularGames() {
   const { t } = useTranslation();
   const { data: games = [], isLoading, isError } = useQuery<Game[]>({
     queryKey: ["/api/games/popular"],
+    staleTime: 0,
   });
 
   if (isLoading) return null;
