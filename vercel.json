@@ -28,11 +28,15 @@
       "destination": "http://fi4.bot-hosting.net:22135/payments-images/$1"
     },
     {
+      "source": "/attached_assets/(.*)",
+      "destination": "http://fi4.bot-hosting.net:22135/attached_assets/$1"
+    },
+    {
       "source": "/socket.io/(.*)",
       "destination": "http://fi4.bot-hosting.net:22135/socket.io/$1"
     },
     {
-      "source": "/((?!api/|uploads/|media/|images/|payments-images/|socket.io/|share/|.*\\.(?:png|jpg|jpeg|gif|ico|json|svg|css|js|woff|woff2|webmanifest)).*)",
+      "source": "/((?!api/|uploads/|media/|images/|payments-images/|attached_assets/|socket.io/|share/|.*\\.(?:png|jpg|jpeg|gif|ico|json|svg|css|js|woff|woff2|webmanifest)).*)",
       "destination": "/index.html"
     }
   ]

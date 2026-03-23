@@ -552,7 +552,7 @@ export default function GamePage() {
                   "bestRating": "5"
                 },
                 "reviewBody": r.comment || "",
-                "datePublished": r.created_at ? new Date(r.created_at).toISOString().split('T')[0] : undefined
+                "datePublished": (() => { try { const d = new Date(r.created_at); return r.created_at && !isNaN(d.getTime()) ? d.toISOString().split('T')[0] : undefined; } catch { return undefined; } })()
               }));
             }
           }
