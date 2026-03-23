@@ -24,3 +24,33 @@ id = "HvaBLoInfJNjV1V-Lweb6"
 uri = "file://client/public/logo-ninja-d.png"
 type = "image"
 title = "Ninja D Esports Logo"
+
+[[outputs]]
+id = "LG5lMnV-Qed7G0ALBYOvb"
+uri = "file://client/public/logo-v1.png"
+type = "image"
+title = "Version 1 — Cyan/Teal Neon (like the reference)"
+
+[[outputs]]
+id = "fgz9_gShO-yj_YlTY71gz"
+uri = "file://client/public/logo-v2.png"
+type = "image"
+title = "Version 2 — Gold & Orange Fire"
+
+[[outputs]]
+id = "HUOWuXlAT4HJB_V5nK6jm"
+uri = "file://client/public/logo-v3.png"
+type = "image"
+title = "Version 3 — Purple Violet Lightning"
+
+[[outputs]]
+id = "6MciLpWH2ku1XLK9Z1MTJ"
+uri = "file://client/public/logo-v4.png"
+type = "image"
+title = "Version 4 — Red Crimson"
+
+[[outputs]]
+id = "qJEiMoi_RGqNcMkZ23RsR"
+uri = "file://client/public/logo-v5.png"
+type = "image"
+title = "Version 5 — Ice Blue/White Frost"
