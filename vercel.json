@@ -20,10 +20,6 @@
       "destination": "http://fi4.bot-hosting.net:22135/media/$1"
     },
     {
-      "source": "/images/(.*)",
-      "destination": "http://fi4.bot-hosting.net:22135/images/$1"
-    },
-    {
       "source": "/payments-images/(.*)",
       "destination": "http://fi4.bot-hosting.net:22135/payments-images/$1"
     },
