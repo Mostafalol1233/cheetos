@@ -1,4 +1,4 @@
-import { ArrowLeft, MessageCircle, Mail, Clock, HelpCircle, Headphones, Zap, Shield } from "lucide-react";
+import { ArrowLeft, MessageCircle, Mail, Clock, HelpCircle, Headphones, Zap, Shield, Phone, CheckCircle } from "lucide-react";
 import { SiWhatsapp, SiTelegram, SiFacebook } from "react-icons/si";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,33 @@ import { useEffect, useState } from "react";
 
 export default function SupportPage() {
   const [contactInfo, setContactInfo] = useState<{ instapay: string | null; cash_numbers: string[]; paypal: string | null; etisalat_cash: string | null } | null>(null);
+  const [formData, setFormData] = useState({ name: '', phone: '', subject: '', message: '' });
+  const [formStatus, setFormStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle');
+
+  const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    setFormData(prev => ({ ...prev, [e.target.id]: e.target.value }));
+  };
+
+  const handleFormSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.name.trim() || !formData.message.trim()) return;
+    setFormStatus('sending');
+    try {
+      const res = await fetch('/api/contact-messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      });
+      if (res.ok) {
+        setFormStatus('success');
+        setFormData({ name: '', phone: '', subject: '', message: '' });
+      } else {
+        setFormStatus('error');
+      }
+    } catch {
+      setFormStatus('error');
+    }
+  };
 
   useEffect(() => {
     (async () => {
@@ -212,30 +239,45 @@ export default function SupportPage() {
             </div>
           </div>
 
-          <form className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="name" className="text-sm font-medium mb-1.5 block">Name</Label>
-                <Input id="name" placeholder="Your full name" className="bg-muted/50 border-border/60 focus:border-gold-primary/50" />
+          {formStatus === 'success' ? (
+            <div className="flex flex-col items-center justify-center py-10 gap-4 text-center">
+              <CheckCircle className="w-14 h-14 text-green-500" />
+              <p className="text-lg font-bold text-foreground">تم إرسال رسالتك بنجاح!</p>
+              <p className="text-sm text-muted-foreground">سنرد عليك في أقرب وقت ممكن</p>
+              <Button variant="outline" onClick={() => setFormStatus('idle')}>إرسال رسالة أخرى</Button>
+            </div>
+          ) : (
+            <form className="space-y-4" onSubmit={handleFormSubmit}>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="name" className="text-sm font-medium mb-1.5 block">الاسم</Label>
+                  <Input id="name" placeholder="اسمك الكامل" value={formData.name} onChange={handleFormChange} className="bg-muted/50 border-border/60 focus:border-gold-primary/50" required />
+                </div>
+                <div>
+                  <Label htmlFor="phone" className="text-sm font-medium mb-1.5 block">رقم الهاتف</Label>
+                  <div className="relative">
+                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input id="phone" type="tel" placeholder="01xxxxxxxxx" value={formData.phone} onChange={handleFormChange} className="bg-muted/50 border-border/60 focus:border-gold-primary/50 pl-9" />
+                  </div>
+                </div>
               </div>
               <div>
-                <Label htmlFor="email" className="text-sm font-medium mb-1.5 block">Email</Label>
-                <Input id="email" type="email" placeholder="your@email.com" className="bg-muted/50 border-border/60 focus:border-gold-primary/50" />
+                <Label htmlFor="subject" className="text-sm font-medium mb-1.5 block">الموضوع</Label>
+                <Input id="subject" placeholder="كيف يمكننا مساعدتك؟" value={formData.subject} onChange={handleFormChange} className="bg-muted/50 border-border/60 focus:border-gold-primary/50" />
               </div>
-            </div>
-            <div>
-              <Label htmlFor="subject" className="text-sm font-medium mb-1.5 block">Subject</Label>
-              <Input id="subject" placeholder="How can we help you?" className="bg-muted/50 border-border/60 focus:border-gold-primary/50" />
-            </div>
-            <div>
-              <Label htmlFor="message" className="text-sm font-medium mb-1.5 block">Message</Label>
-              <Textarea id="message" placeholder="Describe your issue in detail..." rows={5} className="bg-muted/50 border-border/60 focus:border-gold-primary/50 resize-none" />
-            </div>
-            <Button type="submit" className="w-full bg-gold-primary hover:bg-gold-primary/90 text-white font-bold shadow-lg shadow-gold-primary/20 transition-all">
-              <Mail className="w-4 h-4 mr-2" />
-              Send Message
-            </Button>
-          </form>
+              <div>
+                <Label htmlFor="message" className="text-sm font-medium mb-1.5 block">الرسالة</Label>
+                <Textarea id="message" placeholder="اشرح مشكلتك بالتفصيل..." rows={5} value={formData.message} onChange={handleFormChange} className="bg-muted/50 border-border/60 focus:border-gold-primary/50 resize-none" required />
+              </div>
+              {formStatus === 'error' && (
+                <p className="text-sm text-red-500">حدث خطأ، يرجى المحاولة مرة أخرى.</p>
+              )}
+              <Button type="submit" disabled={formStatus === 'sending'} className="w-full bg-gold-primary hover:bg-gold-primary/90 text-white font-bold shadow-lg shadow-gold-primary/20 transition-all">
+                <Mail className="w-4 h-4 mr-2" />
+                {formStatus === 'sending' ? 'جارٍ الإرسال...' : 'إرسال الرسالة'}
+              </Button>
+            </form>
+          )}
         </div>
 
       </div>

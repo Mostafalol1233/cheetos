@@ -67,7 +67,7 @@ export function PopularGames() {
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
           {games.map((game) => (
             <Link key={game.id} href={`/game/${game.slug}`} className="block group">
-              <div className="relative overflow-hidden rounded-2xl border border-white/10 hover:border-gold-primary/50 shadow-md hover:shadow-xl hover:shadow-gold-primary/10 transition-all duration-300 cursor-pointer bg-gray-900" style={{ aspectRatio: '3/4' }}>
+              <div className="relative overflow-hidden rounded-2xl border border-white/10 hover:border-gold-primary/50 shadow-md hover:shadow-xl hover:shadow-gold-primary/10 transition-all duration-300 cursor-pointer bg-gray-900 shimmer-card" style={{ aspectRatio: '3/4' }}>
                 <ImageWithFallback
                   src={getGameImage(game)}
                   alt={game.name}

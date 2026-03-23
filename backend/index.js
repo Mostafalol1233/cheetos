@@ -1115,6 +1115,50 @@ app.get('/api/contact-info', async (req, res) => {
   }
 });
 
+// ===================== CONTACT MESSAGES =====================
+app.post('/api/contact-messages', async (req, res) => {
+  try {
+    const { name, phone, subject, message } = req.body;
+    if (!name || !message) return res.status(400).json({ error: 'Name and message are required' });
+    const id = 'cm_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7);
+    await pool.query(
+      `INSERT INTO contact_messages (id, name, phone, subject, message) VALUES ($1, $2, $3, $4, $5)`,
+      [id, String(name).slice(0, 100), String(phone || '').slice(0, 40), String(subject || '').slice(0, 160), String(message).slice(0, 5000)]
+    );
+    res.json({ success: true });
+  } catch (err) {
+    console.error('contact-messages POST error:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+app.get('/api/contact-messages', async (req, res) => {
+  try {
+    const { rows } = await pool.query(`SELECT * FROM contact_messages ORDER BY created_at DESC LIMIT 200`);
+    res.json(rows);
+  } catch (err) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+app.patch('/api/contact-messages/:id/read', async (req, res) => {
+  try {
+    await pool.query(`UPDATE contact_messages SET read = true WHERE id = $1`, [req.params.id]);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+app.delete('/api/contact-messages/:id', async (req, res) => {
+  try {
+    await pool.query(`DELETE FROM contact_messages WHERE id = $1`, [req.params.id]);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 // ===================== SETTINGS (Theme & Branding) =====================
 const defaultSettings = {
   id: 'default',

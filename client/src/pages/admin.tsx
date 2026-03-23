@@ -22,6 +22,7 @@ import { ResponseTemplatesPanel } from '@/components/response-templates-panel';
 import { PromoCodesPanel } from '@/components/admin-promo-codes-panel';
 import { ReviewsPanel } from '@/components/admin-reviews-panel';
 import { AbandonedCartsPanel } from '@/components/admin-abandoned-carts-panel';
+import { SupportMessagesPanel } from '@/components/support-messages-panel';
 const RichTextEditor = React.lazy(() => import('@/components/rich-text-editor'));
 import { io, Socket } from 'socket.io-client';
 import { HeaderManager } from '@/components/header-manager';
@@ -2275,6 +2276,7 @@ export default function AdminDashboard() {
               {/* ── CUSTOMERS & SUPPORT ── */}
               <TabsTrigger value="users" data-testid="tab-users" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">👥 العملاء</TabsTrigger>
               <TabsTrigger value="chats" data-testid="tab-chats" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">💬 الدعم الفني</TabsTrigger>
+              <TabsTrigger value="support-messages" data-testid="tab-support-messages" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">📨 رسائل التواصل</TabsTrigger>
               <TabsTrigger value="whatsapp" data-testid="tab-whatsapp" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">📱 واتساب</TabsTrigger>
               <TabsTrigger value="templates" data-testid="tab-templates" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">📩 قوالب الرد</TabsTrigger>
               <span className="mx-2 self-stretch w-px bg-border/50 my-1" />
@@ -3427,6 +3429,11 @@ export default function AdminDashboard() {
               </CardContent>
             </Card>
 
+          </TabsContent>
+
+          {/* Support Messages Tab */}
+          <TabsContent value="support-messages" className="space-y-6">
+            <SupportMessagesPanel />
           </TabsContent>
 
           {/* WhatsApp Tab */}
