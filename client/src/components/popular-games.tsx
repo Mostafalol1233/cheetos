@@ -6,8 +6,8 @@ import ImageWithFallback from "./image-with-fallback";
 import { useTranslation } from "@/lib/translation";
 
 const GAME_SLUG_IMAGES: Record<string, string> = {
-  'free-fire': '/images/banner-free-fire.png',
-  'freefire': '/images/banner-free-fire.png',
+  'free-fire': '/images/free-fire-banner.png',
+  'freefire': '/images/free-fire-banner.png',
   'pubg': '/images/banner-pubg.png',
   'pubg-mobile': '/images/banner-pubg.png',
   'crossfire': '/images/banner-crossfire.png',
@@ -16,7 +16,10 @@ const GAME_SLUG_IMAGES: Record<string, string> = {
   'hok': '/images/hok-main.webp',
   'valorant': '/images/valorant-banner.png',
   'valornt': '/images/valorant-turk-banner.png',
-  'roblox': '/images/roblox.webp',
+  'roblox': '/images/roblox-banner.png',
+  'fortnite': '/images/fortnite-banner.png',
+  'league-of-legends': '/images/lol-banner.png',
+  'call-of-duty-mobile': '/images/cod-mobile-banner.png',
   'steam': '/images/Steam-Logo-White_4.webp',
   'xbox': '/images/xbox-live.webp',
   'xbox-live': '/images/xbox-live.webp',
