@@ -135,11 +135,12 @@ export const getQueryFn: <T>(options: {
       return data;
     }
     
+    const basePath = path.split('?')[0];
     const expectsArray =
-      path === '/api/games' ||
-      path === '/api/categories' ||
-      path === '/api/games/popular' ||
-      path.startsWith('/api/games/category/');
+      basePath === '/api/games' ||
+      basePath === '/api/categories' ||
+      basePath === '/api/games/popular' ||
+      basePath.startsWith('/api/games/category/');
 
     // If expecting an array but got an object, try to unwrap common API shapes
     if (expectsArray) {

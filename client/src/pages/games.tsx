@@ -54,7 +54,7 @@ export default function GamesPage() {
   });
 
   const { data: allGames = [], isLoading } = useQuery<Game[]>({
-    queryKey: ["/api/games"],
+    queryKey: ["/api/games?limit=100"],
   });
 
   const filteredGames = allGames.filter(game => {
@@ -158,11 +158,11 @@ export default function GamesPage() {
                     <div className="relative flex flex-col rounded-2xl overflow-hidden border border-border/50 bg-card hover:border-gold-primary/40 transition-all duration-300 shadow-sm hover:shadow-xl hover:shadow-gold-primary/8 hover:-translate-y-1 h-full shimmer-card">
 
                       {/* Image area */}
-                      <div className="relative aspect-square overflow-hidden bg-gray-900 flex items-center justify-center">
+                      <div className="relative aspect-[3/4] overflow-hidden bg-gray-900">
                         <ImageWithFallback
                           src={getGameImage(game)}
                           alt={game.name}
-                          className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-105"
+                          className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                         />
 
                         {/* Gradient overlay bottom */}

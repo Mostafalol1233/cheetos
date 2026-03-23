@@ -11,10 +11,33 @@ import { useToast } from '@/hooks/use-toast';
 
 import { ReceiptUpload } from './receipt-upload';
 
+const GIFT_CARD_SLUGS = new Set([
+  'tiktok', 'discord-nitro', 'netflix-gift-card', 'spotify-gift-card',
+  'amazon-gift-card', 'itunes-app-store', 'google-play', 'steam-wallet',
+  'xbox-gift-card', 'playstation-store',
+]);
+
+function getCheckoutGame() {
+  try {
+    const raw = localStorage.getItem('checkout_package');
+    if (raw) return JSON.parse(raw);
+  } catch {}
+  return null;
+}
+
+function needsPlayerId(gameSlug?: string, gameId?: string): boolean {
+  if (!gameSlug && !gameId) return true;
+  if (gameId && gameId.startsWith('gc_')) return false;
+  if (gameSlug && GIFT_CARD_SLUGS.has(gameSlug)) return false;
+  return true;
+}
+
 export function StepPayment() {
   const { paymentMethod, paymentData, setPaymentData, setStep, availablePaymentMethods } = useCheckout();
   const { toast } = useToast();
   const [isUploading, setIsUploading] = React.useState(false);
+  const checkoutGame = getCheckoutGame();
+  const showPlayerIdField = needsPlayerId(checkoutGame?.gameSlug, checkoutGame?.gameId);
 
   const handleFileUpload = async (file: File) => {
     if (!file) return;
@@ -78,14 +101,16 @@ export function StepPayment() {
 
               {isManualPayment && (
                 <div className="grid gap-4 pt-2">
-                  <div className="space-y-2">
-                    <Label>Player ID / Account ID (if applicable)</Label>
-                    <Input
-                      placeholder="Enter your Player ID"
-                      value={paymentData.playerId || ''}
-                      onChange={e => setPaymentData({ playerId: e.target.value })}
-                    />
-                  </div>
+                  {showPlayerIdField && (
+                    <div className="space-y-2">
+                      <Label>Player ID / Account ID</Label>
+                      <Input
+                        placeholder="Enter your Player ID"
+                        value={paymentData.playerId || ''}
+                        onChange={e => setPaymentData({ playerId: e.target.value })}
+                      />
+                    </div>
+                  )}
                   <div className="space-y-2">
                     <Label>Upload Payment Receipt (Required)</Label>
                     <ReceiptUpload
