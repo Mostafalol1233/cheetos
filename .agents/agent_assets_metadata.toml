@@ -6,3 +6,15 @@ id = "ZuqfEHg3SRIyn9YHU_Yji"
 uri = "file://backend-clean.zip"
 type = "unspecified"
 title = "Backend Clean (no node_modules, no old zips)"
+
+[[outputs]]
+id = "FLkmeAnoSyhNfm5weKnNZ"
+uri = "file://client/public/logo-d.png"
+type = "image"
+title = "Logo Option 1 - Geometric D with Gold Glow"
+
+[[outputs]]
+id = "chJHqwdv1-v8xc1DhbPpM"
+uri = "file://client/public/logo-d-alt.png"
+type = "image"
+title = "Logo Option 2 - Badge Style D with Flame"
