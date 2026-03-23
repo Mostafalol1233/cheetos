@@ -465,12 +465,99 @@ export default function GamePage() {
     <>
       <SEO
         title={language === 'ar'
-          ? `${isGiftCard ? 'كرت' : 'شحن'} ${game.name} - متجر ضياء | Diaa Gaming Store`
-          : `${isGiftCard ? 'Buy' : 'Top Up'} ${game.name} - Diaa Gaming Store Egypt`}
+          ? `${isGiftCard ? 'شراء كرت' : 'شحن'} ${game.name} - متجر ضياء | أرخص سعر في مصر`
+          : `${isGiftCard ? 'Buy' : 'Top Up'} ${game.name} Cheap - Diaa Gaming Store Egypt`}
         description={language === 'ar'
-          ? `${isGiftCard ? 'اشتري كرت' : 'اشحن عملات'} ${game.name} بسهولة في متجر ضياء. خدمة آمنة وسريعة في مصر.`
-          : `${isGiftCard ? 'Buy' : 'Top up'} ${game.name} easily at Diaa Store. Secure and fast service in Egypt.`}
-        keywords={[game.name, 'Diaa Store', 'ضياء', 'gaming top up Egypt', 'شحن ألعاب']}
+          ? `${isGiftCard ? 'اشتري كرت' : 'اشحن عملات'} ${game.name} بأرخص سعر في مصر مع متجر ضياء. ${packagesArr.length > 0 ? `باقات تبدأ من ${getPricing(packagesArr[0], 0).final} جنيه. ` : ''}دفع آمن وتسليم سريع عبر فودافون كاش وإنستاباي.`
+          : `${isGiftCard ? 'Buy' : 'Top up'} ${game.name} at the best price in Egypt. ${packagesArr.length > 0 ? `Packages starting from ${getPricing(packagesArr[0], 0).final} EGP. ` : ''}Safe payment via Vodafone Cash & InstaPay.`}
+        keywords={[
+          game.name,
+          `شحن ${game.name}`,
+          `${game.name} مصر`,
+          `${isGiftCard ? 'كرت' : 'شحن'} ${game.name} رخيص`,
+          `${game.name} top up Egypt`,
+          `buy ${game.name} Egypt`,
+          `${game.name} cheap`,
+          'Diaa Store', 'ضياء', 'gaming top up Egypt', 'شحن ألعاب',
+          'شحن ألعاب مصر', 'فودافون كاش', 'انستاباي'
+        ]}
+        image={heroImage || undefined}
+        structuredData={(() => {
+          const minPrice = packagesArr.length > 0
+            ? Math.min(...packagesArr.map((p, i) => getPricing(p, i).final)).toString()
+            : undefined;
+          const maxPrice = packagesArr.length > 0
+            ? Math.max(...packagesArr.map((p, i) => getPricing(p, i).final)).toString()
+            : undefined;
+          const productSchema: any = {
+            "@context": "https://schema.org",
+            "@type": "Product",
+            "name": game.name,
+            "description": game.description
+              ? game.description.replace(/<[^>]+>/g, '').slice(0, 300)
+              : `${isGiftCard ? 'كرت هدية' : 'شحن عملات'} ${game.name} في مصر`,
+            "brand": {
+              "@type": "Brand",
+              "name": "متجر ضياء"
+            },
+            "url": `${window.location.origin}/game/${game.slug}`,
+            "sku": `diaa-${game.slug}`,
+            "image": heroImage ? [heroImage] : [],
+            "offers": packagesArr.length > 0
+              ? packagesArr.map((p, i) => {
+                  const pricing = getPricing(p, i);
+                  return {
+                    "@type": "Offer",
+                    "name": p.name || `باقة ${i + 1}`,
+                    "price": pricing.final.toString(),
+                    "priceCurrency": "EGP",
+                    "availability": isOutOfStock
+                      ? "https://schema.org/OutOfStock"
+                      : "https://schema.org/InStock",
+                    "seller": {
+                      "@type": "Organization",
+                      "name": "متجر ضياء"
+                    },
+                    "url": `${window.location.origin}/game/${game.slug}`
+                  };
+                })
+              : {
+                "@type": "Offer",
+                "priceCurrency": "EGP",
+                "availability": isOutOfStock
+                  ? "https://schema.org/OutOfStock"
+                  : "https://schema.org/InStock",
+                "seller": {
+                  "@type": "Organization",
+                  "name": "متجر ضياء"
+                },
+                "url": `${window.location.origin}/game/${game.slug}`
+              }
+          };
+          if (reviewStats && Number(reviewStats.total) > 0) {
+            productSchema.aggregateRating = {
+              "@type": "AggregateRating",
+              "ratingValue": Number(reviewStats.average).toFixed(1),
+              "reviewCount": Number(reviewStats.total),
+              "bestRating": "5",
+              "worstRating": "1"
+            };
+            if (reviews.length > 0) {
+              productSchema.review = reviews.slice(0, 3).map((r: any) => ({
+                "@type": "Review",
+                "author": { "@type": "Person", "name": r.user_name || "عميل" },
+                "reviewRating": {
+                  "@type": "Rating",
+                  "ratingValue": r.rating,
+                  "bestRating": "5"
+                },
+                "reviewBody": r.comment || "",
+                "datePublished": r.created_at ? new Date(r.created_at).toISOString().split('T')[0] : undefined
+              }));
+            }
+          }
+          return productSchema;
+        })()}
       />
 
       <div className="min-h-screen bg-background">

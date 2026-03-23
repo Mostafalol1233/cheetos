@@ -83,25 +83,32 @@ export default function Home() {
   return (
     <>
       <SEO
-        title="متجر ضياء - شحن ألعاب إلكترونية في مصر | Diaa Gaming Store - أفضل متجر ألعاب"
-        description="متجر ضياء أفضل متجر شحن ألعاب إلكترونية في مصر. اشحن عملات Free Fire, PUBG, وجميع الألعاب بأمان وسرعة مع Diaa Sadek. خدمة موثوقة وأسعار تنافسية."
+        title="متجر ضياء - شحن ألعاب اونلاين في مصر | أرخص أسعار فري فاير PUBG"
+        description="متجر ضياء أفضل وأرخص متجر شحن ألعاب إلكترونية في مصر. شحن فري فاير دايموندز، PUBG UC، روبلوكس، فورتنايت وكل الألعاب. دفع عبر فودافون كاش وإنستاباي. تسليم فوري."
         keywords={[
-          "متجر ألعاب", "شحن ألعاب", "Diaa", "ضياء", "top up games Egypt",
-          "شحن ألعاب إلكترونية", "gaming store Egypt", "Diaa Sadek", "متجر ضياء",
-          "شحن عملات ألعاب", "ألعاب إلكترونية مصر", "top up Egypt", "gaming top up",
-          "ضياء ألعاب", "Diaa gaming", "شحن ألعاب اونلاين", "متجر ألعاب مصر",
-          "gaming store", "شحن ألعاب سريع", "Free Fire", "PUBG", "ألعاب موبايل"
+          "شحن ألعاب اونلاين مصر", "متجر شحن ألعاب مصر", "شحن فري فاير مصر",
+          "شحن PUBG مصر", "شحن ببجي مصر", "دايموندز فري فاير",
+          "PUBG UC Egypt", "Free Fire diamonds Egypt", "شحن روبلوكس مصر",
+          "شحن فورتنايت مصر", "شحن ألعاب فودافون كاش", "شحن ألعاب انستاباي",
+          "متجر ضياء", "Diaa Sadek", "ضياء ألعاب", "Diaa gaming store",
+          "top up games Egypt cheap", "gaming top up Egypt", "أرخص شحن ألعاب مصر",
+          "كروس فاير", "هونر أوف كينجز", "كارت ستيم", "بلايستيشن ستور",
+          "شحن عملات ألعاب", "gaming store egypt"
         ]}
         structuredData={{
           "@context": "https://schema.org",
-          "@type": "WebPage",
-          "name": "متجر ضياء - الصفحة الرئيسية",
-          "description": "اكتشف متجر ضياء لشحن ألعاب إلكترونية في مصر. شحن آمن وسريع لجميع الألعاب مع Diaa Sadek.",
+          "@type": "WebSite",
+          "name": "متجر ضياء",
+          "alternateName": "Diaa Gaming Store",
+          "description": "أرخص وأفضل متجر شحن ألعاب إلكترونية في مصر",
           "url": window.location.origin,
-          "isPartOf": {
-            "@type": "WebSite",
-            "name": "متجر ضياء",
-            "url": window.location.origin
+          "potentialAction": {
+            "@type": "SearchAction",
+            "target": {
+              "@type": "EntryPoint",
+              "urlTemplate": `${window.location.origin}/games?q={search_term_string}`
+            },
+            "query-input": "required name=search_term_string"
           }
         }}
       />
