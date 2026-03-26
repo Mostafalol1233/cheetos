@@ -889,7 +889,7 @@ export default function AdminDashboard() {
 
   // Fetch games
   const { data: allGames = [] } = useQuery<Game[]>({
-    queryKey: ['/api/games'],
+    queryKey: ['/api/games?limit=200'],
   });
 
   // Fetch categories
