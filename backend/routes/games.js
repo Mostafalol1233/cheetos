@@ -466,7 +466,7 @@ router.post('/', authenticateToken, ensureAdmin, async (req, res) => {
 router.put('/:id', authenticateToken, ensureAdmin, async (req, res) => {
   const { id } = req.params;
   const {
-    name, slug, description, price, currency, image, category, isPopular, stock, discountPrice,
+    name, slug, description, price, currency, image, image_url, category, isPopular, stock, discountPrice,
     packagesList, packages, packagePrices, packageDiscountPrices,
     showOnMainPage, displayOrder
   } = req.body;
@@ -511,17 +511,18 @@ router.put('/:id', authenticateToken, ensureAdmin, async (req, res) => {
           price = COALESCE($4, price),
           currency = COALESCE($5, currency),
           image = COALESCE($6, image),
-          category = COALESCE($7, category),
-          is_popular = COALESCE($8, is_popular),
-          stock = COALESCE($9, stock),
-          discount_price = COALESCE($10, discount_price),
-          show_on_main_page = COALESCE($11, show_on_main_page),
-          display_order = COALESCE($12, display_order),
+          image_url = COALESCE($7, image_url),
+          category = COALESCE($8, category),
+          is_popular = COALESCE($9, is_popular),
+          stock = COALESCE($10, stock),
+          discount_price = COALESCE($11, discount_price),
+          show_on_main_page = COALESCE($12, show_on_main_page),
+          display_order = COALESCE($13, display_order),
           updated_at = CURRENT_TIMESTAMP
-        WHERE id = $13
+        WHERE id = $14
       `, [
         name, slug, description, price !== undefined ? Number(price) : undefined, currency,
-        image, category, isPopular !== undefined ? !!isPopular : undefined,
+        image, image_url || undefined, category, isPopular !== undefined ? !!isPopular : undefined,
         stock !== undefined ? Number(stock) : undefined,
         discountPrice !== undefined ? (discountPrice ? Number(discountPrice) : null) : undefined,
         showOnMainPage !== undefined ? !!showOnMainPage : undefined,

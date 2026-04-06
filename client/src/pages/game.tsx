@@ -385,7 +385,7 @@ export default function GamePage() {
   }
 
   const gameSlug = (game as any).slug || '';
-  const heroImage = game.bannerImage || (game as any).banner_image || HERO_IMAGES[gameSlug] || (game as any).image_url || game.image || '';
+  const heroImage = (game as any).image_url || game.bannerImage || (game as any).banner_image || HERO_IMAGES[gameSlug] || game.image || '';
   const currencyImageUrl = CURRENCY_IMAGES[gameSlug] || null;
 
   const packagesList: any[] = Array.isArray((game as any).packagesList) ? (game as any).packagesList : [];
