@@ -2033,7 +2033,8 @@ export default function AdminDashboard() {
       if (data.url && editingGame) {
         if (target === 'logo') {
           // Update logo and also update banner if it was empty or the same as old logo
-          const isBannerSameAsOldLogo = !editingGame.image_url || editingGame.image_url === editingGame.image;
+          const currentBanner = editingGame.banner_image || editingGame.image_url;
+          const isBannerSameAsOldLogo = !currentBanner || currentBanner === editingGame.image;
           if (isBannerSameAsOldLogo) {
             setEditingGame({ 
               ...editingGame, 
@@ -3653,17 +3654,18 @@ export default function AdminDashboard() {
                 </div>
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="image_url" className="text-right">Large Image URL</Label>
+                <Label htmlFor="banner_image" className="text-right">Banner Image URL</Label>
                 <Input
-                  id="image_url"
-                  value={editingGame.image_url || ''}
+                  id="banner_image"
+                  value={editingGame.banner_image || editingGame.image_url || ''}
                   onChange={(e) => setEditingGame({ 
                     ...editingGame, 
-                    image_url: e.target.value,
+                    banner_image: e.target.value,
                     bannerImage: e.target.value,
-                    banner_image: e.target.value
+                    image_url: e.target.value
                   })}
                   className="col-span-3"
+                  placeholder="https://res.cloudinary.com/..."
                 />
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
@@ -3671,14 +3673,14 @@ export default function AdminDashboard() {
                   <Button
                     type="button"
                     variant="outline"
-                    disabled={!editingGame?.id || !editingGame.image_url || updateGameImageUrlMutation.isPending}
+                    disabled={!editingGame?.id || !(editingGame.banner_image || editingGame.image_url) || updateGameImageUrlMutation.isPending}
                     onClick={() => {
-                      const url = String(editingGame.image_url || '').trim();
+                      const url = String(editingGame.banner_image || editingGame.image_url || '').trim();
                       if (!editingGame?.id || !url) return;
                       updateGameImageUrlMutation.mutate({ id: editingGame.id, image_url: url });
                     }}
                   >
-                    Save Large Image Only
+                    {updateGameImageUrlMutation.isPending ? 'Saving...' : 'Save Banner Image Only'}
                   </Button>
                 </div>
               </div>
@@ -3691,7 +3693,7 @@ export default function AdminDashboard() {
                   className="col-span-3"
                 />
               </div>
-              {(editingGame.image || editingGame.image_url) && (
+              {(editingGame.image || editingGame.banner_image || editingGame.image_url) && (
                 <div className="grid grid-cols-4 items-start gap-4">
                   <Label className="text-right pt-2">Previews</Label>
                   <div className="col-span-3 flex flex-wrap gap-4">
@@ -3701,18 +3703,18 @@ export default function AdminDashboard() {
                         <img 
                           src={getGameDisplayImage(editingGame)} 
                           alt="Home Preview" 
-                          key={`home-${editingGame.image}-${editingGame.image_url}`}
+                          key={`home-${editingGame.image}-${editingGame.banner_image}`}
                           className="absolute inset-0 w-full h-full object-cover" 
                         />
                       </div>
                     </div>
                     <div className="space-y-1">
-                      <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-tighter">Game Page (4:3)</p>
-                      <div className="w-32 overflow-hidden rounded-lg border border-gold-primary/30 relative bg-muted" style={{ aspectRatio: '4/3' }}>
+                      <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-tighter">Game Page (16:9)</p>
+                      <div className="w-40 overflow-hidden rounded-lg border border-gold-primary/30 relative bg-muted" style={{ aspectRatio: '16/9' }}>
                         <img 
-                          src={editingGame.image_url || editingGame.image} 
+                          src={getGameDisplayImage(editingGame)} 
                           alt="Game Preview" 
-                          key={`game-${editingGame.image}-${editingGame.image_url}`}
+                          key={`game-${editingGame.image}-${editingGame.banner_image}`}
                           className="absolute inset-0 w-full h-full object-cover" 
                         />
                       </div>
