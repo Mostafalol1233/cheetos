@@ -133,7 +133,7 @@ export function Header() {
       {/* Main Header */}
       <header
         className={cn(
-          "fixed w-full top-0 z-50 transition-all duration-500",
+          "fixed w-full top-0 z-50 transition-all duration-300 border-b",
           isScrolled
             ? "py-1.5 shadow-xl shadow-black/40 bg-black/98 border-b border-gold-primary/20"
             : "py-2 bg-gradient-to-b from-black/90 to-black/80 border-b border-white/8"
@@ -154,11 +154,12 @@ export function Header() {
                 whileHover={{ scale: 1.03 }}
                 whileTap={{ scale: 0.97 }}
               >
-                <div className={cn("flex items-center transition-all duration-300", isScrolled ? "h-14" : "h-16")}>
+                <div className={cn("flex items-center transition-all duration-300", isScrolled ? "h-12 sm:h-14" : "h-20 sm:h-24")}>
                   <img
                     src="https://files.catbox.moe/brmkrj.png"
                     alt="Diaa Store Logo"
                     className="h-full w-auto object-contain drop-shadow-[0_0_8px_rgba(212,175,55,0.4)] group-hover:drop-shadow-[0_0_12px_rgba(212,175,55,0.7)] transition-all duration-300"
+                    style={{ maxWidth: 'none' }}
                     onError={(e) => {
                       (e.target as HTMLImageElement).src = "/images/diaa-logo-new.png";
                     }}
@@ -173,14 +174,13 @@ export function Header() {
                 const isActive = location === link.href;
                 return (
                   <Link key={link.href} href={link.href}>
-                    <motion.div
+                    <div
                       className={cn(
-                        "relative px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-2",
+                        "relative px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-2 cursor-pointer",
                         isActive
                           ? "text-foreground bg-white/8"
                           : "text-muted-foreground hover:text-foreground hover:bg-white/5"
                       )}
-                      whileTap={{ scale: 0.97 }}
                     >
                       <span className="relative inline-flex items-center">
                         {link.label}
@@ -195,7 +195,7 @@ export function Header() {
                           transition={{ type: "spring", bounce: 0.2, duration: 0.4 }}
                         />
                       )}
-                    </motion.div>
+                    </div>
                   </Link>
                 );
               })}
@@ -259,55 +259,55 @@ export function Header() {
             </nav>
 
             {/* Right Side Actions */}
-            <div className="flex items-center gap-2 md:gap-4">
+            <div className="flex items-center gap-2">
               <LanguageCurrencySwitcher />
 
               {/* Push Notification Toggle */}
               <NotificationButton />
 
               {/* Theme Toggle */}
-              <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={toggleTheme}
-                  className="rounded-xl hover:bg-gold-primary/10 hover:text-gold-primary transition-all duration-300"
-                >
-                  <AnimatePresence mode="wait">
-                    {theme === "dark" ? (
-                      <motion.div
-                        key="sun"
-                        initial={{ rotate: -90, opacity: 0 }}
-                        animate={{ rotate: 0, opacity: 1 }}
-                        exit={{ rotate: 90, opacity: 0 }}
-                        transition={{ duration: 0.2 }}
-                      >
-                        <Sun className="h-5 w-5" />
-                      </motion.div>
-                    ) : (
-                      <motion.div
-                        key="moon"
-                        initial={{ rotate: 90, opacity: 0 }}
-                        animate={{ rotate: 0, opacity: 1 }}
-                        exit={{ rotate: -90, opacity: 0 }}
-                        transition={{ duration: 0.2 }}
-                      >
-                        <Moon className="h-5 w-5" />
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </Button>
-              </motion.div>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={toggleTheme}
+                className="rounded-full hover:bg-muted"
+              >
+                <AnimatePresence mode="wait">
+                  {theme === "dark" ? (
+                    <motion.div
+                      key="sun"
+                      initial={{ rotate: -90, opacity: 0 }}
+                      animate={{ rotate: 0, opacity: 1 }}
+                      exit={{ rotate: 90, opacity: 0 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <Sun className="h-5 w-5" />
+                    </motion.div>
+                  ) : (
+                    <motion.div
+                      key="moon"
+                      initial={{ rotate: 90, opacity: 0 }}
+                      animate={{ rotate: 0, opacity: 1 }}
+                      exit={{ rotate: -90, opacity: 0 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <Moon className="h-5 w-5" />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </Button>
 
               {/* User Auth */}
               {isAuthenticated ? (
                 <div className="hidden md:flex items-center gap-2">
                   <Link href="/profile">
-                    <Button variant="ghost" size="sm" className="rounded-xl hover:bg-gold-primary/10 hover:text-gold-primary relative">
-                      <User className="mr-2 h-4 w-4" />
-                      <span className="hidden sm:inline">{user?.name}</span>
+                    <Button variant="ghost" size="sm" className="rounded-full hover:bg-muted gap-2 pl-2 pr-4 relative">
+                      <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center">
+                        <User className="h-4 w-4 text-primary" />
+                      </div>
+                      <span className="hidden sm:inline font-medium">{user?.name}</span>
                       {hasOrderNotification && (
-                        <span className="absolute -top-1 -right-1 inline-flex h-2.5 w-2.5 rounded-full bg-red-500 shadow-[0_0_0_3px_rgba(248,113,113,0.4)]" />
+                        <span className="absolute top-0 right-0 h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-background" />
                       )}
                     </Button>
                   </Link>
@@ -315,7 +315,7 @@ export function Header() {
                     onClick={logout}
                     variant="ghost"
                     size="icon"
-                    className="rounded-xl hover:bg-destructive/10 hover:text-destructive"
+                    className="rounded-full hover:bg-destructive/10 hover:text-destructive"
                   >
                     <LogOut className="h-4 w-4" />
                   </Button>
@@ -323,7 +323,7 @@ export function Header() {
               ) : (
                 <div className="hidden md:flex items-center gap-2">
                   <Link href="/login?tab=register">
-                    <Button variant="ghost" className="rounded-xl hover:bg-gold-primary/10 hover:text-gold-primary">
+                    <Button variant="ghost" className="rounded-full hover:bg-muted font-medium">
                       Sign Up
                     </Button>
                   </Link>
@@ -336,12 +336,12 @@ export function Header() {
               )}
 
               {/* Mobile Menu Toggle */}
-              <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} className="lg:hidden">
+              <div className="lg:hidden">
                 <Button
                   variant="ghost"
                   size="icon"
                   onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                  className="rounded-xl hover:bg-gold-primary/10 hover:text-gold-primary"
+                  className="rounded-full hover:bg-muted"
                 >
                   <AnimatePresence mode="wait">
                     {isMobileMenuOpen ? (
@@ -351,7 +351,7 @@ export function Header() {
                         animate={{ rotate: 0, opacity: 1 }}
                         exit={{ rotate: 90, opacity: 0 }}
                       >
-                        <X className="h-6 w-6" />
+                        <X className="h-5 w-5" />
                       </motion.div>
                     ) : (
                       <motion.div
@@ -360,12 +360,12 @@ export function Header() {
                         animate={{ rotate: 0, opacity: 1 }}
                         exit={{ rotate: -90, opacity: 0 }}
                       >
-                        <Menu className="h-6 w-6" />
+                        <Menu className="h-5 w-5" />
                       </motion.div>
                     )}
                   </AnimatePresence>
                 </Button>
-              </motion.div>
+              </div>
             </div>
           </div>
         </div>
@@ -428,7 +428,7 @@ export function Header() {
                         <Link href={link.href}>
                           <div
                             className={cn(
-                              "flex items-center gap-3 px-4 py-3.5 rounded-xl transition-all duration-200",
+                              "flex items-center gap-3 px-4 py-3.5 rounded-xl transition-all duration-200 cursor-pointer",
                               isActive
                                 ? "bg-gold-primary/15 text-gold-primary border border-gold-primary/30"
                                 : "hover:bg-muted text-foreground"
@@ -467,7 +467,7 @@ export function Header() {
 
                     {/* All Games */}
                     <Link href="/games">
-                      <div className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-gold-primary/10 hover:text-gold-primary transition-all text-foreground group mb-1">
+                      <div className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-gold-primary/10 hover:text-gold-primary transition-all text-foreground group mb-1 cursor-pointer">
                         <div className="w-8 h-8 rounded-lg bg-gold-primary/10 flex items-center justify-center shrink-0">
                           <Gamepad2 className="w-4 h-4 text-gold-primary" />
                         </div>
@@ -488,7 +488,7 @@ export function Header() {
                           transition={{ delay: 0.32 + idx * 0.06 }}
                         >
                           <Link href={`/category/${cat.slug}`}>
-                            <div className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-muted transition-all text-foreground group mb-1">
+                            <div className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-muted transition-all text-foreground group mb-1 cursor-pointer">
                               <div className={`w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center shrink-0 ${iconColor}`}>
                                 <IconComp className="w-4 h-4" />
                               </div>
@@ -512,7 +512,7 @@ export function Header() {
                   {isAuthenticated ? (
                     <div className="space-y-2">
                       <Link href="/profile">
-                        <div className="flex items-center gap-3 px-4 py-3.5 rounded-xl hover:bg-muted transition-all text-foreground relative group">
+                        <div className="flex items-center gap-3 px-4 py-3.5 rounded-xl hover:bg-muted transition-all text-foreground relative group cursor-pointer">
                           <div className="w-9 h-9 rounded-xl bg-gold-primary/15 border border-gold-primary/30 flex items-center justify-center">
                             <User className="w-4 h-4 text-gold-primary" />
                           </div>

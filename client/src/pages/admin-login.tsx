@@ -48,7 +48,7 @@ export default function AdminLoginPage() {
               <Input
                 id="email"
                 type="email"
-                placeholder="admin@diaaldeen.com"
+                placeholder="Email Address"
                 value={email}
                 onChange={handleEmailChange}
                 required

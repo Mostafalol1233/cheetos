@@ -5,13 +5,16 @@ let socket: Socket | null = null;
 
 export const getSocket = () => {
   if (!socket) {
-    socket = io(API_BASE_URL, {
-      transports: ['polling'],
-      upgrade: false,
+    const socketUrl = API_BASE_URL.startsWith('http') ? API_BASE_URL : undefined;
+    
+    socket = io(socketUrl, {
+      transports: ['websocket', 'polling'], // Prioritize WebSocket to reduce edge requests
+      upgrade: true,
       path: '/socket.io',
-      reconnectionAttempts: 5,
-      reconnectionDelay: 1000,
+      reconnectionAttempts: 10,
+      reconnectionDelay: 5000,
       autoConnect: true,
+      withCredentials: true,
     });
 
     socket.on('connect', () => {
