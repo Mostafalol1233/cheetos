@@ -16,7 +16,7 @@ const shouldAllowLocalFallback = () => {
 
 // Helper to normalize image URL
 const normalizeImageUrl = (raw) => {
-  const v = String(raw || '').trim();
+  let v = String(raw || '').trim().replace(/`/g, '').trim();
   if (!v) return v;
   if (/^https?:\/\//i.test(v)) return v;
   if (v.startsWith('/uploads/') || v.startsWith('/media/') || v.startsWith('/images/') || v.startsWith('/attached_assets/')) return v;
@@ -348,8 +348,10 @@ router.post('/', authenticateToken, ensureAdmin, async (req, res) => {
   const {
     name, slug, description, price, currency, image, category, isPopular, stock, discountPrice,
     packagesList, packages, packagePrices, packageDiscountPrices,
-    showOnMainPage, displayOrder
+    showOnMainPage, displayOrder, banner_image, bannerImage, image_url
   } = req.body;
+
+  const finalBannerImage = banner_image || bannerImage || image_url;
 
   // Validate duplicate name
   try {
@@ -391,6 +393,8 @@ router.post('/', authenticateToken, ensureAdmin, async (req, res) => {
     showOnMainPage: showMain,
     display_order: dispOrder,
     displayOrder: dispOrder,
+    banner_image: finalBannerImage,
+    image_url: finalBannerImage,
     created_at: new Date().toISOString()
   };
 
@@ -415,12 +419,13 @@ router.post('/', authenticateToken, ensureAdmin, async (req, res) => {
       await client.query('BEGIN');
 
       await client.query(`
-        INSERT INTO games (id, name, slug, description, price, currency, image, category, is_popular, stock, discount_price, show_on_main_page, display_order)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+        INSERT INTO games (id, name, slug, description, price, currency, image, category, is_popular, stock, discount_price, show_on_main_page, display_order, banner_image, image_url)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $14)
       `, [
         gameId, name, gameSlug, description || '', Number(price) || 0, currency || 'EGP',
         image || '', category || 'other', isPop, Number(stock) || 0,
-        discountPrice ? Number(discountPrice) : null, showMain, dispOrder
+        discountPrice ? Number(discountPrice) : null, showMain, dispOrder,
+        finalBannerImage
       ]);
 
       for (const pkg of pkgsToInsert) {
@@ -468,8 +473,11 @@ router.put('/:id', authenticateToken, ensureAdmin, async (req, res) => {
   const {
     name, slug, description, price, currency, image, category, isPopular, stock, discountPrice,
     packagesList, packages, packagePrices, packageDiscountPrices,
-    showOnMainPage, displayOrder
+    showOnMainPage, displayOrder, banner_image, bannerImage, image_url
   } = req.body;
+
+  const finalBannerImage = banner_image || bannerImage || image_url;
+  let pkgsToInsert = [];
 
   try {
     const client = await pool.connect();
@@ -517,8 +525,10 @@ router.put('/:id', authenticateToken, ensureAdmin, async (req, res) => {
           discount_price = COALESCE($10, discount_price),
           show_on_main_page = COALESCE($11, show_on_main_page),
           display_order = COALESCE($12, display_order),
+          banner_image = COALESCE($13, banner_image),
+          image_url = COALESCE($13, image_url),
           updated_at = CURRENT_TIMESTAMP
-        WHERE id = $13
+        WHERE id = $14
       `, [
         name, slug, description, price !== undefined ? Number(price) : undefined, currency,
         image, category, isPopular !== undefined ? !!isPopular : undefined,
@@ -526,6 +536,7 @@ router.put('/:id', authenticateToken, ensureAdmin, async (req, res) => {
         discountPrice !== undefined ? (discountPrice ? Number(discountPrice) : null) : undefined,
         showOnMainPage !== undefined ? !!showOnMainPage : undefined,
         displayOrder !== undefined ? Number(displayOrder) : undefined,
+        finalBannerImage,
         realId
       ]);
 
@@ -533,7 +544,6 @@ router.put('/:id', authenticateToken, ensureAdmin, async (req, res) => {
       if (packagesList || packages) {
         await client.query('DELETE FROM game_packages WHERE game_id = $1', [realId]);
 
-        let pkgsToInsert = [];
         if (Array.isArray(packagesList)) {
           pkgsToInsert = packagesList;
         } else if (Array.isArray(packages)) {
@@ -573,14 +583,31 @@ router.put('/:id', authenticateToken, ensureAdmin, async (req, res) => {
       `, [realId]);
 
       const { packages_data, ...game } = finalRes.rows[0];
-      // Sync packages into local JSON so static readers see the update
+      // Sync to local JSON so static readers see the update
       try {
+        const updateData = {
+          name: game.name,
+          slug: game.slug,
+          description: game.description,
+          price: Number(game.price),
+          currency: game.currency,
+          image: game.image,
+          category: game.category,
+          isPopular: !!game.is_popular,
+          stock: Number(game.stock),
+          discountPrice: game.discount_price ? Number(game.discount_price) : null,
+          showOnMainPage: !!game.show_on_main_page,
+          displayOrder: Number(game.display_order),
+          banner_image: game.banner_image,
+          image_url: game.image_url || game.banner_image
+        };
+
         if (pkgsToInsert && pkgsToInsert.length) {
           const legacyPackages = pkgsToInsert.map(p => (typeof p === 'string' ? String(p) : String(p.name || p.amount || '')));
           const legacyPrices = pkgsToInsert.map(p => Number(p.price || 0));
           const legacyDiscounts = pkgsToInsert.map(p => (p.discountPrice != null ? Number(p.discountPrice) : (p.discount_price != null ? Number(p.discount_price) : null)));
           const legacyThumbnails = pkgsToInsert.map(p => p.image || null);
-          localDb.updateGame(realId, {
+          Object.assign(updateData, {
             packagesList: pkgsToInsert,
             packages: legacyPackages,
             package_prices: legacyPrices,
@@ -588,8 +615,9 @@ router.put('/:id', authenticateToken, ensureAdmin, async (req, res) => {
             package_thumbnails: legacyThumbnails
           });
         }
+        localDb.updateGame(realId, updateData);
       } catch (e) {
-        console.error('Failed to sync packages to local JSON:', e && e.message);
+        console.error('Failed to sync game to local JSON:', e && e.message);
       }
 
       const io = getIO();
@@ -1005,18 +1033,29 @@ router.put('/:id/image-url', authenticateToken, ensureAdmin, async (req, res) =>
 
       // Update only image_url
       await client.query(
-        'UPDATE games SET image_url = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
+        'UPDATE games SET image_url = $1, banner_image = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
         [image_url, gameId]
       );
 
       await client.query('COMMIT');
       await logAudit('update_game_image_url', `Updated game image_url for ${gameId}`, req.user);
 
+      // Also sync to local JSON
+      try {
+        localDb.updateGame(gameId, { 
+          image_url, 
+          banner_image: image_url 
+        });
+      } catch (e) {
+        console.error('Failed to sync image_url to local JSON:', e.message);
+      }
+
       const io = getIO();
       if (io) {
         io.emit('games_updated');
       }
 
+      invalidatePopularCache();
       res.json({ id: gameId, image_url });
     } catch (error) {
       await client.query('ROLLBACK');

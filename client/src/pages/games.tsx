@@ -38,9 +38,10 @@ const GAME_SLUG_IMAGES: Record<string, string> = {
 function getGameImage(game: Game): string {
   if (game.bannerImage) return game.bannerImage;
   if ((game as any).banner_image) return (game as any).banner_image;
+  if (game.image_url) return game.image_url;
   if (game.image && game.image.startsWith('https://res.cloudinary.com')) return game.image;
-  if (GAME_SLUG_IMAGES[game.slug]) return GAME_SLUG_IMAGES[game.slug];
   if (game.image) return game.image;
+  if (GAME_SLUG_IMAGES[game.slug]) return GAME_SLUG_IMAGES[game.slug];
   return '';
 }
 

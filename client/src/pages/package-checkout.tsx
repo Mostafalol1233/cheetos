@@ -69,9 +69,13 @@ export default function PackageCheckoutPage() {
         : packagesList.map((p: any) => (p?.discountPrice ?? null));
 
     const packageBonuses = packagesList.map((p: any) => p?.bonus || null);
+    const packageImages = packagesList.map((p: any) => p?.image || null).length > 0 
+        ? packagesList.map((p: any) => p?.image || null)
+        : (game as any).packageThumbnails || [];
 
     const selectedPackage = packages[pkgIndex];
     const bonus = packageBonuses[pkgIndex];
+    const pkgImage = packageImages[pkgIndex];
 
     const getPackagePricing = () => {
         if (localizedPrices && localizedPrices[pkgIndex]) {
@@ -214,8 +218,16 @@ I would like to purchase this package. Please let me know how to proceed.`;
 
                                     {/* Package Info */}
                                     <div className="text-center">
-                                        <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-cyber-blue to-neon-purple flex items-center justify-center mx-auto mb-4 shadow-glow-blue">
-                                            <Package className="w-10 h-10 text-white" />
+                                        <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-cyber-blue to-neon-purple flex items-center justify-center mx-auto mb-4 shadow-glow-blue overflow-hidden">
+                                            {pkgImage ? (
+                                                <img 
+                                                    src={pkgImage} 
+                                                    alt={selectedPackage} 
+                                                    className="w-full h-full object-contain"
+                                                />
+                                            ) : (
+                                                <Package className="w-10 h-10 text-white" />
+                                            )}
                                         </div>
 
                                         <h1 className="text-3xl font-bold text-foreground mb-2">

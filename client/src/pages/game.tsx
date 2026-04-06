@@ -385,7 +385,7 @@ export default function GamePage() {
   }
 
   const gameSlug = (game as any).slug || '';
-  const heroImage = game.bannerImage || (game as any).banner_image || HERO_IMAGES[gameSlug] || (game as any).image_url || game.image || '';
+  const heroImage = game.bannerImage || (game as any).banner_image || (game as any).image_url || (game.image && game.image.startsWith('https://res.cloudinary.com') ? game.image : null) || HERO_IMAGES[gameSlug] || game.image || '';
   const currencyImageUrl = CURRENCY_IMAGES[gameSlug] || null;
 
   const packagesList: any[] = Array.isArray((game as any).packagesList) ? (game as any).packagesList : [];
@@ -395,7 +395,7 @@ export default function GamePage() {
         name: typeof p === 'string' ? p : p?.name || '',
         price: ((game as any).packagePrices || [])[i] ?? 0,
         discountPrice: ((game as any).packageDiscountPrices || [])[i] ?? null,
-        image: null,
+        image: ((game as any).packageThumbnails || [])[i] ?? null,
         bonus: null,
       }));
 
@@ -728,13 +728,7 @@ export default function GamePage() {
                       <div className="p-4 sm:p-5 flex flex-col items-center gap-3">
                         <div className="relative flex items-center justify-center">
                           <div className="w-24 h-24 sm:w-28 sm:h-28 flex items-center justify-center">
-                            {currencyImageUrl ? (
-                              <img
-                                src={currencyImageUrl}
-                                alt={pkgName}
-                                className="w-full h-full object-contain drop-shadow-xl"
-                              />
-                            ) : pkgImage ? (
+                            {pkgImage ? (
                               <img
                                 src={pkgImage}
                                 alt={pkgName}
@@ -747,6 +741,12 @@ export default function GamePage() {
                                     parent.innerHTML = `<div style="width:96px;height:96px;border-radius:20px;background:linear-gradient(135deg,#D4AF37,#b8962e);display:flex;align-items:center;justify-content:center;"><span style="color:#000;font-weight:900;font-size:13px;text-align:center;padding:8px;">${pkgName}</span></div>`;
                                   }
                                 }}
+                              />
+                            ) : currencyImageUrl ? (
+                              <img
+                                src={currencyImageUrl}
+                                alt={pkgName}
+                                className="w-full h-full object-contain drop-shadow-xl"
                               />
                             ) : (
                               <CurrencyAmountIcon amount={pkgName} gameSlug={gameSlug} />

@@ -2032,7 +2032,19 @@ export default function AdminDashboard() {
       const data = await res.json();
       if (data.url && editingGame) {
         if (target === 'logo') {
-          setEditingGame({ ...editingGame, image: data.url });
+          // Update logo and also update banner if it was empty or the same as old logo
+          const isBannerSameAsOldLogo = !editingGame.image_url || editingGame.image_url === editingGame.image;
+          if (isBannerSameAsOldLogo) {
+            setEditingGame({ 
+              ...editingGame, 
+              image: data.url, 
+              image_url: data.url,
+              bannerImage: data.url,
+              banner_image: data.url 
+            });
+          } else {
+            setEditingGame({ ...editingGame, image: data.url });
+          }
         } else {
           setEditingGame({ 
             ...editingGame, 
@@ -2564,7 +2576,17 @@ export default function AdminDashboard() {
               {games.map((game: Game) => (
                 <Card key={game.id} className={`bg-card/50 border-gold-primary/30 ${selectedGames.includes(game.id) ? 'ring-2 ring-gold-primary' : ''}`}>
                   <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
-                    <CardTitle className="text-lg">{game.name}</CardTitle>
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-16 rounded-lg overflow-hidden bg-muted border border-gold-primary/20 shrink-0 relative">
+                        <img 
+                          src={getGameDisplayImage(game)} 
+                          alt="" 
+                          className="absolute inset-0 w-full h-full object-cover" 
+                          onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder.jpg'; }}
+                        />
+                      </div>
+                      <CardTitle className="text-lg">{game.name}</CardTitle>
+                    </div>
                     <Checkbox
                       checked={selectedGames.includes(game.id)}
                       onCheckedChange={(c) => handleSelectGame(game.id, !!c)}
@@ -2683,7 +2705,12 @@ export default function AdminDashboard() {
                           <div className="flex items-center gap-4 mb-3">
                             {p.image ? (
                               <div className="w-16 h-16 bg-gold-primary/5 rounded-xl border border-gold-primary/30 flex items-center justify-center p-1 overflow-hidden">
-                                <img src={p.image} alt="Package" className="max-w-full max-h-full object-contain" />
+                                <img 
+                                  key={`pkg-preview-${idx}-${p.image}`}
+                                  src={p.image} 
+                                  alt="Package" 
+                                  className="max-w-full max-h-full object-contain" 
+                                />
                               </div>
                             ) : (
                               <div className="w-16 h-16 bg-muted/50 rounded-xl border border-dashed border-muted-foreground/30 flex items-center justify-center text-xs text-muted-foreground">
