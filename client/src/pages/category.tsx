@@ -235,7 +235,7 @@ export default function CategoryPage() {
                     <Card key={game.id} className="overflow-hidden border-gold-primary/10 hover:border-gold-primary/50 hover:shadow-xl hover:scale-105 transition-all duration-300 group">
                       <div className="aspect-[4/3] relative overflow-hidden bg-gradient-to-br from-muted to-card">
                         <ImageWithFallback
-                          src={(game as any).image_url || game.image}
+                          src={(game as any).banner_image || game.image}
                           alt={game.name}
                           className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                         />

@@ -473,7 +473,7 @@ router.put('/:id', authenticateToken, ensureAdmin, async (req, res) => {
   const {
     name, slug, description, price, currency, image, image_url, category, isPopular, stock, discountPrice,
     packagesList, packages, packagePrices, packageDiscountPrices,
-    showOnMainPage, displayOrder, banner_image, bannerImage, image_url
+    showOnMainPage, displayOrder, banner_image, bannerImage
   } = req.body;
 
   const finalBannerImage = banner_image || bannerImage || image_url;
