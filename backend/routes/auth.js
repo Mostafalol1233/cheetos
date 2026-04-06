@@ -26,7 +26,10 @@ if (!ADMIN_PASSWORD) {
 
 const qrSessions = new Map();
 
+// Rate Limiting for Admin Login
 const loginAttempts = new Map();
+const MAX_ATTEMPTS = 5;
+const LOCKOUT_TIME = 15 * 60 * 1000; // 15 minutes
 const LOGIN_WINDOW_MS = 15 * 60 * 1000;
 const LOGIN_MAX_ATTEMPTS = 10;
 
@@ -45,6 +48,10 @@ function loginRateLimiter(req, res, next) {
   }
   next();
 }
+
+const getClientIp = (req) => {
+  return req.headers['x-forwarded-for']?.split(',')[0] || req.ip;
+};
 
 // JSON fallback for users
 const getUsersFile = () => path.join(__dirname, '../data/users.json');
@@ -75,14 +82,46 @@ router.post('/admin/login', loginRateLimiter, async (req, res) => {
     }
 
     const { email, password } = req.body;
+    const ip = getClientIp(req);
+    const now = Date.now();
+
+    // Check rate limit
+    const attemptData = loginAttempts.get(ip);
+    if (attemptData) {
+      if (attemptData.lockedUntil && now < attemptData.lockedUntil) {
+        const remainingMinutes = Math.ceil((attemptData.lockedUntil - now) / 60000);
+        return res.status(429).json({ message: `Too many login attempts. Please try again in ${remainingMinutes} minutes.` });
+      }
+      // Reset if lockout expired
+      if (attemptData.lockedUntil && now > attemptData.lockedUntil) {
+        loginAttempts.delete(ip);
+      }
+    }
 
     if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
+      // Success - reset attempts
+      loginAttempts.delete(ip);
+
       const token = jwt.sign({ email, role: 'admin' }, JWT_SECRET, { expiresIn: '24h' });
       const csrfToken = crypto.randomBytes(16).toString('hex');
       const sameSite = process.env.NODE_ENV === 'production' ? 'None' : 'Lax';
       const secure = process.env.NODE_ENV === 'production' ? '; Secure' : '';
       res.setHeader('Set-Cookie', `csrf_token=${encodeURIComponent(csrfToken)}; Path=/; SameSite=${sameSite}${secure}`);
       return res.json({ token, email, role: 'admin', csrfToken });
+    }
+
+    // Failure - increment attempts
+    const currentAttempts = (loginAttempts.get(ip)?.count || 0) + 1;
+    let lockedUntil = null;
+    
+    if (currentAttempts >= MAX_ATTEMPTS) {
+      lockedUntil = now + LOCKOUT_TIME;
+    }
+
+    loginAttempts.set(ip, { count: currentAttempts, lockedUntil });
+
+    if (lockedUntil) {
+       return res.status(429).json({ message: 'Too many login attempts. Account locked for 15 minutes.' });
     }
 
     res.status(401).json({ message: 'Invalid credentials' });
@@ -243,6 +282,21 @@ router.post('/login', async (req, res) => {
       return res.status(400).json({ message: 'Email and password are required' });
     }
 
+    const ip = getClientIp(req);
+    const now = Date.now();
+
+    // Check rate limit
+    const attemptData = loginAttempts.get(ip);
+    if (attemptData) {
+      if (attemptData.lockedUntil && now < attemptData.lockedUntil) {
+        const remainingMinutes = Math.ceil((attemptData.lockedUntil - now) / 60000);
+        return res.status(429).json({ message: `Too many login attempts. Please try again in ${remainingMinutes} minutes.` });
+      }
+      if (attemptData.lockedUntil && now > attemptData.lockedUntil) {
+        loginAttempts.delete(ip);
+      }
+    }
+
     let user;
     try {
       const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
@@ -253,6 +307,14 @@ router.post('/login', async (req, res) => {
     }
 
     if (!user) {
+      // Failure - increment attempts
+      const currentAttempts = (loginAttempts.get(ip)?.count || 0) + 1;
+      let lockedUntil = null;
+      if (currentAttempts >= MAX_ATTEMPTS) {
+        lockedUntil = now + LOCKOUT_TIME;
+      }
+      loginAttempts.set(ip, { count: currentAttempts, lockedUntil });
+      
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
@@ -276,8 +338,19 @@ router.post('/login', async (req, res) => {
     }
 
     if (!isValid) {
+      // Failure - increment attempts
+      const currentAttempts = (loginAttempts.get(ip)?.count || 0) + 1;
+      let lockedUntil = null;
+      if (currentAttempts >= MAX_ATTEMPTS) {
+        lockedUntil = now + LOCKOUT_TIME;
+      }
+      loginAttempts.set(ip, { count: currentAttempts, lockedUntil });
+
       return res.status(401).json({ message: 'Invalid credentials' });
     }
+
+    // Success - reset attempts
+    loginAttempts.delete(ip);
 
     const token = jwt.sign({ id: user.id, name: user.name, email: user.email, role: user.role || 'user' }, JWT_SECRET, { expiresIn: '30d' });
     res.json({ token, user: { id: user.id, name: user.name, email: user.email, role: user.role || 'user' } });

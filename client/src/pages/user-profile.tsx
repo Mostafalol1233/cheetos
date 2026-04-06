@@ -271,11 +271,11 @@ export default function UserProfilePage() {
   useEffect(() => {
     // Socket.io connection for real-time updates
     const socket = io(API_BASE_URL, {
-      transports: ['polling'],
-      upgrade: false,
+      transports: ['websocket', 'polling'],
+      upgrade: true,
       reconnection: true,
       reconnectionAttempts: 5,
-      reconnectionDelay: 1000,
+      reconnectionDelay: 5000,
       timeout: 10000,
       path: '/socket.io'
     });

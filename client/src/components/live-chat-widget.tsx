@@ -232,11 +232,11 @@ interface LiveChatWidgetProps {
 
     if (!socketRef.current) {
       const socket = io(API_BASE_URL, {
-        transports: ['polling'],
-        upgrade: false,
+        transports: ['websocket', 'polling'],
+        upgrade: true,
         reconnection: true,
         reconnectionAttempts: 5,
-        reconnectionDelay: 1000,
+        reconnectionDelay: 5000,
         path: '/socket.io'
       });
       socketRef.current = socket;

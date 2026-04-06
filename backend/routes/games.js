@@ -80,7 +80,7 @@ const formatGame = (game, packages = []) => {
       showOnMainPage: game.showOnMainPage !== undefined ? !!game.showOnMainPage : (game.show_on_main_page !== undefined ? !!game.show_on_main_page : true),
       displayOrder: game.displayOrder !== undefined ? Number(game.displayOrder) : (game.display_order !== undefined ? Number(game.display_order) : 999),
       image: normalizeImageUrl(game.image),
-      image_url: normalizeImageUrl(game.image_url || game.image), // ensure large image is included
+      image_url: normalizeImageUrl(game.image_url || game.banner_image || game.bannerImage || game.image), // ensure large image is included
       // Legacy arrays
       packages: legacyPackages,
       packagePrices: legacyPrices,

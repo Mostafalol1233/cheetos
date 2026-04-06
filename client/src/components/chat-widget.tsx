@@ -44,7 +44,7 @@ export function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
       // Start polling for new messages
       const pollInterval = setInterval(() => {
         loadChatHistory();
-      }, 5000); // Poll every 5 seconds
+      }, 30000); // Poll every 30 seconds to save edge requests
       
       return () => clearInterval(pollInterval);
     }

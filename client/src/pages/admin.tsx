@@ -55,9 +55,20 @@ interface Game {
   category: string;
   image: string;
   image_url?: string;
+  bannerImage?: string;
+  banner_image?: string;
   showOnMainPage?: boolean;
   displayOrder?: number;
   deleted?: boolean;
+}
+
+// Helper to match customer-facing image logic
+function getGameDisplayImage(game: Game): string {
+  if (game.bannerImage) return game.bannerImage;
+  if (game.banner_image) return game.banner_image;
+  if (game.image_url) return game.image_url;
+  if (game.image && game.image.startsWith('https://res.cloudinary.com')) return game.image;
+  return game.image || '';
 }
 
 interface Category {
@@ -639,7 +650,7 @@ function ArrangementPanel() {
   const [arrangementFilter, setArrangementFilter] = useState<'active' | 'deleted' | 'all'>('active');
   const { data: arrangementGames = [], isFetching: isFetchingArrangement, isLoading, isError, refetch } = useQuery<any[]>({
     queryKey: ['/api/games/admin/arrangement', arrangementFilter],
-    refetchInterval: 30000, // Consistency check
+    refetchInterval: 60000, // Consistency check (1m)
     queryFn: async () => {
       const token = localStorage.getItem('adminToken');
       const res = await fetch(apiPath(`/api/games/admin/arrangement?filter=${arrangementFilter}`), {
@@ -818,10 +829,10 @@ export default function AdminDashboard() {
   // Global socket listeners for real-time data sync
   useEffect(() => {
     const socket = io(API_BASE_URL, {
-      transports: ['polling'],
-      upgrade: false,
+      transports: ['websocket', 'polling'],
+      upgrade: true,
       reconnectionAttempts: 5,
-      reconnectionDelay: 1000,
+      reconnectionDelay: 5000,
       path: '/socket.io'
     });
 
@@ -1030,7 +1041,7 @@ export default function AdminDashboard() {
   const { data: alerts = [] } = useQuery<Alert[]>({
     queryKey: ['/api/admin/alerts', alertStatus, alertType, alertSearch],
     enabled: true,
-    refetchInterval: 5000, // Real-time updates
+    refetchInterval: 60000, // Reduced frequency (1m) to save edge requests
     queryFn: async () => {
       const token = typeof window !== 'undefined' ? localStorage.getItem('adminToken') : null;
       const params = new URLSearchParams();
@@ -1645,7 +1656,12 @@ export default function AdminDashboard() {
         queryClient.invalidateQueries({ queryKey: [`/api/games/slug/${editingGame.slug}`] });
       }
       if (resp?.id) {
-        setEditingGame((prev) => (prev ? ({ ...prev, image_url: resp.image_url }) : prev));
+        setEditingGame((prev) => (prev ? ({ 
+          ...prev, 
+          image_url: resp.image_url,
+          bannerImage: resp.image_url,
+          banner_image: resp.image_url
+        }) : prev));
       }
     }
   });
@@ -2018,7 +2034,12 @@ export default function AdminDashboard() {
         if (target === 'logo') {
           setEditingGame({ ...editingGame, image: data.url });
         } else {
-          setEditingGame({ ...editingGame, image_url: data.url });
+          setEditingGame({ 
+            ...editingGame, 
+            image_url: data.url,
+            bannerImage: data.url,
+            banner_image: data.url 
+          });
         }
       } else if (data.url) {
         alert('Image uploaded: ' + data.url);
@@ -2661,9 +2682,11 @@ export default function AdminDashboard() {
                         <div key={idx} className="border-b pb-4 mb-4 last:border-0 last:mb-0 last:pb-0">
                           <div className="flex items-center gap-4 mb-3">
                             {p.image ? (
-                              <img src={p.image} alt="Package" className="w-16 h-16 object-cover rounded border border-gold-primary/30" />
+                              <div className="w-16 h-16 bg-gold-primary/5 rounded-xl border border-gold-primary/30 flex items-center justify-center p-1 overflow-hidden">
+                                <img src={p.image} alt="Package" className="max-w-full max-h-full object-contain" />
+                              </div>
                             ) : (
-                              <div className="w-16 h-16 bg-muted/50 rounded border border-dashed border-muted-foreground/30 flex items-center justify-center text-xs text-muted-foreground">
+                              <div className="w-16 h-16 bg-muted/50 rounded-xl border border-dashed border-muted-foreground/30 flex items-center justify-center text-xs text-muted-foreground">
                                 No Img
                               </div>
                             )}
@@ -3607,7 +3630,12 @@ export default function AdminDashboard() {
                 <Input
                   id="image_url"
                   value={editingGame.image_url || ''}
-                  onChange={(e) => setEditingGame({ ...editingGame, image_url: e.target.value })}
+                  onChange={(e) => setEditingGame({ 
+                    ...editingGame, 
+                    image_url: e.target.value,
+                    bannerImage: e.target.value,
+                    banner_image: e.target.value
+                  })}
                   className="col-span-3"
                 />
               </div>
@@ -3636,17 +3664,43 @@ export default function AdminDashboard() {
                   className="col-span-3"
                 />
               </div>
-              {editingGame.image && (
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <div className="col-start-2 col-span-3">
-                    <img src={editingGame.image} alt="Preview" className="h-32 object-contain rounded-md border" />
-                  </div>
-                </div>
-              )}
-              {editingGame.image_url && (
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <div className="col-start-2 col-span-3">
-                    <img src={editingGame.image_url} alt="Large Preview" className="h-32 object-contain rounded-md border" />
+              {(editingGame.image || editingGame.image_url) && (
+                <div className="grid grid-cols-4 items-start gap-4">
+                  <Label className="text-right pt-2">Previews</Label>
+                  <div className="col-span-3 flex flex-wrap gap-4">
+                    <div className="space-y-1">
+                      <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-tighter">Home Card (3:4)</p>
+                      <div className="w-24 overflow-hidden rounded-lg border border-gold-primary/30 relative bg-muted" style={{ aspectRatio: '3/4' }}>
+                        <img 
+                          src={getGameDisplayImage(editingGame)} 
+                          alt="Home Preview" 
+                          key={`home-${editingGame.image}-${editingGame.image_url}`}
+                          className="absolute inset-0 w-full h-full object-cover" 
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-tighter">Game Page (4:3)</p>
+                      <div className="w-32 overflow-hidden rounded-lg border border-gold-primary/30 relative bg-muted" style={{ aspectRatio: '4/3' }}>
+                        <img 
+                          src={editingGame.image_url || editingGame.image} 
+                          alt="Game Preview" 
+                          key={`game-${editingGame.image}-${editingGame.image_url}`}
+                          className="absolute inset-0 w-full h-full object-cover" 
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-tighter">Package Logo</p>
+                      <div className="w-16 h-16 rounded-xl bg-gold-primary/10 border border-gold-primary/30 flex items-center justify-center overflow-hidden">
+                        <img 
+                          src={editingGame.image} 
+                          alt="Package Logo" 
+                          key={`pkg-${editingGame.image}`}
+                          className="w-12 h-12 object-contain" 
+                        />
+                      </div>
+                    </div>
                   </div>
                 </div>
               )}
@@ -3755,7 +3809,7 @@ function UsersPanel() {
   const { data, isLoading, isError, refetch } = useQuery<{ items: Array<{ id: string; name: string; phone: string; email?: string | null; email_verified?: boolean | null; created_at: string }>; page: number; limit: number; total: number }>({
     queryKey: ['/api/admin/users', q, page],
     enabled: true,
-    refetchInterval: 30000, // Consistency check
+    refetchInterval: 60000, // Consistency check (1m)
     queryFn: async () => {
       const token = localStorage.getItem('adminToken');
       const res = await fetch(apiPath(`/api/admin/users?q=${encodeURIComponent(q)}&page=${page}&limit=20`), {
@@ -3876,7 +3930,7 @@ function InteractionsPanel() {
   const { data, refetch, isLoading, isError } = useQuery<{ items: Array<{ id: string; event_type: string; element?: string; page?: string; success: boolean; error?: string; ua?: string; ts: string }> }>({
     queryKey: ['/api/admin/interactions', q, eventType],
     enabled: true,
-    refetchInterval: 30000, // Consistency check
+    refetchInterval: 60000, // Consistency check (1m)
     queryFn: async () => {
       const token = localStorage.getItem('adminToken');
       const params = new URLSearchParams();
@@ -4159,7 +4213,7 @@ function ChatWidgetConfigPanel() {
       const res = await fetch(apiPath('/api/health'));
       return await res.json().catch(() => ({}));
     },
-    refetchInterval: 5000
+    refetchInterval: 60000
   });
   const { data: selftest } = useQuery<{ ok?: boolean; checks?: any[] }>({
     queryKey: ['/api/admin/selftest'],
@@ -4170,7 +4224,7 @@ function ChatWidgetConfigPanel() {
       });
       return await res.json().catch(() => ({}));
     },
-    refetchInterval: 5000
+    refetchInterval: 60000
   });
 
   // Fetch config
@@ -4943,7 +4997,7 @@ function SellerAlertsPanel() {
   const token = typeof window !== 'undefined' ? localStorage.getItem('adminToken') : null;
   const { data: alerts = [], refetch } = useQuery<Array<{ id: string; type: string; summary: string; created_at: string; read: boolean; flagged: boolean }>>({
     queryKey: ['/api/admin/alerts'],
-    refetchInterval: 5000,
+    refetchInterval: 60000,
     queryFn: async () => {
       const res = await fetch(apiPath('/api/admin/alerts'), { headers: token ? { Authorization: `Bearer ${token}` } : undefined });
       return res.json();
