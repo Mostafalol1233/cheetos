@@ -1619,15 +1619,15 @@ export default function AdminDashboard() {
       if (!res.ok) throw new Error((data as any)?.message || 'Failed to update game');
       return data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/games'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/games/popular'] });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['/api/games'] });
+      await queryClient.invalidateQueries({ queryKey: ['/api/games/popular'] });
       if (editingGame?.id) {
-        queryClient.invalidateQueries({ queryKey: [`/api/games/id/${editingGame.id}`] });
+        await queryClient.invalidateQueries({ queryKey: [`/api/games/id/${editingGame.id}`] });
       }
       if (editingGame?.slug) {
-        queryClient.invalidateQueries({ queryKey: [`/api/games/${editingGame.slug}`] });
-        queryClient.invalidateQueries({ queryKey: [`/api/games/slug/${editingGame.slug}`] });
+        await queryClient.invalidateQueries({ queryKey: [`/api/games/${editingGame.slug}`] });
+        await queryClient.invalidateQueries({ queryKey: [`/api/games/slug/${editingGame.slug}`] });
       }
       setEditingGame(null);
     }

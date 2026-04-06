@@ -484,8 +484,8 @@ router.put('/:id', authenticateToken, ensureAdmin, async (req, res) => {
     try {
       await client.query('BEGIN');
 
-      // Check if game exists
-      const checkRes = await client.query('SELECT * FROM games WHERE id = $1 OR slug = $1', [id]);
+      // Check if game exists and lock it for update to prevent deadlocks
+      const checkRes = await client.query('SELECT * FROM games WHERE id = $1 OR slug = $1 FOR UPDATE', [id]);
       if (checkRes.rows.length === 0) {
         await client.query('ROLLBACK');
         return res.status(404).json({ message: 'Game not found' });
@@ -773,7 +773,7 @@ router.put('/:id/packages', authenticateToken, ensureAdmin, async (req, res) => 
     try {
       await client.query('BEGIN');
 
-      const gameCheck = await client.query('SELECT id FROM games WHERE id = $1', [id]);
+      const gameCheck = await client.query('SELECT id FROM games WHERE id = $1 FOR UPDATE', [id]);
       if (gameCheck.rows.length === 0) {
         await client.query('ROLLBACK');
         // Throw to trigger the outer DB-catch fallback which will persist to localDb
@@ -1023,8 +1023,8 @@ router.put('/:id/image-url', authenticateToken, ensureAdmin, async (req, res) =>
     try {
       await client.query('BEGIN');
 
-      // Check if game exists
-      const checkRes = await client.query('SELECT id FROM games WHERE id = $1 OR slug = $1', [id]);
+      // Check if game exists and lock it
+      const checkRes = await client.query('SELECT id FROM games WHERE id = $1 OR slug = $1 FOR UPDATE', [id]);
       if (checkRes.rows.length === 0) {
         await client.query('ROLLBACK');
         return res.status(404).json({ message: 'Game not found' });
