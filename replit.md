@@ -22,15 +22,20 @@ A high-end digital store for gaming currencies and vouchers.
 
 ## Image Handling
 - All game main (logo) images are hosted on Cloudinary (ddzbutb12) in the `image` DB column
-- All game banner/hero images are hosted on Cloudinary in the `banner_image` DB column (22/24 games)
+- ALL game banner/hero images are hosted on Cloudinary in the `banner_image` DB column (all 24 games)
 - Image priority order (game.tsx hero): banner_image (DB) → HERO_IMAGES fallback → image_url (DB) → image (DB)
 - Image priority order (games.tsx / popular-games.tsx): banner_image (DB) → image (DB Cloudinary) → GAME_SLUG_IMAGES fallback → image (DB)
-- TikTok, Wolf Team, e-football fall back to their small logo Cloudinary images (no banner available)
-- Local static images in `client/public/images/` still used for currency icons, hero banners, and GAME_SLUG_IMAGES fallbacks
+- TikTok, Wolf Team, e-football use their logo Cloudinary images as banners (no proper banner art available)
+- Hero carousel (header_versions table) image_url fields all updated to Cloudinary URLs (gamecart/headers/)
+- Local static images in `client/public/images/` still used for currency icons and GAME_SLUG_IMAGES fallbacks
 - Logo in loading screen uses Cloudinary URL (gamecart/logo.png)
 - `banner_image` column added to games table in DB and to Drizzle schema (shared/schema.ts)
 
 ## Recent Changes
+- Uploaded hero carousel images to Cloudinary (crossfire-banner-new, hero-pubg, hero-free-fire) and updated header_versions table URLs
+- Fixed Valornt Turk banner: uploaded valorant-turk-banner.png to Cloudinary and updated banner_image in DB
+- Set banner_image for TikTok, Wolf Team, e-Football using their existing Cloudinary logo images
+- All games now have Cloudinary banner_image URLs (previously 3 games had empty/wrong banners)
 - Fixed "Image unavailable" by adding `client/public/images/` as static asset dir in backend
 - Generated AI game images for Free Fire, PUBG, Crossfire (banners) and Fortnite (card)
 - Fixed loading screens: replaced blue gradients with pure black (#000000)
