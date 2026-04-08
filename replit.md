@@ -5,10 +5,10 @@ A high-end digital store for gaming currencies and vouchers.
 
 ## Architecture
 - **Frontend**: React + TypeScript + Vite running on PORT 5000
-- **Backend**: Node.js Express running on PORT 3001 (entry: `index.js` → `backend/index.js`)
+- **Backend**: Node.js Express running on PORT 22135 (entry: `index.js` → `backend/index.js`)
 - **Database**: PostgreSQL (via backend DB connection)
 - **Workflows**: "Frontend" runs Vite, "Start application" runs the Node.js backend
-- **Vite Proxy**: All `/api`, `/images`, `/media`, `/uploads`, `/socket.io` routes are proxied from port 5000 to backend port 3001
+- **Vite Proxy**: All `/api`, `/images`, `/media`, `/uploads`, `/socket.io` routes are proxied from port 5000 to backend port 22135
 
 ## Key Files
 - `index.js` — Root shim, delegates to `backend/index.js`
@@ -23,7 +23,7 @@ A high-end digital store for gaming currencies and vouchers.
 ## Image Handling
 - All game main (logo) images are hosted on Cloudinary (ddzbutb12) in the `image` DB column
 - ALL game banner/hero images are hosted on Cloudinary in the `banner_image` DB column (all 24 games)
-- Image priority order (game.tsx hero): banner_image (DB) → HERO_IMAGES fallback → image_url (DB) → image (DB)
+- Image priority order (game.tsx hero): banner_image (DB) → bannerImage → image_url (DB) → Cloudinary image (DB) → HERO_IMAGES fallback → image (DB)
 - Image priority order (games.tsx / popular-games.tsx): banner_image (DB) → image (DB Cloudinary) → GAME_SLUG_IMAGES fallback → image (DB)
 - TikTok, Wolf Team, e-football use their logo Cloudinary images as banners (no proper banner art available)
 - Hero carousel (header_versions table) image_url fields all updated to Cloudinary URLs (gamecart/headers/)
@@ -74,3 +74,7 @@ A high-end digital store for gaming currencies and vouchers.
 - Removed useless tabs: Interactions, Catbox Upload, Image Manager, Advanced Editor, Home Preview
 - Default admin tab changed from 'games' to 'orders'
 - Added description banner to Digital Codes tab explaining how auto-delivery works
+- Post-merge setup script created at `scripts/post-merge.sh` — installs npm deps for root/backend/client (runs automatically after task merges)
+- Admin panel: "Large Image URL" renamed to "Banner Image URL", edit dialog now loads and saves `banner_image` field correctly
+- game.tsx: Fixed heroImage priority — banner_image now takes precedence over image_url (prevents wrong images showing)
+- Fixed merge conflict in game.tsx heroImage line (was causing Vite pre-transform error)
