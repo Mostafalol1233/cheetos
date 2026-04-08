@@ -6,7 +6,6 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Game, Category } from "@shared/schema";
-import ImageWithFallback from "@/components/image-with-fallback";
 import { useTranslation } from "@/lib/translation";
 import { motion } from "framer-motion";
 
@@ -159,10 +158,18 @@ export default function GamesPage() {
 
                       {/* Image area */}
                       <div className="relative aspect-[3/4] overflow-hidden bg-gray-900">
-                        <ImageWithFallback
+                        {/* Blurred background fill for wide/landscape images */}
+                        <img
+                          src={getGameImage(game)}
+                          alt=""
+                          aria-hidden="true"
+                          className="absolute inset-0 w-full h-full object-cover scale-110 blur-2xl opacity-50 saturate-150"
+                        />
+                        {/* Main image — fully visible, not cropped */}
+                        <img
                           src={getGameImage(game)}
                           alt={game.name}
-                          className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                          className="absolute inset-0 w-full h-full object-contain transition-transform duration-500 group-hover:scale-105 drop-shadow-2xl"
                         />
 
                         {/* Gradient overlay bottom */}

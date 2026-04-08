@@ -2,7 +2,6 @@ import { useQuery } from "@tanstack/react-query";
 import { Game } from "@shared/schema";
 import { Link } from "wouter";
 import { Flame, ArrowRight } from "lucide-react";
-import ImageWithFallback from "./image-with-fallback";
 import { useTranslation } from "@/lib/translation";
 
 const GAME_SLUG_IMAGES: Record<string, string> = {
@@ -65,29 +64,40 @@ export function PopularGames() {
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-          {games.map((game) => (
-            <Link key={game.id} href={`/game/${game.slug}`} className="block group">
-              <div className="relative overflow-hidden rounded-2xl border border-white/10 hover:border-gold-primary/50 shadow-md hover:shadow-xl hover:shadow-gold-primary/10 transition-all duration-300 cursor-pointer bg-gray-900 shimmer-card" style={{ aspectRatio: '3/4' }}>
-                <ImageWithFallback
-                  src={getGameImage(game)}
-                  alt={game.name}
-                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                />
+          {games.map((game) => {
+            const imgSrc = getGameImage(game);
+            return (
+              <Link key={game.id} href={`/game/${game.slug}`} className="block group">
+                <div className="relative overflow-hidden rounded-2xl border border-white/10 hover:border-gold-primary/50 shadow-md hover:shadow-xl hover:shadow-gold-primary/10 transition-all duration-300 cursor-pointer bg-gray-900 shimmer-card" style={{ aspectRatio: '3/4' }}>
+                  {/* Blurred background fill — prevents empty bars on wide images */}
+                  <img
+                    src={imgSrc}
+                    alt=""
+                    aria-hidden="true"
+                    className="absolute inset-0 w-full h-full object-cover scale-110 blur-2xl opacity-50 saturate-150"
+                  />
+                  {/* Main image — fully contained so nothing gets cut off */}
+                  <img
+                    src={imgSrc}
+                    alt={game.name}
+                    className="absolute inset-0 w-full h-full object-contain transition-transform duration-500 group-hover:scale-105 drop-shadow-2xl"
+                  />
 
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent" />
 
-                <div className="absolute bottom-0 left-0 right-0 p-3">
-                  <h3 className="text-white font-bold text-sm leading-tight drop-shadow-lg line-clamp-2 mb-1.5 tracking-wide">
-                    {game.name}
-                  </h3>
-                  <div className="inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1 rounded-full bg-gold-primary/20 border border-gold-primary/40 text-gold-primary transition-all duration-300 group-hover:bg-gold-primary group-hover:text-black group-hover:border-gold-primary">
-                    <span>{t('view_details')}</span>
-                    <ArrowRight className="w-2.5 h-2.5 transition-transform duration-300 group-hover:translate-x-0.5" />
+                  <div className="absolute bottom-0 left-0 right-0 p-3">
+                    <h3 className="text-white font-bold text-sm leading-tight drop-shadow-lg line-clamp-2 mb-1.5 tracking-wide">
+                      {game.name}
+                    </h3>
+                    <div className="inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1 rounded-full bg-gold-primary/20 border border-gold-primary/40 text-gold-primary transition-all duration-300 group-hover:bg-gold-primary group-hover:text-black group-hover:border-gold-primary">
+                      <span>{t('view_details')}</span>
+                      <ArrowRight className="w-2.5 h-2.5 transition-transform duration-300 group-hover:translate-x-0.5" />
+                    </div>
                   </div>
                 </div>
-              </div>
-            </Link>
-          ))}
+              </Link>
+            );
+          })}
         </div>
       </div>
     </section>
