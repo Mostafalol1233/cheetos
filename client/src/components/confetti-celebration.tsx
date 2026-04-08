@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 
 interface Particle {
   id: number;
@@ -178,17 +177,6 @@ export function ConfettiCelebration({ active, onComplete, count = 160 }: Confett
   );
 }
 
-const floatingItems = [
-  { emoji: "🌙", size: "text-5xl", x: "15%", delay: 0, duration: 3.5 },
-  { emoji: "⭐", size: "text-3xl", x: "30%", delay: 0.3, duration: 2.8 },
-  { emoji: "🏮", size: "text-4xl", x: "50%", delay: 0.6, duration: 3.2 },
-  { emoji: "⭐", size: "text-2xl", x: "70%", delay: 0.2, duration: 2.5 },
-  { emoji: "🌙", size: "text-3xl", x: "85%", delay: 0.8, duration: 3.8 },
-  { emoji: "✨", size: "text-2xl", x: "22%", delay: 1.0, duration: 2.2 },
-  { emoji: "🏮", size: "text-3xl", x: "75%", delay: 0.5, duration: 3.0 },
-  { emoji: "⭐", size: "text-4xl", x: "60%", delay: 1.2, duration: 2.9 },
-];
-
 export function WelcomeConfetti() {
   const [show, setShow] = useState(false);
 
@@ -204,97 +192,10 @@ export function WelcomeConfetti() {
   }, []);
 
   return (
-    <>
-      <ConfettiCelebration
-        active={show}
-        count={200}
-        onComplete={() => setShow(false)}
-      />
-      <AnimatePresence>
-        {show && (
-          <>
-            {floatingItems.map((item, index) => (
-              <motion.div
-                key={index}
-                className={`fixed pointer-events-none z-[201] select-none ${item.size}`}
-                style={{ left: item.x, top: "-10%" }}
-                initial={{ y: "-10vh", opacity: 0, scale: 0 }}
-                animate={{
-                  y: ["0vh", "30vh", "20vh", "50vh", "40vh", "80vh", "110vh"],
-                  opacity: [0, 1, 1, 1, 1, 0.8, 0],
-                  scale: [0, 1.2, 1, 1.1, 1, 0.9, 0.5],
-                  rotate: [0, 15, -10, 20, -15, 10, 0],
-                }}
-                transition={{
-                  duration: item.duration + 3,
-                  delay: item.delay,
-                  ease: "easeInOut",
-                  times: [0, 0.1, 0.3, 0.5, 0.7, 0.85, 1],
-                }}
-                exit={{ opacity: 0, scale: 0 }}
-              >
-                {item.emoji}
-              </motion.div>
-            ))}
-
-            <motion.div
-              className="fixed top-16 left-1/2 -translate-x-1/2 z-[202] pointer-events-none flex gap-3 items-center"
-              initial={{ opacity: 0, y: -30 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.6, ease: "backOut" }}
-            >
-              {["🌙", "⭐", "🏮", "⭐", "🌙"].map((e, i) => (
-                <motion.span
-                  key={i}
-                  className="text-3xl md:text-4xl"
-                  animate={{
-                    y: [0, -8, 0, -5, 0],
-                    rotate: i % 2 === 0 ? [0, -10, 10, -5, 0] : [0, 10, -10, 5, 0],
-                    scale: [1, 1.15, 1, 1.1, 1],
-                  }}
-                  transition={{
-                    duration: 2,
-                    repeat: 3,
-                    delay: i * 0.15,
-                    ease: "easeInOut",
-                  }}
-                >
-                  {e}
-                </motion.span>
-              ))}
-            </motion.div>
-
-            <motion.div
-              className="fixed bottom-10 left-1/2 -translate-x-1/2 z-[202] pointer-events-none flex gap-2 items-center"
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 20 }}
-              transition={{ duration: 0.6, delay: 0.3, ease: "backOut" }}
-            >
-              {["✨", "🌙", "🏮", "🌙", "✨"].map((e, i) => (
-                <motion.span
-                  key={i}
-                  className="text-2xl md:text-3xl"
-                  animate={{
-                    y: [0, 6, 0, 4, 0],
-                    rotate: [0, 8, -8, 4, 0],
-                    scale: [1, 1.2, 1, 1.1, 1],
-                  }}
-                  transition={{
-                    duration: 1.8,
-                    repeat: 3,
-                    delay: 0.5 + i * 0.12,
-                    ease: "easeInOut",
-                  }}
-                >
-                  {e}
-                </motion.span>
-              ))}
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
-    </>
+    <ConfettiCelebration
+      active={show}
+      count={200}
+      onComplete={() => setShow(false)}
+    />
   );
 }
