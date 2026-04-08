@@ -305,77 +305,82 @@ export default function UserLoginPage() {
           {/* Register Tab */}
           <TabsContent value="register" className="space-y-4">
             <Card className="bg-gradient-to-br from-card-bg/80 to-card-bg/60 border-gold-primary/20">
-              <CardHeader className="pb-4">
+              <CardHeader className="pb-3">
                 <CardTitle className="text-xl text-white flex items-center gap-2">
                   <UserPlus className="w-5 h-5 text-gold-primary" />
                   Create Account
                 </CardTitle>
+                <p className="text-xs text-gray-400 mt-1">Only email &amp; password required — takes 10 seconds</p>
               </CardHeader>
               <CardContent>
-                <form onSubmit={handleRegister} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="reg-name" className="text-white flex items-center gap-2">
-                      <User className="w-4 h-4 text-gold-primary" />
-                      Full Name
-                    </Label>
-                    <Input
-                      id="reg-name"
-                      type="text"
-                      value={registerData.name}
-                      onChange={(e) => setRegisterData(prev => ({ ...prev, name: e.target.value }))}
-                      placeholder="Enter your full name"
-                      required
-                      className="bg-gray-800/50 border-gray-600 text-white placeholder-gray-400 focus:border-gold-primary"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="reg-email" className="text-white flex items-center gap-2">
-                      <Mail className="w-4 h-4 text-gold-primary" />
-                      Email
+                <form onSubmit={handleRegister} className="space-y-3">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="reg-email" className="text-white flex items-center gap-2 text-sm">
+                      <Mail className="w-3.5 h-3.5 text-gold-primary" />
+                      Email <span className="text-red-400">*</span>
                     </Label>
                     <Input
                       id="reg-email"
                       type="email"
                       value={registerData.email}
                       onChange={(e) => setRegisterData(prev => ({ ...prev, email: e.target.value }))}
-                      placeholder="Enter your email"
+                      placeholder="your@email.com"
                       required
-                      className="bg-gray-800/50 border-gray-600 text-white placeholder-gray-400 focus:border-gold-primary"
+                      className="bg-gray-800/50 border-gray-600 text-white placeholder-gray-400 focus:border-gold-primary h-10"
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="reg-phone" className="text-white flex items-center gap-2">
-                      <Phone className="w-4 h-4 text-gold-primary" />
-                      Phone Number
-                    </Label>
-                    <Input
-                      id="reg-phone"
-                      type="tel"
-                      value={registerData.phone}
-                      onChange={(e) => setRegisterData(prev => ({ ...prev, phone: e.target.value }))}
-                      placeholder="Enter your phone number"
-                      className="bg-gray-800/50 border-gray-600 text-white placeholder-gray-400 focus:border-gold-primary"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="reg-password" className="text-white flex items-center gap-2">
-                      <Lock className="w-4 h-4 text-gold-primary" />
-                      Password
+                  <div className="space-y-1.5">
+                    <Label htmlFor="reg-password" className="text-white flex items-center gap-2 text-sm">
+                      <Lock className="w-3.5 h-3.5 text-gold-primary" />
+                      Password <span className="text-red-400">*</span>
                     </Label>
                     <Input
                       id="reg-password"
                       type="password"
                       value={registerData.password}
                       onChange={(e) => setRegisterData(prev => ({ ...prev, password: e.target.value }))}
-                      placeholder="Create a password"
+                      placeholder="Min. 6 characters"
                       required
-                      className="bg-gray-800/50 border-gray-600 text-white placeholder-gray-400 focus:border-gold-primary"
+                      className="bg-gray-800/50 border-gray-600 text-white placeholder-gray-400 focus:border-gold-primary h-10"
                     />
                   </div>
+
+                  <div className="border-t border-gray-700 pt-3">
+                    <p className="text-xs text-gray-500 mb-2">Optional info (can add later in profile)</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="space-y-1">
+                        <Label htmlFor="reg-name" className="text-gray-400 text-xs flex items-center gap-1">
+                          <User className="w-3 h-3" /> Name
+                        </Label>
+                        <Input
+                          id="reg-name"
+                          type="text"
+                          value={registerData.name}
+                          onChange={(e) => setRegisterData(prev => ({ ...prev, name: e.target.value }))}
+                          placeholder="Your name"
+                          className="bg-gray-800/30 border-gray-700 text-white placeholder-gray-500 focus:border-gold-primary h-9 text-sm"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label htmlFor="reg-phone" className="text-gray-400 text-xs flex items-center gap-1">
+                          <Phone className="w-3 h-3" /> Phone
+                        </Label>
+                        <Input
+                          id="reg-phone"
+                          type="tel"
+                          value={registerData.phone}
+                          onChange={(e) => setRegisterData(prev => ({ ...prev, phone: e.target.value }))}
+                          placeholder="01xxxxxxxxx"
+                          className="bg-gray-800/30 border-gray-700 text-white placeholder-gray-500 focus:border-gold-primary h-9 text-sm"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
                   <Button
                     type="submit"
                     disabled={registerLoading}
-                    className="w-full bg-gradient-to-r from-gold-primary to-neon-pink hover:from-gold-secondary hover:to-neon-pink text-black font-semibold py-3"
+                    className="w-full bg-gradient-to-r from-gold-primary to-neon-pink hover:from-gold-secondary hover:to-neon-pink text-black font-semibold py-3 mt-1"
                   >
                     {registerLoading ? (
                       <>
@@ -385,7 +390,7 @@ export default function UserLoginPage() {
                     ) : (
                       <>
                         <UserPlus className="w-4 h-4 mr-2" />
-                        Create Account
+                        Create Account Free
                       </>
                     )}
                   </Button>
