@@ -22,6 +22,7 @@ import { ResponseTemplatesPanel } from '@/components/response-templates-panel';
 import { PromoCodesPanel } from '@/components/admin-promo-codes-panel';
 import { ReviewsPanel } from '@/components/admin-reviews-panel';
 import { AbandonedCartsPanel } from '@/components/admin-abandoned-carts-panel';
+import { AnnouncementsPanel } from '@/components/admin-announcements-panel';
 import { SupportMessagesPanel } from '@/components/support-messages-panel';
 const RichTextEditor = React.lazy(() => import('@/components/rich-text-editor'));
 import { io, Socket } from 'socket.io-client';
@@ -2298,6 +2299,7 @@ export default function AdminDashboard() {
               <TabsTrigger value="approvals" data-testid="tab-approvals" className="data-[state=active]:bg-green-600 data-[state=active]:text-white px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-green-800 font-semibold">✅ الموافقات</TabsTrigger>
               <TabsTrigger value="cards" data-testid="tab-cards" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">🔑 الأكواد الرقمية</TabsTrigger>
               <TabsTrigger value="abandoned-carts" data-testid="tab-abandoned-carts" className="data-[state=active]:bg-yellow-500 data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-yellow-700">🛒 عربات مهجورة</TabsTrigger>
+              <TabsTrigger value="announcements" data-testid="tab-announcements" className="data-[state=active]:bg-pink-600 data-[state=active]:text-white px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-pink-800 font-semibold">📢 الإعلانات</TabsTrigger>
               <span className="mx-2 self-stretch w-px bg-border/50 my-1" />
               {/* ── PRODUCTS ── */}
               <TabsTrigger value="games" data-testid="tab-games" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">🎮 الألعاب</TabsTrigger>
@@ -3523,6 +3525,10 @@ export default function AdminDashboard() {
 
           <TabsContent value="abandoned-carts" className="space-y-6">
             <AbandonedCartsPanel />
+          </TabsContent>
+
+          <TabsContent value="announcements" className="space-y-6">
+            <AnnouncementsPanel />
           </TabsContent>
 
         </Tabs>
