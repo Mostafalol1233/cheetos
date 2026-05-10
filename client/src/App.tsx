@@ -286,8 +286,12 @@ function AppShell() {
 
   return (
     <>
-      {!isAdminRoute ? <AnnouncementBanner /> : null}
-      {!isAdminRoute ? <Header /> : null}
+      {!isAdminRoute ? (
+        <div className="fixed top-0 left-0 right-0 z-50 flex flex-col">
+          <AnnouncementBanner />
+          <Header />
+        </div>
+      ) : null}
 
       <div className={!isAdminRoute && !isHomeRoute ? "pt-24" : ""}>
         <Router />

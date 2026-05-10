@@ -133,7 +133,7 @@ export function Header() {
       {/* Main Header */}
       <header
         className={cn(
-          "fixed w-full top-0 z-50 transition-all duration-300 border-b",
+          "w-full transition-all duration-300 border-b",
           isScrolled
             ? "py-1.5 shadow-xl shadow-black/40 bg-black/98 border-b border-gold-primary/20"
             : "py-2 bg-gradient-to-b from-black/90 to-black/80 border-b border-white/8"
