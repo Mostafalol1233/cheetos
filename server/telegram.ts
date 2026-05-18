@@ -200,26 +200,38 @@ async function cmdOrders(chatId: string): Promise<void> {
   );
   if (!rows.length) { await sendMsg(chatId, "📦 لا يوجد طلبات حالياً."); return; }
 
-  await sendMsg(chatId, `📦 <b>آخر 10 طلبات</b>\n━━━━━━━━━━━━━━━━━━━━`);
+  const statusEmoji: Record<string, string> = {
+    pending: "⏳", processing: "⚙️", completed: "✅",
+    cancelled: "❌", pending_approval: "⏳", refunded: "💸",
+  };
+  const statusLabel: Record<string, string> = {
+    pending: "انتظار", processing: "جاري", completed: "مكتمل",
+    cancelled: "ملغي", pending_approval: "انتظار", refunded: "مسترجع",
+  };
 
-  for (const o of rows) {
-    const statusNames: Record<string, string> = {
-      pending: "⏳ قيد الانتظار", processing: "⚙️ جاري التنفيذ",
-      completed: "✅ مكتمل", cancelled: "❌ ملغي", pending_approval: "⏳ بانتظار الاعتماد",
-    };
-    const s = statusNames[o.status] || o.status;
-    const phone = o.customer_phone || "—";
-    const wa = o.customer_phone ? ` | <a href="${whatsappLink(o.customer_phone)}">واتساب</a>` : "";
-    const text = `📦 <b>طلب:</b> <code>${o.id}</code>
-👤 ${o.customer_name || o.customer_email || "زائر"}
-📞 <code>${phone}</code>${wa}
-💰 ${o.total_amount} ج.م | ${s}
-📅 ${cairoDate(o.created_at)}`;
+  const lines = rows.map((o: any, i: number) => {
+    const e = statusEmoji[o.status] || "📋";
+    const s = statusLabel[o.status] || o.status;
+    const name = (o.customer_name || o.customer_email || "زائر").slice(0, 16);
+    return `${i + 1}. ${e} <code>${o.id.slice(0, 8)}</code> — ${name}\n    💰 ${o.total_amount} ج.م | ${s}`;
+  }).join("\n\n");
 
-    await sendMsg(chatId, text, [
-      [{ text: "🔍 التفاصيل والاعتماد", callback_data: `details:${o.id}` }]
-    ]);
+  // Two buttons per row for compact layout
+  const keyboard: any[][] = [];
+  for (let i = 0; i < rows.length; i += 2) {
+    const row: any[] = [
+      { text: `${i + 1}. ${(rows[i].customer_name || rows[i].customer_email || "زائر").slice(0, 14)}`, callback_data: `details:${rows[i].id}` }
+    ];
+    if (rows[i + 1]) {
+      row.push({ text: `${i + 2}. ${(rows[i + 1].customer_name || rows[i + 1].customer_email || "زائر").slice(0, 14)}`, callback_data: `details:${rows[i + 1].id}` });
+    }
+    keyboard.push(row);
   }
+
+  await sendMsg(chatId,
+    `📦 <b>آخر 10 طلبات</b>\n━━━━━━━━━━━━━━━━━━━━\n${lines}\n━━━━━━━━━━━━━━━━━━━━\n👇 اضغط على اسم العميل لعرض تفاصيل طلبه كاملاً`,
+    keyboard
+  );
 }
 
 async function cmdPending(chatId: string): Promise<void> {
@@ -229,20 +241,28 @@ async function cmdPending(chatId: string): Promise<void> {
   );
   if (!rows.length) { await sendMsg(chatId, "✅ لا يوجد طلبات معلقة!"); return; }
 
-  await sendMsg(chatId, `⏳ <b>طلبات بانتظار التنفيذ (${rows.length})</b>\n━━━━━━━━━━━━━━━━━━━━`);
+  const lines = rows.map((o: any, i: number) => {
+    const name = (o.customer_name || o.customer_email || "زائر").slice(0, 16);
+    const phone = o.customer_phone ? ` | 📞 ${o.customer_phone}` : "";
+    return `${i + 1}. ⏳ <code>${o.id.slice(0, 8)}</code> — ${name}\n    💰 ${o.total_amount} ج.م${phone}`;
+  }).join("\n\n");
 
-  for (const o of rows) {
-    const wa = o.customer_phone ? ` | <a href="${whatsappLink(o.customer_phone)}">واتساب</a>` : "";
-    const text = `• <code>${o.id}</code>
-👤 ${o.customer_name || o.customer_email || "زائر"}
-📞 <code>${o.customer_phone || "—"}</code>${wa}
-💰 ${o.total_amount} ج.م | 📅 ${cairoDate(o.created_at)}`;
-
-    await sendMsg(chatId, text, [
-      [{ text: "✅ اعتماد وإرسال كود", callback_data: `approve:${o.id}` }],
-      [{ text: "🔍 التفاصيل الكاملة", callback_data: `details:${o.id}` }]
-    ]);
+  // Two buttons per row
+  const keyboard: any[][] = [];
+  for (let i = 0; i < rows.length; i += 2) {
+    const row: any[] = [
+      { text: `${i + 1}. ${(rows[i].customer_name || rows[i].customer_email || "زائر").slice(0, 14)}`, callback_data: `details:${rows[i].id}` }
+    ];
+    if (rows[i + 1]) {
+      row.push({ text: `${i + 2}. ${(rows[i + 1].customer_name || rows[i + 1].customer_email || "زائر").slice(0, 14)}`, callback_data: `details:${rows[i + 1].id}` });
+    }
+    keyboard.push(row);
   }
+
+  await sendMsg(chatId,
+    `⏳ <b>طلبات معلقة — بانتظار الاعتماد (${rows.length})</b>\n━━━━━━━━━━━━━━━━━━━━\n${lines}\n━━━━━━━━━━━━━━━━━━━━\n👇 اضغط على اسم العميل لعرض طلبه والاعتماد`,
+    keyboard
+  );
 }
 
 async function cmdStats(chatId: string): Promise<void> {
