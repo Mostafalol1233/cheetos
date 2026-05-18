@@ -13,7 +13,7 @@ import path from "path";
 import passport from "passport";
 import { getSingleSettings, updateSettings } from "./settings";
 import multer from "multer";
-import { notifyNewOrder, notifyOrderStatusChange } from "./telegram";
+import { notifyNewOrder, notifyOrderStatusChange, notifyNewCustomer, updateLastOrderTime } from "./telegram";
 import { sendOrderConfirmationEmail, sendNewAccountEmail } from "./email";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -668,26 +668,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } as any);
 
       // Fire-and-forget: Telegram + email notifications (don't block the response)
+      updateLastOrderTime();
       const notifyAsync = async () => {
         await notifyNewOrder({
           id,
-          customerName: customer_name || user?.username,
-          customerEmail: customer_email || user?.email,
-          customerPhone: customer_phone,
+          customer_name: customer_name || user?.name,
+          customer_email: customer_email || user?.email,
+          customer_phone: customer_phone,
           items,
-          totalAmount: total_amount,
-          paymentMethod: payment_method,
-          playerId: player_id,
-          serverId: server_id,
-          receiptUrl: receipt_url,
-          createdAt: orderCreatedAt,
+          total_amount,
+          payment_method,
+          player_id,
+          receipt_url,
+          created_at: orderCreatedAt,
         });
 
         const emailTo = customer_email || user?.email;
         if (emailTo) {
           await sendOrderConfirmationEmail({
             to: emailTo,
-            customerName: customer_name || user?.username || "Customer",
+            customerName: customer_name || user?.name || "Customer",
             orderId: id,
             items,
             totalAmount: total_amount,
@@ -697,8 +697,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (newUserCreated && generatedPassword) {
             await sendNewAccountEmail({
               to: emailTo,
-              customerName: customer_name || user?.username || "Customer",
-              username: user?.username || emailTo,
+              customerName: customer_name || user?.name || "Customer",
+              username: user?.name || emailTo,
               password: generatedPassword,
             });
           }
