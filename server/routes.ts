@@ -14,7 +14,7 @@ import passport from "passport";
 import { getSingleSettings, updateSettings } from "./settings";
 import multer from "multer";
 
-export function registerRoutes(app: Express): Server {
+export async function registerRoutes(app: Express): Promise<Server> {
   // Setup Auth
   setupAuth(app);
 
