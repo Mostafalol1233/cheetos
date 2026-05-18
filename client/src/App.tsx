@@ -13,6 +13,7 @@ import { AuthProvider, useAuth } from "./lib/auth-context";
 import { UserAuthProvider } from "./lib/user-auth-context";
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { AnnouncementBanner } from "@/components/announcement-banner";
 import { Button } from "@/components/ui/button";
 import Home from "./pages/home";
 import GamePage from "./pages/game";
@@ -285,13 +286,16 @@ function AppShell() {
 
   return (
     <>
-      {!isAdminRoute ? <Header /> : null}
+      {!isAdminRoute ? (
+        <div className="fixed top-0 left-0 right-0 z-50 flex flex-col">
+          <AnnouncementBanner />
+          <Header />
+        </div>
+      ) : null}
 
       <div className={!isAdminRoute && !isHomeRoute ? "pt-24" : ""}>
         <Router />
       </div>
-
-
     </>
   );
 }

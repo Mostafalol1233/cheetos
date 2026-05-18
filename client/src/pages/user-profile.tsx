@@ -52,6 +52,9 @@ interface Order {
     title?: string;
     quantity: number;
     price: number;
+    image?: string;
+    gameImage?: string;
+    game_image?: string;
   }>;
 }
 
@@ -486,52 +489,98 @@ export default function UserProfilePage() {
                   </Card>
                 ) : (
                   <div className="space-y-4">
-                    {orders.map((order) => (
-                      <Card key={order.id} className="bg-gradient-to-br from-card-bg/80 to-card-bg/60 border-gold-primary/20">
-                        <CardHeader className="pb-4">
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <CardTitle className="text-lg text-white">Order #{order.id.slice(-8)}</CardTitle>
-                              <p className="text-gray-400 text-sm">{formatDate(order.created_at)}</p>
-                            </div>
-                            <div className="text-right">
-                              <Badge className={`mb-2 ${getStatusColor(order.status)}`}>
-                                {order.status}
-                              </Badge>
-                              <p className="text-xl font-bold text-gold-primary">{Number(order.total_amount ?? order.total ?? 0).toFixed(2)} EGP</p>
-                            </div>
-                          </div>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="space-y-3">
-                            {order.items.map((item) => (
-                              <div key={item.id} className="flex items-center justify-between py-2 border-b border-gray-700 last:border-b-0">
-                                <div className="flex items-center gap-3">
-                                  <div className="w-10 h-10 bg-gray-700 rounded flex items-center justify-center">
-                                    <Package className="w-5 h-5 text-gray-400" />
+                    {orders.map((order) => {
+                      const firstItemImage = order.items[0]?.image || order.items[0]?.gameImage || order.items[0]?.game_image;
+                      const totalAmount = Number(order.total_amount ?? order.total ?? 0);
+                      return (
+                        <div key={order.id} className="rounded-2xl overflow-hidden border border-white/8 bg-gradient-to-br from-gray-900 to-gray-800/60 shadow-xl">
+                          {/* Card top banner with game image */}
+                          <div className="relative h-20 overflow-hidden">
+                            {firstItemImage ? (
+                              <>
+                                <img
+                                  src={firstItemImage}
+                                  alt=""
+                                  className="w-full h-full object-cover opacity-40"
+                                  onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                                />
+                                <div className="absolute inset-0 bg-gradient-to-r from-gray-900/90 via-gray-900/60 to-transparent" />
+                              </>
+                            ) : (
+                              <div className="w-full h-full bg-gradient-to-r from-gold-primary/10 to-neon-pink/10" />
+                            )}
+                            <div className="absolute inset-0 flex items-center justify-between px-5">
+                              <div className="flex items-center gap-3">
+                                {firstItemImage ? (
+                                  <img
+                                    src={firstItemImage}
+                                    alt=""
+                                    className="w-12 h-12 rounded-xl object-cover border-2 border-white/20 shadow-lg"
+                                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                                  />
+                                ) : (
+                                  <div className="w-12 h-12 rounded-xl bg-gold-primary/20 border border-gold-primary/30 flex items-center justify-center">
+                                    <Package className="w-6 h-6 text-gold-primary" />
                                   </div>
-                                  <div>
-                                    <p className="text-white font-medium">{item.title || item.name || item.id}</p>
-                                    <p className="text-gray-400 text-sm">Qty: {item.quantity}</p>
-                                  </div>
+                                )}
+                                <div>
+                                  <p className="text-white font-bold text-sm">Order #{order.id.slice(-8)}</p>
+                                  <p className="text-gray-400 text-xs">{formatDate(order.created_at)}</p>
                                 </div>
-                                <p className="text-gold-primary font-semibold">{(item.price * item.quantity).toFixed(2)} EGP</p>
                               </div>
-                            ))}
+                              <div className="text-right">
+                                <Badge className={`mb-1 text-xs ${getStatusColor(order.status)}`}>
+                                  {order.status}
+                                </Badge>
+                                <p className="text-gold-primary font-black text-lg leading-tight">{totalAmount.toFixed(2)} <span className="text-xs font-normal text-gray-400">EGP</span></p>
+                              </div>
+                            </div>
                           </div>
-                          <div className="flex gap-2 mt-4">
-                            <Button variant="outline" size="sm" className="border-gold-primary/50 text-gold-primary hover:bg-gold-primary/10">
-                              <Eye className="w-4 h-4 mr-2" />
-                              View Details
+
+                          {/* Items list */}
+                          <div className="px-5 py-3 space-y-2">
+                            {order.items.map((item) => {
+                              const itemImage = item.image || item.gameImage || item.game_image;
+                              return (
+                                <div key={item.id} className="flex items-center justify-between py-1.5 border-b border-white/5 last:border-0">
+                                  <div className="flex items-center gap-3">
+                                    {itemImage ? (
+                                      <img
+                                        src={itemImage}
+                                        alt={item.title || item.name || ''}
+                                        className="w-9 h-9 rounded-lg object-cover border border-white/10"
+                                        onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                                      />
+                                    ) : (
+                                      <div className="w-9 h-9 bg-gray-700/80 rounded-lg flex items-center justify-center border border-white/5">
+                                        <Package className="w-4 h-4 text-gray-500" />
+                                      </div>
+                                    )}
+                                    <div>
+                                      <p className="text-white text-sm font-medium leading-tight">{item.title || item.name || item.id}</p>
+                                      <p className="text-gray-500 text-xs">x{item.quantity}</p>
+                                    </div>
+                                  </div>
+                                  <p className="text-gold-primary text-sm font-bold">{(item.price * item.quantity).toFixed(2)} EGP</p>
+                                </div>
+                              );
+                            })}
+                          </div>
+
+                          {/* Footer actions */}
+                          <div className="px-5 pb-4 flex gap-2">
+                            <Button variant="outline" size="sm" className="flex-1 border-white/10 text-gray-300 hover:bg-white/5 hover:text-white text-xs h-8">
+                              <Eye className="w-3.5 h-3.5 mr-1.5" />
+                              Details
                             </Button>
-                            <Button variant="outline" size="sm" className="border-gold-primary/50 text-gold-primary hover:bg-gold-primary/10">
-                              <Download className="w-4 h-4 mr-2" />
+                            <Button variant="outline" size="sm" className="flex-1 border-gold-primary/30 text-gold-primary hover:bg-gold-primary/10 text-xs h-8">
+                              <Download className="w-3.5 h-3.5 mr-1.5" />
                               Receipt
                             </Button>
                           </div>
-                        </CardContent>
-                      </Card>
-                    ))}
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
               </TabsContent>

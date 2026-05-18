@@ -22,6 +22,7 @@ import { ResponseTemplatesPanel } from '@/components/response-templates-panel';
 import { PromoCodesPanel } from '@/components/admin-promo-codes-panel';
 import { ReviewsPanel } from '@/components/admin-reviews-panel';
 import { AbandonedCartsPanel } from '@/components/admin-abandoned-carts-panel';
+import { AnnouncementsPanel } from '@/components/admin-announcements-panel';
 import { SupportMessagesPanel } from '@/components/support-messages-panel';
 const RichTextEditor = React.lazy(() => import('@/components/rich-text-editor'));
 import { io, Socket } from 'socket.io-client';
@@ -2033,7 +2034,8 @@ export default function AdminDashboard() {
       if (data.url && editingGame) {
         if (target === 'logo') {
           // Update logo and also update banner if it was empty or the same as old logo
-          const isBannerSameAsOldLogo = !editingGame.image_url || editingGame.image_url === editingGame.image;
+          const currentBanner = editingGame.banner_image || editingGame.image_url;
+          const isBannerSameAsOldLogo = !currentBanner || currentBanner === editingGame.image;
           if (isBannerSameAsOldLogo) {
             setEditingGame({ 
               ...editingGame, 
@@ -2297,6 +2299,7 @@ export default function AdminDashboard() {
               <TabsTrigger value="approvals" data-testid="tab-approvals" className="data-[state=active]:bg-green-600 data-[state=active]:text-white px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-green-800 font-semibold">✅ الموافقات</TabsTrigger>
               <TabsTrigger value="cards" data-testid="tab-cards" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">🔑 الأكواد الرقمية</TabsTrigger>
               <TabsTrigger value="abandoned-carts" data-testid="tab-abandoned-carts" className="data-[state=active]:bg-yellow-500 data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-yellow-700">🛒 عربات مهجورة</TabsTrigger>
+              <TabsTrigger value="announcements" data-testid="tab-announcements" className="data-[state=active]:bg-pink-600 data-[state=active]:text-white px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-pink-800 font-semibold">📢 الإعلانات</TabsTrigger>
               <span className="mx-2 self-stretch w-px bg-border/50 my-1" />
               {/* ── PRODUCTS ── */}
               <TabsTrigger value="games" data-testid="tab-games" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">🎮 الألعاب</TabsTrigger>
@@ -3524,6 +3527,10 @@ export default function AdminDashboard() {
             <AbandonedCartsPanel />
           </TabsContent>
 
+          <TabsContent value="announcements" className="space-y-6">
+            <AnnouncementsPanel />
+          </TabsContent>
+
         </Tabs>
       </div>
 
@@ -3618,119 +3625,140 @@ export default function AdminDashboard() {
                   </ErrorBoundary>
                 </div>
               </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="image" className="text-right">Image URL</Label>
-                <Input
-                  id="image"
-                  value={editingGame.image}
-                  onChange={(e) => setEditingGame({ ...editingGame, image: e.target.value })}
-                  className="col-span-3"
-                />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label className="text-right">Upload Logo</Label>
-                <Input
-                  type="file"
-                  accept="image/*"
-                  onChange={(ev) => handleImageUpload(ev, 'logo')}
-                  className="col-span-3"
-                />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <div className="col-start-2 col-span-3 flex gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    disabled={!editingGame?.id || !String(editingGame.image || '').trim() || applyLogoToPackagesMutation.isPending}
-                    onClick={() => {
-                      const logoUrl = String(editingGame.image || '').trim();
-                      if (!editingGame?.id || !logoUrl) return;
-                      applyLogoToPackagesMutation.mutate({ gameId: editingGame.id, logoUrl });
-                    }}
-                  >
-                    Apply Logo To All Packages
-                  </Button>
+              {/* ===== CARD & GAME PAGE IMAGE ===== */}
+              <div className="col-span-4 border border-gold-primary/30 rounded-lg p-4 space-y-3 bg-gold-primary/5">
+                <div>
+                  <p className="text-sm font-bold text-gold-primary">🖼️ Card & Game Page Image</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">This image appears on the home page cards, the games list, AND the large banner on the game detail page.</p>
                 </div>
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="image_url" className="text-right">Large Image URL</Label>
-                <Input
-                  id="image_url"
-                  value={editingGame.image_url || ''}
-                  onChange={(e) => setEditingGame({ 
-                    ...editingGame, 
-                    image_url: e.target.value,
-                    bannerImage: e.target.value,
-                    banner_image: e.target.value
-                  })}
-                  className="col-span-3"
-                />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <div className="col-start-2 col-span-3 flex gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    disabled={!editingGame?.id || !editingGame.image_url || updateGameImageUrlMutation.isPending}
-                    onClick={() => {
-                      const url = String(editingGame.image_url || '').trim();
-                      if (!editingGame?.id || !url) return;
-                      updateGameImageUrlMutation.mutate({ id: editingGame.id, image_url: url });
-                    }}
-                  >
-                    Save Large Image Only
-                  </Button>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="banner_image" className="text-right text-xs">Image URL</Label>
+                  <Input
+                    id="banner_image"
+                    value={editingGame.banner_image || editingGame.image_url || ''}
+                    onChange={(e) => setEditingGame({ 
+                      ...editingGame, 
+                      banner_image: e.target.value,
+                      bannerImage: e.target.value,
+                      image_url: e.target.value
+                    })}
+                    className="col-span-3 text-xs"
+                    placeholder="https://res.cloudinary.com/..."
+                  />
                 </div>
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label className="text-right">Upload Large Image</Label>
-                <Input
-                  type="file"
-                  accept="image/*"
-                  onChange={(ev) => handleImageUpload(ev, 'large')}
-                  className="col-span-3"
-                />
-              </div>
-              {(editingGame.image || editingGame.image_url) && (
-                <div className="grid grid-cols-4 items-start gap-4">
-                  <Label className="text-right pt-2">Previews</Label>
-                  <div className="col-span-3 flex flex-wrap gap-4">
-                    <div className="space-y-1">
-                      <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-tighter">Home Card (3:4)</p>
-                      <div className="w-24 overflow-hidden rounded-lg border border-gold-primary/30 relative bg-muted" style={{ aspectRatio: '3/4' }}>
-                        <img 
-                          src={getGameDisplayImage(editingGame)} 
-                          alt="Home Preview" 
-                          key={`home-${editingGame.image}-${editingGame.image_url}`}
-                          className="absolute inset-0 w-full h-full object-cover" 
-                        />
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label className="text-right text-xs">Upload New</Label>
+                  <Input
+                    type="file"
+                    accept="image/*"
+                    onChange={(ev) => handleImageUpload(ev, 'large')}
+                    className="col-span-3 text-xs"
+                  />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <div className="col-start-2 col-span-3">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      className="border-gold-primary/40 text-gold-primary hover:bg-gold-primary/10"
+                      disabled={!editingGame?.id || !(editingGame.banner_image || editingGame.image_url) || updateGameImageUrlMutation.isPending}
+                      onClick={() => {
+                        const url = String(editingGame.banner_image || editingGame.image_url || '').trim();
+                        if (!editingGame?.id || !url) return;
+                        updateGameImageUrlMutation.mutate({ id: editingGame.id, image_url: url });
+                      }}
+                    >
+                      {updateGameImageUrlMutation.isPending ? 'Saving...' : 'Quick Save This Image'}
+                    </Button>
+                  </div>
+                </div>
+                {(editingGame.banner_image || editingGame.image_url) && (
+                  <div className="grid grid-cols-4 items-start gap-4">
+                    <Label className="text-right text-xs pt-1">Preview</Label>
+                    <div className="col-span-3 flex flex-wrap gap-4">
+                      <div className="space-y-1">
+                        <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-tighter">Home Card (3:4)</p>
+                        <div className="w-24 overflow-hidden rounded-lg border-2 border-gold-primary/50 relative bg-muted" style={{ aspectRatio: '3/4' }}>
+                          <img 
+                            src={editingGame.banner_image || editingGame.image_url || ''} 
+                            alt="Home Card Preview" 
+                            key={`home-${editingGame.banner_image}-${editingGame.image_url}`}
+                            className="absolute inset-0 w-full h-full object-cover" 
+                            onError={(e) => { (e.target as HTMLImageElement).style.opacity = '0.3'; }}
+                          />
+                        </div>
                       </div>
-                    </div>
-                    <div className="space-y-1">
-                      <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-tighter">Game Page (4:3)</p>
-                      <div className="w-32 overflow-hidden rounded-lg border border-gold-primary/30 relative bg-muted" style={{ aspectRatio: '4/3' }}>
-                        <img 
-                          src={editingGame.image_url || editingGame.image} 
-                          alt="Game Preview" 
-                          key={`game-${editingGame.image}-${editingGame.image_url}`}
-                          className="absolute inset-0 w-full h-full object-cover" 
-                        />
-                      </div>
-                    </div>
-                    <div className="space-y-1">
-                      <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-tighter">Package Logo</p>
-                      <div className="w-16 h-16 rounded-xl bg-gold-primary/10 border border-gold-primary/30 flex items-center justify-center overflow-hidden">
-                        <img 
-                          src={editingGame.image} 
-                          alt="Package Logo" 
-                          key={`pkg-${editingGame.image}`}
-                          className="w-12 h-12 object-contain" 
-                        />
+                      <div className="space-y-1">
+                        <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-tighter">Game Page (16:9)</p>
+                        <div className="w-48 overflow-hidden rounded-lg border-2 border-gold-primary/50 relative bg-muted" style={{ aspectRatio: '16/9' }}>
+                          <img 
+                            src={editingGame.banner_image || editingGame.image_url || ''} 
+                            alt="Game Page Preview" 
+                            key={`game-${editingGame.banner_image}-${editingGame.image_url}`}
+                            className="absolute inset-0 w-full h-full object-cover" 
+                            onError={(e) => { (e.target as HTMLImageElement).style.opacity = '0.3'; }}
+                          />
+                        </div>
                       </div>
                     </div>
                   </div>
+                )}
+              </div>
+
+              {/* ===== PACKAGE LOGO / ICON ===== */}
+              <div className="col-span-4 border border-white/10 rounded-lg p-4 space-y-3">
+                <div>
+                  <p className="text-sm font-bold text-foreground">🏷️ Package Logo / Icon</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">Small icon used inside package cards. Does NOT affect the home card or game page image.</p>
                 </div>
-              )}
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="image" className="text-right text-xs">Logo URL</Label>
+                  <Input
+                    id="image"
+                    value={editingGame.image}
+                    onChange={(e) => setEditingGame({ ...editingGame, image: e.target.value })}
+                    className="col-span-3 text-xs"
+                  />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label className="text-right text-xs">Upload Logo</Label>
+                  <Input
+                    type="file"
+                    accept="image/*"
+                    onChange={(ev) => handleImageUpload(ev, 'logo')}
+                    className="col-span-3 text-xs"
+                  />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <div className="col-start-2 col-span-3 flex items-center gap-3">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      disabled={!editingGame?.id || !String(editingGame.image || '').trim() || applyLogoToPackagesMutation.isPending}
+                      onClick={() => {
+                        const logoUrl = String(editingGame.image || '').trim();
+                        if (!editingGame?.id || !logoUrl) return;
+                        applyLogoToPackagesMutation.mutate({ gameId: editingGame.id, logoUrl });
+                      }}
+                    >
+                      Apply Logo To All Packages
+                    </Button>
+                    {editingGame.image && (
+                      <div className="w-12 h-12 rounded-xl bg-gold-primary/10 border border-gold-primary/30 flex items-center justify-center overflow-hidden shrink-0">
+                        <img 
+                          src={editingGame.image} 
+                          alt="Logo Preview" 
+                          key={`pkg-${editingGame.image}`}
+                          className="w-10 h-10 object-contain" 
+                          onError={(e) => { (e.target as HTMLImageElement).style.opacity = '0.3'; }}
+                        />
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
             </div>
           )}
           <DialogFooter>

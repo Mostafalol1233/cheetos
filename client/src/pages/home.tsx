@@ -1,6 +1,5 @@
-import { useState, useEffect } from "react";
 import { Zap, Headphones, Shield, Tag, ArrowRight, Sparkles, Trophy, Clock } from "lucide-react";
-import { motion, useAnimation, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { Link } from "wouter";
 
 import { ShoppingCategories } from "@/components/shopping-categories";
@@ -11,7 +10,6 @@ import { Footer } from "@/components/footer";
 import { useTranslation } from "@/lib/translation";
 import { SEO } from "@/components/SEO";
 import { Button } from "@/components/ui/button";
-import { WelcomeConfetti } from "@/components/confetti-celebration";
 import { ReviewsMarquee } from "@/components/reviews-marquee";
 
 const features = [
@@ -112,8 +110,6 @@ export default function Home() {
           }
         }}
       />
-
-      <WelcomeConfetti />
 
       <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
         {/* Hero Section */}

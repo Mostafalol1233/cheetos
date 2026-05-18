@@ -5,10 +5,10 @@ A high-end digital store for gaming currencies and vouchers.
 
 ## Architecture
 - **Frontend**: React + TypeScript + Vite running on PORT 5000
-- **Backend**: Node.js Express running on PORT 3001 (entry: `index.js` → `backend/index.js`)
+- **Backend**: Node.js Express running on PORT 22135 (entry: `index.js` → `backend/index.js`)
 - **Database**: PostgreSQL (via backend DB connection)
 - **Workflows**: "Frontend" runs Vite, "Start application" runs the Node.js backend
-- **Vite Proxy**: All `/api`, `/images`, `/media`, `/uploads`, `/socket.io` routes are proxied from port 5000 to backend port 3001
+- **Vite Proxy**: All `/api`, `/images`, `/media`, `/uploads`, `/socket.io` routes are proxied from port 5000 to backend port 22135
 
 ## Key Files
 - `index.js` — Root shim, delegates to `backend/index.js`
@@ -22,15 +22,20 @@ A high-end digital store for gaming currencies and vouchers.
 
 ## Image Handling
 - All game main (logo) images are hosted on Cloudinary (ddzbutb12) in the `image` DB column
-- All game banner/hero images are hosted on Cloudinary in the `banner_image` DB column (22/24 games)
-- Image priority order (game.tsx hero): banner_image (DB) → HERO_IMAGES fallback → image_url (DB) → image (DB)
+- ALL game banner/hero images are hosted on Cloudinary in the `banner_image` DB column (all 24 games)
+- Image priority order (game.tsx hero): banner_image (DB) → bannerImage → image_url (DB) → Cloudinary image (DB) → HERO_IMAGES fallback → image (DB)
 - Image priority order (games.tsx / popular-games.tsx): banner_image (DB) → image (DB Cloudinary) → GAME_SLUG_IMAGES fallback → image (DB)
-- TikTok, Wolf Team, e-football fall back to their small logo Cloudinary images (no banner available)
-- Local static images in `client/public/images/` still used for currency icons, hero banners, and GAME_SLUG_IMAGES fallbacks
+- TikTok, Wolf Team, e-football use their logo Cloudinary images as banners (no proper banner art available)
+- Hero carousel (header_versions table) image_url fields all updated to Cloudinary URLs (gamecart/headers/)
+- Local static images in `client/public/images/` still used for currency icons and GAME_SLUG_IMAGES fallbacks
 - Logo in loading screen uses Cloudinary URL (gamecart/logo.png)
 - `banner_image` column added to games table in DB and to Drizzle schema (shared/schema.ts)
 
 ## Recent Changes
+- Uploaded hero carousel images to Cloudinary (crossfire-banner-new, hero-pubg, hero-free-fire) and updated header_versions table URLs
+- Fixed Valornt Turk banner: uploaded valorant-turk-banner.png to Cloudinary and updated banner_image in DB
+- Set banner_image for TikTok, Wolf Team, e-Football using their existing Cloudinary logo images
+- All games now have Cloudinary banner_image URLs (previously 3 games had empty/wrong banners)
 - Fixed "Image unavailable" by adding `client/public/images/` as static asset dir in backend
 - Generated AI game images for Free Fire, PUBG, Crossfire (banners) and Fortnite (card)
 - Fixed loading screens: replaced blue gradients with pure black (#000000)
@@ -69,3 +74,7 @@ A high-end digital store for gaming currencies and vouchers.
 - Removed useless tabs: Interactions, Catbox Upload, Image Manager, Advanced Editor, Home Preview
 - Default admin tab changed from 'games' to 'orders'
 - Added description banner to Digital Codes tab explaining how auto-delivery works
+- Post-merge setup script created at `scripts/post-merge.sh` — installs npm deps for root/backend/client (runs automatically after task merges)
+- Admin panel: "Large Image URL" renamed to "Banner Image URL", edit dialog now loads and saves `banner_image` field correctly
+- game.tsx: Fixed heroImage priority — banner_image now takes precedence over image_url (prevents wrong images showing)
+- Fixed merge conflict in game.tsx heroImage line (was causing Vite pre-transform error)

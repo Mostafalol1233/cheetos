@@ -25,10 +25,10 @@ const detailsSchema = z.object({
 });
 
 const signupSchema = z.object({
-  fullName: z.string().min(2, 'Name must be at least 2 characters'),
+  fullName: z.string().optional(),
   email: z.string().email('Invalid email address'),
   countryCode: z.string().default('+20'),
-  phone: z.string().min(9, 'Phone number is too short'),
+  phone: z.string().optional(),
   password: z.string().min(6, 'Password must be at least 6 characters'),
 });
 
@@ -205,10 +205,10 @@ export function StepDetails({ onNext }: StepDetailsProps) {
             <Card>
               <CardContent className="pt-6">
                 <form onSubmit={handleSubmitSignup(onSignupSubmit)} className="space-y-4">
-                  <div className="text-center mb-6">
+                  <div className="text-center mb-4">
                     <h3 className="text-lg font-semibold">Create an Account</h3>
-                    <p className="text-sm text-muted-foreground">
-                      Sign up to track your order and checkout faster.
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Only email &amp; password required — 10 seconds
                     </p>
                   </div>
 
@@ -218,68 +218,50 @@ export function StepDetails({ onNext }: StepDetailsProps) {
                     </div>
                   )}
 
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-name">Full Name</Label>
-                    <Input
-                      id="signup-name"
-                      {...registerSignup('fullName')}
-                      placeholder="John Doe"
-                    />
-                    {errorsSignup.fullName && <p className="text-sm text-destructive">{errorsSignup.fullName.message}</p>}
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-email">Email</Label>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="signup-email">Email <span className="text-red-500">*</span></Label>
                     <Input
                       id="signup-email"
                       type="email"
                       {...registerSignup('email')}
-                      placeholder="name@example.com"
+                      placeholder="your@email.com"
                     />
                     {errorsSignup.email && <p className="text-sm text-destructive">{errorsSignup.email.message}</p>}
                   </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-phone">Phone Number</Label>
-                    <div className="flex gap-2">
-                      <Controller
-                        name="countryCode"
-                        control={controlSignup}
-                        render={({ field }) => (
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <SelectTrigger className="w-[110px]">
-                              <SelectValue placeholder="+20" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="+20">🇪🇬 +20</SelectItem>
-                              <SelectItem value="+966">🇸🇦 +966</SelectItem>
-                              <SelectItem value="+971">🇦🇪 +971</SelectItem>
-                              <SelectItem value="+965">🇰🇼 +965</SelectItem>
-                              <SelectItem value="+974">🇶🇦 +974</SelectItem>
-                              <SelectItem value="+1">🇺🇸 +1</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        )}
-                      />
-                      <Input
-                        id="signup-phone"
-                        className="flex-1"
-                        {...registerSignup('phone')}
-                        placeholder="1xxxxxxxxx"
-                      />
-                    </div>
-                    {errorsSignup.phone && <p className="text-sm text-destructive">{errorsSignup.phone.message}</p>}
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-password">Password</Label>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="signup-password">Password <span className="text-red-500">*</span></Label>
                     <Input
                       id="signup-password"
                       type="password"
                       {...registerSignup('password')}
-                      placeholder="Choose a password"
+                      placeholder="Min. 6 characters"
                     />
                     {errorsSignup.password && <p className="text-sm text-destructive">{errorsSignup.password.message}</p>}
+                  </div>
+
+                  <div className="border-t pt-3 space-y-3">
+                    <p className="text-xs text-muted-foreground">Optional (can add later)</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="space-y-1">
+                        <Label htmlFor="signup-name" className="text-xs text-muted-foreground">Name</Label>
+                        <Input
+                          id="signup-name"
+                          {...registerSignup('fullName')}
+                          placeholder="Your name"
+                          className="h-9 text-sm"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label htmlFor="signup-phone" className="text-xs text-muted-foreground">Phone</Label>
+                        <Input
+                          id="signup-phone"
+                          {...registerSignup('phone')}
+                          placeholder="01xxxxxxxxx"
+                          className="h-9 text-sm"
+                        />
+                      </div>
+                    </div>
                   </div>
 
                   <Button type="submit" className="w-full" size="lg" disabled={isSigningUp}>

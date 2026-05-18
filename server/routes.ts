@@ -13,8 +13,10 @@ import path from "path";
 import passport from "passport";
 import { getSingleSettings, updateSettings } from "./settings";
 import multer from "multer";
+import { notifyNewOrder, notifyOrderStatusChange, notifyNewCustomer, updateLastOrderTime } from "./telegram";
+import { sendOrderConfirmationEmail, sendNewAccountEmail } from "./email";
 
-export function registerRoutes(app: Express): Server {
+export async function registerRoutes(app: Express): Promise<Server> {
   // Setup Auth
   setupAuth(app);
 
@@ -650,6 +652,7 @@ export function registerRoutes(app: Express): Server {
         status: "queued"
       });
       const { db } = await import("./db");
+      const orderCreatedAt = Date.now();
       await db.insert(ordersTable).values({
         id,
         userId,
@@ -663,6 +666,45 @@ export function registerRoutes(app: Express): Server {
         paymentDetails: payment_details ? JSON.stringify(payment_details) : null,
         deliveryMethod: delivery_method || 'whatsapp'
       } as any);
+
+      // Fire-and-forget: Telegram + email notifications (don't block the response)
+      updateLastOrderTime();
+      const notifyAsync = async () => {
+        await notifyNewOrder({
+          id,
+          customer_name: customer_name || user?.name,
+          customer_email: customer_email || user?.email,
+          customer_phone: customer_phone,
+          items,
+          total_amount,
+          payment_method,
+          player_id,
+          receipt_url,
+          created_at: orderCreatedAt,
+        });
+
+        const emailTo = customer_email || user?.email;
+        if (emailTo) {
+          await sendOrderConfirmationEmail({
+            to: emailTo,
+            customerName: customer_name || user?.name || "Customer",
+            orderId: id,
+            items,
+            totalAmount: total_amount,
+            paymentMethod: payment_method,
+          });
+
+          if (newUserCreated && generatedPassword) {
+            await sendNewAccountEmail({
+              to: emailTo,
+              customerName: customer_name || user?.name || "Customer",
+              username: user?.name || emailTo,
+              password: generatedPassword,
+            });
+          }
+        }
+      };
+      notifyAsync().catch((err) => console.error("[Notify] Error:", err));
 
       res.status(201).json({
         id,
@@ -965,6 +1007,76 @@ export function registerRoutes(app: Express): Server {
   // --- Push Notification Permission Route ---
   app.post("/api/notifications/register", async (req, res) => {
     res.json({ success: true });
+  });
+
+  // --- Announcements ---
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS announcements (
+      id SERIAL PRIMARY KEY,
+      title TEXT,
+      message TEXT NOT NULL,
+      html_content TEXT,
+      bg_color TEXT NOT NULL DEFAULT '#d946a8',
+      text_color TEXT NOT NULL DEFAULT '#ffffff',
+      icon TEXT DEFAULT '📢',
+      is_active BOOLEAN DEFAULT true,
+      show_from BIGINT,
+      show_until BIGINT,
+      dismissible BOOLEAN DEFAULT true,
+      created_at BIGINT DEFAULT EXTRACT(EPOCH FROM NOW()) * 1000
+    )
+  `);
+
+  app.get("/api/announcements/active", async (_req, res) => {
+    try {
+      const now = Date.now();
+      const result = await pool.query(
+        `SELECT * FROM announcements WHERE is_active = true
+         AND (show_from IS NULL OR show_from <= $1)
+         AND (show_until IS NULL OR show_until >= $1)
+         ORDER BY created_at DESC LIMIT 1`,
+        [now]
+      );
+      res.json(result.rows[0] || null);
+    } catch { res.json(null); }
+  });
+
+  app.get("/api/announcements", requireAdmin, async (_req, res) => {
+    try {
+      const result = await pool.query('SELECT * FROM announcements ORDER BY created_at DESC');
+      res.json(result.rows);
+    } catch { res.status(500).json({ message: 'Server error' }); }
+  });
+
+  app.post("/api/announcements", requireAdmin, async (req, res) => {
+    try {
+      const { title, message, html_content, bg_color, text_color, icon, is_active, show_from, show_until, dismissible } = req.body;
+      const result = await pool.query(
+        `INSERT INTO announcements (title, message, html_content, bg_color, text_color, icon, is_active, show_from, show_until, dismissible, created_at)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING *`,
+        [title||'', message, html_content||null, bg_color||'#d946a8', text_color||'#ffffff', icon||'📢', is_active!==false, show_from||null, show_until||null, dismissible!==false, Date.now()]
+      );
+      res.json(result.rows[0]);
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
+  app.put("/api/announcements/:id", requireAdmin, async (req, res) => {
+    try {
+      const { title, message, html_content, bg_color, text_color, icon, is_active, show_from, show_until, dismissible } = req.body;
+      const result = await pool.query(
+        `UPDATE announcements SET title=$1, message=$2, html_content=$3, bg_color=$4, text_color=$5, icon=$6, is_active=$7, show_from=$8, show_until=$9, dismissible=$10
+         WHERE id=$11 RETURNING *`,
+        [title||'', message, html_content||null, bg_color||'#d946a8', text_color||'#ffffff', icon||'📢', is_active!==false, show_from||null, show_until||null, dismissible!==false, req.params.id]
+      );
+      res.json(result.rows[0]);
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
+  app.delete("/api/announcements/:id", requireAdmin, async (req, res) => {
+    try {
+      await pool.query('DELETE FROM announcements WHERE id=$1', [req.params.id]);
+      res.json({ success: true });
+    } catch { res.status(500).json({ message: 'Server error' }); }
   });
 
   return createServer(app);

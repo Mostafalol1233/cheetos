@@ -175,7 +175,7 @@ if (!fs.existsSync(pgModulePath) || !fs.existsSync(baileysModulePath) || !fs.exi
 }
 
 const app = express();
-const PORT = process.env.PORT || 22135;
+const PORT = 22135;
 
 // JWT Configuration
 const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret_key_change_this_in_production';
@@ -5708,6 +5708,76 @@ const startServer = async () => {
       } catch (err) {
         res.status(500).send('Error generating sitemap');
       }
+    });
+
+    // --- Announcements ---
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS announcements (
+        id SERIAL PRIMARY KEY,
+        title TEXT,
+        message TEXT NOT NULL,
+        html_content TEXT,
+        bg_color TEXT NOT NULL DEFAULT '#c2185b',
+        text_color TEXT NOT NULL DEFAULT '#ffffff',
+        icon TEXT DEFAULT '📢',
+        is_active BOOLEAN DEFAULT true,
+        show_from BIGINT,
+        show_until BIGINT,
+        dismissible BOOLEAN DEFAULT true,
+        created_at BIGINT DEFAULT EXTRACT(EPOCH FROM NOW()) * 1000
+      )
+    `);
+
+    app.get('/api/announcements/active', async (_req, res) => {
+      try {
+        const now = Date.now();
+        const result = await pool.query(
+          `SELECT * FROM announcements WHERE is_active = true
+           AND (show_from IS NULL OR show_from <= $1)
+           AND (show_until IS NULL OR show_until >= $1)
+           ORDER BY created_at DESC LIMIT 1`,
+          [now]
+        );
+        res.json(result.rows[0] || null);
+      } catch { res.json(null); }
+    });
+
+    app.get('/api/announcements', authenticateToken, ensureAdmin, async (_req, res) => {
+      try {
+        const result = await pool.query('SELECT * FROM announcements ORDER BY created_at DESC');
+        res.json(result.rows);
+      } catch { res.status(500).json({ message: 'Server error' }); }
+    });
+
+    app.post('/api/announcements', authenticateToken, ensureAdmin, async (req, res) => {
+      try {
+        const { title, message, html_content, bg_color, text_color, icon, is_active, show_from, show_until, dismissible } = req.body;
+        const result = await pool.query(
+          `INSERT INTO announcements (title, message, html_content, bg_color, text_color, icon, is_active, show_from, show_until, dismissible, created_at)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING *`,
+          [title||'', message, html_content||null, bg_color||'#c2185b', text_color||'#ffffff', icon||'📢', is_active!==false, show_from||null, show_until||null, dismissible!==false, Date.now()]
+        );
+        res.json(result.rows[0]);
+      } catch (e) { res.status(500).json({ message: e.message }); }
+    });
+
+    app.put('/api/announcements/:id', authenticateToken, ensureAdmin, async (req, res) => {
+      try {
+        const { title, message, html_content, bg_color, text_color, icon, is_active, show_from, show_until, dismissible } = req.body;
+        const result = await pool.query(
+          `UPDATE announcements SET title=$1, message=$2, html_content=$3, bg_color=$4, text_color=$5, icon=$6, is_active=$7, show_from=$8, show_until=$9, dismissible=$10
+           WHERE id=$11 RETURNING *`,
+          [title||'', message, html_content||null, bg_color||'#c2185b', text_color||'#ffffff', icon||'📢', is_active!==false, show_from||null, show_until||null, dismissible!==false, req.params.id]
+        );
+        res.json(result.rows[0]);
+      } catch (e) { res.status(500).json({ message: e.message }); }
+    });
+
+    app.delete('/api/announcements/:id', authenticateToken, ensureAdmin, async (req, res) => {
+      try {
+        await pool.query('DELETE FROM announcements WHERE id=$1', [req.params.id]);
+        res.json({ success: true });
+      } catch { res.status(500).json({ message: 'Server error' }); }
     });
 
     // Serve built React frontend (dist/) as a SPA
