@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, Suspense } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useRef, Suspense } from 'react';
 import { Link } from 'wouter';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
@@ -1336,7 +1336,7 @@ export default function AdminDashboard() {
       }
     };
 
-    useEffect(() => {
+    useLayoutEffect(() => {
       if (tableScrollRef.current) {
         tableScrollRef.current.scrollLeft = savedScrollLeft.current;
       }

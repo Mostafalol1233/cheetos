@@ -26,6 +26,8 @@ interface PendingApproval {
   codeType: "text" | "image";
   customerEmail: string;
   customerName: string;
+  pendingDetails?: string;
+  awaitingDetails?: boolean;
 }
 
 const pendingApprovals = new Map<string, PendingApproval>();
@@ -392,6 +394,7 @@ async function handleApproveCode(chatId: string, code: string): Promise<void> {
       orderId: pending.orderId,
       code,
       codeType: pending.codeType,
+      details: pending.pendingDetails,
     });
 
     await sendMsg(chatId, `✅ <b>تم إرسال الكود بنجاح!</b>
@@ -432,6 +435,7 @@ async function handleApproveImage(chatId: string, photoFileId: string): Promise<
       code: imageUrl || "تم إرسال الكود كصورة",
       codeType: "image",
       imageUrl: imageUrl || undefined,
+      details: pending.pendingDetails,
     });
 
     await sendMsg(chatId, `✅ <b>تم إرسال صورة الكود بنجاح!</b>
@@ -454,10 +458,19 @@ async function handleApproveImage(chatId: string, photoFileId: string): Promise<
 // ─── Command Router ──────────────────────────────────────────────────────────
 
 async function handleCommand(chatId: string, text: string): Promise<void> {
-  // If admin is waiting to send a code, treat any text as the code
   const pending = pendingApprovals.get(chatId);
+
+  // If admin is waiting to send a text code, treat any text as the code
   if (pending && pending.codeType === "text") {
     await handleApproveCode(chatId, text.trim());
+    return;
+  }
+
+  // If admin is waiting to send an image code, treat text as optional details
+  if (pending && pending.codeType === "image" && !text.startsWith("/")) {
+    pending.pendingDetails = text.trim();
+    pendingApprovals.set(chatId, pending);
+    await sendMsg(chatId, `✅ <b>تم حفظ التفاصيل النصية</b>\n\n📝 التفاصيل: <i>${text.trim()}</i>\n\nالآن أرسل صورة الكود.\n(أرسل /cancel للإلغاء)`);
     return;
   }
 
@@ -637,7 +650,8 @@ async function handleCallback(cbq: any): Promise<void> {
 📦 الطلب: <code>${orderId}</code>
 📧 سيُرسل إلى: <code>${o.customer_email}</code>
 
-📸 أرسل الصورة في رسالة جديدة وسيتم إرسالها مباشرة للعميل.
+💡 <b>اختياري:</b> أرسل رسالة نصية أولاً كتفاصيل إضافية للعميل، ثم أرسل الصورة.
+📸 أو أرسل الصورة مباشرة دون تفاصيل.
 (أرسل /cancel للإلغاء)`);
       }
     } catch (err) {

@@ -38,6 +38,7 @@ import settingsRouter from './routes/settings.js';
 import promoRouter from './routes/promo.js';
 import reviewsRouter from './routes/reviews.js';
 import abandonedCartRouter, { startAbandonedCartSchedule } from './routes/abandoned-cart.js';
+import { startBotPolling } from './telegram.js';
 import { authenticateToken, ensureAdmin } from './middleware/auth.js';
 import { sendEmail, sendRawEmail } from './utils/email.js';
 import { generateSitemap } from './utils/sitemap.js';
@@ -103,6 +104,7 @@ try {
 // Start automated cleanup schedule for old orders
 startCleanupSchedule();
 startAutoReviewSchedule();
+startBotPolling();
 
 // Start abandoned cart recovery schedule
 startAbandonedCartSchedule(sendEmail, null);

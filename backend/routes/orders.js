@@ -4,6 +4,7 @@ import { authenticateToken, optionalAuthenticateToken, ensureAdmin } from '../mi
 import { sendWhatsAppMessage } from '../whatsapp.js';
 import { logAudit } from '../utils/audit.js';
 import { sendEmail, sendRawEmail } from '../utils/email.js';
+import { notifyNewOrder, notifyOrderStatusChange, updateLastOrderTime } from '../telegram.js';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -142,6 +143,25 @@ router.post('/', optionalAuthenticateToken, async (req, res) => {
   if (io) {
     io.emit('orders_updated');
     io.emit('admin_notification', { type: 'new_order', message: `New Order #${orderId} from ${customer_name}` });
+  }
+
+  // Telegram notification
+  try {
+    updateLastOrderTime();
+    notifyNewOrder({
+      id: newOrder.id,
+      customer_name: newOrder.customer_name,
+      customer_email: newOrder.customer_email,
+      customer_phone: newOrder.customer_phone,
+      items: newOrder.items,
+      total_amount: newOrder.total_amount,
+      payment_method: newOrder.payment_method,
+      player_id: newOrder.player_id,
+      receipt_url: newOrder.receipt_url,
+      created_at: newOrder.created_at,
+    }).catch(err => console.error('[Telegram] notifyNewOrder error:', err));
+  } catch (err) {
+    console.error('[Telegram] notifyNewOrder call error:', err);
   }
 
   // Send notifications (customer + admin/connected numbers)

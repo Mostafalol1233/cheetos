@@ -176,6 +176,7 @@ export async function sendOrderCodeEmail(opts: {
   code: string;
   codeType: "text" | "image";
   imageUrl?: string;
+  details?: string;
 }): Promise<void> {
   if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
     console.warn("[Email] SMTP not configured, skipping order code email");
@@ -193,6 +194,13 @@ export async function sendOrderCodeEmail(opts: {
         <p style="margin:0 0 8px;color:#aaa;font-size:12px;text-transform:uppercase;letter-spacing:1px;">الكود الخاص بك</p>
         <p style="margin:0;font-size:28px;font-family:monospace;font-weight:bold;color:#d946a8;letter-spacing:4px;">${opts.code}</p>
       </div>`;
+
+  const detailsSection = opts.details
+    ? `<div style="background:#0f0f1e;border-radius:8px;padding:16px;margin:16px 0;border-right:3px solid #d946a8;">
+        <p style="margin:0 0 8px;color:#aaa;font-size:12px;text-transform:uppercase;letter-spacing:1px;">تفاصيل إضافية</p>
+        <p style="margin:0;color:#f0f0f0;font-size:15px;white-space:pre-wrap;line-height:1.6;">${opts.details}</p>
+      </div>`
+    : ``;
 
   const html = `
 <!DOCTYPE html>
@@ -215,6 +223,8 @@ export async function sendOrderCodeEmail(opts: {
       </div>
 
       ${codeSection}
+
+      ${detailsSection}
 
       <p style="margin:24px 0 0;color:#888;font-size:13px;text-align:center;">
         هل تحتاج مساعدة؟ تواصل معنا في أي وقت.
