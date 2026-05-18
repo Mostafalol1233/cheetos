@@ -57,7 +57,7 @@ function cairoDate(ts: number | string | Date): string {
 
 function buildOrderText(o: any, items: any[]): string {
   const itemLines = items.map((i: any) =>
-    `  • ${i.name || "Item"} x${i.quantity || 1} — ${i.price || "?"} EGP`
+    `  • <b>${i.name || "Item"}</b> x${i.quantity || 1} — ${i.price || "?"} EGP`
   ).join("\n");
   const receipt = o.receipt_url
     ? `<a href="${SITE_URL}${o.receipt_url.startsWith("/") ? o.receipt_url : "/" + o.receipt_url}">View Receipt</a>`
@@ -68,14 +68,14 @@ function buildOrderText(o: any, items: any[]): string {
 🆔 <b>ID:</b> <code>${o.id}</code>
 📅 <b>Date:</b> ${cairoDate(o.created_at)}
 👤 <b>Name:</b> ${o.customer_name || "Guest"}
-📧 <b>Email:</b> ${o.customer_email || "—"}
-📞 <b>Phone:</b> ${o.customer_phone || "—"}
-🎮 <b>Player ID:</b> ${o.player_id || "—"}
+📧 <b>Email:</b> <code>${o.customer_email || "—"}</code>
+📞 <b>Phone:</b> <code>${o.customer_phone || "—"}</code>
+🎮 <b>Player ID:</b> <code>${o.player_id || "—"}</code>
 
 📦 <b>Items:</b>
 ${itemLines}
 
-💰 <b>Total:</b> ${o.total_amount} EGP
+💰 <b>Total:</b> <b>${o.total_amount} EGP</b>
 💳 <b>Payment:</b> ${o.payment_method}
 🧾 <b>Receipt:</b> ${receipt}`.trim();
 }
@@ -217,6 +217,69 @@ async function cmdSearch(chatId: string, query: string): Promise<void> {
   await sendMsg(chatId, text, orderButtons(o.id));
 }
 
+async function cmdStock(chatId: string): Promise<void> {
+  const { rows } = await pool.query(
+    `SELECT name, stock FROM games WHERE stock <= 5 AND deleted = false ORDER BY stock ASC LIMIT 10`
+  );
+  if (!rows.length) { await sendMsg(chatId, "✅ All items have sufficient stock."); return; }
+  const lines = rows.map((g: any) =>
+    `• ${g.name}: <b>${g.stock}</b> left`
+  ).join("\n");
+  await sendMsg(chatId, `⚠️ <b>Low Stock Alert</b>\n━━━━━━━━━━━━━━━━━━━━\n${lines}`);
+}
+
+async function cmdUsers(chatId: string): Promise<void> {
+  const { rows } = await pool.query(`SELECT COUNT(*) as total FROM users WHERE role = 'user'`);
+  const { rows: today } = await pool.query(`SELECT COUNT(*) as count FROM users WHERE role = 'user' AND created_at >= NOW() - INTERVAL '24 hours'`);
+  await sendMsg(chatId, `👥 <b>User Statistics</b>\n━━━━━━━━━━━━━━━━━━━━\nTotal Customers: <b>${rows[0].total}</b>\nNew (Last 24h): <b>${today[0].count}</b>`);
+}
+
+async function cmdTopGames(chatId: string): Promise<void> {
+  const { rows } = await pool.query(`
+    SELECT g.name, COUNT(o.id) as sales
+    FROM orders o, jsonb_array_elements(o.items::jsonb) AS item
+    JOIN games g ON g.name = item->>'name'
+    WHERE o.status = 'completed'
+    GROUP BY g.name
+    ORDER BY sales DESC
+    LIMIT 5
+  `);
+  if (!rows.length) { await sendMsg(chatId, "📉 No sales data yet."); return; }
+  const lines = rows.map((r: any, i: number) => `${i+1}. ${r.name}: <b>${r.sales} sales</b>`).join("\n");
+  await sendMsg(chatId, `🔥 <b>Top Selling Games</b>\n━━━━━━━━━━━━━━━━━━━━\n${lines}`);
+}
+
+async function cmdRevenue(chatId: string): Promise<void> {
+  const { rows } = await pool.query(`
+    SELECT 
+      TO_CHAR(created_at, 'Month') as month,
+      SUM(total_amount::numeric) as rev
+    FROM orders 
+    WHERE status = 'completed' AND created_at >= NOW() - INTERVAL '6 months'
+    GROUP BY 1, created_at
+    ORDER BY created_at DESC
+    LIMIT 6
+  `);
+  const lines = rows.map((r: any) => `• ${r.month.trim()}: <b>${parseFloat(r.rev).toFixed(2)} EGP</b>`).join("\n");
+  await sendMsg(chatId, `💰 <b>Monthly Revenue</b>\n━━━━━━━━━━━━━━━━━━━━\n${lines}`);
+}
+
+async function cmdMaintenance(chatId: string, toggle: string): Promise<void> {
+  if (toggle !== "on" && toggle !== "off") {
+    await sendMsg(chatId, "Usage: /maintenance on|off");
+    return;
+  }
+  const isMaintenance = toggle === "on";
+  await pool.query("UPDATE settings SET maintenance_mode = $1", [isMaintenance]);
+  await sendMsg(chatId, `🛠 <b>Maintenance Mode:</b> ${isMaintenance ? "<b>ON</b> 🔴" : "<b>OFF</b> 🟢"}`);
+}
+
+async function cmdBroadcast(chatId: string, message: string): Promise<void> {
+  if (!message) { await sendMsg(chatId, "Usage: /broadcast YOUR_MESSAGE"); return; }
+  await broadcast(`📢 <b>ADMIN ANNOUNCEMENT</b>\n━━━━━━━━━━━━━━━━━━━━\n${message}`);
+  await sendMsg(chatId, "✅ Broadcast sent to all admins.");
+}
+
 async function handleCommand(chatId: string, text: string): Promise<void> {
   const [cmd, ...args] = text.trim().split(/\s+/);
   const arg = args.join(" ");
@@ -235,6 +298,12 @@ async function handleCommand(chatId: string, text: string): Promise<void> {
   else if (cmd === "/pending") await cmdPending(chatId);
   else if (cmd === "/stats") await cmdStats(chatId);
   else if (cmd === "/search") await cmdSearch(chatId, arg);
+  else if (cmd === "/stock") await cmdStock(chatId);
+  else if (cmd === "/users") await cmdUsers(chatId);
+  else if (cmd === "/top") await cmdTopGames(chatId);
+  else if (cmd === "/revenue") await cmdRevenue(chatId);
+  else if (cmd === "/maintenance") await cmdMaintenance(chatId, arg);
+  else if (cmd === "/broadcast") await cmdBroadcast(chatId, arg);
   else if (cmd === "/help") {
     await sendMsg(chatId, `🤖 <b>Bot Commands</b>
 ━━━━━━━━━━━━━━━━━━━━
@@ -242,6 +311,12 @@ async function handleCommand(chatId: string, text: string): Promise<void> {
 /pending — All pending orders
 /stats — Revenue & order counts
 /search ID — Look up any order
+/stock — Check low stock items
+/users — Customer statistics
+/top — Top selling games
+/revenue — Last 6 months revenue
+/maintenance on|off — Toggle maintenance
+/broadcast MSG — Send alert to admins
 /myid — Your Telegram chat ID
 /help — Show this menu`);
   }
