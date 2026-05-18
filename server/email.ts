@@ -1,4 +1,6 @@
 import nodemailer from "nodemailer";
+import fs from "fs";
+import path from "path";
 
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST || "smtp-relay.brevo.com",
@@ -164,5 +166,76 @@ export async function sendNewAccountEmail(opts: {
     console.log(`[Email] New account credentials sent to ${opts.to}`);
   } catch (err) {
     console.error("[Email] Failed to send account email:", err);
+  }
+}
+
+export async function sendOrderCodeEmail(opts: {
+  to: string;
+  customerName: string;
+  orderId: string;
+  code: string;
+  codeType: "text" | "image";
+  imageUrl?: string;
+}): Promise<void> {
+  if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
+    console.warn("[Email] SMTP not configured, skipping order code email");
+    return;
+  }
+
+  const isImage = opts.codeType === "image" && opts.imageUrl;
+
+  const codeSection = isImage
+    ? `<div style="text-align:center;margin:24px 0;">
+        <p style="margin:0 0 12px;color:#aaa;font-size:13px;text-transform:uppercase;letter-spacing:1px;">كود الطلب</p>
+        <img src="${opts.imageUrl}" alt="كود الطلب" style="max-width:100%;border-radius:10px;border:2px solid #d946a8;" />
+      </div>`
+    : `<div style="background:#0f0f1e;border-radius:8px;padding:20px;margin:24px 0;text-align:center;">
+        <p style="margin:0 0 8px;color:#aaa;font-size:12px;text-transform:uppercase;letter-spacing:1px;">الكود الخاص بك</p>
+        <p style="margin:0;font-size:28px;font-family:monospace;font-weight:bold;color:#d946a8;letter-spacing:4px;">${opts.code}</p>
+      </div>`;
+
+  const html = `
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#0f0f0f;font-family:Arial,sans-serif;color:#f0f0f0;direction:rtl;">
+  <div style="max-width:600px;margin:0 auto;background:#1a1a2e;border-radius:12px;overflow:hidden;">
+    <div style="background:linear-gradient(135deg,#d946a8,#7c3aed);padding:32px 24px;text-align:center;">
+      <h1 style="margin:0;color:#fff;font-size:24px;">تم اعتماد طلبك! 🎮</h1>
+      <p style="margin:8px 0 0;color:rgba(255,255,255,0.85);font-size:15px;">أهلاً ${opts.customerName}، طلبك جاهز!</p>
+    </div>
+    <div style="padding:28px 24px;">
+      <p style="margin:0 0 16px;color:#ccc;font-size:15px;">
+        تم مراجعة طلبك واعتماده. إليك الكود الخاص بك:
+      </p>
+
+      <div style="background:#0f0f1e;border-radius:8px;padding:16px;margin-bottom:20px;">
+        <p style="margin:0 0 8px;color:#aaa;font-size:12px;text-transform:uppercase;letter-spacing:1px;">رقم الطلب</p>
+        <p style="margin:0;color:#fff;font-size:14px;font-family:monospace;">${opts.orderId}</p>
+      </div>
+
+      ${codeSection}
+
+      <p style="margin:24px 0 0;color:#888;font-size:13px;text-align:center;">
+        هل تحتاج مساعدة؟ تواصل معنا في أي وقت.
+      </p>
+    </div>
+    <div style="background:#0a0a1a;padding:16px 24px;text-align:center;">
+      <p style="margin:0;color:#555;font-size:12px;">&copy; ${new Date().getFullYear()} Diaa Gaming Store. جميع الحقوق محفوظة.</p>
+    </div>
+  </div>
+</body>
+</html>`;
+
+  try {
+    await transporter.sendMail({
+      from: FROM,
+      to: opts.to,
+      subject: `✅ كودك جاهز — طلب رقم ${opts.orderId}`,
+      html,
+    });
+    console.log(`[Email] Order code sent to ${opts.to} for order ${opts.orderId}`);
+  } catch (err) {
+    console.error("[Email] Failed to send order code email:", err);
   }
 }

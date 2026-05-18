@@ -1,7 +1,10 @@
 import { pool } from "./db";
+import { sendOrderCodeEmail } from "./email";
 
 const TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const SITE_URL = process.env.FRONTEND_URL || "https://diaasadek.com";
+
+// ─── Authorization (max 2 accounts) ─────────────────────────────────────────
 
 function getAllowedIds(): string[] {
   const ids: string[] = [];
@@ -13,6 +16,21 @@ function getAllowedIds(): string[] {
 function isAuthorized(chatId: string | number): boolean {
   return getAllowedIds().includes(String(chatId));
 }
+
+// ─── Pending Approval State ──────────────────────────────────────────────────
+// Tracks when an admin clicked "اعتماد" and chose a code type.
+// Key = chatId, Value = { orderId, codeType, customerEmail, customerName }
+
+interface PendingApproval {
+  orderId: string;
+  codeType: "text" | "image";
+  customerEmail: string;
+  customerName: string;
+}
+
+const pendingApprovals = new Map<string, PendingApproval>();
+
+// ─── Telegram API Helpers ────────────────────────────────────────────────────
 
 async function tg(method: string, body: object): Promise<any> {
   if (!TOKEN) return null;
@@ -36,32 +54,48 @@ async function sendMsg(chatId: string, text: string, keyboard?: any[][]): Promis
 }
 
 async function sendPhoto(chatId: string, photoUrl: string, caption: string): Promise<void> {
-  await tg("sendPhoto", { chat_id: chatId, photo: photoUrl, caption });
+  await tg("sendPhoto", { chat_id: chatId, photo: photoUrl, caption, parse_mode: "HTML" });
 }
 
-async function editMsg(chatId: string, messageId: number, text: string): Promise<void> {
-  await tg("editMessageText", { chat_id: chatId, message_id: messageId, text, parse_mode: "HTML" });
+async function editMsg(chatId: string, messageId: number, text: string, keyboard?: any[][]): Promise<void> {
+  const body: any = { chat_id: chatId, message_id: messageId, text, parse_mode: "HTML" };
+  if (keyboard) body.reply_markup = { inline_keyboard: keyboard };
+  await tg("editMessageText", body);
 }
 
-async function answerCbq(id: string, text: string): Promise<void> {
-  await tg("answerCallbackQuery", { callback_query_id: id, text, show_alert: false });
+async function answerCbq(id: string, text: string, showAlert = false): Promise<void> {
+  await tg("answerCallbackQuery", { callback_query_id: id, text, show_alert: showAlert });
 }
 
 async function broadcast(text: string, keyboard?: any[][]): Promise<void> {
   await Promise.all(getAllowedIds().map(id => sendMsg(id, text, keyboard)));
 }
 
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
 function cairoDate(ts: number | string | Date): string {
   return new Date(ts).toLocaleString("ar-EG", { timeZone: "Africa/Cairo" });
+}
+
+function whatsappLink(phone: string): string {
+  const cleaned = phone.replace(/\D/g, "");
+  const normalized = cleaned.startsWith("0") ? `2${cleaned}` : cleaned.startsWith("2") ? cleaned : `2${cleaned}`;
+  return `https://wa.me/${normalized}`;
 }
 
 function buildOrderText(o: any, items: any[]): string {
   const itemLines = items.map((i: any) =>
     `  • <b>${i.name || "منتج"}</b> x${i.quantity || 1} — ${i.price || "?"} ج.م`
   ).join("\n");
+
   const receipt = o.receipt_url
-    ? `<a href="${SITE_URL}${o.receipt_url.startsWith("/") ? o.receipt_url : "/" + o.receipt_url}">عرض الإيصال</a>`
+    ? `<a href="${SITE_URL}${o.receipt_url.startsWith("/") ? o.receipt_url : "/" + o.receipt_url}">عرض الإيصال 🧾</a>`
     : "لم يتم الرفع";
+
+  const phone = o.customer_phone || "—";
+  const whatsapp = o.customer_phone
+    ? `\n📲 <a href="${whatsappLink(o.customer_phone)}">فتح واتساب مباشرة</a>`
+    : "";
 
   return `🛒 <b>طلب جديد</b>
 ━━━━━━━━━━━━━━━━━━━━
@@ -69,7 +103,7 @@ function buildOrderText(o: any, items: any[]): string {
 📅 <b>التاريخ:</b> ${cairoDate(o.created_at)}
 👤 <b>الاسم:</b> ${o.customer_name || "زائر"}
 📧 <b>الإيميل:</b> <code>${o.customer_email || "—"}</code>
-📞 <b>الهاتف:</b> <code>${o.customer_phone || "—"}</code>
+📞 <b>الهاتف:</b> <code>${phone}</code>${whatsapp}
 🎮 <b>آيدي اللاعب:</b> <code>${o.player_id || "—"}</code>
 
 📦 <b>المنتجات:</b>
@@ -81,14 +115,18 @@ ${itemLines}
 }
 
 function orderButtons(orderId: string): any[][] {
-  return [[
-    { text: "✅ اكتمل", callback_data: `status:${orderId}:completed` },
-    { text: "⚙️ جاري التنفيذ", callback_data: `status:${orderId}:processing` },
-    { text: "❌ إلغاء", callback_data: `status:${orderId}:cancelled` },
-  ]];
+  return [
+    [
+      { text: "✅ اعتماد وإرسال كود", callback_data: `approve:${orderId}` },
+    ],
+    [
+      { text: "⚙️ جاري التنفيذ", callback_data: `status:${orderId}:processing` },
+      { text: "❌ إلغاء", callback_data: `status:${orderId}:cancelled` },
+    ],
+  ];
 }
 
-// ─── Public Notification Functions ─────────────────────────────────────────
+// ─── Public Notification Functions ──────────────────────────────────────────
 
 export async function notifyNewOrder(order: {
   id: string;
@@ -153,43 +191,57 @@ export async function sendTelegramMessage(text: string, chatId?: string): Promis
   }
 }
 
-// ─── Command Handlers ───────────────────────────────────────────────────────
+// ─── Command Handlers ────────────────────────────────────────────────────────
 
 async function cmdOrders(chatId: string): Promise<void> {
   const { rows } = await pool.query(
-    `SELECT id, customer_name, customer_email, total_amount, status, created_at
+    `SELECT id, customer_name, customer_email, customer_phone, total_amount, status, created_at
      FROM orders ORDER BY created_at DESC LIMIT 10`
   );
   if (!rows.length) { await sendMsg(chatId, "📦 لا يوجد طلبات حالياً."); return; }
-  
+
+  await sendMsg(chatId, `📦 <b>آخر 10 طلبات</b>\n━━━━━━━━━━━━━━━━━━━━`);
+
   for (const o of rows) {
     const statusNames: Record<string, string> = {
-      pending: "قيد الانتظار", processing: "جاري التنفيذ", completed: "مكتمل", cancelled: "ملغي",
+      pending: "⏳ قيد الانتظار", processing: "⚙️ جاري التنفيذ",
+      completed: "✅ مكتمل", cancelled: "❌ ملغي", pending_approval: "⏳ بانتظار الاعتماد",
     };
     const s = statusNames[o.status] || o.status;
+    const phone = o.customer_phone || "—";
+    const wa = o.customer_phone ? ` | <a href="${whatsappLink(o.customer_phone)}">واتساب</a>` : "";
     const text = `📦 <b>طلب:</b> <code>${o.id}</code>
 👤 ${o.customer_name || o.customer_email || "زائر"}
-💰 ${o.total_amount} ج.م | 📊 ${s}
+📞 <code>${phone}</code>${wa}
+💰 ${o.total_amount} ج.م | ${s}
 📅 ${cairoDate(o.created_at)}`;
-    
-    await sendMsg(chatId, text, [[{ text: "� التفاصيل الكاملة", callback_data: `details:${o.id}` }]]);
+
+    await sendMsg(chatId, text, [
+      [{ text: "🔍 التفاصيل والاعتماد", callback_data: `details:${o.id}` }]
+    ]);
   }
 }
 
 async function cmdPending(chatId: string): Promise<void> {
   const { rows } = await pool.query(
-    `SELECT id, customer_name, customer_email, total_amount, created_at FROM orders WHERE status IN ('pending','pending_approval') ORDER BY created_at DESC LIMIT 15`
+    `SELECT id, customer_name, customer_email, customer_phone, total_amount, created_at
+     FROM orders WHERE status IN ('pending','pending_approval') ORDER BY created_at DESC LIMIT 15`
   );
   if (!rows.length) { await sendMsg(chatId, "✅ لا يوجد طلبات معلقة!"); return; }
-  
+
   await sendMsg(chatId, `⏳ <b>طلبات بانتظار التنفيذ (${rows.length})</b>\n━━━━━━━━━━━━━━━━━━━━`);
-  
+
   for (const o of rows) {
+    const wa = o.customer_phone ? ` | <a href="${whatsappLink(o.customer_phone)}">واتساب</a>` : "";
     const text = `• <code>${o.id}</code>
 👤 ${o.customer_name || o.customer_email || "زائر"}
+📞 <code>${o.customer_phone || "—"}</code>${wa}
 💰 ${o.total_amount} ج.م | 📅 ${cairoDate(o.created_at)}`;
-    
-    await sendMsg(chatId, text, [[{ text: "🔍 التفاصيل الكاملة", callback_data: `details:${o.id}` }]]);
+
+    await sendMsg(chatId, text, [
+      [{ text: "✅ اعتماد وإرسال كود", callback_data: `approve:${o.id}` }],
+      [{ text: "🔍 التفاصيل الكاملة", callback_data: `details:${o.id}` }]
+    ]);
   }
 }
 
@@ -223,7 +275,7 @@ async function cmdStats(chatId: string): Promise<void> {
 }
 
 async function cmdSearch(chatId: string, query: string): Promise<void> {
-  if (!query) { await sendMsg(chatId, "الاستخدام: /search رقم_الطلب"); return; }
+  if (!query) { await sendMsg(chatId, "الاستخدام: /search رقم_الطلب_أو_الإيميل"); return; }
   const { rows } = await pool.query(
     `SELECT * FROM orders WHERE id ILIKE $1 OR customer_email ILIKE $1 ORDER BY created_at DESC LIMIT 1`,
     [`%${query}%`]
@@ -245,15 +297,15 @@ async function cmdStock(chatId: string): Promise<void> {
     `SELECT name, stock FROM games WHERE stock <= 5 AND deleted = false ORDER BY stock ASC LIMIT 10`
   );
   if (!rows.length) { await sendMsg(chatId, "✅ جميع المنتجات متوفرة بكمية كافية."); return; }
-  const lines = rows.map((g: any) =>
-    `• ${g.name}: متبقي <b>${g.stock}</b>`
-  ).join("\n");
+  const lines = rows.map((g: any) => `• ${g.name}: متبقي <b>${g.stock}</b>`).join("\n");
   await sendMsg(chatId, `⚠️ <b>تنبيه انخفاض المخزون</b>\n━━━━━━━━━━━━━━━━━━━━\n${lines}`);
 }
 
 async function cmdUsers(chatId: string): Promise<void> {
   const { rows } = await pool.query(`SELECT COUNT(*) as total FROM users WHERE role = 'user'`);
-  const { rows: today } = await pool.query(`SELECT COUNT(*) as count FROM users WHERE role = 'user' AND created_at >= NOW() - INTERVAL '24 hours'`);
+  const { rows: today } = await pool.query(
+    `SELECT COUNT(*) as count FROM users WHERE role = 'user' AND created_at >= NOW() - INTERVAL '24 hours'`
+  );
   await sendMsg(chatId, `👥 <b>إحصائيات المستخدمين</b>\n━━━━━━━━━━━━━━━━━━━━\nإجمالي العملاء: <b>${rows[0].total}</b>\nعملاء جدد (آخر 24 ساعة): <b>${today[0].count}</b>`);
 }
 
@@ -268,23 +320,23 @@ async function cmdTopGames(chatId: string): Promise<void> {
     LIMIT 5
   `);
   if (!rows.length) { await sendMsg(chatId, "📉 لا توجد بيانات مبيعات بعد."); return; }
-  const lines = rows.map((r: any, i: number) => `${i+1}. ${r.name}: <b>${r.sales} مبيعات</b>`).join("\n");
+  const lines = rows.map((r: any, i: number) => `${i + 1}. ${r.name}: <b>${r.sales} مبيعات</b>`).join("\n");
   await sendMsg(chatId, `🔥 <b>الألعاب الأكثر مبيعاً</b>\n━━━━━━━━━━━━━━━━━━━━\n${lines}`);
 }
 
 async function cmdRevenue(chatId: string): Promise<void> {
   const { rows } = await pool.query(`
-    SELECT 
+    SELECT
       TO_CHAR(created_at, 'Month') as month,
       SUM(total_amount::numeric) as rev
-    FROM orders 
+    FROM orders
     WHERE status = 'completed' AND created_at >= NOW() - INTERVAL '6 months'
     GROUP BY 1, created_at
     ORDER BY created_at DESC
     LIMIT 6
   `);
   const lines = rows.map((r: any) => `• ${r.month.trim()}: <b>${parseFloat(r.rev).toFixed(2)} ج.م</b>`).join("\n");
-  await sendMsg(chatId, `💰 <b>الأرباح الشهرية</b>\n━━━━━━━━━━━━━━━━━━━━\n${lines}`);
+  await sendMsg(chatId, `💰 <b>الأرباح الشهرية (آخر 6 أشهر)</b>\n━━━━━━━━━━━━━━━━━━━━\n${lines || "لا توجد بيانات بعد."}`);
 }
 
 async function cmdMaintenance(chatId: string, toggle: string): Promise<void> {
@@ -303,16 +355,101 @@ async function cmdBroadcast(chatId: string, message: string): Promise<void> {
   await sendMsg(chatId, "✅ تم إرسال الإعلان لجميع المشرفين.");
 }
 
+// ─── Approve: Send Code to User's Email ────────────────────────────────────
+
+async function handleApproveCode(chatId: string, code: string): Promise<void> {
+  const pending = pendingApprovals.get(chatId);
+  if (!pending) return;
+
+  pendingApprovals.delete(chatId);
+
+  try {
+    await pool.query("UPDATE orders SET status = $1, updated_at = NOW() WHERE id = $2", ["completed", pending.orderId]);
+
+    await sendOrderCodeEmail({
+      to: pending.customerEmail,
+      customerName: pending.customerName,
+      orderId: pending.orderId,
+      code,
+      codeType: pending.codeType,
+    });
+
+    await sendMsg(chatId, `✅ <b>تم إرسال الكود بنجاح!</b>
+━━━━━━━━━━━━━━━━━━━━
+📦 الطلب: <code>${pending.orderId}</code>
+📧 إلى: <code>${pending.customerEmail}</code>
+🎯 نوع الكود: ${pending.codeType === "text" ? "كود نصي 📝" : "كود صورة 🖼️"}
+📊 الحالة: تم تحديثها إلى <b>مكتمل ✅</b>`);
+
+    const others = getAllowedIds().filter(id => id !== chatId);
+    await Promise.all(others.map(id =>
+      sendMsg(id, `✅ الطلب <code>${pending.orderId}</code> تم اعتماده وإرسال الكود إلى العميل بواسطة المشرف`)
+    ));
+  } catch (err) {
+    console.error("[Telegram] Approve code error:", err);
+    await sendMsg(chatId, "❌ فشل إرسال الكود. حاول مرة أخرى.");
+  }
+}
+
+async function handleApproveImage(chatId: string, photoFileId: string): Promise<void> {
+  const pending = pendingApprovals.get(chatId);
+  if (!pending) return;
+
+  pendingApprovals.delete(chatId);
+
+  try {
+    // Get file path from Telegram to get the public URL
+    const fileData = await tg("getFile", { file_id: photoFileId });
+    const filePath = fileData?.result?.file_path;
+    const imageUrl = filePath ? `https://api.telegram.org/file/bot${TOKEN}/${filePath}` : null;
+
+    await pool.query("UPDATE orders SET status = $1, updated_at = NOW() WHERE id = $2", ["completed", pending.orderId]);
+
+    await sendOrderCodeEmail({
+      to: pending.customerEmail,
+      customerName: pending.customerName,
+      orderId: pending.orderId,
+      code: imageUrl || "تم إرسال الكود كصورة",
+      codeType: "image",
+      imageUrl: imageUrl || undefined,
+    });
+
+    await sendMsg(chatId, `✅ <b>تم إرسال صورة الكود بنجاح!</b>
+━━━━━━━━━━━━━━━━━━━━
+📦 الطلب: <code>${pending.orderId}</code>
+📧 إلى: <code>${pending.customerEmail}</code>
+🖼️ نوع الكود: كود صورة
+📊 الحالة: تم تحديثها إلى <b>مكتمل ✅</b>`);
+
+    const others = getAllowedIds().filter(id => id !== chatId);
+    await Promise.all(others.map(id =>
+      sendMsg(id, `✅ الطلب <code>${pending.orderId}</code> تم اعتماده وإرسال صورة الكود إلى العميل`)
+    ));
+  } catch (err) {
+    console.error("[Telegram] Approve image error:", err);
+    await sendMsg(chatId, "❌ فشل إرسال الكود. حاول مرة أخرى.");
+  }
+}
+
+// ─── Command Router ──────────────────────────────────────────────────────────
+
 async function handleCommand(chatId: string, text: string): Promise<void> {
+  // If admin is waiting to send a code, treat any text as the code
+  const pending = pendingApprovals.get(chatId);
+  if (pending && pending.codeType === "text") {
+    await handleApproveCode(chatId, text.trim());
+    return;
+  }
+
   const [cmd, ...args] = text.trim().split(/\s+/);
   const arg = args.join(" ");
 
   if (cmd === "/start" || cmd === "/myid") {
     await sendMsg(chatId, `👋 <b>مرحباً بك في بوت إدارة المتجر</b>
 ━━━━━━━━━━━━━━━━━━━━
-🔑 معرف الدردشة الخاص بك هو: <code>${chatId}</code>
+🔑 معرف الدردشة الخاص بك: <code>${chatId}</code>
 
-⚠️ إذا لم يكن البوت يستجيب للأوامر، تأكد من إرسال هذا الرقم للمطور لإضافته كمسؤول.`);
+⚠️ إذا لم يكن البوت يستجيب، أرسل هذا الرقم للمطور لإضافتك كمسؤول.`);
     if (!isAuthorized(chatId)) return;
   }
 
@@ -331,6 +468,14 @@ async function handleCommand(chatId: string, text: string): Promise<void> {
   else if (cmd === "/revenue") await cmdRevenue(chatId);
   else if (cmd === "/maintenance") await cmdMaintenance(chatId, arg);
   else if (cmd === "/broadcast") await cmdBroadcast(chatId, arg);
+  else if (cmd === "/cancel") {
+    if (pendingApprovals.has(chatId)) {
+      pendingApprovals.delete(chatId);
+      await sendMsg(chatId, "🚫 تم إلغاء عملية الاعتماد.");
+    } else {
+      await sendMsg(chatId, "لا يوجد عملية معلقة لإلغائها.");
+    }
+  }
   else if (cmd === "/help") {
     await sendMsg(chatId, `🤖 <b>أوامر البوت</b>
 ━━━━━━━━━━━━━━━━━━━━
@@ -344,18 +489,22 @@ async function handleCommand(chatId: string, text: string): Promise<void> {
 /revenue — أرباح آخر 6 أشهر
 /maintenance on|off — تبديل وضع الصيانة
 /broadcast MSG — إرسال تنبيه للمشرفين
+/cancel — إلغاء عملية الاعتماد الحالية
 /myid — معرف الدردشة الخاص بك
 /help — عرض هذه القائمة`);
   }
 }
+
+// ─── Callback Handler ─────────────────────────────────────────────────────
 
 async function handleCallback(cbq: any): Promise<void> {
   const chatId = String(cbq.message?.chat?.id);
   const msgId = cbq.message?.message_id;
   const data: string = cbq.data || "";
 
-  if (!isAuthorized(chatId)) { await answerCbq(cbq.id, "⛔ غير مصرح لك"); return; }
+  if (!isAuthorized(chatId)) { await answerCbq(cbq.id, "⛔ غير مصرح لك", true); return; }
 
+  // ── Status Change ─────────────────────────────────────────────────────────
   if (data.startsWith("status:")) {
     const [, orderId, newStatus] = data.split(":");
     try {
@@ -366,22 +515,25 @@ async function handleCallback(cbq: any): Promise<void> {
       const s = statusNames[newStatus] || newStatus;
       await answerCbq(cbq.id, `${e} تم التحديث إلى ${s}`);
       const original = cbq.message?.text || "";
-      await editMsg(chatId, msgId, `${original}\n\n${e} <b>تم التحديث إلى: ${s.toUpperCase()}</b>`);
+      await editMsg(chatId, msgId, `${original}\n\n${e} <b>تم التحديث إلى: ${s}</b>`);
       const others = getAllowedIds().filter(id => id !== chatId);
       await Promise.all(others.map(id =>
         sendMsg(id, `${e} الطلب <code>${orderId}</code> تم تحديثه إلى <b>${s}</b> بواسطة المشرف`)
       ));
     } catch (err) {
-      await answerCbq(cbq.id, "❌ فشل التحديث");
+      await answerCbq(cbq.id, "❌ فشل التحديث", true);
       console.error("[Telegram] Callback update error:", err);
     }
-  } else if (data.startsWith("details:")) {
+  }
+
+  // ── View Details ──────────────────────────────────────────────────────────
+  else if (data.startsWith("details:")) {
     const orderId = data.split(":")[1];
     try {
       const { rows } = await pool.query("SELECT * FROM orders WHERE id = $1", [orderId]);
-      if (!rows.length) { await answerCbq(cbq.id, "❌ الطلب غير موجود"); return; }
+      if (!rows.length) { await answerCbq(cbq.id, "❌ الطلب غير موجود", true); return; }
       const o = rows[0];
-      let items = [];
+      let items: any[] = [];
       try {
         items = typeof o.items === 'string' ? JSON.parse(o.items) : (o.items || []);
       } catch {
@@ -391,12 +543,97 @@ async function handleCallback(cbq: any): Promise<void> {
       await sendMsg(chatId, text, orderButtons(o.id));
       await answerCbq(cbq.id, "🔍 تم جلب التفاصيل");
     } catch (err) {
-      await answerCbq(cbq.id, "❌ فشل جلب البيانات");
+      await answerCbq(cbq.id, "❌ فشل جلب البيانات", true);
     }
+  }
+
+  // ── Approve: Ask Code Type ────────────────────────────────────────────────
+  else if (data.startsWith("approve:")) {
+    const orderId = data.split(":")[1];
+    try {
+      const { rows } = await pool.query(
+        "SELECT id, customer_name, customer_email FROM orders WHERE id = $1",
+        [orderId]
+      );
+      if (!rows.length) { await answerCbq(cbq.id, "❌ الطلب غير موجود", true); return; }
+      const o = rows[0];
+
+      await answerCbq(cbq.id, "اختر نوع الكود");
+      await sendMsg(chatId,
+        `✅ <b>اعتماد الطلب</b>
+━━━━━━━━━━━━━━━━━━━━
+📦 الطلب: <code>${orderId}</code>
+👤 العميل: ${o.customer_name || o.customer_email}
+📧 الإيميل: <code>${o.customer_email}</code>
+
+اختر نوع الكود الذي تريد إرساله للعميل:`,
+        [
+          [
+            { text: "📝 كود نصي", callback_data: `codetype:${orderId}:text` },
+            { text: "🖼️ كود صورة", callback_data: `codetype:${orderId}:image` },
+          ],
+          [{ text: "🚫 إلغاء", callback_data: `cancelapprove:${orderId}` }]
+        ]
+      );
+    } catch (err) {
+      await answerCbq(cbq.id, "❌ خطأ", true);
+    }
+  }
+
+  // ── Code Type Chosen ──────────────────────────────────────────────────────
+  else if (data.startsWith("codetype:")) {
+    const parts = data.split(":");
+    const orderId = parts[1];
+    const codeType = parts[2] as "text" | "image";
+
+    try {
+      const { rows } = await pool.query(
+        "SELECT id, customer_name, customer_email FROM orders WHERE id = $1",
+        [orderId]
+      );
+      if (!rows.length) { await answerCbq(cbq.id, "❌ الطلب غير موجود", true); return; }
+      const o = rows[0];
+
+      pendingApprovals.set(chatId, {
+        orderId,
+        codeType,
+        customerEmail: o.customer_email,
+        customerName: o.customer_name || o.customer_email,
+      });
+
+      await answerCbq(cbq.id, codeType === "text" ? "أرسل الكود النصي الآن" : "أرسل صورة الكود الآن");
+
+      if (codeType === "text") {
+        await sendMsg(chatId, `📝 <b>أرسل الكود النصي الآن</b>
+━━━━━━━━━━━━━━━━━━━━
+📦 الطلب: <code>${orderId}</code>
+📧 سيُرسل إلى: <code>${o.customer_email}</code>
+
+✍️ اكتب الكود في رسالة جديدة وسيتم إرساله مباشرة للعميل.
+(أرسل /cancel للإلغاء)`);
+      } else {
+        await sendMsg(chatId, `🖼️ <b>أرسل صورة الكود الآن</b>
+━━━━━━━━━━━━━━━━━━━━
+📦 الطلب: <code>${orderId}</code>
+📧 سيُرسل إلى: <code>${o.customer_email}</code>
+
+📸 أرسل الصورة في رسالة جديدة وسيتم إرسالها مباشرة للعميل.
+(أرسل /cancel للإلغاء)`);
+      }
+    } catch (err) {
+      await answerCbq(cbq.id, "❌ خطأ", true);
+    }
+  }
+
+  // ── Cancel Approve ────────────────────────────────────────────────────────
+  else if (data.startsWith("cancelapprove:")) {
+    pendingApprovals.delete(chatId);
+    await answerCbq(cbq.id, "تم الإلغاء");
+    await sendMsg(chatId, "🚫 تم إلغاء عملية الاعتماد.");
   }
 }
 
-// ─── Daily Summary ──────────────────────────────────────────────────────────
+// ─── Daily Summary ────────────────────────────────────────────────────────
 
 async function sendDailySummary(): Promise<void> {
   try {
@@ -437,10 +674,10 @@ function scheduleDailySummary(): void {
     sendDailySummary();
     setInterval(sendDailySummary, 24 * 60 * 60 * 1000);
   }, next.getTime() - now.getTime());
-  console.log(`[Telegram] Daily summary scheduled for ${next.toUTCString()}`);
+  console.log(`[Telegram] الملخص اليومي مجدول لـ ${next.toUTCString()}`);
 }
 
-// ─── Low Activity Alert ─────────────────────────────────────────────────────
+// ─── Low Activity Alert ───────────────────────────────────────────────────
 
 let lastOrderTime = Date.now();
 let lastAlertSent = 0;
@@ -451,7 +688,7 @@ export function updateLastOrderTime(): void {
 
 async function checkLowActivity(): Promise<void> {
   const now = Date.now();
-  const hour = new Date().getUTCHours() + 3; // Cairo UTC+3
+  const hour = new Date().getUTCHours() + 3;
   if (hour < 10 || hour > 23) return;
   const sixHours = 6 * 60 * 60 * 1000;
   if (now - lastOrderTime > sixHours && now - lastAlertSent > sixHours) {
@@ -461,7 +698,7 @@ async function checkLowActivity(): Promise<void> {
   }
 }
 
-// ─── Polling ────────────────────────────────────────────────────────────────
+// ─── Polling ──────────────────────────────────────────────────────────────
 
 let lastUpdateId = 0;
 let pollingActive = false;
@@ -476,9 +713,27 @@ async function poll(): Promise<void> {
     if (data?.result?.length) {
       for (const update of data.result) {
         lastUpdateId = update.update_id;
+
+        // Text messages
         if (update.message?.text) {
-          await handleCommand(String(update.message.chat.id), update.message.text).catch(console.error);
+          const chatId = String(update.message.chat.id);
+          await handleCommand(chatId, update.message.text).catch(console.error);
         }
+
+        // Photo messages (for image code approval)
+        if (update.message?.photo) {
+          const chatId = String(update.message.chat.id);
+          if (isAuthorized(chatId)) {
+            const pending = pendingApprovals.get(chatId);
+            if (pending && pending.codeType === "image") {
+              const photos = update.message.photo;
+              const bestPhoto = photos[photos.length - 1];
+              await handleApproveImage(chatId, bestPhoto.file_id).catch(console.error);
+            }
+          }
+        }
+
+        // Callback queries
         if (update.callback_query) {
           await handleCallback(update.callback_query).catch(console.error);
         }
@@ -494,11 +749,12 @@ async function setBotCommands(): Promise<void> {
       { command: "orders", description: "آخر 10 طلبات" },
       { command: "pending", description: "الطلبات المعلقة" },
       { command: "stats", description: "إحصائيات المتجر" },
-      { command: "search", description: "البحث عن طلب برقم الآيدي" },
+      { command: "search", description: "البحث عن طلب برقم الآيدي أو الإيميل" },
       { command: "stock", description: "المنتجات منخفضة المخزون" },
       { command: "users", description: "إحصائيات العملاء" },
       { command: "top", description: "الأكثر مبيعاً" },
       { command: "revenue", description: "الأرباح الشهرية" },
+      { command: "cancel", description: "إلغاء عملية الاعتماد الحالية" },
       { command: "help", description: "عرض قائمة المساعدة" }
     ]
   });
@@ -506,12 +762,12 @@ async function setBotCommands(): Promise<void> {
 
 export function startBotPolling(): void {
   if (pollingActive || !TOKEN) {
-    if (!TOKEN) console.warn("[Telegram] No bot token — polling skipped");
+    if (!TOKEN) console.warn("[Telegram] لا يوجد توكن — تم تخطي الاستطلاع");
     return;
   }
   pollingActive = true;
-  console.log("[Telegram] Bot polling started ✓");
-  setBotCommands().catch(err => console.error("[Telegram] Set commands error:", err));
+  console.log("[Telegram] تم تشغيل البوت ✓");
+  setBotCommands().catch(err => console.error("[Telegram] خطأ في تعيين الأوامر:", err));
   scheduleDailySummary();
   setInterval(checkLowActivity, 30 * 60 * 1000);
   poll();
