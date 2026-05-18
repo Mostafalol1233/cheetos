@@ -18,7 +18,7 @@ app.use(helmet({
       styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
       fontSrc: ["'self'", "https://fonts.gstatic.com"],
       imgSrc: ["'self'", "data:", "https:", "blob:"],
-      connectSrc: ["'self'", "https://www.google-analytics.com", "https://diaasadek.com", "wss://diaasadek.com", "https://*.replit.app", "wss://*.replit.app", "https://*.replit.dev", "wss://*.replit.dev"],
+      connectSrc: ["'self'", "https://www.google-analytics.com", "https://diaasadek.com", "wss://diaasadek.com"],
     },
   },
   crossOriginEmbedderPolicy: false,
