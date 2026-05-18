@@ -308,12 +308,16 @@ async function handleCommand(chatId: string, text: string): Promise<void> {
   const arg = args.join(" ");
 
   if (cmd === "/start" || cmd === "/myid") {
-    await sendMsg(chatId, `🔑 معرف الدردشة الخاص بك: <code>${chatId}</code>\nقم بمشاركته مع المدير للحصول على صلاحية الدخول.`);
+    await sendMsg(chatId, `👋 <b>مرحباً بك في بوت إدارة المتجر</b>
+━━━━━━━━━━━━━━━━━━━━
+🔑 معرف الدردشة الخاص بك هو: <code>${chatId}</code>
+
+⚠️ إذا لم يكن البوت يستجيب للأوامر، تأكد من إرسال هذا الرقم للمطور لإضافته كمسؤول.`);
     if (!isAuthorized(chatId)) return;
   }
 
   if (!isAuthorized(chatId)) {
-    await sendMsg(chatId, "⛔ ليس لديك صلاحية لاستخدام هذا البوت.");
+    await sendMsg(chatId, `⛔ <b>غير مصرح لك</b>\n\nعذراً، هذا الحساب (<code>${chatId}</code>) غير مسجل في قائمة المسؤولين.`);
     return;
   }
 
