@@ -753,7 +753,6 @@ async function setBotCommands(): Promise<void> {
       { command: "stock", description: "المنتجات منخفضة المخزون" },
       { command: "users", description: "إحصائيات العملاء" },
       { command: "top", description: "الأكثر مبيعاً" },
-      { command: "revenue", description: "الأرباح الشهرية" },
       { command: "cancel", description: "إلغاء عملية الاعتماد الحالية" },
       { command: "help", description: "عرض قائمة المساعدة" }
     ]
