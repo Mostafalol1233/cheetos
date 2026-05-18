@@ -231,7 +231,11 @@ async function cmdSearch(chatId: string, query: string): Promise<void> {
   if (!rows.length) { await sendMsg(chatId, `❌ لم يتم العثور على الطلب: <code>${query}</code>`); return; }
   const o = rows[0];
   let items = [];
-  try { items = JSON.parse(o.items || "[]"); } catch {}
+  try {
+    items = typeof o.items === 'string' ? JSON.parse(o.items) : (o.items || []);
+  } catch {
+    items = Array.isArray(o.items) ? o.items : [];
+  }
   const text = buildOrderText(o, items);
   await sendMsg(chatId, text, orderButtons(o.id));
 }
@@ -374,7 +378,11 @@ async function handleCallback(cbq: any): Promise<void> {
       if (!rows.length) { await answerCbq(cbq.id, "❌ الطلب غير موجود"); return; }
       const o = rows[0];
       let items = [];
-      try { items = JSON.parse(o.items || "[]"); } catch {}
+      try {
+        items = typeof o.items === 'string' ? JSON.parse(o.items) : (o.items || []);
+      } catch {
+        items = Array.isArray(o.items) ? o.items : [];
+      }
       const text = buildOrderText(o, items);
       await sendMsg(chatId, text, orderButtons(o.id));
       await answerCbq(cbq.id, "🔍 تم جلب التفاصيل");
@@ -476,6 +484,22 @@ async function poll(): Promise<void> {
   if (pollingActive) setTimeout(poll, 2000);
 }
 
+async function setBotCommands(): Promise<void> {
+  await tg("setMyCommands", {
+    commands: [
+      { command: "orders", description: "آخر 10 طلبات" },
+      { command: "pending", description: "الطلبات المعلقة" },
+      { command: "stats", description: "إحصائيات المتجر" },
+      { command: "search", description: "البحث عن طلب برقم الآيدي" },
+      { command: "stock", description: "المنتجات منخفضة المخزون" },
+      { command: "users", description: "إحصائيات العملاء" },
+      { command: "top", description: "الأكثر مبيعاً" },
+      { command: "revenue", description: "الأرباح الشهرية" },
+      { command: "help", description: "عرض قائمة المساعدة" }
+    ]
+  });
+}
+
 export function startBotPolling(): void {
   if (pollingActive || !TOKEN) {
     if (!TOKEN) console.warn("[Telegram] No bot token — polling skipped");
@@ -483,6 +507,7 @@ export function startBotPolling(): void {
   }
   pollingActive = true;
   console.log("[Telegram] Bot polling started ✓");
+  setBotCommands().catch(err => console.error("[Telegram] Set commands error:", err));
   scheduleDailySummary();
   setInterval(checkLowActivity, 30 * 60 * 1000);
   poll();
