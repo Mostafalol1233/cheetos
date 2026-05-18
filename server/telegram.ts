@@ -270,14 +270,14 @@ async function cmdStats(chatId: string): Promise<void> {
   const { rows } = await pool.query(
     `SELECT
       COUNT(*) as total,
-      COUNT(CASE WHEN created_at::bigint >= $1 OR created_at >= $2 THEN 1 END) as today,
-      COALESCE(SUM(CASE WHEN (created_at::bigint >= $1 OR created_at >= $2) THEN total_amount::numeric END),0) as today_rev,
+      COUNT(CASE WHEN created_at >= $1 THEN 1 END) as today,
+      COALESCE(SUM(CASE WHEN created_at >= $1 THEN total_amount::numeric END),0) as today_rev,
       COALESCE(SUM(total_amount::numeric),0) as total_rev,
       COUNT(CASE WHEN status='pending' OR status='pending_approval' THEN 1 END) as pending,
       COUNT(CASE WHEN status='completed' THEN 1 END) as completed,
       COUNT(CASE WHEN status='cancelled' THEN 1 END) as cancelled
      FROM orders`,
-    [todayTs, new Date(todayTs).toISOString()]
+    [new Date(new Date().setHours(0,0,0,0)).toISOString()]
   );
   const r = rows[0];
   await sendMsg(chatId, `📊 <b>إحصائيات المتجر</b>
