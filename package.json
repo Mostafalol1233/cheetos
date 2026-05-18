@@ -53,6 +53,7 @@
     "@types/memoizee": "^0.4.12",
     "@vercel/analytics": "^1.6.1",
     "@vercel/node": "^3.2.29",
+    "@vercel/speed-insights": "^2.0.0",
     "@whiskeysockets/baileys": "^7.0.0-rc.9",
     "bcryptjs": "^3.0.3",
     "class-variance-authority": "^0.7.1",
