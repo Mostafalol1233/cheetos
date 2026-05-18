@@ -35,8 +35,6 @@ import { LiveChatWidget } from "@/components/live-chat-widget";
 import { FloatingWhatsAppButton } from "@/components/floating-whatsapp-button";
 import { Header } from "@/components/header";
 import { CartSidebar } from "@/components/cart-sidebar";
-import { Analytics } from "@vercel/analytics/react";
-import { SpeedInsights } from "@vercel/speed-insights/react";
 
 import PackageDetailsPage from "./pages/package-details";
 import PackageCheckoutPage from "./pages/package-checkout";
@@ -314,8 +312,6 @@ function App() {
                     <TooltipProvider>
                       <CartProvider>
                         <Toaster />
-                        <Analytics />
-                        <SpeedInsights />
                         <AppShell />
                       </CartProvider>
                     </TooltipProvider>
