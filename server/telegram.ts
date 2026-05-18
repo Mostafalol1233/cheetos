@@ -57,34 +57,34 @@ function cairoDate(ts: number | string | Date): string {
 
 function buildOrderText(o: any, items: any[]): string {
   const itemLines = items.map((i: any) =>
-    `  • <b>${i.name || "Item"}</b> x${i.quantity || 1} — ${i.price || "?"} EGP`
+    `  • <b>${i.name || "منتج"}</b> x${i.quantity || 1} — ${i.price || "?"} ج.م`
   ).join("\n");
   const receipt = o.receipt_url
-    ? `<a href="${SITE_URL}${o.receipt_url.startsWith("/") ? o.receipt_url : "/" + o.receipt_url}">View Receipt</a>`
-    : "Not uploaded";
+    ? `<a href="${SITE_URL}${o.receipt_url.startsWith("/") ? o.receipt_url : "/" + o.receipt_url}">عرض الإيصال</a>`
+    : "لم يتم الرفع";
 
-  return `🛒 <b>NEW ORDER</b>
+  return `🛒 <b>طلب جديد</b>
 ━━━━━━━━━━━━━━━━━━━━
-🆔 <b>ID:</b> <code>${o.id}</code>
-📅 <b>Date:</b> ${cairoDate(o.created_at)}
-👤 <b>Name:</b> ${o.customer_name || "Guest"}
-📧 <b>Email:</b> <code>${o.customer_email || "—"}</code>
-📞 <b>Phone:</b> <code>${o.customer_phone || "—"}</code>
-🎮 <b>Player ID:</b> <code>${o.player_id || "—"}</code>
+🆔 <b>رقم الطلب:</b> <code>${o.id}</code>
+📅 <b>التاريخ:</b> ${cairoDate(o.created_at)}
+👤 <b>الاسم:</b> ${o.customer_name || "زائر"}
+📧 <b>الإيميل:</b> <code>${o.customer_email || "—"}</code>
+📞 <b>الهاتف:</b> <code>${o.customer_phone || "—"}</code>
+🎮 <b>آيدي اللاعب:</b> <code>${o.player_id || "—"}</code>
 
-📦 <b>Items:</b>
+📦 <b>المنتجات:</b>
 ${itemLines}
 
-💰 <b>Total:</b> <b>${o.total_amount} EGP</b>
-💳 <b>Payment:</b> ${o.payment_method}
-🧾 <b>Receipt:</b> ${receipt}`.trim();
+💰 <b>الإجمالي:</b> <b>${o.total_amount} ج.م</b>
+💳 <b>طريقة الدفع:</b> ${o.payment_method}
+🧾 <b>الإيصال:</b> ${receipt}`.trim();
 }
 
 function orderButtons(orderId: string): any[][] {
   return [[
-    { text: "✅ Complete", callback_data: `status:${orderId}:completed` },
-    { text: "⚙️ Processing", callback_data: `status:${orderId}:processing` },
-    { text: "❌ Cancel", callback_data: `status:${orderId}:cancelled` },
+    { text: "✅ اكتمل", callback_data: `status:${orderId}:completed` },
+    { text: "⚙️ جاري التنفيذ", callback_data: `status:${orderId}:processing` },
+    { text: "❌ إلغاء", callback_data: `status:${orderId}:cancelled` },
   ]];
 }
 
@@ -111,7 +111,7 @@ export async function notifyNewOrder(order: {
       ? order.receipt_url
       : `${SITE_URL}${order.receipt_url.startsWith("/") ? order.receipt_url : "/" + order.receipt_url}`;
     await Promise.all(getAllowedIds().map(id =>
-      sendPhoto(id, fullUrl, `🧾 Receipt for order ${order.id}`)
+      sendPhoto(id, fullUrl, `🧾 إيصال الطلب ${order.id}`)
     ));
   }
 }
@@ -126,7 +126,11 @@ export async function notifyOrderStatusChange(order: {
     pending: "⏳", processing: "⚙️", completed: "✅", cancelled: "❌", refunded: "💸",
   };
   const e = emojis[order.status] || "📋";
-  await broadcast(`${e} <b>ORDER UPDATED</b>\n🆔 <code>${order.id}</code>\n👤 ${order.customer_name || order.customer_email || "Guest"}\n📊 Status: <b>${order.status.toUpperCase()}</b>`);
+  const statusNames: Record<string, string> = {
+    pending: "قيد الانتظار", processing: "جاري التنفيذ", completed: "مكتمل", cancelled: "ملغي", refunded: "مسترجع",
+  };
+  const s = statusNames[order.status] || order.status.toUpperCase();
+  await broadcast(`${e} <b>تحديث الطلب</b>\n🆔 <code>${order.id}</code>\n👤 ${order.customer_name || order.customer_email || "زائر"}\n📊 الحالة: <b>${s}</b>`);
 }
 
 export async function notifyNewCustomer(customer: {
@@ -134,11 +138,11 @@ export async function notifyNewCustomer(customer: {
   email: string;
   createdAt: number;
 }): Promise<void> {
-  await broadcast(`👤 <b>NEW CUSTOMER REGISTERED</b>
+  await broadcast(`👤 <b>تسجيل عميل جديد</b>
 ━━━━━━━━━━━━━━━━━━━━
-👤 <b>Name:</b> ${customer.name || "—"}
-📧 <b>Email:</b> ${customer.email}
-📅 <b>Date:</b> ${cairoDate(customer.createdAt)}`);
+👤 <b>الاسم:</b> ${customer.name || "—"}
+📧 <b>الإيميل:</b> ${customer.email}
+📅 <b>التاريخ:</b> ${cairoDate(customer.createdAt)}`);
 }
 
 export async function sendTelegramMessage(text: string, chatId?: string): Promise<void> {
@@ -156,22 +160,37 @@ async function cmdOrders(chatId: string): Promise<void> {
     `SELECT id, customer_name, customer_email, total_amount, status, created_at
      FROM orders ORDER BY created_at DESC LIMIT 10`
   );
-  if (!rows.length) { await sendMsg(chatId, "📦 No orders yet."); return; }
-  const lines = rows.map((o: any) =>
-    `• <code>${o.id.slice(-16)}</code>\n  ${o.customer_name || o.customer_email || "Guest"} | ${o.total_amount} EGP | <b>${o.status}</b> | ${cairoDate(o.created_at)}`
-  ).join("\n\n");
-  await sendMsg(chatId, `📦 <b>Last 10 Orders</b>\n━━━━━━━━━━━━━━━━━━━━\n${lines}`);
+  if (!rows.length) { await sendMsg(chatId, "📦 لا يوجد طلبات حالياً."); return; }
+  
+  for (const o of rows) {
+    const statusNames: Record<string, string> = {
+      pending: "قيد الانتظار", processing: "جاري التنفيذ", completed: "مكتمل", cancelled: "ملغي",
+    };
+    const s = statusNames[o.status] || o.status;
+    const text = `📦 <b>طلب:</b> <code>${o.id}</code>
+👤 ${o.customer_name || o.customer_email || "زائر"}
+💰 ${o.total_amount} ج.م | 📊 ${s}
+📅 ${cairoDate(o.created_at)}`;
+    
+    await sendMsg(chatId, text, [[{ text: "� التفاصيل الكاملة", callback_data: `details:${o.id}` }]]);
+  }
 }
 
 async function cmdPending(chatId: string): Promise<void> {
   const { rows } = await pool.query(
     `SELECT id, customer_name, customer_email, total_amount, created_at FROM orders WHERE status IN ('pending','pending_approval') ORDER BY created_at DESC LIMIT 15`
   );
-  if (!rows.length) { await sendMsg(chatId, "✅ No pending orders!"); return; }
-  const lines = rows.map((o: any) =>
-    `• <code>${o.id.slice(-16)}</code>\n  ${o.customer_name || o.customer_email || "Guest"} | ${o.total_amount} EGP | ${cairoDate(o.created_at)}`
-  ).join("\n\n");
-  await sendMsg(chatId, `⏳ <b>Pending Orders (${rows.length})</b>\n━━━━━━━━━━━━━━━━━━━━\n${lines}`);
+  if (!rows.length) { await sendMsg(chatId, "✅ لا يوجد طلبات معلقة!"); return; }
+  
+  await sendMsg(chatId, `⏳ <b>طلبات بانتظار التنفيذ (${rows.length})</b>\n━━━━━━━━━━━━━━━━━━━━`);
+  
+  for (const o of rows) {
+    const text = `• <code>${o.id}</code>
+👤 ${o.customer_name || o.customer_email || "زائر"}
+💰 ${o.total_amount} ج.م | 📅 ${cairoDate(o.created_at)}`;
+    
+    await sendMsg(chatId, text, [[{ text: "🔍 التفاصيل الكاملة", callback_data: `details:${o.id}` }]]);
+  }
 }
 
 async function cmdStats(chatId: string): Promise<void> {
@@ -189,27 +208,27 @@ async function cmdStats(chatId: string): Promise<void> {
     [todayTs, new Date(todayTs).toISOString()]
   );
   const r = rows[0];
-  await sendMsg(chatId, `📊 <b>Store Stats</b>
+  await sendMsg(chatId, `📊 <b>إحصائيات المتجر</b>
 ━━━━━━━━━━━━━━━━━━━━
-📅 <b>Today</b>
-  📦 Orders: <b>${r.today}</b>
-  💰 Revenue: <b>${parseFloat(r.today_rev).toFixed(2)} EGP</b>
+📅 <b>اليوم</b>
+  📦 الطلبات: <b>${r.today}</b>
+  💰 الأرباح: <b>${parseFloat(r.today_rev).toFixed(2)} ج.م</b>
 
-📋 <b>All Time</b>
-  📦 Total Orders: <b>${r.total}</b>
-  💰 Total Revenue: <b>${parseFloat(r.total_rev).toFixed(2)} EGP</b>
-  ⏳ Pending: ${r.pending}
-  ✅ Completed: ${r.completed}
-  ❌ Cancelled: ${r.cancelled}`);
+📋 <b>الإجمالي</b>
+  📦 إجمالي الطلبات: <b>${r.total}</b>
+  💰 إجمالي الأرباح: <b>${parseFloat(r.total_rev).toFixed(2)} ج.م</b>
+  ⏳ معلق: ${r.pending}
+  ✅ مكتمل: ${r.completed}
+  ❌ ملغي: ${r.cancelled}`);
 }
 
 async function cmdSearch(chatId: string, query: string): Promise<void> {
-  if (!query) { await sendMsg(chatId, "Usage: /search ORDER_ID"); return; }
+  if (!query) { await sendMsg(chatId, "الاستخدام: /search رقم_الطلب"); return; }
   const { rows } = await pool.query(
     `SELECT * FROM orders WHERE id ILIKE $1 OR customer_email ILIKE $1 ORDER BY created_at DESC LIMIT 1`,
     [`%${query}%`]
   );
-  if (!rows.length) { await sendMsg(chatId, `❌ Order not found: <code>${query}</code>`); return; }
+  if (!rows.length) { await sendMsg(chatId, `❌ لم يتم العثور على الطلب: <code>${query}</code>`); return; }
   const o = rows[0];
   let items = [];
   try { items = JSON.parse(o.items || "[]"); } catch {}
@@ -221,17 +240,17 @@ async function cmdStock(chatId: string): Promise<void> {
   const { rows } = await pool.query(
     `SELECT name, stock FROM games WHERE stock <= 5 AND deleted = false ORDER BY stock ASC LIMIT 10`
   );
-  if (!rows.length) { await sendMsg(chatId, "✅ All items have sufficient stock."); return; }
+  if (!rows.length) { await sendMsg(chatId, "✅ جميع المنتجات متوفرة بكمية كافية."); return; }
   const lines = rows.map((g: any) =>
-    `• ${g.name}: <b>${g.stock}</b> left`
+    `• ${g.name}: متبقي <b>${g.stock}</b>`
   ).join("\n");
-  await sendMsg(chatId, `⚠️ <b>Low Stock Alert</b>\n━━━━━━━━━━━━━━━━━━━━\n${lines}`);
+  await sendMsg(chatId, `⚠️ <b>تنبيه انخفاض المخزون</b>\n━━━━━━━━━━━━━━━━━━━━\n${lines}`);
 }
 
 async function cmdUsers(chatId: string): Promise<void> {
   const { rows } = await pool.query(`SELECT COUNT(*) as total FROM users WHERE role = 'user'`);
   const { rows: today } = await pool.query(`SELECT COUNT(*) as count FROM users WHERE role = 'user' AND created_at >= NOW() - INTERVAL '24 hours'`);
-  await sendMsg(chatId, `👥 <b>User Statistics</b>\n━━━━━━━━━━━━━━━━━━━━\nTotal Customers: <b>${rows[0].total}</b>\nNew (Last 24h): <b>${today[0].count}</b>`);
+  await sendMsg(chatId, `👥 <b>إحصائيات المستخدمين</b>\n━━━━━━━━━━━━━━━━━━━━\nإجمالي العملاء: <b>${rows[0].total}</b>\nعملاء جدد (آخر 24 ساعة): <b>${today[0].count}</b>`);
 }
 
 async function cmdTopGames(chatId: string): Promise<void> {
@@ -244,9 +263,9 @@ async function cmdTopGames(chatId: string): Promise<void> {
     ORDER BY sales DESC
     LIMIT 5
   `);
-  if (!rows.length) { await sendMsg(chatId, "📉 No sales data yet."); return; }
-  const lines = rows.map((r: any, i: number) => `${i+1}. ${r.name}: <b>${r.sales} sales</b>`).join("\n");
-  await sendMsg(chatId, `🔥 <b>Top Selling Games</b>\n━━━━━━━━━━━━━━━━━━━━\n${lines}`);
+  if (!rows.length) { await sendMsg(chatId, "📉 لا توجد بيانات مبيعات بعد."); return; }
+  const lines = rows.map((r: any, i: number) => `${i+1}. ${r.name}: <b>${r.sales} مبيعات</b>`).join("\n");
+  await sendMsg(chatId, `🔥 <b>الألعاب الأكثر مبيعاً</b>\n━━━━━━━━━━━━━━━━━━━━\n${lines}`);
 }
 
 async function cmdRevenue(chatId: string): Promise<void> {
@@ -260,24 +279,24 @@ async function cmdRevenue(chatId: string): Promise<void> {
     ORDER BY created_at DESC
     LIMIT 6
   `);
-  const lines = rows.map((r: any) => `• ${r.month.trim()}: <b>${parseFloat(r.rev).toFixed(2)} EGP</b>`).join("\n");
-  await sendMsg(chatId, `💰 <b>Monthly Revenue</b>\n━━━━━━━━━━━━━━━━━━━━\n${lines}`);
+  const lines = rows.map((r: any) => `• ${r.month.trim()}: <b>${parseFloat(r.rev).toFixed(2)} ج.م</b>`).join("\n");
+  await sendMsg(chatId, `💰 <b>الأرباح الشهرية</b>\n━━━━━━━━━━━━━━━━━━━━\n${lines}`);
 }
 
 async function cmdMaintenance(chatId: string, toggle: string): Promise<void> {
   if (toggle !== "on" && toggle !== "off") {
-    await sendMsg(chatId, "Usage: /maintenance on|off");
+    await sendMsg(chatId, "الاستخدام: /maintenance on|off");
     return;
   }
   const isMaintenance = toggle === "on";
   await pool.query("UPDATE settings SET maintenance_mode = $1", [isMaintenance]);
-  await sendMsg(chatId, `🛠 <b>Maintenance Mode:</b> ${isMaintenance ? "<b>ON</b> 🔴" : "<b>OFF</b> 🟢"}`);
+  await sendMsg(chatId, `🛠 <b>وضع الصيانة:</b> ${isMaintenance ? "<b>تفعيل</b> 🔴" : "<b>إيقاف</b> 🟢"}`);
 }
 
 async function cmdBroadcast(chatId: string, message: string): Promise<void> {
-  if (!message) { await sendMsg(chatId, "Usage: /broadcast YOUR_MESSAGE"); return; }
-  await broadcast(`📢 <b>ADMIN ANNOUNCEMENT</b>\n━━━━━━━━━━━━━━━━━━━━\n${message}`);
-  await sendMsg(chatId, "✅ Broadcast sent to all admins.");
+  if (!message) { await sendMsg(chatId, "الاستخدام: /broadcast الرسالة"); return; }
+  await broadcast(`📢 <b>إعلان من الإدارة</b>\n━━━━━━━━━━━━━━━━━━━━\n${message}`);
+  await sendMsg(chatId, "✅ تم إرسال الإعلان لجميع المشرفين.");
 }
 
 async function handleCommand(chatId: string, text: string): Promise<void> {
@@ -285,12 +304,12 @@ async function handleCommand(chatId: string, text: string): Promise<void> {
   const arg = args.join(" ");
 
   if (cmd === "/start" || cmd === "/myid") {
-    await sendMsg(chatId, `🔑 Your Chat ID: <code>${chatId}</code>\nShare with admin to get access.`);
+    await sendMsg(chatId, `🔑 معرف الدردشة الخاص بك: <code>${chatId}</code>\nقم بمشاركته مع المدير للحصول على صلاحية الدخول.`);
     if (!isAuthorized(chatId)) return;
   }
 
   if (!isAuthorized(chatId)) {
-    await sendMsg(chatId, "⛔ You are not authorized to use this bot.");
+    await sendMsg(chatId, "⛔ ليس لديك صلاحية لاستخدام هذا البوت.");
     return;
   }
 
@@ -305,20 +324,20 @@ async function handleCommand(chatId: string, text: string): Promise<void> {
   else if (cmd === "/maintenance") await cmdMaintenance(chatId, arg);
   else if (cmd === "/broadcast") await cmdBroadcast(chatId, arg);
   else if (cmd === "/help") {
-    await sendMsg(chatId, `🤖 <b>Bot Commands</b>
+    await sendMsg(chatId, `🤖 <b>أوامر البوت</b>
 ━━━━━━━━━━━━━━━━━━━━
-/orders — Last 10 orders
-/pending — All pending orders
-/stats — Revenue & order counts
-/search ID — Look up any order
-/stock — Check low stock items
-/users — Customer statistics
-/top — Top selling games
-/revenue — Last 6 months revenue
-/maintenance on|off — Toggle maintenance
-/broadcast MSG — Send alert to admins
-/myid — Your Telegram chat ID
-/help — Show this menu`);
+/orders — آخر 10 طلبات
+/pending — جميع الطلبات المعلقة
+/stats — الأرباح وإحصائيات الطلبات
+/search ID — البحث عن طلب معين
+/stock — فحص المنتجات منخفضة المخزون
+/users — إحصائيات العملاء
+/top — الألعاب الأكثر مبيعاً
+/revenue — أرباح آخر 6 أشهر
+/maintenance on|off — تبديل وضع الصيانة
+/broadcast MSG — إرسال تنبيه للمشرفين
+/myid — معرف الدردشة الخاص بك
+/help — عرض هذه القائمة`);
   }
 }
 
@@ -327,7 +346,7 @@ async function handleCallback(cbq: any): Promise<void> {
   const msgId = cbq.message?.message_id;
   const data: string = cbq.data || "";
 
-  if (!isAuthorized(chatId)) { await answerCbq(cbq.id, "⛔ Not authorized"); return; }
+  if (!isAuthorized(chatId)) { await answerCbq(cbq.id, "⛔ غير مصرح لك"); return; }
 
   if (data.startsWith("status:")) {
     const [, orderId, newStatus] = data.split(":");
@@ -335,16 +354,32 @@ async function handleCallback(cbq: any): Promise<void> {
       await pool.query("UPDATE orders SET status = $1, updated_at = NOW() WHERE id = $2", [newStatus, orderId]);
       const emojis: Record<string, string> = { completed: "✅", processing: "⚙️", cancelled: "❌" };
       const e = emojis[newStatus] || "📋";
-      await answerCbq(cbq.id, `${e} Marked as ${newStatus}`);
+      const statusNames: Record<string, string> = { completed: "مكتمل", processing: "جاري التنفيذ", cancelled: "ملغي" };
+      const s = statusNames[newStatus] || newStatus;
+      await answerCbq(cbq.id, `${e} تم التحديث إلى ${s}`);
       const original = cbq.message?.text || "";
-      await editMsg(chatId, msgId, `${original}\n\n${e} <b>Updated to: ${newStatus.toUpperCase()}</b>`);
+      await editMsg(chatId, msgId, `${original}\n\n${e} <b>تم التحديث إلى: ${s.toUpperCase()}</b>`);
       const others = getAllowedIds().filter(id => id !== chatId);
       await Promise.all(others.map(id =>
-        sendMsg(id, `${e} Order <code>${orderId}</code> marked as <b>${newStatus}</b> by admin`)
+        sendMsg(id, `${e} الطلب <code>${orderId}</code> تم تحديثه إلى <b>${s}</b> بواسطة المشرف`)
       ));
     } catch (err) {
-      await answerCbq(cbq.id, "❌ Update failed");
+      await answerCbq(cbq.id, "❌ فشل التحديث");
       console.error("[Telegram] Callback update error:", err);
+    }
+  } else if (data.startsWith("details:")) {
+    const orderId = data.split(":")[1];
+    try {
+      const { rows } = await pool.query("SELECT * FROM orders WHERE id = $1", [orderId]);
+      if (!rows.length) { await answerCbq(cbq.id, "❌ الطلب غير موجود"); return; }
+      const o = rows[0];
+      let items = [];
+      try { items = JSON.parse(o.items || "[]"); } catch {}
+      const text = buildOrderText(o, items);
+      await sendMsg(chatId, text, orderButtons(o.id));
+      await answerCbq(cbq.id, "🔍 تم جلب التفاصيل");
+    } catch (err) {
+      await answerCbq(cbq.id, "❌ فشل جلب البيانات");
     }
   }
 }
@@ -367,17 +402,17 @@ async function sendDailySummary(): Promise<void> {
       [y.toISOString(), yEnd.toISOString()]
     );
     const r = rows[0];
-    await broadcast(`🌅 <b>Good Morning! Daily Summary</b>
+    await broadcast(`🌅 <b>صباح الخير! ملخص اليوم الماضي</b>
 ━━━━━━━━━━━━━━━━━━━━
 📅 <b>${y.toLocaleDateString("ar-EG")}</b>
 
-📦 Orders: <b>${r.total}</b>
-💰 Revenue: <b>${parseFloat(r.revenue).toFixed(2)} EGP</b>
-✅ Completed: ${r.done}
-⏳ Pending: ${r.pend}
-❌ Cancelled: ${r.cancel}
+📦 الطلبات: <b>${r.total}</b>
+💰 الأرباح: <b>${parseFloat(r.revenue).toFixed(2)} ج.م</b>
+✅ مكتمل: ${r.done}
+⏳ معلق: ${r.pend}
+❌ ملغي: ${r.cancel}
 ━━━━━━━━━━━━━━━━━━━━
-Have a great day! 🎮`);
+نتمنى لك يوماً سعيداً! 🎮`);
   } catch (err) { console.error("[Telegram] Daily summary error:", err); }
 }
 
@@ -410,7 +445,7 @@ async function checkLowActivity(): Promise<void> {
   if (now - lastOrderTime > sixHours && now - lastAlertSent > sixHours) {
     lastAlertSent = now;
     const hrs = Math.round((now - lastOrderTime) / 3600000);
-    await broadcast(`⚠️ <b>Low Activity Alert</b>\nNo new orders in the last <b>${hrs} hours</b>.\nConsider checking your store or running a promotion! 🎯`);
+    await broadcast(`⚠️ <b>تنبيه انخفاض النشاط</b>\nلا توجد طلبات جديدة منذ <b>${hrs} ساعات</b>.\nربما يجب عليك التحقق من المتجر أو عمل عرض ترويجي! 🎯`);
   }
 }
 
