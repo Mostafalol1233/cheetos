@@ -19,6 +19,7 @@ interface UserAuthContextType {
   register: (data: { name: string; email: string; password: string; phone?: string }) => Promise<void>;
   logout: () => void;
   loginWithPhone: (name: string, phone: string) => Promise<void>;
+  loginWithGoogle: (credential: string) => Promise<void>;
 }
 
 const UserAuthContext = createContext<UserAuthContextType | undefined>(undefined);
@@ -152,6 +153,30 @@ export const UserAuthProvider: FC<{ children: ReactNode }> = ({ children }: { ch
     }
   };
 
+  const loginWithGoogle = async (credential: string) => {
+    setError(null);
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/auth/google`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ credential }),
+        credentials: 'include',
+      });
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.message || 'Google sign-in failed');
+      }
+      const data = await response.json();
+      localStorage.setItem('userToken', data.token);
+      localStorage.setItem('userData', JSON.stringify(data.user));
+      setIsAuthenticated(true);
+      setUser(data.user);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Google sign-in failed');
+      throw err;
+    }
+  };
+
   const logout = () => {
     localStorage.removeItem('userToken');
     localStorage.removeItem('userData');
@@ -169,7 +194,8 @@ export const UserAuthProvider: FC<{ children: ReactNode }> = ({ children }: { ch
       login,
       register,
       logout,
-      loginWithPhone
+      loginWithPhone,
+      loginWithGoogle,
     }}>
       {children}
     </UserAuthContext.Provider>

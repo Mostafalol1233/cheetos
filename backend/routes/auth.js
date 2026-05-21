@@ -2,6 +2,7 @@ import express from 'express';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
+import { OAuth2Client } from 'google-auth-library';
 import pool from '../db.js';
 import { authenticateToken } from '../middleware/auth.js';
 import dotenv from 'dotenv';
@@ -419,6 +420,73 @@ router.post('/qr/consume', async (req, res) => {
     res.json({ token, user: { email } });
   } catch (err) {
     res.status(500).json({ message: err.message });
+  }
+});
+
+// Google Sign-In
+router.post('/google', loginRateLimiter, async (req, res) => {
+  try {
+    const { credential } = req.body;
+    if (!credential) return res.status(400).json({ message: 'Google credential is required' });
+
+    const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
+    if (!GOOGLE_CLIENT_ID) return res.status(500).json({ message: 'Google Sign-In is not configured on this server' });
+
+    const client = new OAuth2Client(GOOGLE_CLIENT_ID);
+    let payload;
+    try {
+      const ticket = await client.verifyIdToken({ idToken: credential, audience: GOOGLE_CLIENT_ID });
+      payload = ticket.getPayload();
+    } catch (verifyErr) {
+      console.error('Google token verification failed:', verifyErr.message);
+      return res.status(401).json({ message: 'Invalid Google token' });
+    }
+
+    const { sub: googleId, email, name, picture } = payload;
+    if (!email) return res.status(400).json({ message: 'Google account must have an email address' });
+
+    let user;
+    let userId;
+
+    try {
+      // Try to find existing user by google_id, then by email
+      let result = await pool.query('SELECT * FROM users WHERE google_id = $1 LIMIT 1', [googleId]);
+      if (result.rows.length === 0) {
+        result = await pool.query('SELECT * FROM users WHERE email = $1 LIMIT 1', [email]);
+      }
+
+      if (result.rows.length > 0) {
+        user = result.rows[0];
+        userId = user.id;
+        // Link Google ID if not already linked
+        if (!user.google_id) {
+          await pool.query('UPDATE users SET google_id = $1, avatar = $2 WHERE id = $3', [googleId, picture, userId]).catch(() => {});
+        }
+      } else {
+        // Create new user from Google
+        userId = `user_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+        await pool.query(
+          'INSERT INTO users (id, name, email, google_id, avatar, role) VALUES ($1, $2, $3, $4, $5, $6)',
+          [userId, name, email, googleId, picture, 'user']
+        );
+        user = { id: userId, name, email, google_id: googleId, avatar: picture, role: 'user' };
+        logAudit('user_register', `New user via Google: ${email}`, { id: userId, email, name }).catch(() => {});
+      }
+    } catch (dbErr) {
+      console.error('Google auth DB error:', dbErr);
+      return res.status(500).json({ message: 'Authentication failed. Please try again.' });
+    }
+
+    const token = jwt.sign({ id: userId, name: user.name, email: user.email, role: 'user' }, JWT_SECRET, { expiresIn: '30d' });
+    logAudit('google_login', `Google login: ${email}`, { id: userId, email }).catch(() => {});
+
+    res.json({
+      token,
+      user: { id: userId, name: user.name, email: user.email, phone: user.phone || '', role: 'user', avatar: picture }
+    });
+  } catch (err) {
+    console.error('Google auth unexpected error:', err);
+    res.status(500).json({ message: 'Authentication failed' });
   }
 });
 

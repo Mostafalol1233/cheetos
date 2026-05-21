@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link, useLocation } from "wouter";
 import { useUserAuth } from "@/lib/user-auth-context";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -9,8 +9,69 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { LogIn, UserPlus, Mail, Lock, User, ArrowLeft, Phone } from "lucide-react";
 
+const GOOGLE_CLIENT_ID = "240771472584-ulq4ea98n3tn37u1r5uur0enig1vhril.apps.googleusercontent.com";
+
+declare global {
+  interface Window {
+    google?: any;
+  }
+}
+
+let googleInitialized = false;
+let googleCallback: ((credential: string) => void) | null = null;
+
+function GoogleSignInButton({ onCredential }: { onCredential: (credential: string) => void }) {
+  const btnRef = useRef<HTMLDivElement>(null);
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    googleCallback = onCredential;
+  }, [onCredential]);
+
+  useEffect(() => {
+    const init = () => {
+      if (!window.google || !btnRef.current) return;
+      if (!googleInitialized) {
+        window.google.accounts.id.initialize({
+          client_id: GOOGLE_CLIENT_ID,
+          callback: (res: any) => {
+            if (res?.credential && googleCallback) googleCallback(res.credential);
+          },
+        });
+        googleInitialized = true;
+      }
+      window.google.accounts.id.renderButton(btnRef.current, {
+        theme: "filled_black",
+        size: "large",
+        shape: "pill",
+        width: btnRef.current.offsetWidth || 380,
+        text: "continue_with",
+      });
+      setReady(true);
+    };
+
+    if (window.google) {
+      init();
+    } else {
+      const interval = setInterval(() => {
+        if (window.google) { clearInterval(interval); init(); }
+      }, 200);
+      return () => clearInterval(interval);
+    }
+  }, []);
+
+  return (
+    <div className="w-full">
+      <div ref={btnRef} className="w-full" style={{ minHeight: 44 }} />
+      {!ready && (
+        <div className="w-full h-11 rounded-full bg-gray-800 animate-pulse" />
+      )}
+    </div>
+  );
+}
+
 export default function UserLoginPage() {
-  const { login, register, isAuthenticated } = useUserAuth();
+  const { login, register, isAuthenticated, loginWithGoogle } = useUserAuth();
   const { toast } = useToast();
   const [location, setLocation] = useLocation();
   const searchParams = new URLSearchParams(window.location.search);
@@ -298,6 +359,31 @@ export default function UserLoginPage() {
                     )}
                   </Button>
                 </form>
+
+                {/* Google Sign-In */}
+                <div className="relative my-4">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-gray-700" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-card-bg px-3 text-gray-500">or continue with</span>
+                  </div>
+                </div>
+                <GoogleSignInButton
+                  onCredential={async (credential) => {
+                    try {
+                      await loginWithGoogle(credential);
+                      toast({ title: "Welcome!", description: "Signed in with Google successfully" });
+                      setLocation(redirectUrl);
+                    } catch (err) {
+                      toast({
+                        title: "Google sign-in failed",
+                        description: err instanceof Error ? err.message : "Please try again",
+                        variant: "destructive",
+                      });
+                    }
+                  }}
+                />
               </CardContent>
             </Card>
           </TabsContent>
@@ -395,6 +481,31 @@ export default function UserLoginPage() {
                     )}
                   </Button>
                 </form>
+
+                {/* Google Sign-Up */}
+                <div className="relative my-4">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-gray-700" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-card-bg px-3 text-gray-500">or sign up with</span>
+                  </div>
+                </div>
+                <GoogleSignInButton
+                  onCredential={async (credential) => {
+                    try {
+                      await loginWithGoogle(credential);
+                      toast({ title: "Account created!", description: "Welcome! Signed up with Google." });
+                      setLocation(redirectUrl);
+                    } catch (err) {
+                      toast({
+                        title: "Google sign-up failed",
+                        description: err instanceof Error ? err.message : "Please try again",
+                        variant: "destructive",
+                      });
+                    }
+                  }}
+                />
               </CardContent>
             </Card>
           </TabsContent>
