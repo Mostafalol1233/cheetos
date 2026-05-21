@@ -1094,3 +1094,27 @@
 .shimmer-card:hover::after {
   animation: shimmer-slide 0.65s ease forwards;
 }
+
+/* ========================================
+   INFINITE SCROLL ROW ANIMATIONS
+   ======================================== */
+@keyframes scroll-left {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+@keyframes scroll-right {
+  0% { transform: translateX(-50%); }
+  100% { transform: translateX(0); }
+}
+.animate-scroll-left {
+  animation: scroll-left 40s linear infinite;
+}
+.animate-scroll-right {
+  animation: scroll-right 40s linear infinite;
+}
+.animate-scroll-left-fast {
+  animation: scroll-left 28s linear infinite;
+}
+.animate-scroll-right-fast {
+  animation: scroll-right 32s linear infinite;
+}

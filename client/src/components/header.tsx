@@ -1,10 +1,10 @@
 import { Link, useLocation } from "wouter";
-import { Sun, Moon, Gamepad2, User, LogOut, Menu, X, Home, Grid3X3, MessageCircle, Package, Flame, Smartphone, Gift, Monitor, ChevronRight, Bell, BellOff } from "lucide-react";
+import { Sun, Moon, Gamepad2, User, LogOut, Menu, X, Home, Grid3X3, MessageCircle, Package, Flame, Smartphone, Gift, Monitor, ChevronRight, ChevronDown, Bell, BellOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { LanguageCurrencySwitcher } from "@/components/language-currency-switcher";
 import { useTheme } from "@/components/theme-provider";
 import { useUserAuth } from "@/lib/user-auth-context";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useTranslation } from "@/lib/translation";
 import { useSettings } from "@/lib/settings-context";
 import { cn } from "@/lib/utils";
@@ -12,14 +12,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
 import type { Category } from "@shared/schema";
 import { requestNotificationPermission, getNotificationPermission } from "@/lib/notification-service";
-import {
-  NavigationMenu,
-  NavigationMenuContent,
-  NavigationMenuItem,
-  NavigationMenuLink,
-  NavigationMenuList,
-  NavigationMenuTrigger,
-} from "@/components/ui/navigation-menu";
 
 const CATEGORY_ICON_MAP: Record<string, React.ElementType> = {
   "hot-deals":    Flame,
@@ -86,11 +78,18 @@ export function Header() {
     staleTime: 5 * 60 * 1000,
   });
 
-  const { data: megaGames = [] } = useQuery<any[]>({
-    queryKey: ["/api/games/popular"],
-    queryFn: () => fetch("/api/games/popular").then(r => r.json()),
-    staleTime: 5 * 60 * 1000,
-  });
+  const [categoriesOpen, setCategoriesOpen] = useState(false);
+  const categoriesRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (categoriesRef.current && !categoriesRef.current.contains(e.target as Node)) {
+        setCategoriesOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   useEffect(() => {
     const update = () => {
@@ -206,110 +205,54 @@ export function Header() {
                 );
               })}
 
-              {/* Categories Dropdown — dynamic from API */}
-              <NavigationMenu>
-                <NavigationMenuList>
-                  <NavigationMenuItem>
-                    <NavigationMenuTrigger className="bg-transparent text-sm font-medium hover:bg-white/5 hover:text-foreground text-muted-foreground data-[state=open]:text-foreground data-[state=open]:bg-white/5 rounded-lg px-4 py-2 h-auto">
-                      {t('categories')}
-                    </NavigationMenuTrigger>
-                    <NavigationMenuContent>
-                      <div className="w-[680px] bg-card border border-border/60 rounded-2xl shadow-2xl overflow-hidden">
-                        <div className="grid grid-cols-[220px_1fr]">
-                          {/* Left: Categories */}
-                          <div className="bg-black/30 border-r border-border/40 p-4 flex flex-col gap-1">
-                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest px-2 mb-2">Browse Categories</p>
-                            <NavigationMenuLink asChild>
-                              <Link href="/games">
-                                <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-gold-primary/10 border border-gold-primary/20 hover:bg-gold-primary/20 transition-all group cursor-pointer mb-1">
-                                  <div className="w-8 h-8 rounded-lg bg-gold-primary/20 flex items-center justify-center shrink-0">
-                                    <Gamepad2 className="w-4 h-4 text-gold-primary" />
-                                  </div>
-                                  <div className="flex-1 min-w-0">
-                                    <div className="text-sm font-bold text-gold-primary">All Games</div>
-                                    <p className="text-[10px] text-muted-foreground">Full collection</p>
-                                  </div>
-                                  <ChevronRight className="w-3.5 h-3.5 text-gold-primary opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" />
-                                </div>
-                              </Link>
-                            </NavigationMenuLink>
-                            {navCategories.map((cat) => {
-                              const IconComp = CATEGORY_ICON_MAP[cat.slug] || Gift;
-                              const iconColor = CATEGORY_COLOR_MAP[cat.slug] || "text-gold-primary";
-                              const bgStyle = CATEGORY_BG_MAP[cat.slug] || "bg-white/5 border-white/10 hover:bg-white/10";
-                              return (
-                                <NavigationMenuLink key={cat.id} asChild>
-                                  <Link href={`/category/${cat.slug}`}>
-                                    <div className={`flex items-center gap-3 px-3 py-2.5 rounded-xl border transition-all group cursor-pointer ${bgStyle}`}>
-                                      <div className={`w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center shrink-0 ${iconColor}`}>
-                                        <IconComp className="w-4 h-4" />
-                                      </div>
-                                      <div className="flex-1 min-w-0">
-                                        <div className="text-sm font-semibold text-foreground">{cat.name}</div>
-                                        <p className="text-[10px] text-muted-foreground line-clamp-1">{cat.description}</p>
-                                      </div>
-                                      <ChevronRight className={`w-3.5 h-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all`} />
-                                    </div>
-                                  </Link>
-                                </NavigationMenuLink>
-                              );
-                            })}
+              {/* Categories Dropdown — simple */}
+              <div className="relative" ref={categoriesRef}>
+                <button
+                  onClick={() => setCategoriesOpen(v => !v)}
+                  className={cn(
+                    "relative px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-1.5 cursor-pointer",
+                    categoriesOpen
+                      ? "text-foreground bg-white/8"
+                      : "text-muted-foreground hover:text-foreground hover:bg-white/5"
+                  )}
+                >
+                  {t('categories')}
+                  <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${categoriesOpen ? "rotate-180" : ""}`} />
+                </button>
+                <AnimatePresence>
+                  {categoriesOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 8, scale: 0.96 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 8, scale: 0.96 }}
+                      transition={{ duration: 0.15 }}
+                      className="absolute top-full left-0 mt-2 w-52 bg-card border border-border/60 rounded-xl shadow-2xl overflow-hidden z-50"
+                    >
+                      <div className="p-1.5">
+                        <Link href="/games" onClick={() => setCategoriesOpen(false)}>
+                          <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg hover:bg-gold-primary/10 transition-colors cursor-pointer">
+                            <Gamepad2 className="w-4 h-4 text-gold-primary shrink-0" />
+                            <span className="text-sm font-semibold text-foreground">All Games</span>
                           </div>
-
-                          {/* Right: Popular Games Grid */}
-                          <div className="p-4">
-                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest px-1 mb-3">Popular Games</p>
-                            <div className="grid grid-cols-3 gap-2">
-                              {megaGames.slice(0, 6).map((game: any) => {
-                                const thumb = game.banner_image || game.image_url || game.image;
-                                return (
-                                  <NavigationMenuLink key={game.id} asChild>
-                                    <Link href={`/game/${game.slug}`}>
-                                      <div className="relative aspect-[3/4] rounded-xl overflow-hidden group cursor-pointer border border-white/10 hover:border-gold-primary/40 transition-all">
-                                        {thumb ? (
-                                          <img
-                                            src={thumb}
-                                            alt={game.name}
-                                            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
-                                          />
-                                        ) : (
-                                          <div className="w-full h-full bg-gradient-to-br from-gray-800 to-gray-900" />
-                                        )}
-                                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-                                        <div className="absolute bottom-0 left-0 right-0 p-2">
-                                          <p className="text-white text-[10px] font-bold leading-tight truncate drop-shadow">{game.name}</p>
-                                        </div>
-                                        <div className="absolute inset-0 ring-2 ring-gold-primary/0 group-hover:ring-gold-primary/50 rounded-xl transition-all" />
-                                      </div>
-                                    </Link>
-                                  </NavigationMenuLink>
-                                );
-                              })}
-                            </div>
-                            {megaGames.length === 0 && (
-                              <div className="grid grid-cols-3 gap-2">
-                                {[...Array(6)].map((_, i) => (
-                                  <div key={i} className="aspect-[3/4] rounded-xl bg-white/5 animate-pulse" />
-                                ))}
+                        </Link>
+                        <div className="h-px bg-border/40 my-1" />
+                        {navCategories.map((cat) => {
+                          const IconComp = CATEGORY_ICON_MAP[cat.slug] || Gift;
+                          const iconColor = CATEGORY_COLOR_MAP[cat.slug] || "text-gold-primary";
+                          return (
+                            <Link key={cat.id} href={`/category/${cat.slug}`} onClick={() => setCategoriesOpen(false)}>
+                              <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg hover:bg-muted transition-colors cursor-pointer">
+                                <IconComp className={`w-4 h-4 shrink-0 ${iconColor}`} />
+                                <span className="text-sm font-medium text-foreground">{cat.name}</span>
                               </div>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Bottom bar */}
-                        <div className="border-t border-border/40 px-4 py-2.5 bg-black/20 flex items-center justify-between">
-                          <span className="text-xs text-muted-foreground">Top-up instantly • Secure payment</span>
-                          <NavigationMenuLink asChild>
-                            <Link href="/games">
-                              <span className="text-xs text-gold-primary font-semibold hover:underline cursor-pointer">View all games →</span>
                             </Link>
-                          </NavigationMenuLink>
-                        </div>
+                          );
+                        })}
                       </div>
-                    </NavigationMenuContent>
-                  </NavigationMenuItem>
-                </NavigationMenuList>
-              </NavigationMenu>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
             </nav>
 
             {/* Right Side Actions */}

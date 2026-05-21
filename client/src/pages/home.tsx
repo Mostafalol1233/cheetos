@@ -1,16 +1,49 @@
-import { Zap, Headphones, Shield, Tag, ArrowRight, Sparkles, Trophy, Clock } from "lucide-react";
+import { useState, useRef, useCallback } from "react";
+import { Zap, Headphones, Shield, Tag, ArrowRight, Sparkles, Trophy, Clock, Search } from "lucide-react";
 import { motion } from "framer-motion";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
+import { useQuery } from "@tanstack/react-query";
 
 import { ShoppingCategories } from "@/components/shopping-categories";
 import { PopularGames } from "@/components/popular-games";
 import PaymentMethods from "@/components/payment-methods";
-import { HeroCarousel } from "@/components/hero-carousel";
 import { Footer } from "@/components/footer";
 import { useTranslation } from "@/lib/translation";
 import { SEO } from "@/components/SEO";
 import { Button } from "@/components/ui/button";
 import { ReviewsMarquee } from "@/components/reviews-marquee";
+import { GameSearchOverlay } from "@/components/game-search-overlay";
+import type { Game } from "@shared/schema";
+
+const TRENDING = ["Free Fire", "PUBG", "PlayStation", "Roblox", "Steam", "iTunes"];
+
+function AnimatedGameRow({ games, direction = "left", speed = 40 }: { games: Game[]; direction?: "left" | "right"; speed?: number }) {
+  if (!games.length) return null;
+  const doubled = [...games, ...games];
+  const animClass = direction === "left" ? "animate-scroll-left" : "animate-scroll-right";
+  return (
+    <div className="flex overflow-hidden w-full select-none pointer-events-none" style={{ maskImage: "linear-gradient(to right, transparent, black 8%, black 92%, transparent)" }}>
+      <div className={`flex gap-2 ${animClass}`} style={{ animationDuration: `${speed}s` }}>
+        {doubled.map((game, i) => {
+          const img = (game as any).banner_image || game.image || "";
+          return (
+            <div
+              key={`${game.id}-${i}`}
+              className="relative shrink-0 w-24 h-32 sm:w-28 sm:h-36 rounded-xl overflow-hidden bg-gray-900 border border-white/8"
+            >
+              {img ? (
+                <img src={img} alt="" className="w-full h-full object-cover" />
+              ) : (
+                <div className="w-full h-full bg-gradient-to-br from-gray-800 to-gray-900" />
+              )}
+              <div className="absolute inset-0 bg-black/20" />
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
 const features = [
   {
@@ -77,6 +110,17 @@ const reviews = [
 
 export default function Home() {
   const { t, language } = useTranslation();
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [, navigate] = useLocation();
+
+  const { data: allGames = [] } = useQuery<Game[]>({
+    queryKey: ["/api/games?limit=500"],
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const row1 = allGames.slice(0, Math.ceil(allGames.length / 3));
+  const row2 = allGames.slice(Math.ceil(allGames.length / 3), Math.ceil(allGames.length * 2 / 3));
+  const row3 = allGames.slice(Math.ceil(allGames.length * 2 / 3));
 
   return (
     <>
@@ -112,16 +156,78 @@ export default function Home() {
       />
 
       <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
-        {/* Hero Section */}
-        <section className="relative">
-          {/* Background Effects */}
-          <div className="absolute inset-0 overflow-hidden pointer-events-none">
-            <div className="absolute top-20 left-10 w-72 h-72 bg-gold-primary/8 rounded-full blur-[100px]" />
-            <div className="absolute top-40 right-20 w-96 h-96 bg-gold-primary/5 rounded-full blur-[120px]" />
+
+        {/* Search Overlay */}
+        <GameSearchOverlay isOpen={searchOpen} onClose={() => setSearchOpen(false)} />
+
+        {/* Hero Section — Animated Game Wall */}
+        <section className="relative overflow-hidden bg-black" style={{ minHeight: "480px" }}>
+
+          {/* Animated game tile rows */}
+          <div className="absolute inset-0 flex flex-col gap-2 py-4 opacity-60">
+            {row1.length > 0 && <AnimatedGameRow games={row1} direction="left" speed={38} />}
+            {row2.length > 0 && <AnimatedGameRow games={row2} direction="right" speed={44} />}
+            {row3.length > 0 && <AnimatedGameRow games={row3} direction="left" speed={36} />}
           </div>
 
-          <div className="container mx-auto px-4 pt-8 relative z-10">
-            <HeroCarousel />
+          {/* Dark overlay */}
+          <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/60 to-black/80" />
+
+          {/* Centered content */}
+          <div className="relative z-10 flex flex-col items-center justify-center px-4 pt-16 pb-20" style={{ minHeight: "480px" }}>
+            <motion.div
+              initial={{ opacity: 0, y: 24 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
+              className="text-center"
+            >
+              <h1 className="text-4xl sm:text-5xl md:text-6xl font-black text-white leading-tight mb-2">
+                {language === 'ar' ? (
+                  <>اشتري أي شيء <span className="text-gold-primary">رقمي.</span></>
+                ) : (
+                  <>Buy anything <span className="text-gold-primary">digital.</span></>
+                )}
+              </h1>
+              <p className="text-muted-foreground text-base sm:text-lg mt-3 mb-8">
+                {language === 'ar'
+                  ? 'شحن فوري للألعاب والبطاقات الرقمية في مصر'
+                  : 'Instant top-up for games & gift cards in Egypt'}
+              </p>
+
+              {/* Search bar */}
+              <div className="flex items-center gap-3 max-w-xl mx-auto mb-6">
+                <button
+                  onClick={() => setSearchOpen(true)}
+                  className="flex-1 flex items-center gap-3 bg-white/10 hover:bg-white/15 border border-white/20 hover:border-white/35 rounded-full px-5 py-3.5 text-muted-foreground text-sm transition-all text-left cursor-text"
+                >
+                  <Search className="w-4 h-4 shrink-0" />
+                  <span>{language === 'ar' ? 'ابحث عن منتج رقمي...' : 'Search for digital products...'}</span>
+                </button>
+                <button
+                  onClick={() => setSearchOpen(true)}
+                  className="w-12 h-12 rounded-full bg-gold-primary hover:bg-gold-primary/90 flex items-center justify-center shrink-0 transition-all shadow-lg shadow-gold-primary/30"
+                >
+                  <Search className="w-5 h-5 text-black" />
+                </button>
+              </div>
+
+              {/* Trending pills */}
+              <div className="flex items-center justify-center flex-wrap gap-2">
+                <span className="text-xs text-muted-foreground flex items-center gap-1">
+                  <Sparkles className="w-3 h-3" />
+                  {language === 'ar' ? 'الأكثر بحثاً:' : 'Trending:'}
+                </span>
+                {TRENDING.map((term) => (
+                  <button
+                    key={term}
+                    onClick={() => { navigate(`/games?q=${encodeURIComponent(term)}`); }}
+                    className="px-3 py-1 rounded-full bg-white/8 hover:bg-white/15 border border-white/12 hover:border-white/25 text-xs text-white/80 hover:text-white transition-all"
+                  >
+                    {term}
+                  </button>
+                ))}
+              </div>
+            </motion.div>
           </div>
         </section>
 

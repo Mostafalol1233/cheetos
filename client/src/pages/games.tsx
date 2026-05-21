@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, Search, SlidersHorizontal, Gamepad2, ChevronRight, Flame, Package } from "lucide-react";
+import { ArrowLeft, Search, SlidersHorizontal, Gamepad2, ChevronRight, Flame, Package, X } from "lucide-react";
 import { Link } from "wouter";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -43,6 +43,27 @@ function getGameImage(game: Game): string {
   return '';
 }
 
+function AnimatedGameRow({ games, direction = "left", speed = 35 }: { games: Game[]; direction?: "left" | "right"; speed?: number }) {
+  if (!games.length) return null;
+  const doubled = [...games, ...games];
+  const animClass = direction === "left" ? "animate-scroll-left" : "animate-scroll-right";
+  return (
+    <div className="flex overflow-hidden w-full select-none pointer-events-none">
+      <div className={`flex gap-2 ${animClass}`} style={{ animationDuration: `${speed}s` }}>
+        {doubled.map((game, i) => {
+          const img = (game as any).banner_image || game.image || "";
+          return (
+            <div key={`${game.id}-${i}`} className="relative shrink-0 w-20 h-28 rounded-xl overflow-hidden bg-gray-900 border border-white/6">
+              {img ? <img src={img} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full bg-gray-800" />}
+              <div className="absolute inset-0 bg-black/30" />
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 export default function GamesPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
@@ -53,7 +74,7 @@ export default function GamesPage() {
   });
 
   const { data: allGames = [], isLoading } = useQuery<Game[]>({
-    queryKey: ["/api/games?limit=100"],
+    queryKey: ["/api/games?limit=500"],
   });
 
   const filteredGames = allGames.filter(game => {
@@ -84,29 +105,30 @@ export default function GamesPage() {
   return (
     <div className="min-h-screen bg-background text-foreground">
 
-      {/* Page Header */}
-      <div className="relative overflow-hidden bg-background border-b border-border/40 py-10 px-4">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_rgba(255,193,7,0.07)_0%,_transparent_60%)]" />
-        <div className="absolute top-0 right-0 w-72 h-72 bg-gold-primary/5 rounded-full blur-3xl pointer-events-none" />
-        <div className="container mx-auto relative z-10">
-          <Link href="/" className="inline-flex items-center gap-2 text-muted-foreground hover:text-gold-primary transition-colors mb-6 text-sm font-medium">
+      {/* Page Header — animated game tiles background */}
+      <div className="relative overflow-hidden bg-black border-b border-border/40" style={{ minHeight: "180px" }}>
+        {/* Animated rows */}
+        <div className="absolute inset-0 flex flex-col gap-2 py-3 opacity-50">
+          <AnimatedGameRow games={allGames.slice(0, Math.ceil(allGames.length / 2))} direction="left" speed={32} />
+          <AnimatedGameRow games={allGames.slice(Math.ceil(allGames.length / 2))} direction="right" speed={38} />
+        </div>
+        {/* Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/50 to-black/80" />
+        {/* Content */}
+        <div className="container mx-auto px-4 py-8 relative z-10">
+          <Link href="/" className="inline-flex items-center gap-2 text-white/60 hover:text-gold-primary transition-colors mb-5 text-sm font-medium">
             <ArrowLeft className="w-4 h-4" />
             {t('back_to_home')}
           </Link>
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-gold-primary/20 to-red-900/10 border border-gold-primary/25 flex items-center justify-center shadow-lg shadow-gold-primary/10">
-                <Gamepad2 className="w-7 h-7 text-gold-primary" />
-              </div>
-              <div>
-                <h1 className="text-3xl md:text-4xl font-black text-foreground">{t('games')}</h1>
-                <p className="text-muted-foreground text-sm mt-1">{t('browse_games_desc')}</p>
-              </div>
+            <div>
+              <h1 className="text-3xl md:text-4xl font-black text-white">{t('games')}</h1>
+              <p className="text-white/60 text-sm mt-1">{t('browse_games_desc')}</p>
             </div>
-            <div className="flex items-center gap-2 text-sm bg-card border border-border/60 px-4 py-2 rounded-full self-start sm:self-auto">
+            <div className="flex items-center gap-2 text-sm bg-white/10 backdrop-blur-sm border border-white/15 px-4 py-2 rounded-full self-start sm:self-auto">
               <Package className="w-4 h-4 text-gold-primary" />
-              <span className="font-semibold text-foreground">{filteredGames.length}</span>
-              <span className="text-muted-foreground">{t('games_found')}</span>
+              <span className="font-semibold text-white">{filteredGames.length}</span>
+              <span className="text-white/60">{t('games_found')}</span>
             </div>
           </div>
         </div>
