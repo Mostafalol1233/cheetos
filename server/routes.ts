@@ -878,7 +878,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         user_email VARCHAR(200),
         rating INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 5),
         comment TEXT,
-        is_approved BOOLEAN DEFAULT true,
+        is_approved BOOLEAN DEFAULT false,
         created_at BIGINT DEFAULT (EXTRACT(EPOCH FROM NOW()) * 1000)
       )
     `);
@@ -913,10 +913,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (isNaN(ratingNum) || ratingNum < 1 || ratingNum > 5) return res.status(400).json({ message: 'Rating must be 1-5' });
     try {
       const result = await pool.query(
-        `INSERT INTO reviews (game_slug, user_name, user_email, rating, comment) VALUES ($1, $2, $3, $4, $5) RETURNING *`,
+        `INSERT INTO reviews (game_slug, user_name, user_email, rating, comment, is_approved) VALUES ($1, $2, $3, $4, $5, false) RETURNING *`,
         [game_slug, user_name, user_email || null, ratingNum, comment || null]
       );
-      res.status(201).json(result.rows[0]);
+      res.status(201).json({ ...result.rows[0], pending: true });
     } catch (err) { res.status(500).json({ message: 'Server error' }); }
   });
 

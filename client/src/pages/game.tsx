@@ -980,9 +980,14 @@ export default function GamePage() {
                 </h3>
                 {reviewSubmitted ? (
                   <div className="text-center py-6 space-y-2">
-                    <div className="text-3xl">⭐</div>
-                    <p className="font-semibold text-green-400">
+                    <div className="text-3xl">⏳</div>
+                    <p className="font-semibold text-yellow-400">
                       {language === 'ar' ? 'شكراً على تقييمك!' : 'Thank you for your review!'}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      {language === 'ar'
+                        ? 'تقييمك قيد المراجعة وسيظهر بعد موافقة الإدارة.'
+                        : 'Your review is pending approval and will appear once approved by our team.'}
                     </p>
                     <button
                       onClick={() => setReviewSubmitted(false)}
