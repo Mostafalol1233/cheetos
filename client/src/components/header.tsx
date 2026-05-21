@@ -86,6 +86,12 @@ export function Header() {
     staleTime: 5 * 60 * 1000,
   });
 
+  const { data: megaGames = [] } = useQuery<any[]>({
+    queryKey: ["/api/games/popular"],
+    queryFn: () => fetch("/api/games/popular").then(r => r.json()),
+    staleTime: 5 * 60 * 1000,
+  });
+
   useEffect(() => {
     const update = () => {
       const notif = localStorage.getItem('order_notification');
@@ -208,50 +214,98 @@ export function Header() {
                       {t('categories')}
                     </NavigationMenuTrigger>
                     <NavigationMenuContent>
-                      <ul className="grid w-[440px] gap-2 p-4 md:w-[540px] md:grid-cols-2 bg-card border border-border/60 rounded-2xl shadow-2xl">
-                        {/* All Games shortcut */}
-                        <li className="col-span-2">
+                      <div className="w-[680px] bg-card border border-border/60 rounded-2xl shadow-2xl overflow-hidden">
+                        <div className="grid grid-cols-[220px_1fr]">
+                          {/* Left: Categories */}
+                          <div className="bg-black/30 border-r border-border/40 p-4 flex flex-col gap-1">
+                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest px-2 mb-2">Browse Categories</p>
+                            <NavigationMenuLink asChild>
+                              <Link href="/games">
+                                <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-gold-primary/10 border border-gold-primary/20 hover:bg-gold-primary/20 transition-all group cursor-pointer mb-1">
+                                  <div className="w-8 h-8 rounded-lg bg-gold-primary/20 flex items-center justify-center shrink-0">
+                                    <Gamepad2 className="w-4 h-4 text-gold-primary" />
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <div className="text-sm font-bold text-gold-primary">All Games</div>
+                                    <p className="text-[10px] text-muted-foreground">Full collection</p>
+                                  </div>
+                                  <ChevronRight className="w-3.5 h-3.5 text-gold-primary opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" />
+                                </div>
+                              </Link>
+                            </NavigationMenuLink>
+                            {navCategories.map((cat) => {
+                              const IconComp = CATEGORY_ICON_MAP[cat.slug] || Gift;
+                              const iconColor = CATEGORY_COLOR_MAP[cat.slug] || "text-gold-primary";
+                              const bgStyle = CATEGORY_BG_MAP[cat.slug] || "bg-white/5 border-white/10 hover:bg-white/10";
+                              return (
+                                <NavigationMenuLink key={cat.id} asChild>
+                                  <Link href={`/category/${cat.slug}`}>
+                                    <div className={`flex items-center gap-3 px-3 py-2.5 rounded-xl border transition-all group cursor-pointer ${bgStyle}`}>
+                                      <div className={`w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center shrink-0 ${iconColor}`}>
+                                        <IconComp className="w-4 h-4" />
+                                      </div>
+                                      <div className="flex-1 min-w-0">
+                                        <div className="text-sm font-semibold text-foreground">{cat.name}</div>
+                                        <p className="text-[10px] text-muted-foreground line-clamp-1">{cat.description}</p>
+                                      </div>
+                                      <ChevronRight className={`w-3.5 h-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all`} />
+                                    </div>
+                                  </Link>
+                                </NavigationMenuLink>
+                              );
+                            })}
+                          </div>
+
+                          {/* Right: Popular Games Grid */}
+                          <div className="p-4">
+                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest px-1 mb-3">Popular Games</p>
+                            <div className="grid grid-cols-3 gap-2">
+                              {megaGames.slice(0, 6).map((game: any) => {
+                                const thumb = game.banner_image || game.image_url || game.image;
+                                return (
+                                  <NavigationMenuLink key={game.id} asChild>
+                                    <Link href={`/game/${game.slug}`}>
+                                      <div className="relative aspect-[3/4] rounded-xl overflow-hidden group cursor-pointer border border-white/10 hover:border-gold-primary/40 transition-all">
+                                        {thumb ? (
+                                          <img
+                                            src={thumb}
+                                            alt={game.name}
+                                            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                                          />
+                                        ) : (
+                                          <div className="w-full h-full bg-gradient-to-br from-gray-800 to-gray-900" />
+                                        )}
+                                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                                        <div className="absolute bottom-0 left-0 right-0 p-2">
+                                          <p className="text-white text-[10px] font-bold leading-tight truncate drop-shadow">{game.name}</p>
+                                        </div>
+                                        <div className="absolute inset-0 ring-2 ring-gold-primary/0 group-hover:ring-gold-primary/50 rounded-xl transition-all" />
+                                      </div>
+                                    </Link>
+                                  </NavigationMenuLink>
+                                );
+                              })}
+                            </div>
+                            {megaGames.length === 0 && (
+                              <div className="grid grid-cols-3 gap-2">
+                                {[...Array(6)].map((_, i) => (
+                                  <div key={i} className="aspect-[3/4] rounded-xl bg-white/5 animate-pulse" />
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Bottom bar */}
+                        <div className="border-t border-border/40 px-4 py-2.5 bg-black/20 flex items-center justify-between">
+                          <span className="text-xs text-muted-foreground">Top-up instantly • Secure payment</span>
                           <NavigationMenuLink asChild>
-                            <Link
-                              href="/games"
-                              className="flex items-center gap-3 select-none rounded-xl bg-gold-primary/8 border border-gold-primary/20 px-4 py-3 no-underline outline-none hover:bg-gold-primary/15 transition-all group"
-                            >
-                              <div className="w-10 h-10 rounded-xl bg-gold-primary/15 border border-gold-primary/25 flex items-center justify-center shrink-0">
-                                <Gamepad2 className="w-5 h-5 text-gold-primary" />
-                              </div>
-                              <div className="flex-1">
-                                <div className="text-sm font-bold text-foreground group-hover:text-gold-primary transition-colors">All Games</div>
-                                <p className="text-xs text-muted-foreground mt-0.5">Browse our full collection of top-ups</p>
-                              </div>
-                              <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-gold-primary group-hover:translate-x-0.5 transition-all" />
+                            <Link href="/games">
+                              <span className="text-xs text-gold-primary font-semibold hover:underline cursor-pointer">View all games →</span>
                             </Link>
                           </NavigationMenuLink>
-                        </li>
-                        {/* Dynamic categories from API */}
-                        {navCategories.map((cat) => {
-                          const IconComp = CATEGORY_ICON_MAP[cat.slug] || Gift;
-                          const iconColor = CATEGORY_COLOR_MAP[cat.slug] || "text-gold-primary";
-                          const bgStyle = CATEGORY_BG_MAP[cat.slug] || "bg-white/5 border-white/10 hover:bg-white/10";
-                          return (
-                            <li key={cat.id}>
-                              <NavigationMenuLink asChild>
-                                <Link href={`/category/${cat.slug}`}>
-                                  <div className={`flex items-center gap-3 select-none rounded-xl border p-3 leading-none no-underline outline-none transition-all group cursor-pointer ${bgStyle}`}>
-                                    <div className={`w-9 h-9 rounded-lg bg-white/5 flex items-center justify-center shrink-0 ${iconColor}`}>
-                                      <IconComp className="w-4 h-4" />
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                      <div className={`text-sm font-semibold leading-none text-foreground group-hover:${iconColor} transition-colors`}>{cat.name}</div>
-                                      <p className="mt-1 line-clamp-1 text-xs leading-snug text-muted-foreground">{cat.description}</p>
-                                    </div>
-                                    <ChevronRight className={`w-3.5 h-3.5 text-muted-foreground group-hover:${iconColor} group-hover:translate-x-0.5 transition-all opacity-0 group-hover:opacity-100`} />
-                                  </div>
-                                </Link>
-                              </NavigationMenuLink>
-                            </li>
-                          );
-                        })}
-                      </ul>
+                        </div>
+                      </div>
                     </NavigationMenuContent>
                   </NavigationMenuItem>
                 </NavigationMenuList>
