@@ -6,7 +6,7 @@ const router = express.Router();
 router.use(authenticateToken, ensureAdmin);
 
 const EXCHANGE_API = 'https://open.er-api.com/v6/latest/USD';
-const THRESHOLD_INSTANT = 5; // % change that triggers note of big change
+const THRESHOLD_INSTANT = 5;
 
 async function fetchLiveRate() {
   const res = await fetch(EXCHANGE_API, { signal: AbortSignal.timeout(8000) });
@@ -21,10 +21,10 @@ async function getSettings() {
   const result = await pool.query('SELECT * FROM live_pricing_settings WHERE id = $1', ['default']);
   if (result.rows.length === 0) {
     await pool.query(
-      `INSERT INTO live_pricing_settings (id, enabled, usd_egp_rate, global_discount_egp)
-       VALUES ('default', false, 0, 0) ON CONFLICT (id) DO NOTHING`
+      `INSERT INTO live_pricing_settings (id, enabled, usd_egp_rate, global_discount_egp, global_charge_egp)
+       VALUES ('default', false, 0, 0, 0) ON CONFLICT (id) DO NOTHING`
     );
-    return { id: 'default', enabled: false, usd_egp_rate: 0, global_discount_egp: 0, last_rate_update: null, last_applied: null };
+    return { id: 'default', enabled: false, usd_egp_rate: 0, global_discount_egp: 0, global_charge_egp: 0, last_rate_update: null, last_applied: null };
   }
   return result.rows[0];
 }
@@ -37,6 +37,7 @@ router.get('/settings', async (req, res) => {
       enabled: settings.enabled,
       usdEgpRate: parseFloat(settings.usd_egp_rate) || 0,
       globalDiscountEgp: parseFloat(settings.global_discount_egp) || 0,
+      globalChargeEgp: parseFloat(settings.global_charge_egp) || 0,
       lastRateUpdate: settings.last_rate_update,
       lastApplied: settings.last_applied,
     });
@@ -49,18 +50,19 @@ router.get('/settings', async (req, res) => {
 // PUT /api/admin/live-pricing/settings
 router.put('/settings', async (req, res) => {
   try {
-    const { enabled, globalDiscountEgp } = req.body;
+    const { enabled, globalDiscountEgp, globalChargeEgp } = req.body;
     const settings = await getSettings();
 
     const newEnabled = enabled !== undefined ? Boolean(enabled) : settings.enabled;
     const newDiscount = globalDiscountEgp !== undefined ? parseFloat(globalDiscountEgp) || 0 : parseFloat(settings.global_discount_egp) || 0;
+    const newCharge = globalChargeEgp !== undefined ? parseFloat(globalChargeEgp) || 0 : parseFloat(settings.global_charge_egp) || 0;
 
     await pool.query(
-      `UPDATE live_pricing_settings SET enabled = $1, global_discount_egp = $2 WHERE id = 'default'`,
-      [newEnabled, newDiscount]
+      `UPDATE live_pricing_settings SET enabled = $1, global_discount_egp = $2, global_charge_egp = $3 WHERE id = 'default'`,
+      [newEnabled, newDiscount, newCharge]
     );
 
-    res.json({ ok: true, enabled: newEnabled, globalDiscountEgp: newDiscount });
+    res.json({ ok: true, enabled: newEnabled, globalDiscountEgp: newDiscount, globalChargeEgp: newCharge });
   } catch (err) {
     console.error('Live pricing update settings error:', err);
     res.status(500).json({ message: 'Failed to update settings' });
@@ -108,11 +110,13 @@ router.get('/packages', async (req, res) => {
     const settings = await getSettings();
     const rate = parseFloat(settings.usd_egp_rate) || 0;
     const discount = parseFloat(settings.global_discount_egp) || 0;
+    const globalCharge = parseFloat(settings.global_charge_egp) || 0;
 
     const result = await pool.query(`
       SELECT gp.id, gp.game_id, gp.name, gp.price, gp.discount_price,
              gp.price_usd, gp.original_price_egp, gp.bonus, gp.image,
-             g.name as game_name
+             g.name as game_name,
+             COALESCE(g.live_price_charge_egp, 0) as game_charge
       FROM game_packages gp
       LEFT JOIN games g ON g.id = gp.game_id
       ORDER BY g.name, gp.price ASC
@@ -120,8 +124,9 @@ router.get('/packages', async (req, res) => {
 
     const packages = result.rows.map(pkg => {
       const priceUsd = parseFloat(pkg.price_usd) || null;
+      const gameCharge = parseFloat(pkg.game_charge) || 0;
       const calculated = priceUsd && rate > 0
-        ? Math.max(0, parseFloat((priceUsd * rate - discount).toFixed(2)))
+        ? Math.max(1, parseFloat((priceUsd * rate - discount + globalCharge + gameCharge).toFixed(2)))
         : null;
       return {
         id: pkg.id,
@@ -135,10 +140,14 @@ router.get('/packages', async (req, res) => {
         calculatedEgp: calculated,
         bonus: pkg.bonus,
         image: pkg.image,
+        gameCharge,
       };
     });
 
-    res.json({ packages, settings: { usdEgpRate: rate, globalDiscountEgp: discount, enabled: settings.enabled } });
+    res.json({
+      packages,
+      settings: { usdEgpRate: rate, globalDiscountEgp: discount, globalChargeEgp: globalCharge, enabled: settings.enabled }
+    });
   } catch (err) {
     console.error('Live pricing get packages error:', err);
     res.status(500).json({ message: 'Failed to load packages' });
@@ -163,22 +172,44 @@ router.put('/package/:id', async (req, res) => {
   }
 });
 
+// PUT /api/admin/live-pricing/game/:gameId/charge
+router.put('/game/:gameId/charge', async (req, res) => {
+  try {
+    const { gameId } = req.params;
+    const { chargeEgp } = req.body;
+    const charge = parseFloat(chargeEgp) || 0;
+
+    await pool.query(
+      'UPDATE games SET live_price_charge_egp = $1 WHERE id = $2',
+      [charge, gameId]
+    );
+    res.json({ ok: true, gameId, chargeEgp: charge });
+  } catch (err) {
+    console.error('Live pricing update game charge error:', err);
+    res.status(500).json({ message: 'Failed to update game charge' });
+  }
+});
+
 // POST /api/admin/live-pricing/apply
-// Applies current rate × USD price - discount → writes to price column
+// Formula: final = max(1, price_usd × rate − global_discount + global_charge + game_charge)
 router.post('/apply', async (req, res) => {
   try {
     const settings = await getSettings();
     const rate = parseFloat(settings.usd_egp_rate);
     const discount = parseFloat(settings.global_discount_egp) || 0;
+    const globalCharge = parseFloat(settings.global_charge_egp) || 0;
 
     if (!rate || rate <= 0) {
       return res.status(400).json({ message: 'يجب جلب سعر الصرف أولاً' });
     }
 
-    // Get all packages with price_usd set
-    const pkgResult = await pool.query(
-      'SELECT id, price, price_usd FROM game_packages WHERE price_usd IS NOT NULL AND price_usd > 0'
-    );
+    const pkgResult = await pool.query(`
+      SELECT gp.id, gp.price, gp.price_usd,
+             COALESCE(g.live_price_charge_egp, 0) as game_charge
+      FROM game_packages gp
+      LEFT JOIN games g ON g.id = gp.game_id
+      WHERE gp.price_usd IS NOT NULL AND gp.price_usd > 0
+    `);
 
     if (pkgResult.rows.length === 0) {
       return res.status(400).json({ message: 'لا توجد باقات بسعر دولار محدد. حدد سعر الدولار لكل باقة أولاً.' });
@@ -190,7 +221,8 @@ router.post('/apply', async (req, res) => {
       let updated = 0;
       for (const pkg of pkgResult.rows) {
         const priceUsd = parseFloat(pkg.price_usd);
-        const newPrice = Math.max(1, parseFloat((priceUsd * rate - discount).toFixed(2)));
+        const gameCharge = parseFloat(pkg.game_charge) || 0;
+        const newPrice = Math.max(1, parseFloat((priceUsd * rate - discount + globalCharge + gameCharge).toFixed(2)));
         const originalEgp = parseFloat(pkg.price) || 0;
 
         await client.query(
@@ -203,7 +235,6 @@ router.post('/apply', async (req, res) => {
         updated++;
       }
 
-      // Enable live pricing and record apply time
       await client.query(
         `UPDATE live_pricing_settings SET enabled = true, last_applied = NOW() WHERE id = 'default'`
       );
@@ -214,7 +245,8 @@ router.post('/apply', async (req, res) => {
         updated,
         rate,
         discount,
-        message: `✅ تم تحديث ${updated} باقة — 1 USD = ${rate} EGP، خصم ${discount} EGP لكل باقة`,
+        globalCharge,
+        message: `✅ تم تحديث ${updated} باقة — 1 USD = ${rate} EGP، خصم ${discount} EGP، إضافة ${globalCharge} EGP`,
       });
     } catch (err) {
       await client.query('ROLLBACK');
@@ -229,7 +261,6 @@ router.post('/apply', async (req, res) => {
 });
 
 // POST /api/admin/live-pricing/reset
-// Restores original EGP prices and disables live pricing
 router.post('/reset', async (req, res) => {
   try {
     const pkgResult = await pool.query(

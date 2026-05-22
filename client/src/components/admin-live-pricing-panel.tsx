@@ -10,13 +10,14 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import {
   TrendingUp, RefreshCw, Zap, RotateCcw, DollarSign,
-  ChevronDown, ChevronUp, Minus, Info, AlertTriangle
+  ChevronDown, ChevronUp, Minus, Plus, Info, AlertTriangle
 } from "lucide-react";
 
 interface LivePricingSettings {
   enabled: boolean;
   usdEgpRate: number;
   globalDiscountEgp: number;
+  globalChargeEgp: number;
   lastRateUpdate: string | null;
   lastApplied: string | null;
 }
@@ -32,6 +33,7 @@ interface PkgRow {
   originalPriceEgp: number | null;
   calculatedEgp: number | null;
   bonus: string | null;
+  gameCharge: number;
 }
 
 function formatDate(d: string | null) {
@@ -43,7 +45,9 @@ export function AdminLivePricingPanel() {
   const { toast } = useToast();
   const qc = useQueryClient();
   const [discountInput, setDiscountInput] = useState('');
+  const [chargeInput, setChargeInput] = useState('');
   const [editingUsd, setEditingUsd] = useState<Record<number, string>>({});
+  const [editingGameCharge, setEditingGameCharge] = useState<Record<string, string>>({});
   const [filterHasUsd, setFilterHasUsd] = useState(false);
   const [search, setSearch] = useState('');
   const [expandedGames, setExpandedGames] = useState<Set<string>>(new Set());
@@ -60,7 +64,10 @@ export function AdminLivePricingPanel() {
   });
 
   useEffect(() => {
-    if (settings) setDiscountInput(String(settings.globalDiscountEgp ?? 0));
+    if (settings) {
+      setDiscountInput(String(settings.globalDiscountEgp ?? 0));
+      setChargeInput(String(settings.globalChargeEgp ?? 0));
+    }
   }, [settings]);
 
   const invalidateAll = useCallback(() => {
@@ -110,15 +117,21 @@ export function AdminLivePricingPanel() {
   const updatePkgUsdMut = useMutation({
     mutationFn: ({ id, priceUsd }: { id: number; priceUsd: number | null }) =>
       apiRequest('PUT', `/api/admin/live-pricing/package/${id}`, { priceUsd }).then(r => r.json()),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['/api/admin/live-pricing/packages'] });
-    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['/api/admin/live-pricing/packages'] }),
     onError: (e: any) => toast({ title: 'خطأ في الحفظ', description: e.message, variant: 'destructive' }),
   });
 
-  const handleSaveDiscount = () => {
-    const val = parseFloat(discountInput) || 0;
-    updateSettingsMut.mutate({ globalDiscountEgp: val });
+  const updateGameChargeMut = useMutation({
+    mutationFn: ({ gameId, chargeEgp }: { gameId: string; chargeEgp: number }) =>
+      apiRequest('PUT', `/api/admin/live-pricing/game/${gameId}/charge`, { chargeEgp }).then(r => r.json()),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['/api/admin/live-pricing/packages'] }),
+    onError: (e: any) => toast({ title: 'خطأ في الحفظ', description: e.message, variant: 'destructive' }),
+  });
+
+  const handleSaveGlobals = () => {
+    const disc = parseFloat(discountInput) || 0;
+    const charge = parseFloat(chargeInput) || 0;
+    updateSettingsMut.mutate({ globalDiscountEgp: disc, globalChargeEgp: charge });
   };
 
   const handleToggle = (checked: boolean) => {
@@ -136,6 +149,14 @@ export function AdminLivePricingPanel() {
     updatePkgUsdMut.mutate({ id: pkgId, priceUsd: val });
   };
 
+  const handleGameChargeBlur = (gameId: string, currentCharge: number) => {
+    const raw = editingGameCharge[gameId];
+    if (raw === undefined) return;
+    const val = raw === '' ? 0 : parseFloat(raw) || 0;
+    if (val === currentCharge) return;
+    updateGameChargeMut.mutate({ gameId, chargeEgp: val });
+  };
+
   const packages = pkgData?.packages ?? [];
   const filtered = packages.filter(p => {
     if (filterHasUsd && !p.priceUsd) return false;
@@ -147,6 +168,12 @@ export function AdminLivePricingPanel() {
     const key = p.gameName || p.gameId;
     if (!acc[key]) acc[key] = [];
     acc[key].push(p);
+    return acc;
+  }, {});
+
+  // Build a gameId→gameCharge map from packages for the game header row
+  const gameChargeMap = packages.reduce<Record<string, { gameId: string; charge: number }>>((acc, p) => {
+    if (!acc[p.gameName || p.gameId]) acc[p.gameName || p.gameId] = { gameId: p.gameId, charge: p.gameCharge };
     return acc;
   }, {});
 
@@ -162,6 +189,7 @@ export function AdminLivePricingPanel() {
   const countTotal = packages.length;
   const rate = settings?.usdEgpRate ?? 0;
   const discount = settings?.globalDiscountEgp ?? 0;
+  const globalCharge = settings?.globalChargeEgp ?? 0;
   const isEnabled = settings?.enabled ?? false;
 
   if (settingsLoading) {
@@ -223,9 +251,9 @@ export function AdminLivePricingPanel() {
         </Card>
         <Card className="bg-gray-800/60 border-gray-700">
           <CardContent className="p-4">
-            <div className="text-xs text-gray-400 mb-1">باقات مربوطة بالدولار</div>
-            <div className="text-2xl font-bold text-white">{countWithUsd} / {countTotal}</div>
-            <div className="text-xs text-gray-500">باقة لديها سعر USD</div>
+            <div className="text-xs text-gray-400 mb-1">الزيادة العالمية</div>
+            <div className="text-2xl font-bold text-orange-400">{globalCharge} EGP</div>
+            <div className="text-xs text-gray-500">يُضاف لكل باقة</div>
           </CardContent>
         </Card>
         <Card className="bg-gray-800/60 border-gray-700">
@@ -238,8 +266,8 @@ export function AdminLivePricingPanel() {
         </Card>
       </div>
 
-      {/* Controls */}
-      <div className="grid md:grid-cols-2 gap-4">
+      {/* Controls — 3 columns */}
+      <div className="grid md:grid-cols-3 gap-4">
 
         {/* Exchange Rate Card */}
         <Card className="bg-gray-800/60 border-gray-700">
@@ -276,84 +304,105 @@ export function AdminLivePricingPanel() {
           </CardContent>
         </Card>
 
-        {/* Discount + Apply Card */}
+        {/* Global Discount + Charge Card */}
         <Card className="bg-gray-800/60 border-gray-700">
           <CardHeader className="pb-3">
             <CardTitle className="text-base text-white flex items-center gap-2">
               <Minus className="w-4 h-4 text-blue-400" />
-              الخصم العالمي على جميع الباقات
+              <Plus className="w-4 h-4 text-orange-400" />
+              الخصم والزيادة العالمية
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            <div className="flex gap-2">
-              <Input
-                type="number"
-                min="0"
-                step="0.5"
-                value={discountInput}
-                onChange={e => setDiscountInput(e.target.value)}
-                className="bg-gray-900 border-gray-600 text-white text-center text-lg font-bold"
-                placeholder="0"
-              />
-              <span className="flex items-center text-gray-300 font-semibold text-sm px-1">EGP</span>
+            <div>
+              <Label className="text-xs text-blue-300 mb-1 flex items-center gap-1">
+                <Minus className="w-3 h-3" /> خصم عالمي (يُطرح من كل باقة)
+              </Label>
+              <div className="flex gap-2">
+                <Input
+                  type="number"
+                  min="0"
+                  step="0.5"
+                  value={discountInput}
+                  onChange={e => setDiscountInput(e.target.value)}
+                  className="bg-gray-900 border-gray-600 text-white text-center font-bold"
+                  placeholder="0"
+                />
+                <span className="flex items-center text-gray-300 font-semibold text-sm px-1">EGP</span>
+              </div>
+            </div>
+            <div>
+              <Label className="text-xs text-orange-300 mb-1 flex items-center gap-1">
+                <Plus className="w-3 h-3" /> زيادة عالمية (تُضاف لكل باقة)
+              </Label>
+              <div className="flex gap-2">
+                <Input
+                  type="number"
+                  min="0"
+                  step="0.5"
+                  value={chargeInput}
+                  onChange={e => setChargeInput(e.target.value)}
+                  className="bg-gray-900 border-orange-700 text-white text-center font-bold"
+                  placeholder="0"
+                />
+                <span className="flex items-center text-gray-300 font-semibold text-sm px-1">EGP</span>
+              </div>
             </div>
             <Button
               variant="outline"
               className="w-full border-blue-500 text-blue-400 hover:bg-blue-500/10"
-              onClick={handleSaveDiscount}
+              onClick={handleSaveGlobals}
               disabled={updateSettingsMut.isPending}
             >
-              حفظ الخصم
+              حفظ الخصم والزيادة
             </Button>
-            <div className="pt-1 border-t border-gray-700 space-y-2">
-              <Button
-                className="w-full bg-green-600 hover:bg-green-700 text-white font-bold"
-                onClick={() => applyMut.mutate()}
-                disabled={applyMut.isPending || rate <= 0}
-              >
-                {applyMut.isPending ? (
-                  <><Zap className="w-4 h-4 mr-2 animate-pulse" /> جاري التطبيق...</>
-                ) : (
-                  <><Zap className="w-4 h-4 mr-2" /> تطبيق الأسعار على جميع الباقات</>
-                )}
-              </Button>
-              <Button
-                variant="outline"
-                className="w-full border-red-500 text-red-400 hover:bg-red-500/10"
-                onClick={() => {
-                  if (confirm('هل تريد إعادة تعيين جميع الأسعار للقيم الأصلية؟')) resetMut.mutate();
-                }}
-                disabled={resetMut.isPending}
-              >
-                {resetMut.isPending ? (
-                  <><RotateCcw className="w-4 h-4 mr-2 animate-spin" /> جاري الاسترجاع...</>
-                ) : (
-                  <><RotateCcw className="w-4 h-4 mr-2" /> إعادة تعيين للأسعار الأصلية</>
-                )}
-              </Button>
-            </div>
           </CardContent>
         </Card>
-      </div>
 
-      {/* How it works */}
-      <Card className="bg-blue-900/20 border-blue-500/30">
-        <CardContent className="p-4">
-          <div className="flex items-start gap-3">
-            <Info className="w-5 h-5 text-blue-400 shrink-0 mt-0.5" />
-            <div className="text-sm text-blue-200 space-y-1">
-              <p className="font-semibold">كيف يعمل النظام؟</p>
-              <ol className="list-decimal list-inside space-y-0.5 text-blue-300/80 text-xs">
-                <li>حدد سعر الدولار لكل باقة في الجدول أدناه</li>
-                <li>اجلب سعر الصرف الحالي</li>
-                <li>أضف خصماً عاماً (اختياري) — يُطرح من السعر المحسوب</li>
-                <li>اضغط "تطبيق الأسعار" — السعر المحسوب = (USD × سعر الصرف) − الخصم</li>
-                <li>إذا أردت الرجوع: "إعادة تعيين" يسترجع الأسعار اليدوية الأصلية</li>
-              </ol>
+        {/* Apply / Reset Card */}
+        <Card className="bg-gray-800/60 border-gray-700">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base text-white flex items-center gap-2">
+              <Zap className="w-4 h-4 text-green-400" />
+              تطبيق الأسعار
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="bg-black/20 rounded p-3 text-xs text-gray-400 space-y-1">
+              <p className="font-semibold text-gray-300">معادلة السعر:</p>
+              <p className="font-mono text-green-300 text-center mt-1">
+                (USD × سعر الصرف) − خصم + زيادة عامة + زيادة اللعبة
+              </p>
             </div>
-          </div>
-        </CardContent>
-      </Card>
+            <Button
+              className="w-full bg-green-600 hover:bg-green-700 text-white font-bold"
+              onClick={() => applyMut.mutate()}
+              disabled={applyMut.isPending || rate <= 0}
+            >
+              {applyMut.isPending ? (
+                <><Zap className="w-4 h-4 mr-2 animate-pulse" /> جاري التطبيق...</>
+              ) : (
+                <><Zap className="w-4 h-4 mr-2" /> تطبيق الأسعار على جميع الباقات</>
+              )}
+            </Button>
+            <Button
+              variant="outline"
+              className="w-full border-red-500 text-red-400 hover:bg-red-500/10"
+              onClick={() => {
+                if (confirm('هل تريد إعادة تعيين جميع الأسعار للقيم الأصلية؟')) resetMut.mutate();
+              }}
+              disabled={resetMut.isPending}
+            >
+              {resetMut.isPending ? (
+                <><RotateCcw className="w-4 h-4 mr-2 animate-spin" /> جاري الاسترجاع...</>
+              ) : (
+                <><RotateCcw className="w-4 h-4 mr-2" /> إعادة تعيين للأسعار الأصلية</>
+              )}
+            </Button>
+          </CardContent>
+        </Card>
+
+      </div>
 
       {/* Packages Table */}
       <Card className="bg-gray-800/60 border-gray-700">
@@ -398,31 +447,55 @@ export function AdminLivePricingPanel() {
               {Object.entries(grouped).map(([gameName, pkgs]) => {
                 const isOpen = expandedGames.has(gameName);
                 const hasUsdCount = pkgs.filter(p => p.priceUsd).length;
+                const gameInfo = gameChargeMap[gameName];
+                const gameId = gameInfo?.gameId ?? pkgs[0]?.gameId;
+                const currentGameCharge = gameInfo?.charge ?? 0;
+                const gameChargeDisplay = editingGameCharge[gameId] !== undefined
+                  ? editingGameCharge[gameId]
+                  : String(currentGameCharge || '');
+
                 return (
                   <div key={gameName}>
                     {/* Game row header */}
-                    <button
-                      onClick={() => toggleGame(gameName)}
-                      className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-gray-700/30 transition-colors"
-                    >
-                      <div className="flex items-center gap-3">
-                        {isOpen ? <ChevronUp className="w-4 h-4 text-gray-400" /> : <ChevronDown className="w-4 h-4 text-gray-400" />}
-                        <span className="font-semibold text-white text-sm">{gameName}</span>
-                        <Badge variant="outline" className="text-xs">
+                    <div className="flex items-center px-4 py-3 hover:bg-gray-700/30 transition-colors gap-3">
+                      <button
+                        onClick={() => toggleGame(gameName)}
+                        className="flex items-center gap-3 flex-1 text-left min-w-0"
+                      >
+                        {isOpen ? <ChevronUp className="w-4 h-4 text-gray-400 shrink-0" /> : <ChevronDown className="w-4 h-4 text-gray-400 shrink-0" />}
+                        <span className="font-semibold text-white text-sm truncate">{gameName}</span>
+                        <Badge variant="outline" className="text-xs shrink-0">
                           {pkgs.length} باقة
                         </Badge>
                         {hasUsdCount > 0 && (
-                          <Badge className="text-xs bg-green-700/40 text-green-300 border-green-600">
+                          <Badge className="text-xs bg-green-700/40 text-green-300 border-green-600 shrink-0">
                             {hasUsdCount} بـ USD
                           </Badge>
                         )}
+                      </button>
+
+                      {/* Per-game charge input */}
+                      <div className="flex items-center gap-1 shrink-0" onClick={e => e.stopPropagation()}>
+                        <Plus className="w-3 h-3 text-orange-400" />
+                        <Input
+                          type="number"
+                          min="0"
+                          step="1"
+                          placeholder="0"
+                          title="زيادة خاصة بهذه اللعبة (EGP)"
+                          value={gameChargeDisplay}
+                          onChange={e => setEditingGameCharge(prev => ({ ...prev, [gameId]: e.target.value }))}
+                          onBlur={() => handleGameChargeBlur(gameId, currentGameCharge)}
+                          className="h-7 w-20 text-xs text-center bg-gray-900 border-orange-700/50 text-orange-300 focus:border-orange-500"
+                        />
+                        <span className="text-xs text-gray-500">EGP</span>
                       </div>
-                    </button>
+                    </div>
 
                     {/* Package rows */}
                     {isOpen && (
                       <div className="bg-gray-900/30">
-                        {/* Header */}
+                        {/* Column headers */}
                         <div className="grid grid-cols-12 gap-2 px-4 py-2 text-xs text-gray-500 border-b border-gray-700/50">
                           <div className="col-span-4">اسم الباقة</div>
                           <div className="col-span-2 text-center">سعر الدولار</div>
@@ -433,8 +506,11 @@ export function AdminLivePricingPanel() {
                         {pkgs.map(pkg => {
                           const usdVal = editingUsd[pkg.id] !== undefined ? editingUsd[pkg.id] : String(pkg.priceUsd ?? '');
                           const usdNum = parseFloat(usdVal) || 0;
+                          const gameChargeForPreview = editingGameCharge[pkg.gameId] !== undefined
+                            ? parseFloat(editingGameCharge[pkg.gameId]) || 0
+                            : pkg.gameCharge;
                           const previewCalc = usdNum > 0 && rate > 0
-                            ? Math.max(0, usdNum * rate - discount).toFixed(2)
+                            ? Math.max(1, usdNum * rate - discount + globalCharge + gameChargeForPreview).toFixed(2)
                             : null;
 
                           return (
