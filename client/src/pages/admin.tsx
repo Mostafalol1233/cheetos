@@ -18,6 +18,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import QRCode from 'qrcode';
 import { normalizeNumericString } from '@/lib/quantity';
 import { AdminThemePanel } from '@/components/admin-theme-panel';
+import { AdminLivePricingPanel } from '@/components/admin-live-pricing-panel';
 import { ResponseTemplatesPanel } from '@/components/response-templates-panel';
 import { PromoCodesPanel } from '@/components/admin-promo-codes-panel';
 import { ReviewsPanel } from '@/components/admin-reviews-panel';
@@ -2304,6 +2305,7 @@ export default function AdminDashboard() {
               {/* ── PRODUCTS ── */}
               <TabsTrigger value="games" data-testid="tab-games" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">🎮 الألعاب</TabsTrigger>
               <TabsTrigger value="packages" data-testid="tab-packages" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">📋 الباقات</TabsTrigger>
+              <TabsTrigger value="live-pricing" data-testid="tab-live-pricing" className="data-[state=active]:bg-green-600 data-[state=active]:text-white px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-green-800 font-semibold">💹 أسعار لايف</TabsTrigger>
               <TabsTrigger value="categories" data-testid="tab-categories" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">🗂 الفئات</TabsTrigger>
               <TabsTrigger value="discounts" data-testid="tab-discounts" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">💰 الخصومات</TabsTrigger>
               <TabsTrigger value="promo-codes" data-testid="tab-promo-codes" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">🏷️ أكواد الخصم</TabsTrigger>
@@ -3529,6 +3531,10 @@ export default function AdminDashboard() {
 
           <TabsContent value="announcements" className="space-y-6">
             <AnnouncementsPanel />
+          </TabsContent>
+
+          <TabsContent value="live-pricing" className="space-y-6">
+            <AdminLivePricingPanel />
           </TabsContent>
 
         </Tabs>
