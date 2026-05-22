@@ -62,6 +62,9 @@ export async function apiRequest(
       return "";
     }
   })();
+  const adminToken = (() => {
+    try { return localStorage.getItem('adminToken') || ""; } catch { return ""; }
+  })();
   let res: Response;
   try {
     res = await fetch(finalUrl, {
@@ -69,6 +72,7 @@ export async function apiRequest(
       headers: {
         ...(data ? { "Content-Type": "application/json" } : {}),
         ...(csrf ? { "X-CSRF-Token": csrf } : {}),
+        ...(adminToken ? { "Authorization": `Bearer ${adminToken}` } : {}),
       },
       body: data ? JSON.stringify(data) : undefined,
       credentials: "include",
@@ -104,12 +108,16 @@ export const getQueryFn: <T>(options: {
         return "";
       }
     })();
+    const adminToken = (() => {
+      try { return localStorage.getItem('adminToken') || ""; } catch { return ""; }
+    })();
     let res: Response;
     try {
       res = await fetch(finalUrl, {
         credentials: "include",
         headers: {
           ...(csrf ? { "X-CSRF-Token": csrf } : {}),
+          ...(adminToken ? { "Authorization": `Bearer ${adminToken}` } : {}),
         },
       });
     } catch (err: any) {
