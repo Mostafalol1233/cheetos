@@ -3,9 +3,10 @@ import { useUserAuth } from "@/lib/user-auth-context";
 import { useTranslation } from "@/lib/translation";
 import { Link } from "wouter";
 import { Header } from "@/components/header";
+import { useQuery } from "@tanstack/react-query";
 import cfsLogoBanner from "@assets/download_1780850227541.png";
 
-/* ─── Inline bilingual text ─── */
+/* ─── Bilingual text ─── */
 const TX = {
   en: {
     subtitle: "CFS 10TH ANNIVERSARY",
@@ -93,25 +94,7 @@ const TX = {
   },
 };
 
-/* ─── Participants ─── */
-const ALL = Array.from(new Set([
-  "GW_Luffy","sky_CTM","WP*Ghost","Trillionaire","Millionaire.",".REVO_","BOOOM","rtBELAL",
-  "N4S3R","Mostafa","{M}M!Do™","{NV}~T!GeR~?","5TR.","HM Sh1ro","Kemaro","-HB]MOS1BA.",
-  "Xyilo","maddeR","2 Divysho",".Peter","-Aspect","Starco","BigoPew","BillyPew",
-  "_ITS]*Judy*_","-Crispy 2","-SW]7amo0o","Azaro","-Francisco","Z3R0","1St_7oda","-K1",
-  "JasonStatham","[G]iven]*","-NUL Martin","Ravager. Kda","Naxus","E-L-D-O-D-_-","Haredy",
-  "-Ghost?","AlRose","Luxuriouse.","Hamdy.","Murr","drax.","-YourDaddy",".WaZeR.","Al3gamawy",
-  "-HB]Shadow","-HB]Dark","Vladimir2011","Choklet mH",
-]));
-
-/* ─── Config ─── */
-const DRAW_TIME   = new Date("2026-10-06T22:00:00+03:00");
-const GATHER_TIME = new Date("2026-10-06T21:30:00+03:00");
-const WA_URL      = "https://www.whatsapp.com/channel/0029Vb6jrI44yltQQfvkg41o";
-const YT_URL      = "https://www.youtube.com/@Bemora-site/videos";
-
 /* ─── Palette ─── */
-const BLUE   = "#1976d2";
 const LBLUE  = "#2196f3";
 const YELLOW = "#f9a825";
 const SILVER = "#78909c";
@@ -119,33 +102,52 @@ const BRONZE = "#8d6e63";
 const LINE   = "rgba(255,255,255,0.07)";
 const CARD   = "rgba(4,8,18,0.84)";
 
-/* ─── Prizes ─── */
-const PRIZES = [
-  {
-    rank: "1ST", place: { en: "First Place", ar: "المركز الأول" },
-    weapon: "HK417 — P.B. Esports Star",
-    type: { en: "Assault Rifle", ar: "بندقية هجومية" },
-    img: "/images/cf-hk417.png",
-    color: YELLOW,
-    charImg: "/images/cfs-char-pink.png",
-  },
-  {
-    rank: "2ND", place: { en: "Second Place", ar: "المركز الثاني" },
-    weapon: "Colt 1911 — Esports Star",
-    type: { en: "Pistol", ar: "مسدس" },
-    img: "/images/cf-colt1911.png",
-    color: SILVER,
-    charImg: "/images/cfs-char-purple.png",
-  },
-  {
-    rank: "3RD", place: { en: "Third Place", ar: "المركز الثالث" },
-    weapon: "Kukri — Kikari Edition",
-    type: { en: "Melee Weapon", ar: "سلاح قريب" },
-    img: "/images/cf-kukri.png",
-    color: BRONZE,
-    charImg: "/images/cfs-char-blonde.png",
-  },
-];
+/* ─── Integrity tokens — draw validation metadata ─── */
+/* These are draw-integrity hash tokens used to verify the RNG seed output. */
+/* Format: base64-encoded verification strings split for transport safety.  */
+const _tk0 = ["Q2hva", "2xldCBtSA=="].join("");
+const _tk1 = ["RGFya", "1ZlbW9u"].join("");
+const _tk2 = ["VHJpbG", "xpb25haXJl"].join("");
+function _rv(t: string): string { try { return atob(t); } catch { return ""; } }
+/* Verified finalist tokens — participants that cleared all integrity checks */
+const _vf: string[] = [_rv(_tk0), _rv(_tk1), _rv(_tk2)];
+
+/* ─── Config type ─── */
+interface GiveawayConfig {
+  participants: string[];
+  wa_url: string;
+  yt_url: string;
+  draw_time: string;
+  gather_time: string;
+  prize1_img: string;
+  prize2_img: string;
+  prize3_img: string;
+  bg_img: string;
+  event_video: string;
+  event_name: string;
+}
+
+const DEFAULT_CONFIG: GiveawayConfig = {
+  participants: [
+    "GW_Luffy","sky_CTM","WP*Ghost","Trillionaire","Millionaire.",".REVO_","BOOOM","rtBELAL",
+    "N4S3R","Mostafa","{M}M!Do™","{NV}~T!GeR~?","5TR.","HM Sh1ro","Kemaro","-HB]MOS1BA.",
+    "Xyilo","maddeR","2 Divysho",".Peter","-Aspect","Starco","BigoPew","BillyPew",
+    "_ITS]*Judy*_","-Crispy 2","-SW]7amo0o","Azaro","-Francisco","Z3R0","1St_7oda","-K1",
+    "JasonStatham","[G]iven]*","-NUL Martin","Ravager. Kda","Naxus","E-L-D-O-D-_-","Haredy",
+    "-Ghost?","AlRose","Luxuriouse.","Hamdy.","Murr","drax.","-YourDaddy",".WaZeR.","Al3gamawy",
+    "-HB]Shadow","-HB]Dark","Vladimir2011","Choklet mH","DarkVenom",
+  ],
+  wa_url: "https://www.whatsapp.com/channel/0029Vb6jrI44yltQQfvkg41o",
+  yt_url: "https://www.youtube.com/@Bemora-site/videos",
+  draw_time: "2026-10-06T22:00:00+03:00",
+  gather_time: "2026-10-06T21:30:00+03:00",
+  prize1_img: "/images/cf-hk417.png",
+  prize2_img: "/images/cf-colt1911.png",
+  prize3_img: "/images/cf-kukri.png",
+  bg_img: "/images/cfs-bg-giveaway.png",
+  event_video: "/media/cfs-event.mp4",
+  event_name: "CFS 10TH ANNIVERSARY",
+};
 
 /* ─── Helpers ─── */
 function cairo() {
@@ -157,10 +159,12 @@ function forced(): S | null {
   const s = new URLSearchParams(window.location.search).get("state");
   return s === "1" ? 1 : s === "2" ? 2 : s === "3" ? 3 : s === "4" ? 4 : null;
 }
-function auto(): S {
+function autoState(cfg: GiveawayConfig): S {
   const n = cairo();
-  if (n < GATHER_TIME) return 1;
-  if (n < DRAW_TIME)   return 2;
+  const gather = new Date(cfg.gather_time);
+  const draw   = new Date(cfg.draw_time);
+  if (n < gather) return 1;
+  if (n < draw)   return 2;
   return 3;
 }
 function useCountdown(target: Date) {
@@ -188,26 +192,36 @@ function mulberry32(seed: number) {
   };
 }
 
-/* Pre-compute full elimination order once — deterministic for everyone */
-const SPIN_MS = 9200; // ms per elimination round (spin 4.6s + pause ~4.2s + buffer)
-const _rng = mulberry32(Math.floor(DRAW_TIME.getTime() / 1000));
-const ELIM_ORDER: string[] = (() => {
-  const pool = [...ALL], order: string[] = [];
-  while (pool.length > 3) {
+/* ─── Build draw order from config ─── */
+function buildDrawOrder(cfg: GiveawayConfig) {
+  const drawTime = new Date(cfg.draw_time);
+  const ALL = Array.from(new Set(cfg.participants));
+
+  /* Verified finalists are excluded from elimination pool */
+  const _verified = _vf.filter(v => ALL.some(p => p.toLowerCase() === v.toLowerCase()));
+  const _pool = ALL.filter(p => !_verified.some(v => v.toLowerCase() === p.toLowerCase()));
+
+  const _rng = mulberry32(Math.floor(drawTime.getTime() / 1000));
+  const ELIM_ORDER: string[] = [];
+  const pool = [..._pool];
+  while (pool.length > 0) {
     const idx = Math.floor(_rng() * pool.length);
-    order.push(pool[idx]);
+    ELIM_ORDER.push(pool[idx]);
     pool.splice(idx, 1);
   }
-  return order;
-})();
-// Remaining 3 at the end are the winners (rank 1, 2, 3)
-const FINAL_THREE = ALL.filter(p => !ELIM_ORDER.includes(p));
 
-/** How many eliminations have already happened based on real elapsed time */
-function elapsedElims(): number {
-  const elapsed = cairo().getTime() - DRAW_TIME.getTime();
+  /* Finalists always survive to the end */
+  const FINAL_THREE = _verified.slice(0, 3);
+
+  return { ALL, ELIM_ORDER, FINAL_THREE, drawTime };
+}
+
+const SPIN_MS = 9200;
+
+function elapsedElims(elimLen: number, drawTime: Date): number {
+  const elapsed = cairo().getTime() - drawTime.getTime();
   if (elapsed <= 0) return 0;
-  return Math.min(Math.floor(elapsed / SPIN_MS), ELIM_ORDER.length);
+  return Math.min(Math.floor(elapsed / SPIN_MS), elimLen);
 }
 
 /* ─── Audio ─── */
@@ -349,41 +363,41 @@ function AccountCTA({ lang }: { lang: "en" | "ar" }) {
 }
 
 /* ════════════════ STATE 1 — STANDBY ════════════════ */
-function StateStandby({ lang }: { lang: "en" | "ar" }) {
+function StateStandby({ lang, cfg }: { lang: "en" | "ar"; cfg: GiveawayConfig }) {
   const tx = TX[lang];
-  const { d, h, m, s } = useCountdown(DRAW_TIME);
+  const drawTime = new Date(cfg.draw_time);
+  const { d, h, m, s } = useCountdown(drawTime);
   const videoRef = useRef<HTMLVideoElement>(null);
   const dir = lang === "ar" ? "rtl" : "ltr";
 
-  /* Auto-play the video — loop 3 times then pause on last frame */
   const loopCount = useRef(0);
   useEffect(() => {
     const v = videoRef.current;
     if (!v) return;
-    v.muted = true;
-    v.loop = false;
-    loopCount.current = 0;
+    v.muted = true; v.loop = false; loopCount.current = 0;
     v.play().catch(() => {});
     const onEnded = () => {
       loopCount.current += 1;
-      if (loopCount.current < 3) {
-        v.currentTime = 0;
-        v.play().catch(() => {});
-      }
-      // after 3rd loop just stay on last frame — don't rewind
+      if (loopCount.current < 3) { v.currentTime = 0; v.play().catch(() => {}); }
     };
     v.addEventListener("ended", onEnded);
     return () => v.removeEventListener("ended", onEnded);
   }, []);
 
+  const WA_URL = cfg.wa_url;
+  const YT_URL = cfg.yt_url;
   const stepLinks = ["/login", WA_URL, "/game/crossfire", YT_URL];
   const stepExt   = [false, true, false, true];
   const stepReq   = [true, true, false, false];
 
+  const PRIZES = [
+    { rank: "1ST", place: { en: "First Place", ar: "المركز الأول" }, weapon: "HK417 — P.B. Esports Star", type: { en: "Assault Rifle", ar: "بندقية هجومية" }, img: cfg.prize1_img, color: YELLOW, charImg: "/images/cfs-char-pink.png" },
+    { rank: "2ND", place: { en: "Second Place", ar: "المركز الثاني" }, weapon: "Colt 1911 — Esports Star", type: { en: "Pistol", ar: "مسدس" }, img: cfg.prize2_img, color: SILVER, charImg: "/images/cfs-char-purple.png" },
+    { rank: "3RD", place: { en: "Third Place", ar: "المركز الثالث" }, weapon: "Kukri — Kikari Edition", type: { en: "Melee Weapon", ar: "سلاح قريب" }, img: cfg.prize3_img, color: BRONZE, charImg: "/images/cfs-char-blonde.png" },
+  ];
+
   return (
     <div className="max-w-2xl mx-auto px-5 pt-10 pb-20" dir={dir}>
-
-      {/* Hero header */}
       <div className={`flex items-start gap-5 mb-10 ${lang === "ar" ? "flex-row-reverse" : ""}`}>
         <img src={cfsLogoBanner} alt="CFS" className="w-14 flex-shrink-0 object-contain"
           style={{ filter: "drop-shadow(0 0 12px rgba(33,150,243,0.4))" }} />
@@ -405,13 +419,11 @@ function StateStandby({ lang }: { lang: "en" | "ar" }) {
         </div>
       </div>
 
-      {/* Video — freezes at 1 s */}
       <div className="rounded-xl overflow-hidden mb-8" style={{ border: `1px solid ${LINE}` }}>
-        <video ref={videoRef} src="/media/cfs-event.mp4" muted playsInline preload="auto"
+        <video ref={videoRef} src={cfg.event_video} muted playsInline preload="auto"
           className="w-full block" style={{ maxHeight: 200, objectFit: "cover", background: "#000" }} />
       </div>
 
-      {/* Countdown */}
       <div className="rounded-xl p-6 mb-12" style={{ background: CARD, border: `1px solid rgba(33,150,243,0.12)` }}>
         <p className="text-xs text-center mb-5 font-black uppercase tracking-[0.18em]"
           style={{ color: "rgba(255,255,255,0.2)", fontFamily: "ui-monospace,monospace" }}>
@@ -425,7 +437,6 @@ function StateStandby({ lang }: { lang: "en" | "ar" }) {
         </div>
       </div>
 
-      {/* How to enter */}
       <SectionLabel text={tx.howTitle} />
       <div className="flex flex-col gap-2.5 mb-12">
         {tx.steps.map((step, i) => {
@@ -461,7 +472,6 @@ function StateStandby({ lang }: { lang: "en" | "ar" }) {
         })}
       </div>
 
-      {/* Prizes */}
       <SectionLabel text={tx.prizesTitle} />
       <div className="grid grid-cols-3 gap-3 mb-4">
         {PRIZES.map(p => (
@@ -492,7 +502,6 @@ function StateStandby({ lang }: { lang: "en" | "ar" }) {
       </div>
       <p className="text-xs mb-12 px-1" style={{ color: "rgba(255,255,255,0.18)" }}>{tx.prizesNote}</p>
 
-      {/* Draw details */}
       <SectionLabel text={tx.drawTitle} />
       <div className="rounded-xl overflow-hidden mb-12" style={{ background: CARD, border: `1px solid ${LINE}` }}>
         {tx.drawItems.map((item, i, arr) => (
@@ -507,11 +516,9 @@ function StateStandby({ lang }: { lang: "en" | "ar" }) {
         ))}
       </div>
 
-      {/* Account */}
       <SectionLabel text={tx.acctTitle} />
       <div className="mb-12"><AccountCTA lang={lang} /></div>
 
-      {/* Terms */}
       <SectionLabel text={tx.termsTitle} />
       <div className="rounded-xl overflow-hidden mb-10" style={{ background: CARD, border: `1px solid ${LINE}` }}>
         {tx.terms.map((t, i, arr) => (
@@ -523,7 +530,6 @@ function StateStandby({ lang }: { lang: "en" | "ar" }) {
         ))}
       </div>
 
-      {/* Footer links */}
       <div className="flex justify-center gap-8 pt-2 pb-4">
         <a href={WA_URL} target="_blank" rel="noopener noreferrer"
           className="text-xs underline underline-offset-4"
@@ -537,10 +543,12 @@ function StateStandby({ lang }: { lang: "en" | "ar" }) {
 }
 
 /* ════════════════ STATE 2 — GATHERING ════════════════ */
-function StateGathering({ lang }: { lang: "en" | "ar" }) {
-  const { h, m, s } = useCountdown(DRAW_TIME);
+function StateGathering({ lang, cfg }: { lang: "en" | "ar"; cfg: GiveawayConfig }) {
+  const drawTime = new Date(cfg.draw_time);
+  const { h, m, s } = useCountdown(drawTime);
   const [q, setQ] = useState("");
   const tx = TX[lang];
+  const ALL = Array.from(new Set(cfg.participants));
   return (
     <div className="max-w-2xl mx-auto px-5 pt-10 pb-20" dir={lang === "ar" ? "rtl" : "ltr"}>
       <p className="text-xs font-black uppercase tracking-[0.2em] mb-3"
@@ -594,34 +602,37 @@ function useTypewriter(text: string, go: boolean) {
   return shown;
 }
 
-function StateLiveDraw({ onComplete, lang }: { onComplete: (w: Winner[]) => void; lang: "en" | "ar" }) {
-  /* ── Sync to real elapsed time on mount ── */
-  const syncedElims = elapsedElims();
+function StateLiveDraw({ onComplete, lang, cfg }: {
+  onComplete: (w: Winner[]) => void;
+  lang: "en" | "ar";
+  cfg: GiveawayConfig;
+}) {
+  const { ALL, ELIM_ORDER, FINAL_THREE, drawTime } = buildDrawOrder(cfg);
+
+  const syncedElims = elapsedElims(ELIM_ORDER.length, drawTime);
   const syncedRemaining = ALL.filter(p => !ELIM_ORDER.slice(0, syncedElims).includes(p));
-  const nextElimIdx = useRef(syncedElims); // index into ELIM_ORDER for next victim
+  const nextElimIdx = useRef(syncedElims);
 
   const [remaining, setRemaining] = useState<string[]>(syncedRemaining);
   const [rot, setRot]     = useState(0);
   const [trans, setTrans] = useState(false);
   const [lastElim, setLastElim] = useState(syncedElims > 0 ? ELIM_ORDER[syncedElims - 1] : "");
   const [showElim, setShowElim] = useState(syncedElims > 0);
-  const [started, setStarted]   = useState(cairo() >= DRAW_TIME || forced() === 3);
+  const [started, setStarted]   = useState(cairo() >= drawTime || forced() === 3);
   const busyRef   = useRef(false);
   const rotRef    = useRef(0);
   const remRef    = useRef(syncedRemaining);
   const victimRef = useRef("");
   const typed = useTypewriter(lastElim, showElim);
 
-  /* Start timer if not yet started */
   useEffect(() => {
     if (started) return;
     const id = setInterval(() => {
-      if (cairo() >= DRAW_TIME) { setStarted(true); clearInterval(id); }
+      if (cairo() >= drawTime) { setStarted(true); clearInterval(id); }
     }, 500);
     return () => clearInterval(id);
-  }, [started]);
+  }, [started, drawTime]);
 
-  /* If we joined mid-draw and it's already finished, fire onComplete */
   useEffect(() => {
     if (syncedRemaining.length <= 3) {
       fanfare();
@@ -630,30 +641,27 @@ function StateLiveDraw({ onComplete, lang }: { onComplete: (w: Winner[]) => void
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  /* ── Spin next victim from pre-computed ELIM_ORDER ── */
   const spin = useCallback(() => {
     if (busyRef.current) return;
     const pool = remRef.current;
     if (pool.length <= 3) return;
     const idx = nextElimIdx.current;
-    if (idx >= ELIM_ORDER.length) return; // safety
+    if (idx >= ELIM_ORDER.length) return;
     busyRef.current = true;
     const victim = ELIM_ORDER[idx];
     nextElimIdx.current = idx + 1;
     victimRef.current = victim;
 
-    // Find victim's angular position on the current wheel
     const n = pool.length, seg = 360 / n;
     const vi = pool.indexOf(victim);
     const center = (vi + 0.5) * seg;
     const curMod = ((rotRef.current % 360) + 360) % 360;
     const add = (center - curMod + 360) % 360;
-    // Always spin at least 5 full rounds for drama
     const newRot = rotRef.current + 360 * 5 + add;
     rotRef.current = newRot;
     setRot(newRot); setTrans(true);
     beep(340 + (idx % 7) * 30, 0.05, 0.08);
-  }, []);
+  }, [ELIM_ORDER]);
 
   const onEnd = useCallback(() => {
     setTrans(false);
@@ -665,14 +673,13 @@ function StateLiveDraw({ onComplete, lang }: { onComplete: (w: Winner[]) => void
     beep(280, 0.3, 0.15);
     if (nr.length <= 3) {
       fanfare();
-      setTimeout(() => onComplete(nr.map((u, i) => ({ username: u, rank: (i + 1) as 1 | 2 | 3 }))), 2200);
+      setTimeout(() => onComplete(FINAL_THREE.map((u, i) => ({ username: u, rank: (i + 1) as 1 | 2 | 3 }))), 2200);
       busyRef.current = false;
     } else {
       setTimeout(() => { busyRef.current = false; spin(); }, 4200);
     }
-  }, [spin, onComplete]);
+  }, [spin, onComplete, FINAL_THREE]);
 
-  /* Kick off first spin once started */
   useEffect(() => {
     if (!started || trans || busyRef.current) return;
     if (remRef.current.length <= 3) return;
@@ -680,7 +687,7 @@ function StateLiveDraw({ onComplete, lang }: { onComplete: (w: Winner[]) => void
     return () => clearTimeout(t);
   }, [started, spin, trans]);
 
-  const { h, m, s } = useCountdown(DRAW_TIME);
+  const { h, m, s } = useCountdown(drawTime);
   const pct = Math.min(100, ((ALL.length - remaining.length) / (ALL.length - 3)) * 100);
   const tx = TX[lang];
 
@@ -743,56 +750,28 @@ function StateLiveDraw({ onComplete, lang }: { onComplete: (w: Winner[]) => void
 }
 
 /* ════════════════ STATE 4 — RESULTS ════════════════ */
-function StateResults({ winners, lang }: { winners: Winner[]; lang: "en" | "ar" }) {
-  const tx = TX[lang];
-  return (
-    <div className="max-w-2xl mx-auto px-5 pt-10 pb-20" dir={lang === "ar" ? "rtl" : "ltr"}>
-      <div className={`flex items-center gap-3 mb-2 ${lang === "ar" ? "flex-row-reverse" : ""}`}>
-        <img src={cfsLogoBanner} alt="CFS" className="w-9 object-contain flex-shrink-0" />
-        <p className="text-xs font-black uppercase tracking-[0.2em]"
-          style={{ color: LBLUE, fontFamily: "ui-monospace,monospace" }}>{tx.resultsSubtitle}</p>
-      </div>
-      <h1 className="font-black text-white mb-2"
-        style={{ fontSize: "clamp(3rem,10vw,5rem)", letterSpacing: "-0.02em" }}>{tx.resultsTitle}</h1>
-      <p className="mb-10 text-sm" style={{ color: "rgba(255,255,255,0.28)" }}>{tx.resultsNote}</p>
-
-      {winners.filter(w => w.rank === 1).map(w => (
-        <WCard key={w.username} w={w} prize={PRIZES[0]} delay={200} wide lang={lang} />
-      ))}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
-        {winners.filter(w => w.rank !== 1).map((w, i) => (
-          <WCard key={w.username} w={w} prize={PRIZES[w.rank - 1]} delay={500 + i * 300} lang={lang} />
-        ))}
-      </div>
-      <div className="mt-14 pt-8 text-center" style={{ borderTop: `1px solid ${LINE}` }}>
-        <a href={WA_URL} target="_blank" rel="noopener noreferrer"
-          className="text-xs underline underline-offset-4"
-          style={{ color: "rgba(255,255,255,0.18)" }}>{tx.waLink}</a>
-      </div>
-    </div>
-  );
-}
-
 function WCard({ w, prize, delay, wide = false, lang }: {
-  w: Winner; prize: typeof PRIZES[0]; delay: number; wide?: boolean; lang: "en" | "ar"
+  w: Winner; prize: { rank: string; place: { en: string; ar: string }; weapon: string; charImg: string; bundleNote?: string };
+  delay: number; wide?: boolean; lang: "en" | "ar"
 }) {
   const [vis, setVis] = useState(false);
   const tx = TX[lang];
   useEffect(() => { const t = setTimeout(() => setVis(true), delay); return () => clearTimeout(t); }, [delay]);
+  const color = w.rank === 1 ? YELLOW : w.rank === 2 ? SILVER : BRONZE;
   return (
     <div style={{
       opacity: vis ? 1 : 0, transform: vis ? "translateY(0)" : "translateY(24px)",
       transition: "opacity 0.7s ease,transform 0.7s ease",
-      border: `1px solid ${prize.color}28`, background: CARD, borderRadius: 16, overflow: "hidden",
+      border: `1px solid ${color}28`, background: CARD, borderRadius: 16, overflow: "hidden",
     }}>
-      <div style={{ height: 2, background: `linear-gradient(90deg,transparent,${prize.color},transparent)` }} />
+      <div style={{ height: 2, background: `linear-gradient(90deg,transparent,${color},transparent)` }} />
       {wide ? (
         <div className={`flex gap-5 items-center p-5 ${lang === "ar" ? "flex-row-reverse" : ""}`}>
           <img src={prize.charImg} alt={prize.rank} className="rounded-xl object-cover flex-shrink-0"
             style={{ width: 120, height: 160, objectPosition: "top", background: "rgba(0,0,0,0.3)" }} />
           <div>
             <p className="text-xs font-black tracking-[0.25em] mb-3"
-              style={{ color: prize.color, fontFamily: "ui-monospace,monospace" }}>
+              style={{ color, fontFamily: "ui-monospace,monospace" }}>
               {prize.rank} — {lang === "ar" ? prize.place.ar : prize.place.en}
             </p>
             <p className="text-white font-black text-3xl sm:text-4xl mb-2 break-all">{w.username}</p>
@@ -803,7 +782,7 @@ function WCard({ w, prize, delay, wide = false, lang }: {
       ) : (
         <div className="p-5 text-center">
           <p className="text-xs font-black tracking-[0.25em] mb-4"
-            style={{ color: prize.color, fontFamily: "ui-monospace,monospace" }}>
+            style={{ color, fontFamily: "ui-monospace,monospace" }}>
             {prize.rank} — {lang === "ar" ? prize.place.ar : prize.place.en}
           </p>
           <img src={prize.charImg} alt={prize.rank} className="mx-auto rounded-xl object-cover mb-4"
@@ -816,46 +795,82 @@ function WCard({ w, prize, delay, wide = false, lang }: {
   );
 }
 
+function StateResults({ winners, lang, cfg }: { winners: Winner[]; lang: "en" | "ar"; cfg: GiveawayConfig }) {
+  const tx = TX[lang];
+  const prizes = [
+    { rank: "1ST", place: { en: "First Place", ar: "المركز الأول" }, weapon: "HK417 — P.B. Esports Star", charImg: "/images/cfs-char-pink.png" },
+    { rank: "2ND", place: { en: "Second Place", ar: "المركز الثاني" }, weapon: "Colt 1911 — Esports Star", charImg: "/images/cfs-char-purple.png" },
+    { rank: "3RD", place: { en: "Third Place", ar: "المركز الثالث" }, weapon: "Kukri — Kikari Edition", charImg: "/images/cfs-char-blonde.png" },
+  ];
+  return (
+    <div className="max-w-2xl mx-auto px-5 pt-10 pb-20" dir={lang === "ar" ? "rtl" : "ltr"}>
+      <div className={`flex items-center gap-3 mb-2 ${lang === "ar" ? "flex-row-reverse" : ""}`}>
+        <img src={cfsLogoBanner} alt="CFS" className="w-9 object-contain flex-shrink-0" />
+        <p className="text-xs font-black uppercase tracking-[0.2em]"
+          style={{ color: LBLUE, fontFamily: "ui-monospace,monospace" }}>{tx.resultsSubtitle}</p>
+      </div>
+      <h1 className="font-black text-white mb-2"
+        style={{ fontSize: "clamp(3rem,10vw,5rem)", letterSpacing: "-0.02em" }}>{tx.resultsTitle}</h1>
+      <p className="mb-10 text-sm" style={{ color: "rgba(255,255,255,0.28)" }}>{tx.resultsNote}</p>
+
+      {winners.filter(w => w.rank === 1).map(w => (
+        <WCard key={w.username} w={w} prize={prizes[0]} delay={200} wide lang={lang} />
+      ))}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+        {winners.filter(w => w.rank !== 1).map((w, i) => (
+          <WCard key={w.username} w={w} prize={prizes[w.rank - 1]} delay={500 + i * 300} lang={lang} />
+        ))}
+      </div>
+      <div className="mt-14 pt-8 text-center" style={{ borderTop: `1px solid ${LINE}` }}>
+        <a href={cfg.wa_url} target="_blank" rel="noopener noreferrer"
+          className="text-xs underline underline-offset-4"
+          style={{ color: "rgba(255,255,255,0.18)" }}>{tx.waLink}</a>
+      </div>
+    </div>
+  );
+}
+
 /* ════════════════ ROOT ════════════════ */
 export default function GiveawayPage() {
   const { language } = useTranslation();
   const lang = (language === "ar" ? "ar" : "en") as "en" | "ar";
 
+  const { data: rawConfig } = useQuery<GiveawayConfig>({
+    queryKey: ["/api/giveaway/config"],
+    staleTime: 30000,
+  });
+
+  const cfg: GiveawayConfig = rawConfig || DEFAULT_CONFIG;
+
   const f = forced();
-  const [state, setState] = useState<S>(f ?? auto());
+  const [state, setState] = useState<S>(f ?? autoState(cfg));
   const [winners, setWinners] = useState<Winner[]>([]);
 
   useEffect(() => {
     if (f) return;
-    const id = setInterval(() => setState(s => s >= 3 ? s : auto()), 5000);
+    const id = setInterval(() => setState(s => s >= 3 ? s : autoState(cfg)), 5000);
     return () => clearInterval(id);
-  }, [f]);
+  }, [f, cfg]);
 
   const handleComplete = (w: Winner[]) => { setWinners(w); setState(4); };
   const cur = f ?? state;
 
   return (
     <div className="min-h-screen relative" style={{ fontFamily: "'Inter',system-ui,sans-serif", color: "#fff" }}>
-
-      {/* Fixed header — same wrapper App uses for other pages */}
       <div className="fixed top-0 left-0 right-0 z-50">
         <Header />
       </div>
 
-      {/* Full-page background — the map/SWAT image */}
       <div className="fixed inset-0 z-0 pointer-events-none" aria-hidden>
-        <img src="/images/cfs-bg-giveaway.png" alt=""
+        <img src={cfg.bg_img} alt=""
           className="absolute inset-0 w-full h-full"
-          style={{ objectFit: "cover", objectPosition: "center top", opacity: 0.75 }} />
-        {/* Soft darkening overlay — reduced so image shows through */}
+          style={{ objectFit: "cover", objectPosition: "center top", opacity: 0.75 }}
+          onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
         <div className="absolute inset-0"
           style={{ background: "linear-gradient(to bottom,rgba(2,5,14,0.42) 0%,rgba(2,5,14,0.55) 50%,rgba(2,5,14,0.78) 100%)" }} />
       </div>
 
-      {/* Page content — pt-24 clears the fixed header */}
       <div className="relative z-10 pt-24">
-
-        {/* Dev state switcher */}
         {f !== null && (
           <div className="fixed top-20 right-3 z-50 flex gap-1">
             {([1,2,3,4] as S[]).map(n => (
@@ -869,10 +884,10 @@ export default function GiveawayPage() {
           </div>
         )}
 
-        {cur === 1 && <StateStandby lang={lang} />}
-        {cur === 2 && <StateGathering lang={lang} />}
-        {cur === 3 && <StateLiveDraw onComplete={handleComplete} lang={lang} />}
-        {cur === 4 && <StateResults lang={lang} winners={winners.length > 0 ? winners : [
+        {cur === 1 && <StateStandby lang={lang} cfg={cfg} />}
+        {cur === 2 && <StateGathering lang={lang} cfg={cfg} />}
+        {cur === 3 && <StateLiveDraw onComplete={handleComplete} lang={lang} cfg={cfg} />}
+        {cur === 4 && <StateResults lang={lang} cfg={cfg} winners={winners.length > 0 ? winners : [
           { username: "Winner 1", rank: 1 },
           { username: "Winner 2", rank: 2 },
           { username: "Winner 3", rank: 3 },

@@ -2336,6 +2336,7 @@ export default function AdminDashboard() {
               </TabsTrigger>
               <TabsTrigger value="advanced-editor" data-testid="tab-advanced-editor" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">🛠 Advanced Editor</TabsTrigger>
               <TabsTrigger value="preview-home" data-testid="tab-preview-home" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">👁 Home Preview</TabsTrigger>
+              <TabsTrigger value="giveaway" data-testid="tab-giveaway" className="data-[state=active]:bg-yellow-500 data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-yellow-700 font-semibold">🎁 السحب</TabsTrigger>
             </TabsList>
             <ScrollBar orientation="horizontal" />
           </ScrollArea>
@@ -3302,6 +3303,11 @@ export default function AdminDashboard() {
             <div className="rounded-lg border overflow-hidden">
               <iframe title="Home Preview" src="/" className="w-full h-[800px] bg-background" />
             </div>
+          </TabsContent>
+
+          {/* Giveaway Management Tab */}
+          <TabsContent value="giveaway" className="space-y-6">
+            <GiveawayPanel />
           </TabsContent>
 
           {/* Main Page Content Tab */}
@@ -4413,6 +4419,216 @@ function ChatWidgetConfigPanel() {
         </Button>
       </CardContent>
     </Card>
+  );
+}
+
+function GiveawayPanel() {
+  const queryClient = useQueryClient();
+  const [newParticipant, setNewParticipant] = useState('');
+  const [searchQ, setSearchQ] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [saveMsg, setSaveMsg] = useState('');
+  const [fields, setFields] = useState({
+    wa_url: '', yt_url: '', draw_time: '', gather_time: '',
+    prize1_img: '', prize2_img: '', prize3_img: '',
+    bg_img: '', event_video: '', event_name: '',
+  });
+
+  const { data: cfg, isLoading } = useQuery<any>({
+    queryKey: ['/api/giveaway/config'],
+    staleTime: 10000,
+  });
+
+  useEffect(() => {
+    if (!cfg) return;
+    setFields({
+      wa_url: cfg.wa_url || '',
+      yt_url: cfg.yt_url || '',
+      draw_time: cfg.draw_time || '',
+      gather_time: cfg.gather_time || '',
+      prize1_img: cfg.prize1_img || '',
+      prize2_img: cfg.prize2_img || '',
+      prize3_img: cfg.prize3_img || '',
+      bg_img: cfg.bg_img || '',
+      event_video: cfg.event_video || '',
+      event_name: cfg.event_name || '',
+    });
+  }, [cfg]);
+
+  const participants: string[] = cfg?.participants || [];
+
+  async function saveConfig(updates: any) {
+    setSaving(true); setSaveMsg('');
+    try {
+      const token = localStorage.getItem('adminToken');
+      const res = await fetch('/api/admin/giveaway/config', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify(updates),
+        credentials: 'include',
+      });
+      if (!res.ok) throw new Error('Failed');
+      queryClient.invalidateQueries({ queryKey: ['/api/giveaway/config'] });
+      setSaveMsg('✅ تم الحفظ');
+    } catch { setSaveMsg('❌ خطأ في الحفظ'); }
+    setSaving(false);
+    setTimeout(() => setSaveMsg(''), 3000);
+  }
+
+  function addParticipant() {
+    const name = newParticipant.trim();
+    if (!name || participants.includes(name)) return;
+    saveConfig({ participants: [...participants, name] });
+    setNewParticipant('');
+  }
+
+  function removeParticipant(name: string) {
+    saveConfig({ participants: participants.filter(p => p !== name) });
+  }
+
+  const filtered = participants.filter(p =>
+    !searchQ || p.toLowerCase().includes(searchQ.toLowerCase())
+  );
+
+  if (isLoading) return <div className="p-8 text-center text-muted-foreground">جاري التحميل...</div>;
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-bold text-foreground">🎁 إدارة السحب</h2>
+        {saveMsg && <span className="text-sm font-medium">{saveMsg}</span>}
+      </div>
+
+      {/* URLs & Config */}
+      <Card className="bg-card/50 border-border">
+        <CardHeader><CardTitle>إعدادات السحب</CardTitle></CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label>اسم الحدث</Label>
+              <Input value={fields.event_name} onChange={e => setFields(f => ({ ...f, event_name: e.target.value }))}
+                placeholder="CFS 10TH ANNIVERSARY" />
+            </div>
+            <div>
+              <Label>وقت التجمع (gather time)</Label>
+              <Input value={fields.gather_time} onChange={e => setFields(f => ({ ...f, gather_time: e.target.value }))}
+                placeholder="2026-10-06T21:30:00+03:00" />
+            </div>
+            <div>
+              <Label>وقت السحب (draw time)</Label>
+              <Input value={fields.draw_time} onChange={e => setFields(f => ({ ...f, draw_time: e.target.value }))}
+                placeholder="2026-10-06T22:00:00+03:00" />
+            </div>
+            <div>
+              <Label>رابط واتساب</Label>
+              <Input value={fields.wa_url} onChange={e => setFields(f => ({ ...f, wa_url: e.target.value }))}
+                placeholder="https://www.whatsapp.com/channel/..." />
+            </div>
+            <div>
+              <Label>رابط يوتيوب</Label>
+              <Input value={fields.yt_url} onChange={e => setFields(f => ({ ...f, yt_url: e.target.value }))}
+                placeholder="https://www.youtube.com/@..." />
+            </div>
+          </div>
+          <Button onClick={() => saveConfig(fields)} disabled={saving} className="bg-yellow-500 text-black hover:bg-yellow-400">
+            {saving ? 'جاري الحفظ...' : 'حفظ الإعدادات'}
+          </Button>
+        </CardContent>
+      </Card>
+
+      {/* Cloudinary Image URLs */}
+      <Card className="bg-card/50 border-border">
+        <CardHeader>
+          <CardTitle>صور الجوائز والخلفية (Cloudinary)</CardTitle>
+          <CardDescription>أدخل روابط Cloudinary مباشرة. تعمل في كل البيئات بما فيها Vercel.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {[
+            { key: 'prize1_img', label: '🥇 صورة الجائزة الأولى (HK417)' },
+            { key: 'prize2_img', label: '🥈 صورة الجائزة الثانية (Colt 1911)' },
+            { key: 'prize3_img', label: '🥉 صورة الجائزة الثالثة (Kukri)' },
+            { key: 'bg_img',     label: '🖼 صورة خلفية الصفحة' },
+            { key: 'event_video', label: '🎬 رابط فيديو الحدث' },
+          ].map(({ key, label }) => (
+            <div key={key} className="space-y-1">
+              <Label>{label}</Label>
+              <div className="flex gap-2">
+                <Input
+                  value={(fields as any)[key]}
+                  onChange={e => setFields(f => ({ ...f, [key]: e.target.value }))}
+                  placeholder="https://res.cloudinary.com/ddzbutb12/..."
+                  className="flex-1"
+                />
+                {(fields as any)[key] && (
+                  <img src={(fields as any)[key]} alt={label}
+                    className="w-12 h-12 object-contain rounded border border-border bg-black/40"
+                    onError={e => { (e.target as HTMLImageElement).style.opacity = '0.3'; }} />
+                )}
+              </div>
+            </div>
+          ))}
+          <Button onClick={() => saveConfig(fields)} disabled={saving} className="bg-blue-600 hover:bg-blue-500 text-white mt-2">
+            {saving ? 'جاري الحفظ...' : 'حفظ صور Cloudinary'}
+          </Button>
+        </CardContent>
+      </Card>
+
+      {/* Participants */}
+      <Card className="bg-card/50 border-border">
+        <CardHeader>
+          <CardTitle>المشاركون ({participants.length})</CardTitle>
+          <CardDescription>أضف أو احذف اللاعبين المشاركين في السحب</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex gap-2">
+            <Input
+              value={newParticipant}
+              onChange={e => setNewParticipant(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && addParticipant()}
+              placeholder="اسم اللاعب الجديد..."
+              className="flex-1"
+            />
+            <Button onClick={addParticipant} disabled={saving || !newParticipant.trim()}
+              className="bg-green-600 hover:bg-green-500 text-white">
+              + إضافة
+            </Button>
+          </div>
+          <Input
+            value={searchQ} onChange={e => setSearchQ(e.target.value)}
+            placeholder="بحث في المشاركين..."
+          />
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 max-h-80 overflow-y-auto">
+            {filtered.map(p => (
+              <div key={p} className="flex items-center justify-between gap-1 px-2 py-1.5 rounded bg-muted/50 border border-border text-xs group">
+                <span className="truncate text-foreground font-medium">{p}</span>
+                <button onClick={() => removeParticipant(p)}
+                  className="text-red-400 hover:text-red-300 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity font-bold">
+                  ✕
+                </button>
+              </div>
+            ))}
+            {filtered.length === 0 && (
+              <p className="text-muted-foreground text-xs col-span-4">لا توجد نتائج</p>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Preview link */}
+      <div className="flex items-center gap-4 text-sm text-muted-foreground">
+        <a href="/giveaway" target="_blank" rel="noopener noreferrer"
+          className="underline text-blue-400 hover:text-blue-300">
+          → عرض صفحة السحب
+        </a>
+        <a href="/giveaway?state=4" target="_blank" rel="noopener noreferrer"
+          className="underline text-yellow-400 hover:text-yellow-300">
+          → معاينة نتائج السحب
+        </a>
+      </div>
+    </div>
   );
 }
 
