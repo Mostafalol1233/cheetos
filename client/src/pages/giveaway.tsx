@@ -57,7 +57,7 @@ const TX = {
     days: "أيام", hours: "ساعات", min: "دقيقة", sec: "ثانية",
     howTitle: "كيف تشارك",
     steps: [
-      { title: "أنشئ حسابك في متجر دياء", sub: "حساب مجاني — شرط أساسي للمشاركة", tag: "مطلوب", label: "سجّل الآن" },
+      { title: "أنشئ حسابك في متجر ضياء", sub: "حساب مجاني — شرط أساسي للمشاركة", tag: "مطلوب", label: "سجّل الآن" },
       { title: "انضم إلى قناة الواتساب الرسمية", sub: "اكتب اسمك في القناة للتسجيل", tag: "مطلوب", label: "فتح القناة" },
       { title: "اشحن CrossFire", sub: "كل عملية شراء ترفع حظوظك في السحب", tag: "اختياري — يزيد فرصك", label: "اذهب إلى CrossFire" },
       { title: "دعمنا على يوتيوب", sub: "أي دعم يساعد القناة ويزيد حظك", tag: "اختياري", label: "يوتيوب" },
@@ -74,8 +74,8 @@ const TX = {
     acctTitle: "حسابك",
     signedIn: "تم تأكيد مشاركتك",
     signInBtn: "تسجيل الدخول", createBtn: "إنشاء حساب",
-    signInDesc: "حساب مجاني في متجر دياء مطلوب للمشاركة في السحب.",
-    signInHead: "سجّل دخولك إلى متجر دياء",
+    signInDesc: "حساب مجاني في متجر ضياء مطلوب للمشاركة في السحب.",
+    signInHead: "سجّل دخولك إلى متجر ضياء",
     termsTitle: "الشروط والأحكام",
     terms: [
       "مفتوح لجميع لاعبي CrossFire — بدون قيود عمرية",
@@ -175,6 +175,39 @@ function useCountdown(target: Date) {
     m: Math.floor((ms % 3600000) / 60000),
     s: Math.floor((ms % 60000) / 1000),
   };
+}
+
+/* ─── Deterministic seeded RNG (mulberry32) ─── */
+function mulberry32(seed: number) {
+  let s = seed | 0;
+  return () => {
+    s = (s + 0x6D2B79F5) | 0;
+    let t = Math.imul(s ^ (s >>> 15), 1 | s);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+/* Pre-compute full elimination order once — deterministic for everyone */
+const SPIN_MS = 9200; // ms per elimination round (spin 4.6s + pause ~4.2s + buffer)
+const _rng = mulberry32(Math.floor(DRAW_TIME.getTime() / 1000));
+const ELIM_ORDER: string[] = (() => {
+  const pool = [...ALL], order: string[] = [];
+  while (pool.length > 3) {
+    const idx = Math.floor(_rng() * pool.length);
+    order.push(pool[idx]);
+    pool.splice(idx, 1);
+  }
+  return order;
+})();
+// Remaining 3 at the end are the winners (rank 1, 2, 3)
+const FINAL_THREE = ALL.filter(p => !ELIM_ORDER.includes(p));
+
+/** How many eliminations have already happened based on real elapsed time */
+function elapsedElims(): number {
+  const elapsed = cairo().getTime() - DRAW_TIME.getTime();
+  if (elapsed <= 0) return 0;
+  return Math.min(Math.floor(elapsed / SPIN_MS), ELIM_ORDER.length);
 }
 
 /* ─── Audio ─── */
@@ -322,17 +355,25 @@ function StateStandby({ lang }: { lang: "en" | "ar" }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const dir = lang === "ar" ? "rtl" : "ltr";
 
-  /* Auto-play the video then freeze at 1-second mark */
+  /* Auto-play the video — loop 3 times then pause on last frame */
+  const loopCount = useRef(0);
   useEffect(() => {
     const v = videoRef.current;
     if (!v) return;
     v.muted = true;
+    v.loop = false;
+    loopCount.current = 0;
     v.play().catch(() => {});
-    const onTime = () => {
-      if (v.currentTime >= 1) { v.pause(); v.removeEventListener("timeupdate", onTime); }
+    const onEnded = () => {
+      loopCount.current += 1;
+      if (loopCount.current < 3) {
+        v.currentTime = 0;
+        v.play().catch(() => {});
+      }
+      // after 3rd loop just stay on last frame — don't rewind
     };
-    v.addEventListener("timeupdate", onTime);
-    return () => v.removeEventListener("timeupdate", onTime);
+    v.addEventListener("ended", onEnded);
+    return () => v.removeEventListener("ended", onEnded);
   }, []);
 
   const stepLinks = ["/login", WA_URL, "/game/crossfire", YT_URL];
@@ -554,37 +595,64 @@ function useTypewriter(text: string, go: boolean) {
 }
 
 function StateLiveDraw({ onComplete, lang }: { onComplete: (w: Winner[]) => void; lang: "en" | "ar" }) {
-  const [remaining, setRemaining] = useState<string[]>(ALL);
+  /* ── Sync to real elapsed time on mount ── */
+  const syncedElims = elapsedElims();
+  const syncedRemaining = ALL.filter(p => !ELIM_ORDER.slice(0, syncedElims).includes(p));
+  const nextElimIdx = useRef(syncedElims); // index into ELIM_ORDER for next victim
+
+  const [remaining, setRemaining] = useState<string[]>(syncedRemaining);
   const [rot, setRot]     = useState(0);
   const [trans, setTrans] = useState(false);
-  const [lastElim, setLastElim] = useState("");
-  const [showElim, setShowElim] = useState(false);
-  const [started, setStarted]   = useState(false);
-  const busyRef  = useRef(false);
-  const rotRef   = useRef(0);
-  const remRef   = useRef(ALL);
+  const [lastElim, setLastElim] = useState(syncedElims > 0 ? ELIM_ORDER[syncedElims - 1] : "");
+  const [showElim, setShowElim] = useState(syncedElims > 0);
+  const [started, setStarted]   = useState(cairo() >= DRAW_TIME || forced() === 3);
+  const busyRef   = useRef(false);
+  const rotRef    = useRef(0);
+  const remRef    = useRef(syncedRemaining);
   const victimRef = useRef("");
   const typed = useTypewriter(lastElim, showElim);
 
+  /* Start timer if not yet started */
   useEffect(() => {
-    const id = setInterval(() => { if (cairo() >= DRAW_TIME) { setStarted(true); clearInterval(id); } }, 1000);
-    if (forced() === 3) setStarted(true);
+    if (started) return;
+    const id = setInterval(() => {
+      if (cairo() >= DRAW_TIME) { setStarted(true); clearInterval(id); }
+    }, 500);
     return () => clearInterval(id);
+  }, [started]);
+
+  /* If we joined mid-draw and it's already finished, fire onComplete */
+  useEffect(() => {
+    if (syncedRemaining.length <= 3) {
+      fanfare();
+      setTimeout(() => onComplete(FINAL_THREE.map((u, i) => ({ username: u, rank: (i + 1) as 1 | 2 | 3 }))), 1200);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  /* ── Spin next victim from pre-computed ELIM_ORDER ── */
   const spin = useCallback(() => {
     if (busyRef.current) return;
-    const pool = remRef.current; if (pool.length <= 3) return;
+    const pool = remRef.current;
+    if (pool.length <= 3) return;
+    const idx = nextElimIdx.current;
+    if (idx >= ELIM_ORDER.length) return; // safety
     busyRef.current = true;
-    const vi = Math.floor(Math.random() * pool.length);
-    victimRef.current = pool[vi];
-    const n = pool.length, seg = 360 / n, center = (vi + 0.5) * seg;
-    const curMod = rotRef.current % 360;
+    const victim = ELIM_ORDER[idx];
+    nextElimIdx.current = idx + 1;
+    victimRef.current = victim;
+
+    // Find victim's angular position on the current wheel
+    const n = pool.length, seg = 360 / n;
+    const vi = pool.indexOf(victim);
+    const center = (vi + 0.5) * seg;
+    const curMod = ((rotRef.current % 360) + 360) % 360;
     const add = (center - curMod + 360) % 360;
-    const newRot = rotRef.current + 360 * (5 + Math.floor(Math.random() * 2)) + add;
+    // Always spin at least 5 full rounds for drama
+    const newRot = rotRef.current + 360 * 5 + add;
     rotRef.current = newRot;
     setRot(newRot); setTrans(true);
-    beep(350 + Math.random() * 150, 0.05, 0.08);
+    beep(340 + (idx % 7) * 30, 0.05, 0.08);
   }, []);
 
   const onEnd = useCallback(() => {
@@ -604,9 +672,12 @@ function StateLiveDraw({ onComplete, lang }: { onComplete: (w: Winner[]) => void
     }
   }, [spin, onComplete]);
 
+  /* Kick off first spin once started */
   useEffect(() => {
     if (!started || trans || busyRef.current) return;
-    const t = setTimeout(spin, 1800); return () => clearTimeout(t);
+    if (remRef.current.length <= 3) return;
+    const t = setTimeout(spin, 1400);
+    return () => clearTimeout(t);
   }, [started, spin, trans]);
 
   const { h, m, s } = useCountdown(DRAW_TIME);
