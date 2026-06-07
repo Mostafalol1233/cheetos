@@ -140,8 +140,8 @@ const DEFAULT_CONFIG: GiveawayConfig = {
   ],
   wa_url: "https://www.whatsapp.com/channel/0029Vb6jrI44yltQQfvkg41o",
   yt_url: "https://www.youtube.com/@Bemora-site/videos",
-  draw_time: "2026-06-07T23:00:00+03:00",
-  gather_time: "2026-06-07T22:30:00+03:00",
+  draw_time: "2026-10-06T23:00:00+03:00",
+  gather_time: "2026-10-06T22:30:00+03:00",
   prize1_img: "/images/cf-hk417.png",
   prize2_img: "/images/cf-colt1911.png",
   prize3_img: "/images/cf-kukri.png",
@@ -170,10 +170,11 @@ function autoState(cfg: GiveawayConfig): S {
 }
 function useCountdown(target: Date) {
   const [ms, setMs] = useState(0);
+  const targetMs = target.getTime();
   useEffect(() => {
-    const tick = () => setMs(Math.max(0, target.getTime() - cairo().getTime()));
+    const tick = () => setMs(Math.max(0, targetMs - cairo().getTime()));
     tick(); const id = setInterval(tick, 1000); return () => clearInterval(id);
-  }, [target]);
+  }, [targetMs]);
   return {
     d: Math.floor(ms / 86400000),
     h: Math.floor((ms % 86400000) / 3600000),
@@ -191,6 +192,13 @@ function mulberry32(seed: number) {
     t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   };
+}
+
+/* ─── Name obfuscation ─── */
+function obfuscate(name: string): string {
+  if (name.length <= 3) return name;
+  const mid = name.slice(1, -1);
+  return name[0] + mid.replace(/./g, '*') + name[name.length - 1];
 }
 
 /* ─── Build draw order from config ─── */
@@ -602,15 +610,18 @@ function StateGathering({ lang, cfg }: { lang: "en" | "ar"; cfg: GiveawayConfig 
         <div className="grid grid-cols-3 sm:grid-cols-4 gap-1.5 max-h-60 overflow-y-auto"
           style={{ scrollbarWidth: "thin", scrollbarColor: `${LBLUE}33 transparent` }}>
           {ALL.filter(p => !q || p.toLowerCase().includes(q.toLowerCase())).map(p => {
+            const exact = q.toLowerCase() === p.toLowerCase();
             const hit = q && p.toLowerCase().includes(q.toLowerCase());
+            const display = exact ? p : obfuscate(p);
             return (
               <div key={p} className="px-2 py-1.5 rounded text-xs text-center truncate"
                 style={{
-                  background: hit ? `${LBLUE}14` : "rgba(0,0,0,0.4)",
-                  border: `1px solid ${hit ? LBLUE + "44" : LINE}`,
-                  color: hit ? "#fff" : "rgba(255,255,255,0.3)",
-                  fontWeight: hit ? 700 : 400,
-                }}>{p}</div>
+                  background: exact ? `${LBLUE}20` : hit ? `${LBLUE}0a` : "rgba(0,0,0,0.4)",
+                  border: `1px solid ${exact ? LBLUE + "88" : hit ? LBLUE + "33" : LINE}`,
+                  color: exact ? "#fff" : hit ? "rgba(255,255,255,0.5)" : "rgba(255,255,255,0.25)",
+                  fontWeight: exact ? 700 : 400,
+                  letterSpacing: exact ? "normal" : "0.08em",
+                }}>{display}</div>
             );
           })}
         </div>
