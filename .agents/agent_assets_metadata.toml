@@ -1,5 +1,22 @@
 uploads = []
-generated = []
+
+[[generated]]
+id = "7dmx4ZMJwBNDEdiVm74Ce"
+uri = "file://client/public/images/cfs-trophy.png"
+type = "image"
+title = "cfs trophy award"
+
+[[generated]]
+id = "-G38lVTn636oNzM-gi3My"
+uri = "file://client/public/images/cfs-award-banner.png"
+type = "image"
+title = "cfs award banner"
+
+[[generated]]
+id = "_o0cU24E__QvCDKu61yjB"
+uri = "file://client/public/images/cfs-emblem.png"
+type = "image"
+title = "cfs emblem badge"
 
 [[outputs]]
 id = "ZuqfEHg3SRIyn9YHU_Yji"
