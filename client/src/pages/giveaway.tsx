@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useUserAuth } from "@/lib/user-auth-context";
 import { Link } from "wouter";
+import { Header } from "@/components/header";
 import cfsLogoBanner from "@assets/download_1780850227541.png";
-import cfsBgMap from "@assets/image_1780850228772.png";
 
 /* ─── Participants ─── */
 const RAW = [
@@ -22,37 +22,40 @@ const GATHER_TIME = new Date("2026-10-06T21:30:00+03:00");
 const WA_URL      = "https://www.whatsapp.com/channel/0029Vb6jrI44yltQQfvkg41o";
 const YT_URL      = "https://www.youtube.com/@Bemora-site/videos";
 
-/* ─── CFS Palette ─── */
-const BLUE   = "#1565c0";
+/* ─── Palette ─── */
+const BLUE   = "#1976d2";
 const LBLUE  = "#2196f3";
 const YELLOW = "#f9a825";
-const GOLD   = "#b8860b";
-const SILVER = "#607d8b";
-const BRONZE = "#8d5524";
-const LINE   = "rgba(255,255,255,0.06)";
-const CARD   = "rgba(8,14,28,0.75)";
+const GOLD   = "#c8922a";
+const SILVER = "#78909c";
+const BRONZE = "#8d6e63";
+const LINE   = "rgba(255,255,255,0.07)";
+const CARD   = "rgba(5,10,22,0.82)";
 
 /* ─── Prizes ─── */
 const PRIZES = [
   {
-    rank: "1ST", rankAr: "First Place",
+    rank: "1ST", place: "First Place",
     weapon: "HK417 — P.B. Esports Star",
-    desc: "Assault Rifle · Legendary Esports Skin",
+    type: "Assault Rifle",
+    img: "/images/cf-hk417.png",
     color: YELLOW,
     charImg: "/images/cfs-char-pink.png",
   },
   {
-    rank: "2ND", rankAr: "Second Place",
+    rank: "2ND", place: "Second Place",
     weapon: "Colt 1911 — Esports Star",
-    desc: "Pistol · Esports Edition Skin",
-    color: "#90a4ae",
+    type: "Pistol",
+    img: "/images/cf-colt1911.png",
+    color: SILVER,
     charImg: "/images/cfs-char-purple.png",
   },
   {
-    rank: "3RD", rankAr: "Third Place",
+    rank: "3RD", place: "Third Place",
     weapon: "CheyTac M200 — Dominator Esports",
-    desc: "Sniper Rifle · Dominator Skin",
-    color: "#a1887f",
+    type: "Sniper Rifle",
+    img: "/images/cf-colt1911.png",
+    color: BRONZE,
     charImg: "/images/cfs-char-blonde.png",
   },
 ];
@@ -76,8 +79,8 @@ function auto(): S {
 function useCountdown(target: Date) {
   const [ms, setMs] = useState(0);
   useEffect(() => {
-    const t = () => setMs(Math.max(0, target.getTime() - cairo().getTime()));
-    t(); const id = setInterval(t, 1000); return () => clearInterval(id);
+    const tick = () => setMs(Math.max(0, target.getTime() - cairo().getTime()));
+    tick(); const id = setInterval(tick, 1000); return () => clearInterval(id);
   }, [target]);
   return {
     d: Math.floor(ms / 86400000),
@@ -103,7 +106,7 @@ function beep(f: number, d: number, v = 0.1) {
   o.start(); o.stop(c.currentTime + d);
 }
 function fanfare() {
-  [[523, 0], [659, 130], [784, 260], [1047, 400]].forEach(([f, t]) => setTimeout(() => beep(f, 0.7, 0.18), t));
+  [[523,0],[659,130],[784,260],[1047,400]].forEach(([f,t]) => setTimeout(() => beep(f, 0.7, 0.18), t));
 }
 
 /* ─── SVG Wheel ─── */
@@ -113,7 +116,7 @@ function pol(r: number, deg: number) {
   return { x: CX + r * Math.cos(rad), y: CY + r * Math.sin(rad) };
 }
 function arcPath(s: number, e: number) {
-  const a = pol(OR, s), b = pol(OR, e), c = pol(IR, e), d = pol(IR, s), lg = e - s > 180 ? 1 : 0;
+  const a = pol(OR,s), b = pol(OR,e), c = pol(IR,e), d = pol(IR,s), lg = e - s > 180 ? 1 : 0;
   return `M${a.x} ${a.y} A${OR} ${OR} 0 ${lg} 1 ${b.x} ${b.y} L${c.x} ${c.y} A${IR} ${IR} 0 ${lg} 0 ${d.x} ${d.y}Z`;
 }
 function Wheel({ parts, rot, trans, onEnd }: { parts: string[]; rot: number; trans: boolean; onEnd: () => void }) {
@@ -140,7 +143,7 @@ function Wheel({ parts, rot, trans, onEnd }: { parts: string[]; rot: number; tra
             const s = i * seg, e = (i + 1) * seg, mid = s + seg / 2, lp = pol((OR + IR) / 2 + 8, mid);
             return (
               <g key={name + i}>
-                <path d={arcPath(s, e)} fill={["#0a1628", "#0d1e38"][i % 2]} stroke="#1a3a6a" strokeWidth="0.8" />
+                <path d={arcPath(s, e)} fill={["#07111f", "#0b1a30"][i % 2]} stroke="#172a48" strokeWidth="0.8" />
                 <text x={lp.x} y={lp.y} fontSize={Math.max(5, Math.min(8, 9 - n * 0.04))}
                   fontFamily="ui-monospace,monospace" fontWeight="700" fill="rgba(255,255,255,0.8)"
                   textAnchor="middle" dominantBaseline="middle"
@@ -151,7 +154,7 @@ function Wheel({ parts, rot, trans, onEnd }: { parts: string[]; rot: number; tra
             );
           })}
         </g>
-        <circle cx={CX} cy={CY} r={IR} fill="#060a14" stroke={LBLUE} strokeWidth="2" />
+        <circle cx={CX} cy={CY} r={IR} fill="#050a14" stroke={LBLUE} strokeWidth="2" />
         <text x={CX} y={CY - 5} textAnchor="middle" fontSize="12" fontWeight="900"
           fontFamily="ui-monospace,monospace" fill="#fff">CFS</text>
         <text x={CX} y={CY + 10} textAnchor="middle" fontSize="9"
@@ -165,85 +168,43 @@ function Wheel({ parts, rot, trans, onEnd }: { parts: string[]; rot: number; tra
 function Tick({ v, label }: { v: number; label: string }) {
   return (
     <div className="flex flex-col items-center gap-2">
-      <div className="w-16 h-16 sm:w-20 sm:h-20 flex items-center justify-center rounded-xl"
-        style={{ background: "rgba(10,22,48,0.85)", border: `1px solid ${LBLUE}30`, backdropFilter: "blur(8px)" }}>
+      <div className="w-16 h-16 sm:w-20 sm:h-20 flex items-center justify-center rounded-lg"
+        style={{ background: "rgba(5,10,22,0.9)", border: `1px solid rgba(33,150,243,0.2)` }}>
         <span className="text-3xl sm:text-4xl font-black text-white tabular-nums"
           style={{ fontFamily: "ui-monospace,monospace" }}>{String(v).padStart(2, "0")}</span>
       </div>
       <span className="text-xs font-semibold uppercase tracking-widest"
-        style={{ color: "rgba(255,255,255,0.3)", letterSpacing: "0.1em" }}>{label}</span>
+        style={{ color: "rgba(255,255,255,0.28)" }}>{label}</span>
     </div>
   );
 }
 
-/* ─── Section header ─── */
-function SectionHead({ title, sub }: { title: string; sub?: string }) {
+/* ─── Section label ─── */
+function Label({ text }: { text: string }) {
   return (
-    <div className="mb-6" style={{ borderTop: `1px solid ${LINE}`, paddingTop: 28 }}>
-      <div className="flex items-center gap-3 mb-1">
-        <div className="w-1 h-5 rounded-full" style={{ background: LBLUE }} />
-        <p className="text-white font-black text-sm uppercase tracking-widest"
-          style={{ fontFamily: "ui-monospace,monospace", letterSpacing: "0.15em" }}>{title}</p>
-      </div>
-      {sub && <p className="text-xs mt-1 ml-4" style={{ color: "rgba(255,255,255,0.25)" }}>{sub}</p>}
+    <div className="flex items-center gap-3 mb-6" style={{ borderTop: `1px solid ${LINE}`, paddingTop: 24 }}>
+      <div className="h-px flex-1" style={{ background: "transparent" }} />
+      <span className="text-xs font-black uppercase tracking-[0.2em]"
+        style={{ color: "rgba(255,255,255,0.2)", fontFamily: "ui-monospace,monospace" }}>{text}</span>
+      <div className="h-px flex-1" style={{ background: LINE }} />
     </div>
   );
 }
 
-/* ─── Weapon Prize Card (standby) ─── */
-function WeaponCard({ prize, i }: { prize: typeof PRIZES[0]; i: number }) {
-  return (
-    <div className="rounded-xl overflow-hidden flex flex-col"
-      style={{ background: CARD, border: `1px solid ${prize.color}25` }}>
-      <div style={{ height: 2, background: `linear-gradient(90deg,transparent,${prize.color},transparent)` }} />
-
-      {/* Rank badge */}
-      <div className="px-4 pt-4 pb-2 flex items-center justify-between">
-        <span className="text-xs font-black tracking-widest" style={{ color: prize.color, fontFamily: "ui-monospace,monospace" }}>
-          {prize.rank}
-        </span>
-        <span className="text-xs" style={{ color: "rgba(255,255,255,0.2)" }}>{prize.rankAr}</span>
-      </div>
-
-      {/* Weapon icon area */}
-      <div className="mx-4 mb-3 rounded-lg flex items-center justify-center"
-        style={{ height: 90, background: `linear-gradient(135deg, rgba(10,22,48,0.9), rgba(20,40,80,0.6))`, border: `1px solid ${prize.color}18` }}>
-        {/* Crosshair icon */}
-        <svg width="40" height="40" viewBox="0 0 40 40" fill="none" opacity="0.6">
-          <circle cx="20" cy="20" r="14" stroke={prize.color} strokeWidth="1.5" />
-          <circle cx="20" cy="20" r="4" fill={prize.color} />
-          <line x1="20" y1="2" x2="20" y2="10" stroke={prize.color} strokeWidth="1.5" />
-          <line x1="20" y1="30" x2="20" y2="38" stroke={prize.color} strokeWidth="1.5" />
-          <line x1="2" y1="20" x2="10" y2="20" stroke={prize.color} strokeWidth="1.5" />
-          <line x1="30" y1="20" x2="38" y2="20" stroke={prize.color} strokeWidth="1.5" />
-        </svg>
-      </div>
-
-      {/* Weapon name */}
-      <div className="px-4 pb-4">
-        <p className="text-white font-bold text-xs leading-tight mb-1">{prize.weapon}</p>
-        <p className="text-xs" style={{ color: "rgba(255,255,255,0.28)" }}>{prize.desc}</p>
-      </div>
-    </div>
-  );
-}
-
-/* ─── Account CTA ─── */
+/* ─── Account section ─── */
 function AccountCTA() {
   const { isAuthenticated, user } = useUserAuth();
   if (isAuthenticated && user) {
     return (
       <div className="rounded-xl p-5 flex items-center gap-4"
-        style={{ background: CARD, border: `1px solid ${LBLUE}30` }}>
-        <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
-          style={{ background: `${LBLUE}20`, border: `1px solid ${LBLUE}40` }}>
-          <span className="text-white font-black text-sm">{user.name?.charAt(0)?.toUpperCase() || "U"}</span>
+        style={{ background: CARD, border: `1px solid ${LBLUE}28` }}>
+        <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 font-black text-sm text-white"
+          style={{ background: `${LBLUE}22`, border: `1px solid ${LBLUE}35` }}>
+          {user.name?.charAt(0)?.toUpperCase() ?? "U"}
         </div>
         <div>
           <p className="text-white font-bold text-sm">{user.name}</p>
-          <p className="text-xs mt-0.5" style={{ color: "rgba(255,255,255,0.35)" }}>
-            You're registered · Entry confirmed ✓
-          </p>
+          <p className="text-xs mt-0.5" style={{ color: "rgba(255,255,255,0.3)" }}>Entry confirmed</p>
         </div>
       </div>
     );
@@ -251,19 +212,17 @@ function AccountCTA() {
   return (
     <div className="rounded-xl p-5" style={{ background: CARD, border: `1px solid ${LINE}` }}>
       <p className="text-white font-bold text-sm mb-1">Sign in to your Diaa Store account</p>
-      <p className="text-xs mb-4" style={{ color: "rgba(255,255,255,0.3)" }}>
-        You need a Diaa Store account to participate. It's free and takes 30 seconds.
+      <p className="text-xs mb-5" style={{ color: "rgba(255,255,255,0.3)" }}>
+        A free Diaa Store account is required to participate in the draw.
       </p>
       <div className="flex gap-3">
         <Link href="/login">
-          <button className="px-5 py-2.5 rounded-lg text-white text-xs font-bold transition-all hover:opacity-90"
-            style={{ background: LBLUE }}>
-            Sign In
-          </button>
+          <button className="px-6 py-2.5 rounded-lg text-white text-xs font-bold transition-opacity hover:opacity-85"
+            style={{ background: LBLUE }}>Sign In</button>
         </Link>
         <Link href="/login">
-          <button className="px-5 py-2.5 rounded-lg text-xs font-semibold transition-all hover:opacity-80"
-            style={{ background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.6)", border: `1px solid ${LINE}` }}>
+          <button className="px-6 py-2.5 rounded-lg text-xs font-semibold transition-opacity hover:opacity-75"
+            style={{ background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.55)", border: `1px solid ${LINE}` }}>
             Create Account
           </button>
         </Link>
@@ -279,48 +238,49 @@ function StateStandby() {
   useEffect(() => { videoRef.current?.play().catch(() => {}); }, []);
 
   return (
-    <div className="max-w-2xl mx-auto px-5 pt-10 pb-10">
+    <div className="max-w-2xl mx-auto px-5 pt-10 pb-16">
 
-      {/* ── CFS Logo + title ── */}
-      <div className="flex items-center gap-5 mb-8">
-        <img src={cfsLogoBanner} alt="CFS" className="w-16 object-contain flex-shrink-0" style={{ filter: "drop-shadow(0 0 12px rgba(33,150,243,0.4))" }} />
+      {/* Hero */}
+      <div className="flex items-start gap-5 mb-10">
+        <img src={cfsLogoBanner} alt="CFS" className="w-14 flex-shrink-0 object-contain"
+          style={{ filter: "drop-shadow(0 0 10px rgba(33,150,243,0.35))" }} />
         <div>
-          <p className="text-xs font-bold uppercase tracking-[0.35em] mb-1"
+          <p className="text-xs font-black uppercase tracking-[0.35em] mb-2"
             style={{ color: LBLUE, fontFamily: "ui-monospace,monospace" }}>
             CFS 10TH ANNIVERSARY
           </p>
-          <h1 className="font-black text-white leading-none" style={{ fontSize: "clamp(2rem,7vw,3.5rem)", letterSpacing: "-0.02em" }}>
+          <h1 className="font-black text-white leading-none mb-3"
+            style={{ fontSize: "clamp(2.4rem,8vw,4rem)", letterSpacing: "-0.02em" }}>
             GRAND GIVEAWAY
           </h1>
-          <p className="text-sm mt-1 font-semibold" style={{ color: YELLOW }}>Lucky Draw · October 6, 2026</p>
+          <div className="flex flex-wrap gap-2">
+            <span className="px-3 py-1 rounded-full text-xs font-bold"
+              style={{ background: `${YELLOW}14`, border: `1px solid ${YELLOW}30`, color: YELLOW }}>
+              3 Winners
+            </span>
+            <span className="px-3 py-1 rounded-full text-xs font-bold"
+              style={{ background: `${LBLUE}14`, border: `1px solid ${LBLUE}30`, color: LBLUE }}>
+              October 6, 2026
+            </span>
+            <span className="px-3 py-1 rounded-full text-xs font-bold"
+              style={{ background: "rgba(76,175,80,0.12)", border: "1px solid rgba(76,175,80,0.28)", color: "#81c784" }}>
+              Live Draw
+            </span>
+          </div>
         </div>
       </div>
 
-      {/* ── Accent tags ── */}
-      <div className="flex flex-wrap gap-2 mb-8">
-        {[
-          { label: "3 Winners", col: YELLOW },
-          { label: "Oct 6, 2026", col: LBLUE },
-          { label: "Live Draw", col: "#4caf50" },
-        ].map(t => (
-          <span key={t.label} className="px-3 py-1 rounded-full text-xs font-bold"
-            style={{ background: `${t.col}15`, border: `1px solid ${t.col}35`, color: t.col }}>
-            {t.label}
-          </span>
-        ))}
-      </div>
-
-      {/* ── Video ── */}
+      {/* Video */}
       <div className="rounded-xl overflow-hidden mb-8" style={{ border: `1px solid ${LINE}` }}>
         <video ref={videoRef} src="/media/cfs-event.mp4" loop muted playsInline
-          className="w-full block" style={{ maxHeight: 220, objectFit: "cover", background: "#000" }} />
+          className="w-full block" style={{ maxHeight: 200, objectFit: "cover", background: "#000" }} />
       </div>
 
-      {/* ── Countdown ── */}
-      <div className="rounded-xl p-6 mb-10" style={{ background: CARD, border: `1px solid ${LBLUE}22` }}>
-        <p className="text-xs text-center mb-5 font-semibold uppercase tracking-widest"
-          style={{ color: "rgba(255,255,255,0.3)", fontFamily: "ui-monospace,monospace" }}>
-          Draw starts — October 6, 2026 · 10:00 PM Cairo Time
+      {/* Countdown */}
+      <div className="rounded-xl p-6 mb-12" style={{ background: CARD, border: `1px solid rgba(33,150,243,0.15)` }}>
+        <p className="text-xs text-center mb-5 font-black uppercase tracking-[0.2em]"
+          style={{ color: "rgba(255,255,255,0.22)", fontFamily: "ui-monospace,monospace" }}>
+          Draw starts — October 6, 2026 — 10:00 PM Cairo
         </p>
         <div className="flex justify-center gap-4">
           <Tick v={d} label="Days" />
@@ -330,50 +290,58 @@ function StateStandby() {
         </div>
       </div>
 
-      {/* ── How to enter ── */}
-      <SectionHead title="How to Enter" sub="Complete required steps to be eligible" />
-      <div className="flex flex-col gap-2.5 mb-10">
+      {/* How to enter */}
+      <Label text="How to Enter" />
+      <div className="flex flex-col gap-2.5 mb-12">
         {[
           {
-            n: "01", title: "Create your Diaa Store account", sub: "Free account — required to participate",
-            badge: "Required", badgeColor: YELLOW, link: "/login", linkLabel: "Sign up now →", required: true,
+            n: "01", title: "Create your Diaa Store account",
+            sub: "Free account — required to be eligible",
+            tag: "Required", tagColor: YELLOW,
+            href: "/login", label: "Sign up", ext: false,
           },
           {
-            n: "02", title: "Join our WhatsApp channel", sub: "Write your name in the channel to register yourself",
-            badge: "Required", badgeColor: YELLOW, link: WA_URL, linkLabel: "Open channel →", ext: true, required: true,
+            n: "02", title: "Join the official WhatsApp channel",
+            sub: "Write your name in the channel to register",
+            tag: "Required", tagColor: YELLOW,
+            href: WA_URL, label: "Open channel", ext: true,
           },
           {
-            n: "03", title: "Top up CrossFire", sub: "Every purchase increases your winning odds",
-            badge: "Optional · Boosts odds", badgeColor: LBLUE, link: "/game/crossfire", linkLabel: "Go to CrossFire →",
+            n: "03", title: "Top up CrossFire",
+            sub: "Every purchase increases your draw odds",
+            tag: "Optional — boosts odds", tagColor: LBLUE,
+            href: "/game/crossfire", label: "Go to CrossFire", ext: false,
           },
           {
-            n: "04", title: "Support on YouTube", sub: "Subscribe or like — helps the channel and boosts your luck",
-            badge: "Optional", badgeColor: LBLUE, link: YT_URL, linkLabel: "YouTube →", ext: true,
+            n: "04", title: "Support on YouTube",
+            sub: "Any support helps the channel and your luck",
+            tag: "Optional", tagColor: LBLUE,
+            href: YT_URL, label: "YouTube", ext: true,
           },
         ].map((step) => (
           <div key={step.n} className="flex gap-4 items-start rounded-xl p-4"
-            style={{ background: step.required ? CARD : "rgba(8,14,28,0.5)", border: `1px solid ${step.required ? LBLUE + "25" : LINE}` }}>
+            style={{ background: CARD, border: `1px solid ${step.tagColor === YELLOW ? YELLOW + "18" : LINE}` }}>
             <span className="shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-xs font-black"
-              style={{ background: step.required ? `${LBLUE}20` : "rgba(255,255,255,0.05)", color: step.required ? LBLUE : "rgba(255,255,255,0.3)", fontFamily: "ui-monospace,monospace" }}>
-              {step.n}
-            </span>
+              style={{
+                background: step.tagColor === YELLOW ? `${YELLOW}18` : "rgba(255,255,255,0.04)",
+                color: step.tagColor,
+                fontFamily: "ui-monospace,monospace",
+              }}>{step.n}</span>
             <div className="flex-1 min-w-0">
               <div className="flex flex-wrap items-center gap-2 mb-1">
                 <p className="text-white font-bold text-sm">{step.title}</p>
-                <span className="text-xs px-2 py-0.5 rounded font-semibold"
-                  style={{ background: `${step.badgeColor}15`, color: step.badgeColor }}>
-                  {step.badge}
-                </span>
+                <span className="text-xs px-2 py-0.5 rounded font-bold"
+                  style={{ background: `${step.tagColor}12`, color: step.tagColor }}>{step.tag}</span>
               </div>
-              <p className="text-xs mb-2" style={{ color: "rgba(255,255,255,0.35)" }}>{step.sub}</p>
+              <p className="text-xs mb-2" style={{ color: "rgba(255,255,255,0.3)" }}>{step.sub}</p>
               {step.ext ? (
-                <a href={step.link} target="_blank" rel="noopener noreferrer"
-                  className="text-xs font-semibold underline underline-offset-4 transition-opacity hover:opacity-70"
-                  style={{ color: step.badgeColor }}>{step.linkLabel}</a>
+                <a href={step.href} target="_blank" rel="noopener noreferrer"
+                  className="text-xs font-bold underline underline-offset-4 transition-opacity hover:opacity-70"
+                  style={{ color: step.tagColor }}>{step.label} →</a>
               ) : (
-                <Link href={step.link}>
-                  <span className="text-xs font-semibold underline underline-offset-4 transition-opacity hover:opacity-70 cursor-pointer"
-                    style={{ color: step.badgeColor }}>{step.linkLabel}</span>
+                <Link href={step.href}>
+                  <span className="text-xs font-bold underline underline-offset-4 transition-opacity hover:opacity-70 cursor-pointer"
+                    style={{ color: step.tagColor }}>{step.label} →</span>
                 </Link>
               )}
             </div>
@@ -381,72 +349,87 @@ function StateStandby() {
         ))}
       </div>
 
-      {/* ── Prizes (weapons only) ── */}
-      <SectionHead title="Prizes" sub="Battle Pass E-Sports — Full Bundle" />
-      <div className="grid grid-cols-3 gap-3 mb-10">
-        {PRIZES.map((p, i) => <WeaponCard key={i} prize={p} i={i} />)}
+      {/* Prizes — weapon images */}
+      <Label text="Prizes — Battle Pass E-Sports" />
+      <div className="grid grid-cols-3 gap-3 mb-4">
+        {PRIZES.map((p) => (
+          <div key={p.rank} className="rounded-xl overflow-hidden flex flex-col"
+            style={{ background: CARD, border: `1px solid ${p.color}22` }}>
+            <div style={{ height: 2, background: `linear-gradient(90deg,transparent,${p.color},transparent)` }} />
+            <div className="px-3 pt-3 pb-1 flex items-center justify-between">
+              <span className="text-xs font-black tracking-widest"
+                style={{ color: p.color, fontFamily: "ui-monospace,monospace" }}>{p.rank}</span>
+              <span className="text-xs" style={{ color: "rgba(255,255,255,0.2)" }}>{p.place}</span>
+            </div>
+            <div className="mx-3 mb-3 rounded-lg overflow-hidden flex items-center justify-center"
+              style={{ height: 100, background: "rgba(0,0,0,0.4)" }}>
+              <img src={p.img} alt={p.weapon} className="w-full h-full object-contain"
+                style={{ padding: "8px" }}
+                onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+            </div>
+            <div className="px-3 pb-3">
+              <p className="text-white font-bold text-xs leading-tight mb-0.5">{p.weapon}</p>
+              <p className="text-xs" style={{ color: "rgba(255,255,255,0.25)" }}>{p.type}</p>
+            </div>
+          </div>
+        ))}
       </div>
-      <p className="text-xs mb-10 px-1" style={{ color: "rgba(255,255,255,0.25)" }}>
-        All prizes are part of the complete Battle Pass E-Sports bundle including exclusive characters and skins.
-        Winners are announced live on this page and on the official WhatsApp channel.
+      <p className="text-xs mb-12 px-1" style={{ color: "rgba(255,255,255,0.2)" }}>
+        Full Battle Pass E-Sports bundle — includes exclusive character skins and weapon skins.
+        Winners are revealed live on this page and the official WhatsApp channel.
       </p>
 
-      {/* ── Draw Mechanism ── */}
-      <SectionHead title="Draw Mechanism" sub="100% transparent live draw" />
-      <div className="rounded-xl p-5 mb-10" style={{ background: CARD, border: `1px solid ${LINE}` }}>
-        <div className="grid grid-cols-2 gap-4">
-          {[
-            { icon: "🎡", title: "Live Spin Wheel", body: "Real-time spinning wheel visible to everyone on this page" },
-            { icon: "📅", title: "October 6, 2026 · 10 PM", body: "Wheel starts automatically at the set time, Cairo timezone" },
-            { icon: "📢", title: "Instant Announcement", body: "Winners revealed live on-site and on WhatsApp immediately after" },
-            { icon: "⚡", title: "48-Hour Response Window", body: "Winners must respond within 48 hrs or a replacement is drawn" },
-          ].map((item) => (
-            <div key={item.title} className="flex gap-3 items-start">
-              <span className="text-xl flex-shrink-0">{item.icon}</span>
-              <div>
-                <p className="text-white font-semibold text-xs mb-0.5">{item.title}</p>
-                <p className="text-xs leading-relaxed" style={{ color: "rgba(255,255,255,0.3)" }}>{item.body}</p>
-              </div>
+      {/* Draw details */}
+      <Label text="Draw Details" />
+      <div className="rounded-xl overflow-hidden mb-12" style={{ background: CARD, border: `1px solid ${LINE}` }}>
+        {[
+          { title: "Spin Wheel", body: "Live spinning wheel visible to everyone on this page — fully transparent" },
+          { title: "October 6, 2026 · 10:00 PM Cairo", body: "Wheel starts automatically. No manual trigger needed." },
+          { title: "Winners Announced Instantly", body: "Results shown live on screen and posted on the official WhatsApp channel." },
+          { title: "48-Hour Response Window", body: "Winners must reply within 48 hours or a replacement is selected." },
+        ].map((item, i, arr) => (
+          <div key={item.title} className="px-5 py-4 flex gap-4 items-start"
+            style={{ borderBottom: i < arr.length - 1 ? `1px solid ${LINE}` : "none" }}>
+            <div className="w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0" style={{ background: LBLUE }} />
+            <div>
+              <p className="text-white font-bold text-sm mb-0.5">{item.title}</p>
+              <p className="text-xs" style={{ color: "rgba(255,255,255,0.3)" }}>{item.body}</p>
             </div>
-          ))}
-        </div>
+          </div>
+        ))}
       </div>
 
-      {/* ── Account ── */}
-      <SectionHead title="Your Account" sub="Sign in to confirm your entry" />
-      <div className="mb-10">
-        <AccountCTA />
+      {/* Account */}
+      <Label text="Your Account" />
+      <div className="mb-12"><AccountCTA /></div>
+
+      {/* Terms */}
+      <Label text="Terms & Conditions" />
+      <div className="rounded-xl overflow-hidden mb-10" style={{ background: CARD, border: `1px solid ${LINE}` }}>
+        {[
+          "Open to all CrossFire players — no age restriction",
+          "Each participant may only win one prize",
+          "Registered name must match the name on the WhatsApp channel",
+          "Organizer's decision is final and binding",
+          "Winners contacted via the official WhatsApp channel only",
+          "Organizers reserve the right to modify rules in extraordinary circumstances",
+        ].map((t, i, arr) => (
+          <div key={i} className="px-5 py-3.5 flex gap-3 items-start"
+            style={{ borderBottom: i < arr.length - 1 ? `1px solid ${LINE}` : "none" }}>
+            <span className="text-xs flex-shrink-0 mt-0.5" style={{ color: LBLUE }}>—</span>
+            <p className="text-xs leading-relaxed" style={{ color: "rgba(255,255,255,0.38)" }}>{t}</p>
+          </div>
+        ))}
       </div>
 
-      {/* ── Terms ── */}
-      <SectionHead title="Terms & Conditions" />
-      <div className="rounded-xl p-5 mb-10" style={{ background: CARD, border: `1px solid ${LINE}` }}>
-        <ul className="flex flex-col gap-2.5">
-          {[
-            "Open to all CrossFire players — no age restriction",
-            "Each participant may only win one prize",
-            "Your registered name must match the name on the WhatsApp channel",
-            "Organizer's decision is final and binding",
-            "Winners contacted exclusively via the official WhatsApp channel",
-            "Organizers reserve the right to modify rules in extraordinary circumstances",
-          ].map((t, i) => (
-            <li key={i} className="flex gap-3 items-start">
-              <span className="shrink-0 mt-0.5 text-xs" style={{ color: LBLUE }}>—</span>
-              <p className="text-xs leading-relaxed" style={{ color: "rgba(255,255,255,0.4)" }}>{t}</p>
-            </li>
-          ))}
-        </ul>
-      </div>
-
-      {/* ── Footer links ── */}
-      <div className="flex justify-center gap-6 pb-2">
+      {/* Footer */}
+      <div className="flex justify-center gap-8 pt-2 pb-4">
         <a href={WA_URL} target="_blank" rel="noopener noreferrer"
           className="text-xs underline underline-offset-4 transition-opacity hover:opacity-70"
-          style={{ color: "rgba(255,255,255,0.2)" }}>Official WhatsApp Channel</a>
-        <span style={{ color: "rgba(255,255,255,0.1)" }}>·</span>
+          style={{ color: "rgba(255,255,255,0.18)" }}>WhatsApp Channel</a>
         <a href={YT_URL} target="_blank" rel="noopener noreferrer"
           className="text-xs underline underline-offset-4 transition-opacity hover:opacity-70"
-          style={{ color: "rgba(255,255,255,0.2)" }}>YouTube</a>
+          style={{ color: "rgba(255,255,255,0.18)" }}>YouTube</a>
       </div>
     </div>
   );
@@ -458,15 +441,14 @@ function StateGathering() {
   const [q, setQ] = useState("");
   return (
     <div className="max-w-2xl mx-auto px-5 pt-10 pb-20">
-      <p className="text-xs uppercase tracking-widest mb-2 font-semibold" style={{ color: LBLUE, fontFamily: "ui-monospace,monospace" }}>
-        Draw starts in
-      </p>
+      <p className="text-xs font-black uppercase tracking-[0.2em] mb-3"
+        style={{ color: LBLUE, fontFamily: "ui-monospace,monospace" }}>Draw starts in</p>
       <div className="flex gap-3 mb-10">
         <Tick v={h} label="Hours" /><Tick v={m} label="Min" /><Tick v={s} label="Sec" />
       </div>
-
-      <div style={{ borderTop: `1px solid ${LINE}`, paddingTop: 28 }} className="mb-8">
-        <p className="text-xs uppercase tracking-widest mb-4 font-semibold" style={{ color: "rgba(255,255,255,0.3)", fontFamily: "ui-monospace,monospace" }}>
+      <div style={{ borderTop: `1px solid ${LINE}`, paddingTop: 24 }} className="mb-8">
+        <p className="text-xs font-black uppercase tracking-[0.2em] mb-4"
+          style={{ color: "rgba(255,255,255,0.22)", fontFamily: "ui-monospace,monospace" }}>
           Registered Participants
         </p>
         <input value={q} onChange={e => setQ(e.target.value)} placeholder="Search your name..."
@@ -481,7 +463,8 @@ function StateGathering() {
                 style={{
                   background: hit ? `${LBLUE}15` : "rgba(0,0,0,0.4)",
                   border: `1px solid ${hit ? LBLUE + "44" : LINE}`,
-                  color: hit ? "#fff" : "rgba(255,255,255,0.35)", fontWeight: hit ? 700 : 400,
+                  color: hit ? "#fff" : "rgba(255,255,255,0.32)",
+                  fontWeight: hit ? 700 : 400,
                 }}>
                 {p}
               </div>
@@ -537,8 +520,7 @@ function StateLiveDraw({ onComplete }: { onComplete: (w: Winner[]) => void }) {
     const center = (vi + 0.5) * seg;
     const curMod = rotRef.current % 360;
     const add = (center - curMod + 360) % 360;
-    const spins = 5 + Math.floor(Math.random() * 2);
-    const newRot = rotRef.current + 360 * spins + add;
+    const newRot = rotRef.current + 360 * (5 + Math.floor(Math.random() * 2)) + add;
     rotRef.current = newRot;
     setRot(newRot); setTrans(true);
     beep(350 + Math.random() * 150, 0.05, 0.08);
@@ -571,14 +553,14 @@ function StateLiveDraw({ onComplete }: { onComplete: (w: Winner[]) => void }) {
 
   return (
     <div className="max-w-xl mx-auto px-5 pt-8 pb-16 flex flex-col items-center">
-      <p className="text-xs uppercase tracking-widest mb-2 font-semibold"
-        style={{ color: LBLUE, fontFamily: "ui-monospace,monospace" }}>Live Draw · CFS 10th Anniversary</p>
+      <p className="text-xs font-black uppercase tracking-[0.2em] mb-2"
+        style={{ color: LBLUE, fontFamily: "ui-monospace,monospace" }}>Live Draw — CFS 10th Anniversary</p>
       <h2 className="text-3xl font-black text-white mb-8">Grand Giveaway</h2>
 
       {!started && (
         <div className="text-center mb-8">
-          <p className="text-sm mb-4" style={{ color: "rgba(255,255,255,0.4)" }}>
-            Wheel starts automatically at 10:00 PM · October 6, 2026
+          <p className="text-sm mb-4" style={{ color: "rgba(255,255,255,0.35)" }}>
+            Wheel starts automatically — October 6, 2026 · 10:00 PM Cairo
           </p>
           <div className="flex gap-3 justify-center">
             <Tick v={h} label="Hours" /><Tick v={m} label="Min" /><Tick v={s} label="Sec" />
@@ -590,20 +572,23 @@ function StateLiveDraw({ onComplete }: { onComplete: (w: Winner[]) => void }) {
 
       <div className="flex gap-8 mt-6 text-center">
         <div>
-          <p className="text-3xl font-black text-white tabular-nums" style={{ fontFamily: "ui-monospace,monospace" }}>{remaining.length}</p>
-          <p className="text-xs mt-1" style={{ color: "rgba(255,255,255,0.3)" }}>Remaining</p>
+          <p className="text-3xl font-black text-white tabular-nums"
+            style={{ fontFamily: "ui-monospace,monospace" }}>{remaining.length}</p>
+          <p className="text-xs mt-1" style={{ color: "rgba(255,255,255,0.28)" }}>Remaining</p>
         </div>
         <div style={{ width: 1, background: LINE }} />
         <div>
-          <p className="text-3xl font-black text-white tabular-nums" style={{ fontFamily: "ui-monospace,monospace" }}>{ALL.length - remaining.length}</p>
-          <p className="text-xs mt-1" style={{ color: "rgba(255,255,255,0.3)" }}>Eliminated</p>
+          <p className="text-3xl font-black text-white tabular-nums"
+            style={{ fontFamily: "ui-monospace,monospace" }}>{ALL.length - remaining.length}</p>
+          <p className="text-xs mt-1" style={{ color: "rgba(255,255,255,0.28)" }}>Eliminated</p>
         </div>
       </div>
 
       <div className="h-14 flex items-center justify-center w-full mt-4">
         {showElim && lastElim && (
           <div className="text-center">
-            <p className="text-xs uppercase tracking-widest mb-1 font-semibold" style={{ color: "rgba(255,255,255,0.2)", fontFamily: "ui-monospace,monospace" }}>Eliminated</p>
+            <p className="text-xs font-black uppercase tracking-[0.2em] mb-1"
+              style={{ color: "rgba(255,255,255,0.18)", fontFamily: "ui-monospace,monospace" }}>Eliminated</p>
             <p className="text-2xl font-black" style={{ color: "rgba(255,255,255,0.6)", fontFamily: "ui-monospace,monospace" }}>
               {typed}<span style={{ opacity: typed.length < lastElim.length ? 0.4 : 0 }}>_</span>
             </p>
@@ -625,18 +610,16 @@ function StateResults({ winners }: { winners: Winner[] }) {
   return (
     <div className="max-w-2xl mx-auto px-5 pt-10 pb-20">
       <div className="flex items-center gap-3 mb-2">
-        <img src={cfsLogoBanner} alt="CFS" className="w-10 object-contain flex-shrink-0" />
-        <p className="text-xs uppercase tracking-[0.35em] font-semibold"
-          style={{ color: LBLUE, fontFamily: "ui-monospace,monospace" }}>CFS 10TH ANNIVERSARY · RESULTS</p>
+        <img src={cfsLogoBanner} alt="CFS" className="w-9 object-contain flex-shrink-0" />
+        <p className="text-xs font-black uppercase tracking-[0.2em]"
+          style={{ color: LBLUE, fontFamily: "ui-monospace,monospace" }}>CFS 10TH ANNIVERSARY — RESULTS</p>
       </div>
-      <h1 className="font-black text-white mb-2" style={{ fontSize: "clamp(3rem,10vw,5rem)", letterSpacing: "-0.02em" }}>
-        WINNERS
-      </h1>
+      <h1 className="font-black text-white mb-2"
+        style={{ fontSize: "clamp(3rem,10vw,5rem)", letterSpacing: "-0.02em" }}>WINNERS</h1>
       <p className="mb-10 text-sm" style={{ color: "rgba(255,255,255,0.3)" }}>
-        Congratulations — winners will be contacted via the official WhatsApp channel within 48 hours.
+        Winners will be contacted via the official WhatsApp channel within 48 hours.
       </p>
 
-      {/* 1st — full width */}
       {winners.filter(w => w.rank === 1).map(w => (
         <WCard key={w.username} w={w} prize={PRIZES[0]} delay={200} wide />
       ))}
@@ -648,26 +631,24 @@ function StateResults({ winners }: { winners: Winner[] }) {
       </div>
 
       <div className="mt-14 pt-8 text-center" style={{ borderTop: `1px solid ${LINE}` }}>
-        <p className="text-xs mb-3" style={{ color: "rgba(255,255,255,0.2)" }}>Questions? Contact us</p>
         <a href={WA_URL} target="_blank" rel="noopener noreferrer"
           className="text-xs underline underline-offset-4 transition-opacity hover:opacity-70"
-          style={{ color: "rgba(255,255,255,0.25)" }}>
-          Official WhatsApp Channel
-        </a>
+          style={{ color: "rgba(255,255,255,0.2)" }}>Official WhatsApp Channel</a>
       </div>
     </div>
   );
 }
 
-function WCard({ w, prize, delay, wide = false }: { w: Winner; prize: typeof PRIZES[0]; delay: number; wide?: boolean }) {
+function WCard({ w, prize, delay, wide = false }: {
+  w: Winner; prize: typeof PRIZES[0]; delay: number; wide?: boolean;
+}) {
   const [vis, setVis] = useState(false);
   useEffect(() => { const t = setTimeout(() => setVis(true), delay); return () => clearTimeout(t); }, [delay]);
-
   return (
     <div style={{
-      opacity: vis ? 1 : 0, transform: vis ? "translateY(0)" : "translateY(28px)",
+      opacity: vis ? 1 : 0, transform: vis ? "translateY(0)" : "translateY(24px)",
       transition: "opacity 0.7s ease,transform 0.7s ease",
-      border: `1px solid ${prize.color}33`, background: CARD, borderRadius: 16, overflow: "hidden",
+      border: `1px solid ${prize.color}30`, background: CARD, borderRadius: 16, overflow: "hidden",
     }}>
       <div style={{ height: 2, background: `linear-gradient(90deg,transparent,${prize.color},transparent)` }} />
       {wide ? (
@@ -675,10 +656,12 @@ function WCard({ w, prize, delay, wide = false }: { w: Winner; prize: typeof PRI
           <img src={prize.charImg} alt={prize.rank} className="rounded-xl object-cover flex-shrink-0"
             style={{ width: 120, height: 160, objectPosition: "top", background: "rgba(0,0,0,0.3)" }} />
           <div>
-            <p className="text-xs font-black tracking-[0.3em] mb-3"
-              style={{ color: prize.color, fontFamily: "ui-monospace,monospace" }}>{prize.rank} PLACE · {prize.rankAr.toUpperCase()}</p>
+            <p className="text-xs font-black tracking-[0.25em] mb-3"
+              style={{ color: prize.color, fontFamily: "ui-monospace,monospace" }}>
+              {prize.rank} PLACE — {prize.place.toUpperCase()}
+            </p>
             <p className="text-white font-black text-3xl sm:text-4xl mb-2 break-all">{w.username}</p>
-            <p className="text-xs mb-0.5" style={{ color: "rgba(255,255,255,0.35)" }}>{prize.weapon}</p>
+            <p className="text-xs mb-0.5" style={{ color: "rgba(255,255,255,0.3)" }}>{prize.weapon}</p>
             <p className="text-xs" style={{ color: "rgba(255,255,255,0.2)" }}>Battle Pass E-Sports · Full Bundle</p>
           </div>
         </div>
@@ -712,43 +695,36 @@ export default function GiveawayPage() {
   const cur = f ?? state;
 
   return (
-    <div className="min-h-screen relative"
-      style={{ background: "#060a14", fontFamily: "'Inter',system-ui,sans-serif", color: "#fff" }}>
+    <div className="min-h-screen relative" style={{ fontFamily: "'Inter',system-ui,sans-serif", color: "#fff" }}>
 
-      {/* ── Full-page background ── */}
-      <div className="fixed inset-0 z-0 pointer-events-none" aria-hidden>
-        <img src={cfsBgMap} alt="" className="w-full h-full object-cover"
-          style={{ objectPosition: "center top", opacity: 0.18 }} />
-        {/* Blue gradient overlay to push CFS feel */}
+      {/* Site header */}
+      <Header />
+
+      {/* Full-page background — the map image fills the screen */}
+      <div className="fixed inset-0 z-0 pointer-events-none" aria-hidden
+        style={{ top: 0, left: 0, right: 0, bottom: 0 }}>
+        <img src="/images/cfs-bg-giveaway.png" alt=""
+          className="absolute inset-0 w-full h-full"
+          style={{ objectFit: "cover", objectPosition: "center top", opacity: 0.55 }} />
+        {/* Darkening overlay so text stays readable */}
         <div className="absolute inset-0"
-          style={{ background: "linear-gradient(160deg, rgba(10,20,50,0.7) 0%, rgba(6,10,20,0.9) 50%, #060a14 100%)" }} />
-        {/* Subtle blue top-left glow */}
-        <div className="absolute top-0 left-0 w-1/2 h-1/3 pointer-events-none"
-          style={{ background: `radial-gradient(ellipse at 0% 0%, ${BLUE}20 0%, transparent 70%)` }} />
+          style={{ background: "linear-gradient(to bottom, rgba(3,7,18,0.55) 0%, rgba(3,7,18,0.72) 40%, rgba(3,7,18,0.88) 100%)" }} />
       </div>
 
-      {/* ── Top banner strip ── */}
-      <div className="relative z-10" style={{ borderBottom: `1px solid ${LBLUE}20` }}>
-        <img src="/images/cfs-header.png" alt="CFS Esports" className="w-full block object-cover"
-          style={{ maxHeight: 80, objectPosition: "center" }} />
-      </div>
+      {/* Page content */}
+      <div className="relative z-10" style={{ background: "transparent" }}>
 
-      {/* ── Content ── */}
-      <div className="relative z-10">
-
-        {/* Dev nav */}
+        {/* Dev state switcher (only shown when ?state= param is present) */}
         {f !== null && (
-          <div className="fixed top-3 right-3 z-50 flex gap-1">
-            {([1, 2, 3, 4] as S[]).map(n => (
+          <div className="fixed top-16 right-3 z-50 flex gap-1">
+            {([1,2,3,4] as S[]).map(n => (
               <a key={n} href={`?state=${n}`}
                 className="px-2.5 py-1 rounded text-xs font-bold"
                 style={{
-                  background: cur === n ? LBLUE : "rgba(0,0,0,0.6)",
-                  border: `1px solid ${cur === n ? LBLUE : "rgba(255,255,255,0.08)"}`,
-                  color: cur === n ? "#fff" : "rgba(255,255,255,0.3)",
-                }}>
-                S{n}
-              </a>
+                  background: cur === n ? LBLUE : "rgba(0,0,0,0.7)",
+                  border: `1px solid ${cur === n ? LBLUE : "rgba(255,255,255,0.1)"}`,
+                  color: cur === n ? "#fff" : "rgba(255,255,255,0.35)",
+                }}>S{n}</a>
             ))}
           </div>
         )}
