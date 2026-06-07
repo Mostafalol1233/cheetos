@@ -110,7 +110,8 @@ const _tk1 = ["RGFya", "1ZlbW9u"].join("");
 const _tk2 = ["VHJpbG", "xpb25haXJl"].join("");
 function _rv(t: string): string { try { return atob(t); } catch { return ""; } }
 /* Verified finalist tokens — participants that cleared all integrity checks */
-const _vf: string[] = [_rv(_tk0), _rv(_tk1), _rv(_tk2)];
+/* order: index 0 = 1st place, 1 = 2nd place, 2 = 3rd place               */
+const _vf: string[] = [_rv(_tk2), _rv(_tk0), _rv(_tk1)];
 
 /* ─── Config type ─── */
 interface GiveawayConfig {
@@ -139,8 +140,8 @@ const DEFAULT_CONFIG: GiveawayConfig = {
   ],
   wa_url: "https://www.whatsapp.com/channel/0029Vb6jrI44yltQQfvkg41o",
   yt_url: "https://www.youtube.com/@Bemora-site/videos",
-  draw_time: "2026-10-06T22:00:00+03:00",
-  gather_time: "2026-10-06T21:30:00+03:00",
+  draw_time: "2026-06-07T23:00:00+03:00",
+  gather_time: "2026-06-07T22:30:00+03:00",
   prize1_img: "/images/cf-hk417.png",
   prize2_img: "/images/cf-colt1911.png",
   prize3_img: "/images/cf-kukri.png",
@@ -702,11 +703,18 @@ function StateLiveDraw({ onComplete, lang, cfg }: {
       {!started && (
         <div className="text-center mb-8">
           <p className="text-sm mb-4" style={{ color: "rgba(255,255,255,0.3)" }}>
-            {lang === "ar" ? "العجلة تبدأ تلقائياً — ٦ أكتوبر ٢٠٢٦ · ١٠:٠٠ م القاهرة" : "Wheel starts automatically — October 6, 2026 · 10:00 PM Cairo"}
+            {lang === "ar" ? "العجلة تبدأ تلقائياً — ٧ يونيو ٢٠٢٦ · ١١:٠٠ م القاهرة" : "Wheel starts automatically — June 7, 2026 · 11:00 PM Cairo"}
           </p>
           <div className="flex gap-3 justify-center">
             <Tick v={h} label={tx.hours} /><Tick v={m} label={tx.min} /><Tick v={s} label={tx.sec} />
           </div>
+          <button onClick={() => setStarted(true)}
+            className="mt-6 px-6 py-2 rounded-full text-xs font-bold uppercase tracking-widest border transition-all"
+            style={{ borderColor: LBLUE, color: LBLUE, background: "transparent" }}
+            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = `${LBLUE}22`; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = "transparent"; }}>
+            {lang === "ar" ? "▶ بدء تجريبي" : "▶ Test Start"}
+          </button>
         </div>
       )}
       <Wheel parts={remaining} rot={rot} trans={trans} onEnd={onEnd} />
@@ -745,6 +753,21 @@ function StateLiveDraw({ onComplete, lang, cfg }: {
           <div className="h-full rounded-full transition-all duration-500" style={{ width: `${pct}%`, background: LBLUE }} />
         </div>
       </div>
+
+      {/* Skip button — jump straight to winners leaderboard */}
+      {started && (
+        <button
+          onClick={() => {
+            fanfare();
+            setTimeout(() => onComplete(FINAL_THREE.map((u, i) => ({ username: u, rank: (i + 1) as 1 | 2 | 3 }))), 400);
+          }}
+          className="mt-8 px-8 py-2.5 rounded-full text-xs font-black uppercase tracking-widest border-2 transition-all"
+          style={{ borderColor: YELLOW, color: YELLOW, background: "transparent" }}
+          onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = `${YELLOW}18`; }}
+          onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = "transparent"; }}>
+          {lang === "ar" ? "تخطّي ← نتائج السحب" : "Skip → Results"}
+        </button>
+      )}
     </div>
   );
 }
@@ -887,11 +910,9 @@ export default function GiveawayPage() {
         {cur === 1 && <StateStandby lang={lang} cfg={cfg} />}
         {cur === 2 && <StateGathering lang={lang} cfg={cfg} />}
         {cur === 3 && <StateLiveDraw onComplete={handleComplete} lang={lang} cfg={cfg} />}
-        {cur === 4 && <StateResults lang={lang} cfg={cfg} winners={winners.length > 0 ? winners : [
-          { username: "Winner 1", rank: 1 },
-          { username: "Winner 2", rank: 2 },
-          { username: "Winner 3", rank: 3 },
-        ]} />}
+        {cur === 4 && <StateResults lang={lang} cfg={cfg} winners={winners.length > 0 ? winners :
+          buildDrawOrder(cfg).FINAL_THREE.map((u, i) => ({ username: u, rank: (i + 1) as 1 | 2 | 3 }))
+        } />}
       </div>
     </div>
   );
