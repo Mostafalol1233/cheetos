@@ -674,6 +674,34 @@ export default function GamePage() {
             </motion.div>
           </div>
 
+          {/* CrossFire 10th Anniversary Giveaway Banner */}
+          {gameSlug === 'crossfire' && (
+            <a href="/giveaway" className="block mt-8 rounded-2xl overflow-hidden group" style={{ textDecoration: 'none' }}>
+              <div className="relative flex items-center gap-5 px-6 py-5"
+                style={{ background: '#060608', border: '1px solid rgba(159,18,57,0.35)', borderRadius: 16 }}>
+                <div style={{ width: 4, alignSelf: 'stretch', borderRadius: 4, background: '#9f1239', flexShrink: 0 }} />
+                <img src="/images/cf-characters.png" alt="Team Goddess"
+                  className="object-contain rounded-lg flex-shrink-0"
+                  style={{ width: 72, height: 72, background: 'rgba(255,255,255,0.03)', padding: 4 }} />
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs uppercase tracking-widest mb-1 font-semibold"
+                    style={{ color: '#9f1239', fontFamily: 'ui-monospace,monospace' }}>
+                    CFS 10TH ANNIVERSARY
+                  </p>
+                  <p className="text-white font-black text-lg leading-tight">
+                    {language === 'ar' ? 'سحب الذكرى العاشرة الكبير' : 'Grand Giveaway — Lucky Draw'}
+                  </p>
+                  <p className="text-white/40 text-sm mt-0.5">
+                    {language === 'ar' ? 'Battle Pass E-Sports كامل — اضغط للمشاركة' : 'Full Battle Pass E-Sports prize — Click to join'}
+                  </p>
+                </div>
+                <svg className="flex-shrink-0 text-white/20 group-hover:text-white/50 transition-colors" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                </svg>
+              </div>
+            </a>
+          )}
+
           {packagesArr.length > 0 && (
             <section className="mt-10">
               <h2 className="text-xl font-bold text-foreground mb-5 flex items-center gap-2">
