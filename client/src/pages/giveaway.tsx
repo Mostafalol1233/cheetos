@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useUserAuth } from "@/lib/user-auth-context";
 import { useTranslation } from "@/lib/translation";
 import { Link } from "wouter";
@@ -545,19 +545,50 @@ function StateStandby({ lang, cfg }: { lang: "en" | "ar"; cfg: GiveawayConfig })
 
 /* ════════════════ STATE 2 — GATHERING ════════════════ */
 function StateGathering({ lang, cfg }: { lang: "en" | "ar"; cfg: GiveawayConfig }) {
-  const drawTime = new Date(cfg.draw_time);
+  const gatherTime = new Date(cfg.gather_time);
+  const drawTime   = new Date(cfg.draw_time);
   const { h, m, s } = useCountdown(drawTime);
   const [q, setQ] = useState("");
+  const [pct, setPct] = useState(0);
   const tx = TX[lang];
   const ALL = Array.from(new Set(cfg.participants));
+
+  useEffect(() => {
+    const totalMs = drawTime.getTime() - gatherTime.getTime();
+    const tick = () => {
+      const elapsed = cairo().getTime() - gatherTime.getTime();
+      setPct(Math.max(0, Math.min(100, (elapsed / totalMs) * 100)));
+    };
+    tick(); const id = setInterval(tick, 1000); return () => clearInterval(id);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cfg.gather_time, cfg.draw_time]);
+
   return (
     <div className="max-w-2xl mx-auto px-5 pt-10 pb-20" dir={lang === "ar" ? "rtl" : "ltr"}>
       <p className="text-xs font-black uppercase tracking-[0.2em] mb-3"
         style={{ color: LBLUE, fontFamily: "ui-monospace,monospace" }}>
         {lang === "ar" ? "السحب يبدأ خلال" : "Draw starts in"}
       </p>
-      <div className="flex gap-3 mb-10">
+      <div className="flex gap-3 mb-5">
         <Tick v={h} label={tx.hours} /><Tick v={m} label={tx.min} /><Tick v={s} label={tx.sec} />
+      </div>
+
+      {/* Time progress bar */}
+      <div className="mb-10">
+        <div className="flex justify-between mb-1.5">
+          <span className="text-[10px] font-black uppercase tracking-widest"
+            style={{ color: "rgba(255,255,255,0.18)", fontFamily: "ui-monospace,monospace" }}>
+            {lang === "ar" ? "التقدم نحو السحب" : "Progress to draw"}
+          </span>
+          <span className="text-[10px] font-black tabular-nums"
+            style={{ color: LBLUE, fontFamily: "ui-monospace,monospace" }}>
+            {Math.round(pct)}%
+          </span>
+        </div>
+        <div className="w-full h-1.5 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.05)" }}>
+          <div className="h-full rounded-full transition-all duration-1000"
+            style={{ width: `${pct}%`, background: `linear-gradient(90deg, ${LBLUE}88, ${LBLUE})` }} />
+        </div>
       </div>
       <div style={{ borderTop: `1px solid ${LINE}`, paddingTop: 24 }} className="mb-8">
         <p className="text-xs font-black uppercase tracking-[0.2em] mb-4"
@@ -608,10 +639,11 @@ function StateLiveDraw({ onComplete, lang, cfg }: {
   lang: "en" | "ar";
   cfg: GiveawayConfig;
 }) {
-  const { ALL, ELIM_ORDER, FINAL_THREE, drawTime } = buildDrawOrder(cfg);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const { ALL, ELIM_ORDER, FINAL_THREE, drawTime } = useMemo(() => buildDrawOrder(cfg), [cfg.draw_time, cfg.participants.join('\x00')]);
 
-  const syncedElims = elapsedElims(ELIM_ORDER.length, drawTime);
-  const syncedRemaining = ALL.filter(p => !ELIM_ORDER.slice(0, syncedElims).includes(p));
+  const syncedElims = useMemo(() => elapsedElims(ELIM_ORDER.length, drawTime), [ELIM_ORDER.length, drawTime]);
+  const syncedRemaining = useMemo(() => ALL.filter(p => !ELIM_ORDER.slice(0, syncedElims).includes(p)), [ALL, ELIM_ORDER, syncedElims]);
   const nextElimIdx = useRef(syncedElims);
 
   const [remaining, setRemaining] = useState<string[]>(syncedRemaining);
@@ -836,13 +868,12 @@ function StateResults({ winners, lang, cfg }: { winners: Winner[]; lang: "en" | 
         style={{ fontSize: "clamp(3rem,10vw,5rem)", letterSpacing: "-0.02em" }}>{tx.resultsTitle}</h1>
       <p className="mb-10 text-sm" style={{ color: "rgba(255,255,255,0.28)" }}>{tx.resultsNote}</p>
 
-      {winners.filter(w => w.rank === 1).map(w => (
-        <WCard key={w.username} w={w} prize={prizes[0]} delay={200} wide lang={lang} />
-      ))}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
-        {winners.filter(w => w.rank !== 1).map((w, i) => (
-          <WCard key={w.username} w={w} prize={prizes[w.rank - 1]} delay={500 + i * 300} lang={lang} />
-        ))}
+      <div className="flex flex-col gap-4">
+        {[1, 2, 3].map((rank, i) => {
+          const w = winners.find(x => x.rank === rank);
+          if (!w) return null;
+          return <WCard key={w.username} w={w} prize={prizes[rank - 1]} delay={200 + i * 300} wide lang={lang} />;
+        })}
       </div>
       <div className="mt-14 pt-8 text-center" style={{ borderTop: `1px solid ${LINE}` }}>
         <a href={cfg.wa_url} target="_blank" rel="noopener noreferrer"

@@ -72,6 +72,25 @@ export function Header() {
   const { settings } = useSettings();
   const [hasOrderNotification, setHasOrderNotification] = useState(false);
 
+  /* ── Giveaway LIVE badge ── */
+  const { data: giveawayCfg } = useQuery<{ draw_time?: string } | null>({
+    queryKey: ['/api/giveaway/config'],
+    staleTime: 60000,
+    gcTime: Infinity,
+  });
+  const [isLive, setIsLive] = useState(false);
+  useEffect(() => {
+    if (!giveawayCfg?.draw_time) return;
+    const check = () => {
+      const now = Date.now();
+      const drawMs = new Date(giveawayCfg.draw_time!).getTime();
+      setIsLive(now >= drawMs && now < drawMs + 5 * 3600000);
+    };
+    check();
+    const id = setInterval(check, 15000);
+    return () => clearInterval(id);
+  }, [giveawayCfg?.draw_time]);
+
   const { data: navCategories = [] } = useQuery<Category[]>({
     queryKey: ["/api/categories"],
     queryFn: () => fetch("/api/categories").then(r => r.json()),
@@ -253,6 +272,24 @@ export function Header() {
                   )}
                 </AnimatePresence>
               </div>
+
+              {/* LIVE badge — giveaway draw in progress */}
+              {isLive && (
+                <Link href="/giveaway">
+                  <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg cursor-pointer transition-colors"
+                    style={{ background: "rgba(220,38,38,0.07)", border: "1px solid rgba(220,38,38,0.16)" }}
+                    onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.background = "rgba(220,38,38,0.13)"; }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.background = "rgba(220,38,38,0.07)"; }}>
+                    <span className="relative flex h-2 w-2 shrink-0">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-50"
+                        style={{ background: "#ef4444" }} />
+                      <span className="relative inline-flex rounded-full h-2 w-2" style={{ background: "#ef4444" }} />
+                    </span>
+                    <span className="text-[11px] font-black tracking-[0.18em]"
+                      style={{ color: "#f87171", fontFamily: "ui-monospace,monospace" }}>LIVE</span>
+                  </div>
+                </Link>
+              )}
             </nav>
 
             {/* Right Side Actions */}
