@@ -15,8 +15,8 @@ const RAW = [
 const ALL = Array.from(new Set(RAW));
 
 /* ─── Config ─── */
-const DRAW_TIME    = new Date("2025-10-10T22:00:00+03:00");
-const GATHER_TIME  = new Date("2025-10-10T21:30:00+03:00");
+const DRAW_TIME    = new Date("2026-10-06T22:00:00+03:00");
+const GATHER_TIME  = new Date("2026-10-06T21:30:00+03:00");
 const WA_URL       = "https://www.whatsapp.com/channel/0029Vb6jrI44yltQQfvkg41o";
 const YT_URL       = "https://www.youtube.com/@Bemora-site/videos";
 
@@ -26,6 +26,7 @@ const GOLD   = "#b45309";
 const SILVER = "#475569";
 const BRONZE = "#92400e";
 const LINE   = "rgba(255,255,255,0.06)";
+const GOLD_GLOW = "rgba(180,83,9,0.15)";
 
 /* ─── Characters per rank ─── */
 const CHARS = [
@@ -134,16 +135,38 @@ function Wheel({parts,rot,trans,onEnd}:{parts:string[];rot:number;trans:boolean;
 }
 
 /* ─── Countdown box ─── */
-function Tick({v,label}:{v:number;label:string}){
+function Tick({v,labelAr,labelEn}:{v:number;labelAr:string;labelEn:string}){
   return(
     <div className="flex flex-col items-center gap-2">
-      <div className="w-16 h-16 sm:w-20 sm:h-20 flex items-center justify-center rounded-lg"
-        style={{background:"rgba(0,0,0,0.55)",border:`1px solid ${LINE}`,backdropFilter:"blur(4px)"}}>
+      <div className="w-16 h-16 sm:w-20 sm:h-20 flex items-center justify-center rounded-xl"
+        style={{background:"rgba(0,0,0,0.6)",border:`1px solid rgba(255,255,255,0.08)`,backdropFilter:"blur(8px)"}}>
         <span className="text-3xl sm:text-4xl font-black text-white tabular-nums"
           style={{fontFamily:"ui-monospace,monospace"}}>{String(v).padStart(2,"0")}</span>
       </div>
-      <span className="text-xs uppercase tracking-widest" style={{color:"rgba(255,255,255,0.3)"}}>{label}</span>
+      <span className="text-xs font-medium" style={{color:"rgba(255,255,255,0.28)",letterSpacing:"0.05em"}}>{labelAr}</span>
     </div>
+  );
+}
+
+/* ─── Divider ─── */
+function Section({title,titleEn}:{title:string;titleEn:string}){
+  return(
+    <div className="flex items-center gap-4 mb-7" style={{borderTop:`1px solid ${LINE}`,paddingTop:32}}>
+      <div>
+        <p className="text-white font-bold text-base leading-tight">{title}</p>
+        <p className="text-xs mt-0.5" style={{color:"rgba(255,255,255,0.2)",fontFamily:"ui-monospace,monospace",letterSpacing:"0.08em"}}>{titleEn}</p>
+      </div>
+    </div>
+  );
+}
+
+/* ─── Info badge ─── */
+function Badge({label}:{label:string}){
+  return(
+    <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold"
+      style={{background:"rgba(159,18,57,0.15)",border:`1px solid rgba(159,18,57,0.3)`,color:"#fca5a5"}}>
+      {label}
+    </span>
   );
 }
 
@@ -161,7 +184,8 @@ function InlineAuth(){
       <div className="rounded-xl p-5" style={{background:"rgba(0,0,0,0.4)",border:`1px solid ${LINE}`}}>
         <p className="text-white/40 text-xs uppercase tracking-widest mb-1">Signed in as</p>
         <p className="text-white font-bold text-lg">{user.name}</p>
-        <button onClick={logout} className="mt-3 text-xs text-white/25 hover:text-white/50 transition-colors underline underline-offset-4">Sign out</button>
+        <p className="text-white/30 text-xs mt-1">أنت مسجل في المسابقة ✓</p>
+        <button onClick={logout} className="mt-3 text-xs text-white/25 hover:text-white/50 transition-colors underline underline-offset-4">تسجيل الخروج</button>
       </div>
     );
   }
@@ -175,9 +199,10 @@ function InlineAuth(){
 
   return(
     <div className="rounded-xl p-5" style={{background:"rgba(0,0,0,0.5)",border:`1px solid ${LINE}`}}>
-      <p className="text-white font-semibold mb-4 text-sm">
+      <p className="text-white font-semibold mb-1 text-sm">
         {tab==="login"?"سجل دخولك عشان تتابع السحب":"إنشاء حساب جديد"}
       </p>
+      <p className="text-white/30 text-xs mb-4">الحساب مجاني ولازم للاشتراك في المسابقة</p>
       <div className="flex gap-4 mb-4">
         {(["login","reg"] as const).map(t=>(
           <button key={t} onClick={()=>setTab(t)}
@@ -214,15 +239,21 @@ function StateStandby(){
       <img src="/images/cfs-header.png" alt="CFS Esports" className="w-full block object-cover"
         style={{maxHeight:90,objectPosition:"center"}}/>
 
-      {/* ── Hero title ── */}
       <div className="max-w-2xl mx-auto px-5 pt-12 pb-4">
-        <p className="text-xs uppercase tracking-[0.4em] mb-3" style={{color:"rgba(255,255,255,0.35)",fontFamily:"ui-monospace,monospace"}}>
+
+        {/* ── Hero title ── */}
+        <p className="text-xs uppercase tracking-[0.4em] mb-3" style={{color:"rgba(255,255,255,0.3)",fontFamily:"ui-monospace,monospace"}}>
           CFS 10TH ANNIVERSARY · GRAND GIVEAWAY
         </p>
         <h1 className="font-black text-white leading-none mb-1" style={{fontSize:"clamp(3rem,10vw,6rem)"}}>
           الذكرى<br/>العاشرة
         </h1>
-        <p className="text-white/35 text-lg font-medium mb-10">السحب الكبير — Lucky Draw</p>
+        <p className="text-white/30 text-lg font-medium mb-2">السحب الكبير — Lucky Draw</p>
+        <div className="flex flex-wrap gap-2 mb-10">
+          <Badge label={`${ALL.length} مشارك`}/>
+          <Badge label="6 أكتوبر 2026"/>
+          <Badge label="3 فائزين"/>
+        </div>
 
         {/* ── Video ── */}
         <div className="rounded-xl overflow-hidden mb-10" style={{border:`1px solid ${LINE}`}}>
@@ -231,139 +262,198 @@ function StateStandby(){
         </div>
 
         {/* ── Countdown ── */}
-        <p className="text-xs uppercase tracking-widest mb-4" style={{color:"rgba(255,255,255,0.25)"}}>
-          السحب يبدأ تلقائياً يوم 10 أكتوبر الساعة 10 مساءً
-        </p>
-        <div className="flex gap-4 mb-14">
-          <Tick v={d} label="Days"/>
-          <Tick v={h} label="Hours"/>
-          <Tick v={m} label="Min"/>
-          <Tick v={s} label="Sec"/>
+        <div className="rounded-xl p-6 mb-14" style={{background:"rgba(0,0,0,0.35)",border:`1px solid ${LINE}`}}>
+          <p className="text-xs mb-5 text-center" style={{color:"rgba(255,255,255,0.25)",fontFamily:"ui-monospace,monospace",letterSpacing:"0.08em"}}>
+            السحب يبدأ · 6 أكتوبر 2026 · الساعة 10 مساءً بتوقيت القاهرة
+          </p>
+          <div className="flex justify-center gap-4">
+            <Tick v={d} labelAr="يوم" labelEn="Days"/>
+            <Tick v={h} labelAr="ساعة" labelEn="Hours"/>
+            <Tick v={m} labelAr="دقيقة" labelEn="Min"/>
+            <Tick v={s} labelAr="ثانية" labelEn="Sec"/>
+          </div>
         </div>
 
-        {/* ── Conditions ── */}
-        <div className="mb-14" style={{borderTop:`1px solid ${LINE}`,paddingTop:32}}>
-          <p className="text-xs uppercase tracking-[0.3em] mb-6" style={{color:"rgba(255,255,255,0.3)",fontFamily:"ui-monospace,monospace"}}>
-            شروط المسابقة
-          </p>
-          <div className="flex flex-col gap-4">
-            {/* Step 1 */}
-            <div className="flex gap-4 items-start rounded-xl p-4"
-              style={{background:"rgba(0,0,0,0.45)",border:`1px solid ${LINE}`}}>
-              <span className="shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-xs font-black"
-                style={{background:RED,color:"#fff"}}>1</span>
-              <div>
-                <p className="text-white font-bold text-sm">سجل بريدك الإلكتروني في الموقع</p>
-                <p className="text-white/40 text-xs mt-1">إنشاء حساب مجاني في متجر ضياء</p>
-                <Link href="/register">
-                  <span className="inline-block mt-2 text-xs font-semibold underline underline-offset-4"
-                    style={{color:RED}}>إنشاء حساب الآن</span>
-                </Link>
+        {/* ── How to enter ── */}
+        <Section title="شروط الاشتراك" titleEn="HOW TO ENTER"/>
+        <div className="flex flex-col gap-3 mb-14">
+          {/* Step 1 */}
+          <div className="flex gap-4 items-start rounded-xl p-4"
+            style={{background:"rgba(0,0,0,0.45)",border:`1px solid ${LINE}`}}>
+            <span className="shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-xs font-black"
+              style={{background:RED,color:"#fff"}}>1</span>
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-1">
+                <p className="text-white font-bold text-sm">سجل حسابك في الموقع</p>
+                <span className="text-xs px-2 py-0.5 rounded font-semibold" style={{background:"rgba(159,18,57,0.2)",color:"#fca5a5"}}>إلزامي</span>
               </div>
+              <p className="text-white/40 text-xs">إنشاء حساب مجاني في متجر ضياء — بدونه مش هتقدر تشارك</p>
+              <Link href="/register">
+                <span className="inline-block mt-2 text-xs font-semibold underline underline-offset-4"
+                  style={{color:RED}}>إنشاء حساب الآن ←</span>
+              </Link>
             </div>
-            {/* Step 2 */}
-            <div className="flex gap-4 items-start rounded-xl p-4"
-              style={{background:"rgba(0,0,0,0.45)",border:`1px solid ${LINE}`}}>
-              <span className="shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-xs font-black"
-                style={{background:RED,color:"#fff"}}>2</span>
-              <div>
-                <p className="text-white font-bold text-sm">اكتب اسمك في قناة الواتساب عشان نسجلك</p>
-                <p className="text-white/40 text-xs mt-1">الاشتراك في القناة شرط أساسي للمشاركة</p>
-                <a href={WA_URL} target="_blank" rel="noopener noreferrer"
-                  className="inline-block mt-2 text-xs font-semibold underline underline-offset-4"
-                  style={{color:RED}}>فتح قناة الواتساب</a>
+          </div>
+          {/* Step 2 */}
+          <div className="flex gap-4 items-start rounded-xl p-4"
+            style={{background:"rgba(0,0,0,0.45)",border:`1px solid ${LINE}`}}>
+            <span className="shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-xs font-black"
+              style={{background:RED,color:"#fff"}}>2</span>
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-1">
+                <p className="text-white font-bold text-sm">اشترك في قناة الواتساب</p>
+                <span className="text-xs px-2 py-0.5 rounded font-semibold" style={{background:"rgba(159,18,57,0.2)",color:"#fca5a5"}}>إلزامي</span>
               </div>
+              <p className="text-white/40 text-xs">اكتب اسمك في القناة عشان نسجلك — الاشتراك شرط أساسي</p>
+              <a href={WA_URL} target="_blank" rel="noopener noreferrer"
+                className="inline-block mt-2 text-xs font-semibold underline underline-offset-4"
+                style={{color:RED}}>فتح قناة الواتساب ←</a>
             </div>
-            {/* Step 3 */}
-            <div className="flex gap-4 items-start rounded-xl p-4"
-              style={{background:"rgba(0,0,0,0.3)",border:`1px solid rgba(255,255,255,0.04)`}}>
-              <span className="shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-xs font-black"
-                style={{background:"rgba(255,255,255,0.08)",color:"rgba(255,255,255,0.4)"}}>3</span>
-              <div>
-                <p className="text-white/60 font-bold text-sm">
-                  اشحن واشتري من CrossFire
-                  <span className="mr-2 text-xs font-normal px-1.5 py-0.5 rounded"
-                    style={{background:"rgba(255,255,255,0.06)",color:"rgba(255,255,255,0.35)"}}>اختياري</span>
-                </p>
-                <p className="text-white/30 text-xs mt-1">كل شراء يزيد نسبة حظك في الفوز</p>
-                <Link href="/game/crossfire">
-                  <span className="inline-block mt-2 text-xs text-white/25 underline underline-offset-4">
-                    صفحة CrossFire
-                  </span>
-                </Link>
+          </div>
+          {/* Step 3 */}
+          <div className="flex gap-4 items-start rounded-xl p-4"
+            style={{background:"rgba(0,0,0,0.3)",border:`1px solid rgba(255,255,255,0.05)`}}>
+            <span className="shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-xs font-black"
+              style={{background:"rgba(255,255,255,0.08)",color:"rgba(255,255,255,0.4)"}}>3</span>
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-1">
+                <p className="text-white/60 font-bold text-sm">اشحن من CrossFire</p>
+                <span className="text-xs px-2 py-0.5 rounded" style={{background:"rgba(255,255,255,0.06)",color:"rgba(255,255,255,0.3)"}}>اختياري — يزيد فرصك</span>
               </div>
+              <p className="text-white/30 text-xs">كل عملية شراء بتزود نسبة حظك في الفوز بشكل مباشر</p>
+              <Link href="/game/crossfire">
+                <span className="inline-block mt-2 text-xs text-white/25 underline underline-offset-4">
+                  صفحة CrossFire ←
+                </span>
+              </Link>
             </div>
-            {/* Step 4 */}
-            <div className="flex gap-4 items-start rounded-xl p-4"
-              style={{background:"rgba(0,0,0,0.3)",border:`1px solid rgba(255,255,255,0.04)`}}>
-              <span className="shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-xs font-black"
-                style={{background:"rgba(255,255,255,0.08)",color:"rgba(255,255,255,0.4)"}}>4</span>
-              <div>
-                <p className="text-white/60 font-bold text-sm">
-                  دعم عبر يوتيوب
-                  <span className="mr-2 text-xs font-normal px-1.5 py-0.5 rounded"
-                    style={{background:"rgba(255,255,255,0.06)",color:"rgba(255,255,255,0.35)"}}>اختياري</span>
-                </p>
-                <p className="text-white/30 text-xs mt-1">مش هتتقل عليك، سواء اشتراك أو أي دعم</p>
-                <a href={YT_URL} target="_blank" rel="noopener noreferrer"
-                  className="inline-block mt-2 text-xs text-white/25 underline underline-offset-4">
-                  قناة يوتيوب
-                </a>
+          </div>
+          {/* Step 4 */}
+          <div className="flex gap-4 items-start rounded-xl p-4"
+            style={{background:"rgba(0,0,0,0.3)",border:`1px solid rgba(255,255,255,0.05)`}}>
+            <span className="shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-xs font-black"
+              style={{background:"rgba(255,255,255,0.08)",color:"rgba(255,255,255,0.4)"}}>4</span>
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-1">
+                <p className="text-white/60 font-bold text-sm">دعم عبر يوتيوب</p>
+                <span className="text-xs px-2 py-0.5 rounded" style={{background:"rgba(255,255,255,0.06)",color:"rgba(255,255,255,0.3)"}}>اختياري</span>
               </div>
+              <p className="text-white/30 text-xs">اشتراك أو لايك أو أي دعم — بتفرق للقناة وبيزود حظك</p>
+              <a href={YT_URL} target="_blank" rel="noopener noreferrer"
+                className="inline-block mt-2 text-xs text-white/25 underline underline-offset-4">
+                قناة يوتيوب ←
+              </a>
             </div>
           </div>
         </div>
 
         {/* ── Prizes ── */}
-        <div className="mb-14" style={{borderTop:`1px solid ${LINE}`,paddingTop:32}}>
-          <p className="text-xs uppercase tracking-[0.3em] mb-6" style={{color:"rgba(255,255,255,0.3)",fontFamily:"ui-monospace,monospace"}}>
-            الجوائز · Prizes
-          </p>
-          <p className="text-white font-black text-2xl mb-2">Battle Pass E-Sports الكامل</p>
-          <p className="text-white/35 text-sm mb-8">حزمة البطولة الكاملة بكل ما تحتويه</p>
+        <Section title="الجوائز" titleEn="PRIZES · BATTLE PASS E-SPORTS FULL BUNDLE"/>
+        <p className="text-white/40 text-sm mb-6">Battle Pass E-Sports الكامل — حزمة البطولة بكل ما تحتويه من شخصيات وأسلحة حصرية</p>
 
-          <div className="grid grid-cols-3 gap-3">
-            {CHARS.map((c,i)=>{
-              const rankColor=[GOLD,SILVER,BRONZE][i];
-              const rankLabel=["المركز الأول","المركز الثاني","المركز الثالث"][i];
-              return(
-                <div key={i} className="rounded-xl overflow-hidden flex flex-col items-center"
-                  style={{background:"rgba(0,0,0,0.45)",border:`1px solid ${rankColor}22`}}>
-                  <div className="h-0.5 w-full" style={{background:`linear-gradient(90deg,transparent,${rankColor},transparent)`}}/>
-                  <p className="text-xs font-bold pt-3 pb-2 text-center tracking-wider"
-                    style={{color:rankColor,fontFamily:"ui-monospace,monospace"}}>
-                    {["1ST","2ND","3RD"][i]}
-                  </p>
-                  <img src={c.img} alt={rankLabel}
-                    className="w-full object-cover" style={{aspectRatio:"3/4",objectPosition:"top"}}/>
-                  <div className="px-2 pb-3 pt-2 text-center">
-                    <p className="text-white/60 text-xs leading-snug">{WEAPONS[i]}</p>
-                  </div>
+        <div className="grid grid-cols-3 gap-3 mb-14">
+          {CHARS.map((c,i)=>{
+            const rankColor=[GOLD,SILVER,BRONZE][i];
+            const rankLabel=["المركز الأول","المركز الثاني","المركز الثالث"][i];
+            const rankEn=["1ST","2ND","3RD"][i];
+            return(
+              <div key={i} className="rounded-xl overflow-hidden flex flex-col"
+                style={{background:"rgba(0,0,0,0.5)",border:`1px solid ${rankColor}28`}}>
+                <div className="h-0.5 w-full" style={{background:`linear-gradient(90deg,transparent,${rankColor},transparent)`}}/>
+                <div className="px-3 pt-3 pb-2">
+                  <p className="text-xs font-black tracking-wider" style={{color:rankColor,fontFamily:"ui-monospace,monospace"}}>{rankEn}</p>
+                  <p className="text-white/50 text-xs mt-0.5">{rankLabel}</p>
                 </div>
-              );
-            })}
+                <img src={c.img} alt={rankLabel}
+                  className="w-full object-cover" style={{aspectRatio:"3/4",objectPosition:"top"}}/>
+                <div className="px-3 pb-3 pt-2">
+                  <p className="text-white/55 text-xs leading-snug">{WEAPONS[i]}</p>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* ── Draw mechanism ── */}
+        <Section title="آلية السحب" titleEn="DRAW MECHANISM"/>
+        <div className="rounded-xl p-5 mb-14" style={{background:"rgba(0,0,0,0.4)",border:`1px solid ${LINE}`}}>
+          <div className="flex flex-col gap-4">
+            <div className="flex gap-3 items-start">
+              <span className="text-lg">🎡</span>
+              <div>
+                <p className="text-white font-semibold text-sm">عجلة الحظ الحية</p>
+                <p className="text-white/35 text-xs mt-0.5">السحب يتم عبر عجلة دوّارة حية أمامكم على الموقع — شفافية 100%</p>
+              </div>
+            </div>
+            <div className="flex gap-3 items-start">
+              <span className="text-lg">📅</span>
+              <div>
+                <p className="text-white font-semibold text-sm">الموعد: 6 أكتوبر 2026 الساعة 10 مساءً</p>
+                <p className="text-white/35 text-xs mt-0.5">العجلة تبدأ تلقائياً في الموعد المحدد بتوقيت القاهرة</p>
+              </div>
+            </div>
+            <div className="flex gap-3 items-start">
+              <span className="text-lg">📢</span>
+              <div>
+                <p className="text-white font-semibold text-sm">إعلان الفائزين</p>
+                <p className="text-white/35 text-xs mt-0.5">يُعلن عن الفائزين مباشرةً على الموقع وقناة الواتساب فور انتهاء السحب</p>
+              </div>
+            </div>
+            <div className="flex gap-3 items-start">
+              <span className="text-lg">⚡</span>
+              <div>
+                <p className="text-white font-semibold text-sm">مهلة الرد: 48 ساعة</p>
+                <p className="text-white/35 text-xs mt-0.5">الفائز لازم يتواصل خلال 48 ساعة من الإعلان وإلا بيتم اختيار بديل</p>
+              </div>
+            </div>
           </div>
         </div>
 
         {/* ── Auth ── */}
-        <div className="mb-14" style={{borderTop:`1px solid ${LINE}`,paddingTop:32}}>
-          <p className="text-xs uppercase tracking-[0.3em] mb-5" style={{color:"rgba(255,255,255,0.3)",fontFamily:"ui-monospace,monospace"}}>
-            حسابك
-          </p>
+        <Section title="حسابك" titleEn="YOUR ACCOUNT"/>
+        <div className="mb-14">
           <InlineAuth/>
         </div>
 
-        {/* ── Participants count ── */}
-        <div className="mb-10 text-center">
-          <p className="text-xs text-white/20">{ALL.length} participants registered</p>
+        {/* ── Terms ── */}
+        <Section title="الشروط والأحكام" titleEn="TERMS & CONDITIONS"/>
+        <div className="rounded-xl p-5 mb-14" style={{background:"rgba(0,0,0,0.35)",border:`1px solid ${LINE}`}}>
+          <ul className="flex flex-col gap-3">
+            {[
+              "المسابقة مفتوحة لجميع اللاعبين بدون قيود عمرية",
+              "يحق لكل مشارك الفوز بجائزة واحدة فقط",
+              "يجب أن يكون الاسم المسجل في الواتساب مطابقاً للحساب في الموقع",
+              "قرار لجنة التحكيم نهائي ولا يقبل الطعن",
+              "يحتفظ المنظمون بحق تعديل الشروط أو إلغاء المسابقة في حالات الضرورة القصوى",
+              "التواصل مع الفائزين يتم عبر قناة الواتساب الرسمية فقط",
+            ].map((t,i)=>(
+              <li key={i} className="flex gap-3 items-start">
+                <span className="shrink-0 mt-0.5 w-4 h-4 rounded-full flex items-center justify-center text-xs"
+                  style={{background:"rgba(255,255,255,0.05)",color:"rgba(255,255,255,0.3)"}}>✓</span>
+                <p className="text-white/45 text-xs leading-relaxed">{t}</p>
+              </li>
+            ))}
+          </ul>
         </div>
 
-        {/* ── WhatsApp subtle ── */}
-        <div className="text-center pb-4">
+        {/* ── Participants count ── */}
+        <div className="mb-10 rounded-xl p-4 text-center" style={{background:"rgba(0,0,0,0.3)",border:`1px solid ${LINE}`}}>
+          <p className="text-3xl font-black text-white tabular-nums" style={{fontFamily:"ui-monospace,monospace"}}>{ALL.length}</p>
+          <p className="text-xs mt-1" style={{color:"rgba(255,255,255,0.25)"}}>مشارك مسجل حتى الآن · Registered Participants</p>
+        </div>
+
+        {/* ── Footer links ── */}
+        <div className="flex justify-center gap-6 pb-6">
           <a href={WA_URL} target="_blank" rel="noopener noreferrer"
-            className="text-xs underline underline-offset-4 transition-colors"
-            style={{color:"rgba(255,255,255,0.15)"}}>
-            القناة الرسمية على واتساب
+            className="text-xs underline underline-offset-4 transition-colors hover:text-white/40"
+            style={{color:"rgba(255,255,255,0.18)"}}>
+            قناة الواتساب الرسمية
+          </a>
+          <span style={{color:"rgba(255,255,255,0.1)"}}>·</span>
+          <a href={YT_URL} target="_blank" rel="noopener noreferrer"
+            className="text-xs underline underline-offset-4 transition-colors hover:text-white/40"
+            style={{color:"rgba(255,255,255,0.18)"}}>
+            قناة يوتيوب
           </a>
         </div>
       </div>
@@ -380,11 +470,15 @@ function StateGathering(){
       <img src="/images/cfs-header.png" alt="CFS Esports" className="w-full block object-cover"
         style={{maxHeight:90,filter:"brightness(0.75)"}}/>
       <div className="max-w-2xl mx-auto px-5 pt-10 pb-20">
-        <p className="text-xs uppercase tracking-widest mb-3" style={{color:"rgba(255,255,255,0.25)"}}>السحب يبدأ خلال</p>
-        <div className="flex gap-3 mb-10"><Tick v={h} label="Hours"/><Tick v={m} label="Min"/><Tick v={s} label="Sec"/></div>
+        <p className="text-xs uppercase tracking-widest mb-2" style={{color:"rgba(255,255,255,0.25)"}}>السحب يبدأ خلال</p>
+        <div className="flex gap-3 mb-10">
+          <Tick v={h} labelAr="ساعة" labelEn="Hours"/>
+          <Tick v={m} labelAr="دقيقة" labelEn="Min"/>
+          <Tick v={s} labelAr="ثانية" labelEn="Sec"/>
+        </div>
         <div style={{borderTop:`1px solid ${LINE}`,paddingTop:28}} className="mb-8">
           <p className="text-xs uppercase tracking-widest mb-4" style={{color:"rgba(255,255,255,0.25)"}}>
-            {ALL.length} Participants
+            {ALL.length} Participants · المشاركون
           </p>
           <input value={q} onChange={e=>setQ(e.target.value)} placeholder="ابحث عن اسمك..."
             className="w-full px-4 py-3 rounded-lg text-white text-sm outline-none placeholder-white/20 mb-4"
@@ -500,8 +594,12 @@ function StateLiveDraw({onComplete}:{onComplete:(w:Winner[])=>void}){
 
         {!started&&(
           <div className="text-center mb-8">
-            <p className="text-white/35 text-sm mb-4">العجلة تبدأ تلقائياً الساعة ١٠ مساءً</p>
-            <div className="flex gap-3 justify-center"><Tick v={h} label="Hours"/><Tick v={m} label="Min"/><Tick v={s} label="Sec"/></div>
+            <p className="text-white/35 text-sm mb-4">العجلة تبدأ تلقائياً الساعة ١٠ مساءً · 6 أكتوبر 2026</p>
+            <div className="flex gap-3 justify-center">
+              <Tick v={h} labelAr="ساعة" labelEn="Hours"/>
+              <Tick v={m} labelAr="دقيقة" labelEn="Min"/>
+              <Tick v={s} labelAr="ثانية" labelEn="Sec"/>
+            </div>
           </div>
         )}
 
@@ -510,19 +608,19 @@ function StateLiveDraw({onComplete}:{onComplete:(w:Winner[])=>void}){
         <div className="flex gap-8 mt-6 text-center">
           <div>
             <p className="text-3xl font-black text-white tabular-nums" style={{fontFamily:"ui-monospace,monospace"}}>{remaining.length}</p>
-            <p className="text-xs mt-1" style={{color:"rgba(255,255,255,0.25)"}}>Remaining</p>
+            <p className="text-xs mt-1" style={{color:"rgba(255,255,255,0.25)"}}>متبقي</p>
           </div>
           <div style={{width:1,background:LINE}}/>
           <div>
             <p className="text-3xl font-black text-white tabular-nums" style={{fontFamily:"ui-monospace,monospace"}}>{ALL.length-remaining.length}</p>
-            <p className="text-xs mt-1" style={{color:"rgba(255,255,255,0.25)"}}>Eliminated</p>
+            <p className="text-xs mt-1" style={{color:"rgba(255,255,255,0.25)"}}>خرج</p>
           </div>
         </div>
 
         <div className="h-14 flex items-center justify-center w-full mt-4">
           {showElim&&lastElim&&(
             <div className="text-center">
-              <p className="text-xs uppercase tracking-widest mb-1" style={{color:"rgba(255,255,255,0.2)",fontFamily:"ui-monospace,monospace"}}>Eliminated</p>
+              <p className="text-xs uppercase tracking-widest mb-1" style={{color:"rgba(255,255,255,0.2)",fontFamily:"ui-monospace,monospace"}}>خرج من السحب</p>
               <p className="text-2xl font-black" style={{color:"rgba(255,255,255,0.65)",fontFamily:"ui-monospace,monospace"}}>
                 {typed}<span style={{opacity:typed.length<lastElim.length?0.4:0}}>_</span>
               </p>
@@ -548,7 +646,8 @@ function StateResults({winners}:{winners:Winner[]}){
         style={{maxHeight:90,filter:"brightness(0.55)"}}/>
       <div className="max-w-2xl mx-auto px-5 pt-10 pb-20">
         <p className="text-xs uppercase tracking-[0.35em] mb-2" style={{color:"rgba(255,255,255,0.25)"}}>CFS 10TH ANNIVERSARY · RESULTS</p>
-        <h1 className="font-black text-white mb-10" style={{fontSize:"clamp(3rem,10vw,5rem)"}}>الفائزون</h1>
+        <h1 className="font-black text-white mb-3" style={{fontSize:"clamp(3rem,10vw,5rem)"}}>الفائزون</h1>
+        <p className="text-white/30 text-sm mb-10">مبروك للفائزين — سيتم التواصل معكم عبر قناة الواتساب الرسمية خلال 48 ساعة</p>
 
         {/* 1st — full width */}
         {winners.filter(w=>w.rank===1).map(w=>{
@@ -569,10 +668,11 @@ function StateResults({winners}:{winners:Winner[]}){
         </div>
 
         <div className="mt-14 pt-8 text-center" style={{borderTop:`1px solid ${LINE}`}}>
+          <p className="text-white/25 text-xs mb-3">للتواصل والاستفسار</p>
           <a href={WA_URL} target="_blank" rel="noopener noreferrer"
-            className="text-xs underline underline-offset-4 transition-colors"
+            className="text-xs underline underline-offset-4 transition-colors hover:text-white/40"
             style={{color:"rgba(255,255,255,0.2)"}}>
-            القناة الرسمية على واتساب للتفاصيل
+            القناة الرسمية على واتساب
           </a>
         </div>
       </div>
