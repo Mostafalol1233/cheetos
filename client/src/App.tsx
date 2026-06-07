@@ -39,6 +39,7 @@ import { CartSidebar } from "@/components/cart-sidebar";
 import PackageDetailsPage from "./pages/package-details";
 import PackageCheckoutPage from "./pages/package-checkout";
 import MaintenancePage from "./pages/maintenance";
+import GiveawayPage from "./pages/giveaway";
 
 // Protected admin route component
 function ProtectedAdminRoute() {
@@ -84,6 +85,7 @@ function Router() {
         <Route path="/game/:slug" component={GamePage} />
         <Route path="/package/:gameSlug/:packageIndex" component={PackageCheckoutPage} />
         <Route path="/packages/:slug" component={PackageDetailsPage} />
+        <Route path="/giveaway" component={GiveawayPage} />
         <Route path="/faq" component={FAQPage} />
         <Route path="/terms" component={TermsPage} />
         <Route path="/privacy" component={PrivacyPage} />
@@ -220,6 +222,7 @@ function AppShell() {
   }, [toast, location]);
 
   const isAdminRoute = location === "/admin" || location.startsWith("/admin/") || location === "/admin/login";
+  const isGiveawayRoute = location === "/giveaway";
   const isProfileRoute = location === "/profile";
   const isHomeRoute = location === "/" || location.startsWith("/#");
 
@@ -279,20 +282,20 @@ function AppShell() {
     };
   }, []);
 
-  if (!healthState.ok && !isAdminRoute) {
+  if (!healthState.ok && !isAdminRoute && !isGiveawayRoute) {
     return <MaintenancePage reason={healthState.reason} onRetry={runHealthCheck} />;
   }
 
   return (
     <>
-      {!isAdminRoute ? (
+      {!isAdminRoute && !isGiveawayRoute ? (
         <div className="fixed top-0 left-0 right-0 z-50 flex flex-col">
           <AnnouncementBanner />
           <Header />
         </div>
       ) : null}
 
-      <div className={!isAdminRoute && !isHomeRoute ? "pt-24" : ""}>
+      <div className={!isAdminRoute && !isGiveawayRoute && !isHomeRoute ? "pt-24" : ""}>
         <Router />
       </div>
     </>
