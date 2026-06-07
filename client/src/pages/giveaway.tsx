@@ -1,11 +1,100 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useUserAuth } from "@/lib/user-auth-context";
+import { useTranslation } from "@/lib/translation";
 import { Link } from "wouter";
 import { Header } from "@/components/header";
 import cfsLogoBanner from "@assets/download_1780850227541.png";
 
+/* ─── Inline bilingual text ─── */
+const TX = {
+  en: {
+    subtitle: "CFS 10TH ANNIVERSARY",
+    title: "GRAND GIVEAWAY",
+    badges: { winners: "3 Winners", date: "October 6, 2026", type: "Live Draw" },
+    drawLine: "Draw starts — October 6, 2026 — 10:00 PM Cairo",
+    days: "Days", hours: "Hours", min: "Min", sec: "Sec",
+    howTitle: "How to Enter",
+    steps: [
+      { title: "Create your Diaa Store account", sub: "Free account — required to be eligible", tag: "Required", label: "Sign up" },
+      { title: "Join the official WhatsApp channel", sub: "Write your name in the channel to register", tag: "Required", label: "Open channel" },
+      { title: "Top up CrossFire", sub: "Every purchase increases your draw odds", tag: "Optional — boosts odds", label: "Go to CrossFire" },
+      { title: "Support on YouTube", sub: "Any support helps the channel and your luck", tag: "Optional", label: "YouTube" },
+    ],
+    prizesTitle: "Prizes — Battle Pass E-Sports",
+    prizesNote: "Full Battle Pass E-Sports bundle — includes exclusive character and weapon skins. Winners revealed live on this page and the official WhatsApp channel.",
+    drawTitle: "Draw Details",
+    drawItems: [
+      { title: "Spin Wheel", body: "Live spinning wheel visible to everyone on this page — fully transparent." },
+      { title: "October 6, 2026 · 10:00 PM Cairo", body: "Wheel starts automatically. No manual trigger needed." },
+      { title: "Winners Announced Instantly", body: "Results shown live on screen and posted on the official WhatsApp channel." },
+      { title: "48-Hour Response Window", body: "Winners must reply within 48 hours or a replacement is selected." },
+    ],
+    acctTitle: "Your Account",
+    signedIn: "Entry confirmed",
+    signInBtn: "Sign In", createBtn: "Create Account",
+    signInDesc: "A free Diaa Store account is required to participate in the draw.",
+    signInHead: "Sign in to your Diaa Store account",
+    termsTitle: "Terms & Conditions",
+    terms: [
+      "Open to all CrossFire players — no age restriction",
+      "Each participant may only win one prize",
+      "Registered name must match the name on the WhatsApp channel",
+      "Organizer's decision is final and binding",
+      "Winners contacted via the official WhatsApp channel only",
+      "Organizers reserve the right to modify rules in extraordinary circumstances",
+    ],
+    waLink: "WhatsApp Channel", ytLink: "YouTube",
+    resultsSubtitle: "CFS 10TH ANNIVERSARY — RESULTS",
+    resultsTitle: "WINNERS",
+    resultsNote: "Winners will be contacted via the official WhatsApp channel within 48 hours.",
+    bundleNote: "Battle Pass E-Sports · Full Bundle",
+  },
+  ar: {
+    subtitle: "الذكرى العاشرة لـ CFS",
+    title: "السحب الكبير",
+    badges: { winners: "٣ فائزون", date: "٦ أكتوبر ٢٠٢٦", type: "سحب مباشر" },
+    drawLine: "السحب يبدأ — ٦ أكتوبر ٢٠٢٦ — ١٠:٠٠ م بتوقيت القاهرة",
+    days: "أيام", hours: "ساعات", min: "دقيقة", sec: "ثانية",
+    howTitle: "كيف تشارك",
+    steps: [
+      { title: "أنشئ حسابك في متجر دياء", sub: "حساب مجاني — شرط أساسي للمشاركة", tag: "مطلوب", label: "سجّل الآن" },
+      { title: "انضم إلى قناة الواتساب الرسمية", sub: "اكتب اسمك في القناة للتسجيل", tag: "مطلوب", label: "فتح القناة" },
+      { title: "اشحن CrossFire", sub: "كل عملية شراء ترفع حظوظك في السحب", tag: "اختياري — يزيد فرصك", label: "اذهب إلى CrossFire" },
+      { title: "دعمنا على يوتيوب", sub: "أي دعم يساعد القناة ويزيد حظك", tag: "اختياري", label: "يوتيوب" },
+    ],
+    prizesTitle: "الجوائز — Battle Pass E-Sports",
+    prizesNote: "حزمة Battle Pass E-Sports الكاملة — تشمل أزياء شخصيات وأسلحة حصرية. الفائزون يُعلنون مباشرة على هذه الصفحة وقناة الواتساب الرسمية.",
+    drawTitle: "تفاصيل السحب",
+    drawItems: [
+      { title: "عجلة الحظ", body: "عجلة حظ مباشرة يراها الجميع — شفافية كاملة." },
+      { title: "٦ أكتوبر ٢٠٢٦ · ١٠:٠٠ م القاهرة", body: "تبدأ العجلة تلقائياً. لا حاجة لتشغيل يدوي." },
+      { title: "إعلان الفائزين فوراً", body: "النتائج تظهر مباشرة على الشاشة وتُنشر في قناة الواتساب الرسمية." },
+      { title: "نافذة الرد: ٤٨ ساعة", body: "يجب على الفائزين الرد خلال ٤٨ ساعة وإلا يُختار بديل." },
+    ],
+    acctTitle: "حسابك",
+    signedIn: "تم تأكيد مشاركتك",
+    signInBtn: "تسجيل الدخول", createBtn: "إنشاء حساب",
+    signInDesc: "حساب مجاني في متجر دياء مطلوب للمشاركة في السحب.",
+    signInHead: "سجّل دخولك إلى متجر دياء",
+    termsTitle: "الشروط والأحكام",
+    terms: [
+      "مفتوح لجميع لاعبي CrossFire — بدون قيود عمرية",
+      "كل مشارك لا يفوز إلا بجائزة واحدة",
+      "الاسم المسجل يجب أن يطابق الاسم في قناة الواتساب",
+      "قرار المنظمين نهائي وملزم",
+      "يُتواصل مع الفائزين عبر قناة الواتساب الرسمية فقط",
+      "يحق للمنظمين تعديل القواعد في الظروف الاستثنائية",
+    ],
+    waLink: "قناة الواتساب", ytLink: "يوتيوب",
+    resultsSubtitle: "الذكرى العاشرة لـ CFS — النتائج",
+    resultsTitle: "الفائزون",
+    resultsNote: "سيتم التواصل مع الفائزين عبر قناة الواتساب الرسمية خلال ٤٨ ساعة.",
+    bundleNote: "Battle Pass E-Sports · الحزمة الكاملة",
+  },
+};
+
 /* ─── Participants ─── */
-const RAW = [
+const ALL = Array.from(new Set([
   "GW_Luffy","sky_CTM","WP*Ghost","Trillionaire","Millionaire.",".REVO_","BOOOM","rtBELAL",
   "N4S3R","Mostafa","{M}M!Do™","{NV}~T!GeR~?","5TR.","HM Sh1ro","Kemaro","-HB]MOS1BA.",
   "Xyilo","maddeR","2 Divysho",".Peter","-Aspect","Starco","BigoPew","BillyPew",
@@ -13,8 +102,7 @@ const RAW = [
   "JasonStatham","[G]iven]*","-NUL Martin","Ravager. Kda","Naxus","E-L-D-O-D-_-","Haredy",
   "-Ghost?","AlRose","Luxuriouse.","Hamdy.","Murr","drax.","-YourDaddy",".WaZeR.","Al3gamawy",
   "-HB]Shadow","-HB]Dark","Vladimir2011","Choklet mH",
-];
-const ALL = Array.from(new Set(RAW));
+]));
 
 /* ─── Config ─── */
 const DRAW_TIME   = new Date("2026-10-06T22:00:00+03:00");
@@ -26,41 +114,40 @@ const YT_URL      = "https://www.youtube.com/@Bemora-site/videos";
 const BLUE   = "#1976d2";
 const LBLUE  = "#2196f3";
 const YELLOW = "#f9a825";
-const GOLD   = "#c8922a";
 const SILVER = "#78909c";
 const BRONZE = "#8d6e63";
 const LINE   = "rgba(255,255,255,0.07)";
-const CARD   = "rgba(5,10,22,0.82)";
+const CARD   = "rgba(4,8,18,0.84)";
 
 /* ─── Prizes ─── */
 const PRIZES = [
   {
-    rank: "1ST", place: "First Place",
+    rank: "1ST", place: { en: "First Place", ar: "المركز الأول" },
     weapon: "HK417 — P.B. Esports Star",
-    type: "Assault Rifle",
+    type: { en: "Assault Rifle", ar: "بندقية هجومية" },
     img: "/images/cf-hk417.png",
     color: YELLOW,
     charImg: "/images/cfs-char-pink.png",
   },
   {
-    rank: "2ND", place: "Second Place",
+    rank: "2ND", place: { en: "Second Place", ar: "المركز الثاني" },
     weapon: "Colt 1911 — Esports Star",
-    type: "Pistol",
+    type: { en: "Pistol", ar: "مسدس" },
     img: "/images/cf-colt1911.png",
     color: SILVER,
     charImg: "/images/cfs-char-purple.png",
   },
   {
-    rank: "3RD", place: "Third Place",
-    weapon: "CheyTac M200 — Dominator Esports",
-    type: "Sniper Rifle",
-    img: "/images/cf-colt1911.png",
+    rank: "3RD", place: { en: "Third Place", ar: "المركز الثالث" },
+    weapon: "Kukri — Kikari Edition",
+    type: { en: "Melee Weapon", ar: "سلاح قريب" },
+    img: "/images/cf-kukri.png",
     color: BRONZE,
     charImg: "/images/cfs-char-blonde.png",
   },
 ];
 
-/* ─── Time helpers ─── */
+/* ─── Helpers ─── */
 function cairo() {
   const n = new Date();
   return new Date(n.getTime() + n.getTimezoneOffset() * 60000 + 3 * 3600000);
@@ -109,7 +196,7 @@ function fanfare() {
   [[523,0],[659,130],[784,260],[1047,400]].forEach(([f,t]) => setTimeout(() => beep(f, 0.7, 0.18), t));
 }
 
-/* ─── SVG Wheel ─── */
+/* ─── Wheel ─── */
 const CX = 250, CY = 250, OR = 232, IR = 58;
 function pol(r: number, deg: number) {
   const rad = ((deg - 90) * Math.PI) / 180;
@@ -143,7 +230,7 @@ function Wheel({ parts, rot, trans, onEnd }: { parts: string[]; rot: number; tra
             const s = i * seg, e = (i + 1) * seg, mid = s + seg / 2, lp = pol((OR + IR) / 2 + 8, mid);
             return (
               <g key={name + i}>
-                <path d={arcPath(s, e)} fill={["#07111f", "#0b1a30"][i % 2]} stroke="#172a48" strokeWidth="0.8" />
+                <path d={arcPath(s, e)} fill={["#07111f","#0b1a30"][i % 2]} stroke="#172a48" strokeWidth="0.8" />
                 <text x={lp.x} y={lp.y} fontSize={Math.max(5, Math.min(8, 9 - n * 0.04))}
                   fontFamily="ui-monospace,monospace" fontWeight="700" fill="rgba(255,255,255,0.8)"
                   textAnchor="middle" dominantBaseline="middle"
@@ -164,66 +251,63 @@ function Wheel({ parts, rot, trans, onEnd }: { parts: string[]; rot: number; tra
   );
 }
 
-/* ─── Countdown box ─── */
+/* ─── UI atoms ─── */
 function Tick({ v, label }: { v: number; label: string }) {
   return (
     <div className="flex flex-col items-center gap-2">
       <div className="w-16 h-16 sm:w-20 sm:h-20 flex items-center justify-center rounded-lg"
-        style={{ background: "rgba(5,10,22,0.9)", border: `1px solid rgba(33,150,243,0.2)` }}>
+        style={{ background: "rgba(4,8,18,0.9)", border: `1px solid rgba(33,150,243,0.18)` }}>
         <span className="text-3xl sm:text-4xl font-black text-white tabular-nums"
           style={{ fontFamily: "ui-monospace,monospace" }}>{String(v).padStart(2, "0")}</span>
       </div>
       <span className="text-xs font-semibold uppercase tracking-widest"
-        style={{ color: "rgba(255,255,255,0.28)" }}>{label}</span>
+        style={{ color: "rgba(255,255,255,0.25)" }}>{label}</span>
     </div>
   );
 }
-
-/* ─── Section label ─── */
-function Label({ text }: { text: string }) {
+function SectionLabel({ text }: { text: string }) {
   return (
-    <div className="flex items-center gap-3 mb-6" style={{ borderTop: `1px solid ${LINE}`, paddingTop: 24 }}>
+    <div className="flex items-center gap-3 mb-6 mt-2" style={{ borderTop: `1px solid ${LINE}`, paddingTop: 24 }}>
       <div className="h-px flex-1" style={{ background: "transparent" }} />
-      <span className="text-xs font-black uppercase tracking-[0.2em]"
-        style={{ color: "rgba(255,255,255,0.2)", fontFamily: "ui-monospace,monospace" }}>{text}</span>
+      <span className="text-xs font-black uppercase tracking-[0.18em]"
+        style={{ color: "rgba(255,255,255,0.18)", fontFamily: "ui-monospace,monospace" }}>{text}</span>
       <div className="h-px flex-1" style={{ background: LINE }} />
     </div>
   );
 }
 
-/* ─── Account section ─── */
-function AccountCTA() {
+/* ─── Account CTA ─── */
+function AccountCTA({ lang }: { lang: "en" | "ar" }) {
   const { isAuthenticated, user } = useUserAuth();
+  const tx = TX[lang];
   if (isAuthenticated && user) {
     return (
       <div className="rounded-xl p-5 flex items-center gap-4"
-        style={{ background: CARD, border: `1px solid ${LBLUE}28` }}>
+        style={{ background: CARD, border: `1px solid ${LBLUE}22` }}>
         <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 font-black text-sm text-white"
-          style={{ background: `${LBLUE}22`, border: `1px solid ${LBLUE}35` }}>
+          style={{ background: `${LBLUE}20`, border: `1px solid ${LBLUE}30` }}>
           {user.name?.charAt(0)?.toUpperCase() ?? "U"}
         </div>
         <div>
           <p className="text-white font-bold text-sm">{user.name}</p>
-          <p className="text-xs mt-0.5" style={{ color: "rgba(255,255,255,0.3)" }}>Entry confirmed</p>
+          <p className="text-xs mt-0.5" style={{ color: "rgba(255,255,255,0.28)" }}>{tx.signedIn}</p>
         </div>
       </div>
     );
   }
   return (
     <div className="rounded-xl p-5" style={{ background: CARD, border: `1px solid ${LINE}` }}>
-      <p className="text-white font-bold text-sm mb-1">Sign in to your Diaa Store account</p>
-      <p className="text-xs mb-5" style={{ color: "rgba(255,255,255,0.3)" }}>
-        A free Diaa Store account is required to participate in the draw.
-      </p>
-      <div className="flex gap-3">
+      <p className="text-white font-bold text-sm mb-1">{tx.signInHead}</p>
+      <p className="text-xs mb-5" style={{ color: "rgba(255,255,255,0.28)" }}>{tx.signInDesc}</p>
+      <div className={`flex gap-3 ${lang === "ar" ? "flex-row-reverse" : ""}`}>
         <Link href="/login">
-          <button className="px-6 py-2.5 rounded-lg text-white text-xs font-bold transition-opacity hover:opacity-85"
-            style={{ background: LBLUE }}>Sign In</button>
+          <button className="px-6 py-2.5 rounded-lg text-white text-xs font-bold"
+            style={{ background: LBLUE }}>{tx.signInBtn}</button>
         </Link>
         <Link href="/login">
-          <button className="px-6 py-2.5 rounded-lg text-xs font-semibold transition-opacity hover:opacity-75"
-            style={{ background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.55)", border: `1px solid ${LINE}` }}>
-            Create Account
+          <button className="px-6 py-2.5 rounded-lg text-xs font-semibold"
+            style={{ background: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.45)", border: `1px solid ${LINE}` }}>
+            {tx.createBtn}
           </button>
         </Link>
       </div>
@@ -231,227 +315,207 @@ function AccountCTA() {
   );
 }
 
-/* ═══════════════ STATE 1 — STANDBY ═══════════════ */
-function StateStandby() {
+/* ════════════════ STATE 1 — STANDBY ════════════════ */
+function StateStandby({ lang }: { lang: "en" | "ar" }) {
+  const tx = TX[lang];
   const { d, h, m, s } = useCountdown(DRAW_TIME);
   const videoRef = useRef<HTMLVideoElement>(null);
-  useEffect(() => { videoRef.current?.play().catch(() => {}); }, []);
+  const dir = lang === "ar" ? "rtl" : "ltr";
+
+  /* Auto-play the video then freeze at 1-second mark */
+  useEffect(() => {
+    const v = videoRef.current;
+    if (!v) return;
+    v.muted = true;
+    v.play().catch(() => {});
+    const onTime = () => {
+      if (v.currentTime >= 1) { v.pause(); v.removeEventListener("timeupdate", onTime); }
+    };
+    v.addEventListener("timeupdate", onTime);
+    return () => v.removeEventListener("timeupdate", onTime);
+  }, []);
+
+  const stepLinks = ["/login", WA_URL, "/game/crossfire", YT_URL];
+  const stepExt   = [false, true, false, true];
+  const stepReq   = [true, true, false, false];
 
   return (
-    <div className="max-w-2xl mx-auto px-5 pt-10 pb-16">
+    <div className="max-w-2xl mx-auto px-5 pt-10 pb-20" dir={dir}>
 
-      {/* Hero */}
-      <div className="flex items-start gap-5 mb-10">
+      {/* Hero header */}
+      <div className={`flex items-start gap-5 mb-10 ${lang === "ar" ? "flex-row-reverse" : ""}`}>
         <img src={cfsLogoBanner} alt="CFS" className="w-14 flex-shrink-0 object-contain"
-          style={{ filter: "drop-shadow(0 0 10px rgba(33,150,243,0.35))" }} />
+          style={{ filter: "drop-shadow(0 0 12px rgba(33,150,243,0.4))" }} />
         <div>
-          <p className="text-xs font-black uppercase tracking-[0.35em] mb-2"
-            style={{ color: LBLUE, fontFamily: "ui-monospace,monospace" }}>
-            CFS 10TH ANNIVERSARY
-          </p>
-          <h1 className="font-black text-white leading-none mb-3"
-            style={{ fontSize: "clamp(2.4rem,8vw,4rem)", letterSpacing: "-0.02em" }}>
-            GRAND GIVEAWAY
-          </h1>
-          <div className="flex flex-wrap gap-2">
-            <span className="px-3 py-1 rounded-full text-xs font-bold"
-              style={{ background: `${YELLOW}14`, border: `1px solid ${YELLOW}30`, color: YELLOW }}>
-              3 Winners
-            </span>
-            <span className="px-3 py-1 rounded-full text-xs font-bold"
-              style={{ background: `${LBLUE}14`, border: `1px solid ${LBLUE}30`, color: LBLUE }}>
-              October 6, 2026
-            </span>
-            <span className="px-3 py-1 rounded-full text-xs font-bold"
-              style={{ background: "rgba(76,175,80,0.12)", border: "1px solid rgba(76,175,80,0.28)", color: "#81c784" }}>
-              Live Draw
-            </span>
+          <p className="text-xs font-black uppercase tracking-[0.32em] mb-2"
+            style={{ color: LBLUE, fontFamily: "ui-monospace,monospace" }}>{tx.subtitle}</p>
+          <h1 className="font-black text-white leading-none mb-4"
+            style={{ fontSize: "clamp(2.4rem,8vw,4rem)", letterSpacing: "-0.02em" }}>{tx.title}</h1>
+          <div className={`flex flex-wrap gap-2 ${lang === "ar" ? "flex-row-reverse" : ""}`}>
+            {[
+              { label: tx.badges.winners, c: YELLOW },
+              { label: tx.badges.date,    c: LBLUE  },
+              { label: tx.badges.type,    c: "#81c784" },
+            ].map(b => (
+              <span key={b.label} className="px-3 py-1 rounded-full text-xs font-bold"
+                style={{ background: `${b.c}12`, border: `1px solid ${b.c}28`, color: b.c }}>{b.label}</span>
+            ))}
           </div>
         </div>
       </div>
 
-      {/* Video */}
+      {/* Video — freezes at 1 s */}
       <div className="rounded-xl overflow-hidden mb-8" style={{ border: `1px solid ${LINE}` }}>
-        <video ref={videoRef} src="/media/cfs-event.mp4" loop muted playsInline
+        <video ref={videoRef} src="/media/cfs-event.mp4" muted playsInline preload="auto"
           className="w-full block" style={{ maxHeight: 200, objectFit: "cover", background: "#000" }} />
       </div>
 
       {/* Countdown */}
-      <div className="rounded-xl p-6 mb-12" style={{ background: CARD, border: `1px solid rgba(33,150,243,0.15)` }}>
-        <p className="text-xs text-center mb-5 font-black uppercase tracking-[0.2em]"
-          style={{ color: "rgba(255,255,255,0.22)", fontFamily: "ui-monospace,monospace" }}>
-          Draw starts — October 6, 2026 — 10:00 PM Cairo
+      <div className="rounded-xl p-6 mb-12" style={{ background: CARD, border: `1px solid rgba(33,150,243,0.12)` }}>
+        <p className="text-xs text-center mb-5 font-black uppercase tracking-[0.18em]"
+          style={{ color: "rgba(255,255,255,0.2)", fontFamily: "ui-monospace,monospace" }}>
+          {tx.drawLine}
         </p>
         <div className="flex justify-center gap-4">
-          <Tick v={d} label="Days" />
-          <Tick v={h} label="Hours" />
-          <Tick v={m} label="Min" />
-          <Tick v={s} label="Sec" />
+          <Tick v={d} label={tx.days} />
+          <Tick v={h} label={tx.hours} />
+          <Tick v={m} label={tx.min} />
+          <Tick v={s} label={tx.sec} />
         </div>
       </div>
 
       {/* How to enter */}
-      <Label text="How to Enter" />
+      <SectionLabel text={tx.howTitle} />
       <div className="flex flex-col gap-2.5 mb-12">
-        {[
-          {
-            n: "01", title: "Create your Diaa Store account",
-            sub: "Free account — required to be eligible",
-            tag: "Required", tagColor: YELLOW,
-            href: "/login", label: "Sign up", ext: false,
-          },
-          {
-            n: "02", title: "Join the official WhatsApp channel",
-            sub: "Write your name in the channel to register",
-            tag: "Required", tagColor: YELLOW,
-            href: WA_URL, label: "Open channel", ext: true,
-          },
-          {
-            n: "03", title: "Top up CrossFire",
-            sub: "Every purchase increases your draw odds",
-            tag: "Optional — boosts odds", tagColor: LBLUE,
-            href: "/game/crossfire", label: "Go to CrossFire", ext: false,
-          },
-          {
-            n: "04", title: "Support on YouTube",
-            sub: "Any support helps the channel and your luck",
-            tag: "Optional", tagColor: LBLUE,
-            href: YT_URL, label: "YouTube", ext: true,
-          },
-        ].map((step) => (
-          <div key={step.n} className="flex gap-4 items-start rounded-xl p-4"
-            style={{ background: CARD, border: `1px solid ${step.tagColor === YELLOW ? YELLOW + "18" : LINE}` }}>
-            <span className="shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-xs font-black"
-              style={{
-                background: step.tagColor === YELLOW ? `${YELLOW}18` : "rgba(255,255,255,0.04)",
-                color: step.tagColor,
-                fontFamily: "ui-monospace,monospace",
-              }}>{step.n}</span>
-            <div className="flex-1 min-w-0">
-              <div className="flex flex-wrap items-center gap-2 mb-1">
-                <p className="text-white font-bold text-sm">{step.title}</p>
-                <span className="text-xs px-2 py-0.5 rounded font-bold"
-                  style={{ background: `${step.tagColor}12`, color: step.tagColor }}>{step.tag}</span>
+        {tx.steps.map((step, i) => {
+          const req = stepReq[i];
+          const col = req ? YELLOW : LBLUE;
+          return (
+            <div key={i} className="flex gap-4 items-start rounded-xl p-4"
+              style={{ background: CARD, border: `1px solid ${req ? YELLOW + "16" : LINE}` }}>
+              <span className="shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-xs font-black"
+                style={{ background: `${col}14`, color: col, fontFamily: "ui-monospace,monospace" }}>
+                {String(i + 1).padStart(2, "0")}
+              </span>
+              <div className="flex-1 min-w-0">
+                <div className={`flex flex-wrap items-center gap-2 mb-1 ${lang === "ar" ? "flex-row-reverse" : ""}`}>
+                  <p className="text-white font-bold text-sm">{step.title}</p>
+                  <span className="text-xs px-2 py-0.5 rounded font-bold"
+                    style={{ background: `${col}10`, color: col }}>{step.tag}</span>
+                </div>
+                <p className="text-xs mb-2" style={{ color: "rgba(255,255,255,0.28)" }}>{step.sub}</p>
+                {stepExt[i] ? (
+                  <a href={stepLinks[i]} target="_blank" rel="noopener noreferrer"
+                    className="text-xs font-bold underline underline-offset-4"
+                    style={{ color: col }}>{step.label} →</a>
+                ) : (
+                  <Link href={stepLinks[i]}>
+                    <span className="text-xs font-bold underline underline-offset-4 cursor-pointer"
+                      style={{ color: col }}>{step.label} →</span>
+                  </Link>
+                )}
               </div>
-              <p className="text-xs mb-2" style={{ color: "rgba(255,255,255,0.3)" }}>{step.sub}</p>
-              {step.ext ? (
-                <a href={step.href} target="_blank" rel="noopener noreferrer"
-                  className="text-xs font-bold underline underline-offset-4 transition-opacity hover:opacity-70"
-                  style={{ color: step.tagColor }}>{step.label} →</a>
-              ) : (
-                <Link href={step.href}>
-                  <span className="text-xs font-bold underline underline-offset-4 transition-opacity hover:opacity-70 cursor-pointer"
-                    style={{ color: step.tagColor }}>{step.label} →</span>
-                </Link>
-              )}
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
-      {/* Prizes — weapon images */}
-      <Label text="Prizes — Battle Pass E-Sports" />
+      {/* Prizes */}
+      <SectionLabel text={tx.prizesTitle} />
       <div className="grid grid-cols-3 gap-3 mb-4">
-        {PRIZES.map((p) => (
+        {PRIZES.map(p => (
           <div key={p.rank} className="rounded-xl overflow-hidden flex flex-col"
-            style={{ background: CARD, border: `1px solid ${p.color}22` }}>
+            style={{ background: CARD, border: `1px solid ${p.color}1e` }}>
             <div style={{ height: 2, background: `linear-gradient(90deg,transparent,${p.color},transparent)` }} />
-            <div className="px-3 pt-3 pb-1 flex items-center justify-between">
+            <div className={`px-3 pt-3 pb-1 flex items-center justify-between ${lang === "ar" ? "flex-row-reverse" : ""}`}>
               <span className="text-xs font-black tracking-widest"
                 style={{ color: p.color, fontFamily: "ui-monospace,monospace" }}>{p.rank}</span>
-              <span className="text-xs" style={{ color: "rgba(255,255,255,0.2)" }}>{p.place}</span>
+              <span className="text-xs" style={{ color: "rgba(255,255,255,0.18)" }}>
+                {lang === "ar" ? p.place.ar : p.place.en}
+              </span>
             </div>
             <div className="mx-3 mb-3 rounded-lg overflow-hidden flex items-center justify-center"
-              style={{ height: 100, background: "rgba(0,0,0,0.4)" }}>
+              style={{ height: 100, background: "rgba(0,0,0,0.45)" }}>
               <img src={p.img} alt={p.weapon} className="w-full h-full object-contain"
-                style={{ padding: "8px" }}
-                onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+                style={{ padding: 8 }}
+                onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
             </div>
             <div className="px-3 pb-3">
               <p className="text-white font-bold text-xs leading-tight mb-0.5">{p.weapon}</p>
-              <p className="text-xs" style={{ color: "rgba(255,255,255,0.25)" }}>{p.type}</p>
+              <p className="text-xs" style={{ color: "rgba(255,255,255,0.22)" }}>
+                {lang === "ar" ? p.type.ar : p.type.en}
+              </p>
             </div>
           </div>
         ))}
       </div>
-      <p className="text-xs mb-12 px-1" style={{ color: "rgba(255,255,255,0.2)" }}>
-        Full Battle Pass E-Sports bundle — includes exclusive character skins and weapon skins.
-        Winners are revealed live on this page and the official WhatsApp channel.
-      </p>
+      <p className="text-xs mb-12 px-1" style={{ color: "rgba(255,255,255,0.18)" }}>{tx.prizesNote}</p>
 
       {/* Draw details */}
-      <Label text="Draw Details" />
+      <SectionLabel text={tx.drawTitle} />
       <div className="rounded-xl overflow-hidden mb-12" style={{ background: CARD, border: `1px solid ${LINE}` }}>
-        {[
-          { title: "Spin Wheel", body: "Live spinning wheel visible to everyone on this page — fully transparent" },
-          { title: "October 6, 2026 · 10:00 PM Cairo", body: "Wheel starts automatically. No manual trigger needed." },
-          { title: "Winners Announced Instantly", body: "Results shown live on screen and posted on the official WhatsApp channel." },
-          { title: "48-Hour Response Window", body: "Winners must reply within 48 hours or a replacement is selected." },
-        ].map((item, i, arr) => (
-          <div key={item.title} className="px-5 py-4 flex gap-4 items-start"
+        {tx.drawItems.map((item, i, arr) => (
+          <div key={i} className={`px-5 py-4 flex gap-4 items-start ${lang === "ar" ? "flex-row-reverse" : ""}`}
             style={{ borderBottom: i < arr.length - 1 ? `1px solid ${LINE}` : "none" }}>
             <div className="w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0" style={{ background: LBLUE }} />
             <div>
               <p className="text-white font-bold text-sm mb-0.5">{item.title}</p>
-              <p className="text-xs" style={{ color: "rgba(255,255,255,0.3)" }}>{item.body}</p>
+              <p className="text-xs" style={{ color: "rgba(255,255,255,0.28)" }}>{item.body}</p>
             </div>
           </div>
         ))}
       </div>
 
       {/* Account */}
-      <Label text="Your Account" />
-      <div className="mb-12"><AccountCTA /></div>
+      <SectionLabel text={tx.acctTitle} />
+      <div className="mb-12"><AccountCTA lang={lang} /></div>
 
       {/* Terms */}
-      <Label text="Terms & Conditions" />
+      <SectionLabel text={tx.termsTitle} />
       <div className="rounded-xl overflow-hidden mb-10" style={{ background: CARD, border: `1px solid ${LINE}` }}>
-        {[
-          "Open to all CrossFire players — no age restriction",
-          "Each participant may only win one prize",
-          "Registered name must match the name on the WhatsApp channel",
-          "Organizer's decision is final and binding",
-          "Winners contacted via the official WhatsApp channel only",
-          "Organizers reserve the right to modify rules in extraordinary circumstances",
-        ].map((t, i, arr) => (
-          <div key={i} className="px-5 py-3.5 flex gap-3 items-start"
+        {tx.terms.map((t, i, arr) => (
+          <div key={i} className={`px-5 py-3.5 flex gap-3 items-start ${lang === "ar" ? "flex-row-reverse" : ""}`}
             style={{ borderBottom: i < arr.length - 1 ? `1px solid ${LINE}` : "none" }}>
             <span className="text-xs flex-shrink-0 mt-0.5" style={{ color: LBLUE }}>—</span>
-            <p className="text-xs leading-relaxed" style={{ color: "rgba(255,255,255,0.38)" }}>{t}</p>
+            <p className="text-xs leading-relaxed" style={{ color: "rgba(255,255,255,0.32)" }}>{t}</p>
           </div>
         ))}
       </div>
 
-      {/* Footer */}
+      {/* Footer links */}
       <div className="flex justify-center gap-8 pt-2 pb-4">
         <a href={WA_URL} target="_blank" rel="noopener noreferrer"
-          className="text-xs underline underline-offset-4 transition-opacity hover:opacity-70"
-          style={{ color: "rgba(255,255,255,0.18)" }}>WhatsApp Channel</a>
+          className="text-xs underline underline-offset-4"
+          style={{ color: "rgba(255,255,255,0.16)" }}>{tx.waLink}</a>
         <a href={YT_URL} target="_blank" rel="noopener noreferrer"
-          className="text-xs underline underline-offset-4 transition-opacity hover:opacity-70"
-          style={{ color: "rgba(255,255,255,0.18)" }}>YouTube</a>
+          className="text-xs underline underline-offset-4"
+          style={{ color: "rgba(255,255,255,0.16)" }}>{tx.ytLink}</a>
       </div>
     </div>
   );
 }
 
-/* ═══════════════ STATE 2 — GATHERING ═══════════════ */
-function StateGathering() {
+/* ════════════════ STATE 2 — GATHERING ════════════════ */
+function StateGathering({ lang }: { lang: "en" | "ar" }) {
   const { h, m, s } = useCountdown(DRAW_TIME);
   const [q, setQ] = useState("");
+  const tx = TX[lang];
   return (
-    <div className="max-w-2xl mx-auto px-5 pt-10 pb-20">
+    <div className="max-w-2xl mx-auto px-5 pt-10 pb-20" dir={lang === "ar" ? "rtl" : "ltr"}>
       <p className="text-xs font-black uppercase tracking-[0.2em] mb-3"
-        style={{ color: LBLUE, fontFamily: "ui-monospace,monospace" }}>Draw starts in</p>
+        style={{ color: LBLUE, fontFamily: "ui-monospace,monospace" }}>
+        {lang === "ar" ? "السحب يبدأ خلال" : "Draw starts in"}
+      </p>
       <div className="flex gap-3 mb-10">
-        <Tick v={h} label="Hours" /><Tick v={m} label="Min" /><Tick v={s} label="Sec" />
+        <Tick v={h} label={tx.hours} /><Tick v={m} label={tx.min} /><Tick v={s} label={tx.sec} />
       </div>
       <div style={{ borderTop: `1px solid ${LINE}`, paddingTop: 24 }} className="mb-8">
         <p className="text-xs font-black uppercase tracking-[0.2em] mb-4"
-          style={{ color: "rgba(255,255,255,0.22)", fontFamily: "ui-monospace,monospace" }}>
-          Registered Participants
+          style={{ color: "rgba(255,255,255,0.18)", fontFamily: "ui-monospace,monospace" }}>
+          {lang === "ar" ? "المشاركون المسجلون" : "Registered Participants"}
         </p>
-        <input value={q} onChange={e => setQ(e.target.value)} placeholder="Search your name..."
+        <input value={q} onChange={e => setQ(e.target.value)}
+          placeholder={lang === "ar" ? "ابحث عن اسمك..." : "Search your name..."}
           className="w-full px-4 py-3 rounded-lg text-white text-sm outline-none placeholder-white/20 mb-4"
           style={{ background: "rgba(0,0,0,0.5)", border: `1px solid ${LINE}` }} />
         <div className="grid grid-cols-3 sm:grid-cols-4 gap-1.5 max-h-60 overflow-y-auto"
@@ -459,25 +523,23 @@ function StateGathering() {
           {ALL.filter(p => !q || p.toLowerCase().includes(q.toLowerCase())).map(p => {
             const hit = q && p.toLowerCase().includes(q.toLowerCase());
             return (
-              <div key={p} className="px-2 py-1.5 rounded text-xs text-center truncate transition-all"
+              <div key={p} className="px-2 py-1.5 rounded text-xs text-center truncate"
                 style={{
-                  background: hit ? `${LBLUE}15` : "rgba(0,0,0,0.4)",
+                  background: hit ? `${LBLUE}14` : "rgba(0,0,0,0.4)",
                   border: `1px solid ${hit ? LBLUE + "44" : LINE}`,
-                  color: hit ? "#fff" : "rgba(255,255,255,0.32)",
+                  color: hit ? "#fff" : "rgba(255,255,255,0.3)",
                   fontWeight: hit ? 700 : 400,
-                }}>
-                {p}
-              </div>
+                }}>{p}</div>
             );
           })}
         </div>
       </div>
-      <AccountCTA />
+      <AccountCTA lang={lang} />
     </div>
   );
 }
 
-/* ═══════════════ STATE 3 — LIVE DRAW ═══════════════ */
+/* ════════════════ STATE 3 — LIVE DRAW ════════════════ */
 interface Winner { username: string; rank: 1 | 2 | 3 }
 
 function useTypewriter(text: string, go: boolean) {
@@ -491,16 +553,16 @@ function useTypewriter(text: string, go: boolean) {
   return shown;
 }
 
-function StateLiveDraw({ onComplete }: { onComplete: (w: Winner[]) => void }) {
+function StateLiveDraw({ onComplete, lang }: { onComplete: (w: Winner[]) => void; lang: "en" | "ar" }) {
   const [remaining, setRemaining] = useState<string[]>(ALL);
-  const [rot, setRot] = useState(0);
+  const [rot, setRot]     = useState(0);
   const [trans, setTrans] = useState(false);
   const [lastElim, setLastElim] = useState("");
   const [showElim, setShowElim] = useState(false);
-  const [started, setStarted] = useState(false);
-  const busyRef = useRef(false);
-  const rotRef = useRef(0);
-  const remRef = useRef(ALL);
+  const [started, setStarted]   = useState(false);
+  const busyRef  = useRef(false);
+  const rotRef   = useRef(0);
+  const remRef   = useRef(ALL);
   const victimRef = useRef("");
   const typed = useTypewriter(lastElim, showElim);
 
@@ -516,8 +578,7 @@ function StateLiveDraw({ onComplete }: { onComplete: (w: Winner[]) => void }) {
     busyRef.current = true;
     const vi = Math.floor(Math.random() * pool.length);
     victimRef.current = pool[vi];
-    const n = pool.length, seg = 360 / n;
-    const center = (vi + 0.5) * seg;
+    const n = pool.length, seg = 360 / n, center = (vi + 0.5) * seg;
     const curMod = rotRef.current % 360;
     const add = (center - curMod + 360) % 360;
     const newRot = rotRef.current + 360 * (5 + Math.floor(Math.random() * 2)) + add;
@@ -550,54 +611,59 @@ function StateLiveDraw({ onComplete }: { onComplete: (w: Winner[]) => void }) {
 
   const { h, m, s } = useCountdown(DRAW_TIME);
   const pct = Math.min(100, ((ALL.length - remaining.length) / (ALL.length - 3)) * 100);
+  const tx = TX[lang];
 
   return (
-    <div className="max-w-xl mx-auto px-5 pt-8 pb-16 flex flex-col items-center">
+    <div className="max-w-xl mx-auto px-5 pt-8 pb-16 flex flex-col items-center"
+      dir={lang === "ar" ? "rtl" : "ltr"}>
       <p className="text-xs font-black uppercase tracking-[0.2em] mb-2"
-        style={{ color: LBLUE, fontFamily: "ui-monospace,monospace" }}>Live Draw — CFS 10th Anniversary</p>
-      <h2 className="text-3xl font-black text-white mb-8">Grand Giveaway</h2>
-
+        style={{ color: LBLUE, fontFamily: "ui-monospace,monospace" }}>
+        {lang === "ar" ? "السحب المباشر — الذكرى العاشرة لـ CFS" : "Live Draw — CFS 10th Anniversary"}
+      </p>
+      <h2 className="text-3xl font-black text-white mb-8">{tx.title}</h2>
       {!started && (
         <div className="text-center mb-8">
-          <p className="text-sm mb-4" style={{ color: "rgba(255,255,255,0.35)" }}>
-            Wheel starts automatically — October 6, 2026 · 10:00 PM Cairo
+          <p className="text-sm mb-4" style={{ color: "rgba(255,255,255,0.3)" }}>
+            {lang === "ar" ? "العجلة تبدأ تلقائياً — ٦ أكتوبر ٢٠٢٦ · ١٠:٠٠ م القاهرة" : "Wheel starts automatically — October 6, 2026 · 10:00 PM Cairo"}
           </p>
           <div className="flex gap-3 justify-center">
-            <Tick v={h} label="Hours" /><Tick v={m} label="Min" /><Tick v={s} label="Sec" />
+            <Tick v={h} label={tx.hours} /><Tick v={m} label={tx.min} /><Tick v={s} label={tx.sec} />
           </div>
         </div>
       )}
-
       <Wheel parts={remaining} rot={rot} trans={trans} onEnd={onEnd} />
-
       <div className="flex gap-8 mt-6 text-center">
         <div>
           <p className="text-3xl font-black text-white tabular-nums"
             style={{ fontFamily: "ui-monospace,monospace" }}>{remaining.length}</p>
-          <p className="text-xs mt-1" style={{ color: "rgba(255,255,255,0.28)" }}>Remaining</p>
+          <p className="text-xs mt-1" style={{ color: "rgba(255,255,255,0.26)" }}>
+            {lang === "ar" ? "متبقّون" : "Remaining"}
+          </p>
         </div>
         <div style={{ width: 1, background: LINE }} />
         <div>
           <p className="text-3xl font-black text-white tabular-nums"
             style={{ fontFamily: "ui-monospace,monospace" }}>{ALL.length - remaining.length}</p>
-          <p className="text-xs mt-1" style={{ color: "rgba(255,255,255,0.28)" }}>Eliminated</p>
+          <p className="text-xs mt-1" style={{ color: "rgba(255,255,255,0.26)" }}>
+            {lang === "ar" ? "مُستبعَدون" : "Eliminated"}
+          </p>
         </div>
       </div>
-
       <div className="h-14 flex items-center justify-center w-full mt-4">
         {showElim && lastElim && (
           <div className="text-center">
             <p className="text-xs font-black uppercase tracking-[0.2em] mb-1"
-              style={{ color: "rgba(255,255,255,0.18)", fontFamily: "ui-monospace,monospace" }}>Eliminated</p>
-            <p className="text-2xl font-black" style={{ color: "rgba(255,255,255,0.6)", fontFamily: "ui-monospace,monospace" }}>
+              style={{ color: "rgba(255,255,255,0.16)", fontFamily: "ui-monospace,monospace" }}>
+              {lang === "ar" ? "مُستبعَد" : "Eliminated"}
+            </p>
+            <p className="text-2xl font-black" style={{ color: "rgba(255,255,255,0.55)", fontFamily: "ui-monospace,monospace" }}>
               {typed}<span style={{ opacity: typed.length < lastElim.length ? 0.4 : 0 }}>_</span>
             </p>
           </div>
         )}
       </div>
-
       <div className="w-full mt-4">
-        <div className="w-full h-px rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.06)" }}>
+        <div className="w-full h-px rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.05)" }}>
           <div className="h-full rounded-full transition-all duration-500" style={{ width: `${pct}%`, background: LBLUE }} />
         </div>
       </div>
@@ -605,82 +671,85 @@ function StateLiveDraw({ onComplete }: { onComplete: (w: Winner[]) => void }) {
   );
 }
 
-/* ═══════════════ STATE 4 — RESULTS ═══════════════ */
-function StateResults({ winners }: { winners: Winner[] }) {
+/* ════════════════ STATE 4 — RESULTS ════════════════ */
+function StateResults({ winners, lang }: { winners: Winner[]; lang: "en" | "ar" }) {
+  const tx = TX[lang];
   return (
-    <div className="max-w-2xl mx-auto px-5 pt-10 pb-20">
-      <div className="flex items-center gap-3 mb-2">
+    <div className="max-w-2xl mx-auto px-5 pt-10 pb-20" dir={lang === "ar" ? "rtl" : "ltr"}>
+      <div className={`flex items-center gap-3 mb-2 ${lang === "ar" ? "flex-row-reverse" : ""}`}>
         <img src={cfsLogoBanner} alt="CFS" className="w-9 object-contain flex-shrink-0" />
         <p className="text-xs font-black uppercase tracking-[0.2em]"
-          style={{ color: LBLUE, fontFamily: "ui-monospace,monospace" }}>CFS 10TH ANNIVERSARY — RESULTS</p>
+          style={{ color: LBLUE, fontFamily: "ui-monospace,monospace" }}>{tx.resultsSubtitle}</p>
       </div>
       <h1 className="font-black text-white mb-2"
-        style={{ fontSize: "clamp(3rem,10vw,5rem)", letterSpacing: "-0.02em" }}>WINNERS</h1>
-      <p className="mb-10 text-sm" style={{ color: "rgba(255,255,255,0.3)" }}>
-        Winners will be contacted via the official WhatsApp channel within 48 hours.
-      </p>
+        style={{ fontSize: "clamp(3rem,10vw,5rem)", letterSpacing: "-0.02em" }}>{tx.resultsTitle}</h1>
+      <p className="mb-10 text-sm" style={{ color: "rgba(255,255,255,0.28)" }}>{tx.resultsNote}</p>
 
       {winners.filter(w => w.rank === 1).map(w => (
-        <WCard key={w.username} w={w} prize={PRIZES[0]} delay={200} wide />
+        <WCard key={w.username} w={w} prize={PRIZES[0]} delay={200} wide lang={lang} />
       ))}
-
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
         {winners.filter(w => w.rank !== 1).map((w, i) => (
-          <WCard key={w.username} w={w} prize={PRIZES[w.rank - 1]} delay={500 + i * 300} />
+          <WCard key={w.username} w={w} prize={PRIZES[w.rank - 1]} delay={500 + i * 300} lang={lang} />
         ))}
       </div>
-
       <div className="mt-14 pt-8 text-center" style={{ borderTop: `1px solid ${LINE}` }}>
         <a href={WA_URL} target="_blank" rel="noopener noreferrer"
-          className="text-xs underline underline-offset-4 transition-opacity hover:opacity-70"
-          style={{ color: "rgba(255,255,255,0.2)" }}>Official WhatsApp Channel</a>
+          className="text-xs underline underline-offset-4"
+          style={{ color: "rgba(255,255,255,0.18)" }}>{tx.waLink}</a>
       </div>
     </div>
   );
 }
 
-function WCard({ w, prize, delay, wide = false }: {
-  w: Winner; prize: typeof PRIZES[0]; delay: number; wide?: boolean;
+function WCard({ w, prize, delay, wide = false, lang }: {
+  w: Winner; prize: typeof PRIZES[0]; delay: number; wide?: boolean; lang: "en" | "ar"
 }) {
   const [vis, setVis] = useState(false);
+  const tx = TX[lang];
   useEffect(() => { const t = setTimeout(() => setVis(true), delay); return () => clearTimeout(t); }, [delay]);
   return (
     <div style={{
       opacity: vis ? 1 : 0, transform: vis ? "translateY(0)" : "translateY(24px)",
       transition: "opacity 0.7s ease,transform 0.7s ease",
-      border: `1px solid ${prize.color}30`, background: CARD, borderRadius: 16, overflow: "hidden",
+      border: `1px solid ${prize.color}28`, background: CARD, borderRadius: 16, overflow: "hidden",
     }}>
       <div style={{ height: 2, background: `linear-gradient(90deg,transparent,${prize.color},transparent)` }} />
       {wide ? (
-        <div className="flex gap-5 items-center p-5">
+        <div className={`flex gap-5 items-center p-5 ${lang === "ar" ? "flex-row-reverse" : ""}`}>
           <img src={prize.charImg} alt={prize.rank} className="rounded-xl object-cover flex-shrink-0"
             style={{ width: 120, height: 160, objectPosition: "top", background: "rgba(0,0,0,0.3)" }} />
           <div>
             <p className="text-xs font-black tracking-[0.25em] mb-3"
               style={{ color: prize.color, fontFamily: "ui-monospace,monospace" }}>
-              {prize.rank} PLACE — {prize.place.toUpperCase()}
+              {prize.rank} — {lang === "ar" ? prize.place.ar : prize.place.en}
             </p>
             <p className="text-white font-black text-3xl sm:text-4xl mb-2 break-all">{w.username}</p>
-            <p className="text-xs mb-0.5" style={{ color: "rgba(255,255,255,0.3)" }}>{prize.weapon}</p>
-            <p className="text-xs" style={{ color: "rgba(255,255,255,0.2)" }}>Battle Pass E-Sports · Full Bundle</p>
+            <p className="text-xs mb-0.5" style={{ color: "rgba(255,255,255,0.28)" }}>{prize.weapon}</p>
+            <p className="text-xs" style={{ color: "rgba(255,255,255,0.18)" }}>{tx.bundleNote}</p>
           </div>
         </div>
       ) : (
         <div className="p-5 text-center">
           <p className="text-xs font-black tracking-[0.25em] mb-4"
-            style={{ color: prize.color, fontFamily: "ui-monospace,monospace" }}>{prize.rank} PLACE</p>
+            style={{ color: prize.color, fontFamily: "ui-monospace,monospace" }}>
+            {prize.rank} — {lang === "ar" ? prize.place.ar : prize.place.en}
+          </p>
           <img src={prize.charImg} alt={prize.rank} className="mx-auto rounded-xl object-cover mb-4"
             style={{ width: 90, height: 120, objectPosition: "top", background: "rgba(0,0,0,0.3)" }} />
           <p className="text-white font-black text-xl break-all mb-1">{w.username}</p>
-          <p className="text-xs" style={{ color: "rgba(255,255,255,0.3)" }}>{prize.weapon}</p>
+          <p className="text-xs" style={{ color: "rgba(255,255,255,0.28)" }}>{prize.weapon}</p>
         </div>
       )}
     </div>
   );
 }
 
-/* ═══════════════ ROOT ═══════════════ */
+/* ════════════════ ROOT ════════════════ */
 export default function GiveawayPage() {
+  const { language } = useTranslation();
+  const lang = (language === "ar" ? "ar" : "en") as "en" | "ar";
+
   const f = forced();
   const [state, setState] = useState<S>(f ?? auto());
   const [winners, setWinners] = useState<Winner[]>([]);
@@ -697,42 +766,42 @@ export default function GiveawayPage() {
   return (
     <div className="min-h-screen relative" style={{ fontFamily: "'Inter',system-ui,sans-serif", color: "#fff" }}>
 
-      {/* Site header */}
-      <Header />
-
-      {/* Full-page background — the map image fills the screen */}
-      <div className="fixed inset-0 z-0 pointer-events-none" aria-hidden
-        style={{ top: 0, left: 0, right: 0, bottom: 0 }}>
-        <img src="/images/cfs-bg-giveaway.png" alt=""
-          className="absolute inset-0 w-full h-full"
-          style={{ objectFit: "cover", objectPosition: "center top", opacity: 0.55 }} />
-        {/* Darkening overlay so text stays readable */}
-        <div className="absolute inset-0"
-          style={{ background: "linear-gradient(to bottom, rgba(3,7,18,0.55) 0%, rgba(3,7,18,0.72) 40%, rgba(3,7,18,0.88) 100%)" }} />
+      {/* Fixed header — same wrapper App uses for other pages */}
+      <div className="fixed top-0 left-0 right-0 z-50">
+        <Header />
       </div>
 
-      {/* Page content */}
-      <div className="relative z-10" style={{ background: "transparent" }}>
+      {/* Full-page background — the map/SWAT image */}
+      <div className="fixed inset-0 z-0 pointer-events-none" aria-hidden>
+        <img src="/images/cfs-bg-giveaway.png" alt=""
+          className="absolute inset-0 w-full h-full"
+          style={{ objectFit: "cover", objectPosition: "center top", opacity: 0.75 }} />
+        {/* Soft darkening overlay — reduced so image shows through */}
+        <div className="absolute inset-0"
+          style={{ background: "linear-gradient(to bottom,rgba(2,5,14,0.42) 0%,rgba(2,5,14,0.55) 50%,rgba(2,5,14,0.78) 100%)" }} />
+      </div>
 
-        {/* Dev state switcher (only shown when ?state= param is present) */}
+      {/* Page content — pt-24 clears the fixed header */}
+      <div className="relative z-10 pt-24">
+
+        {/* Dev state switcher */}
         {f !== null && (
-          <div className="fixed top-16 right-3 z-50 flex gap-1">
+          <div className="fixed top-20 right-3 z-50 flex gap-1">
             {([1,2,3,4] as S[]).map(n => (
-              <a key={n} href={`?state=${n}`}
-                className="px-2.5 py-1 rounded text-xs font-bold"
+              <a key={n} href={`?state=${n}`} className="px-2.5 py-1 rounded text-xs font-bold"
                 style={{
                   background: cur === n ? LBLUE : "rgba(0,0,0,0.7)",
                   border: `1px solid ${cur === n ? LBLUE : "rgba(255,255,255,0.1)"}`,
-                  color: cur === n ? "#fff" : "rgba(255,255,255,0.35)",
+                  color: cur === n ? "#fff" : "rgba(255,255,255,0.3)",
                 }}>S{n}</a>
             ))}
           </div>
         )}
 
-        {cur === 1 && <StateStandby />}
-        {cur === 2 && <StateGathering />}
-        {cur === 3 && <StateLiveDraw onComplete={handleComplete} />}
-        {cur === 4 && <StateResults winners={winners.length > 0 ? winners : [
+        {cur === 1 && <StateStandby lang={lang} />}
+        {cur === 2 && <StateGathering lang={lang} />}
+        {cur === 3 && <StateLiveDraw onComplete={handleComplete} lang={lang} />}
+        {cur === 4 && <StateResults lang={lang} winners={winners.length > 0 ? winners : [
           { username: "Winner 1", rank: 1 },
           { username: "Winner 2", rank: 2 },
           { username: "Winner 3", rank: 3 },
