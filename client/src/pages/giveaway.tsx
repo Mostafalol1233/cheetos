@@ -3,7 +3,7 @@ import { useUserAuth } from "@/lib/user-auth-context";
 import { useTranslation } from "@/lib/translation";
 import { Link } from "wouter";
 import { Header } from "@/components/header";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 const cfsLogoBanner = "https://res.cloudinary.com/ddzbutb12/image/upload/gamecart/giveaway/cfs-emblem.png";
 
 /* ─── Bilingual text ─── */
@@ -49,6 +49,8 @@ const TX = {
     resultsTitle: "WINNERS",
     resultsNote: "Winners will be contacted via the official WhatsApp channel within 48 hours.",
     bundleNote: "Battle Pass E-Sports · Full Bundle",
+    registerBtn: "Join Giveaway",
+    registeredMsg: "Entry confirmed",
   },
   ar: {
     subtitle: "الذكرى العاشرة لـ CFS",
@@ -60,7 +62,7 @@ const TX = {
     steps: [
       { title: "أنشئ حسابك في متجر ضياء", sub: "حساب مجاني — شرط أساسي للمشاركة", tag: "مطلوب", label: "سجّل الآن" },
       { title: "انضم إلى قناة الواتساب الرسمية", sub: "اكتب اسمك في القناة للتسجيل", tag: "مطلوب", label: "فتح القناة" },
-      { title: "اشحن CrossFire", sub: "كل عملية شراء ترفع حظوظك في السحب", tag: "اختياري — يزيد فرصك", label: "اذهب إلى CrossFire" },
+      { title: "اشحن CrossFire", sub: "Every purchase increases your draw odds", tag: "Optional — boosts odds", label: "Go to CrossFire" },
       { title: "دعمنا على يوتيوب", sub: "أي دعم يساعد القناة ويزيد حظك", tag: "اختياري", label: "يوتيوب" },
     ],
     prizesTitle: "الجوائز — Battle Pass E-Sports",
@@ -91,6 +93,8 @@ const TX = {
     resultsTitle: "الفائزون",
     resultsNote: "سيتم التواصل مع الفائزين عبر قناة الواتساب الرسمية خلال ٤٨ ساعة.",
     bundleNote: "Battle Pass E-Sports · الحزمة الكاملة",
+    registerBtn: "شارك في المسابقة",
+    registeredMsg: "تم تأكيد مشاركتك بنجاح",
   },
 };
 
@@ -416,21 +420,61 @@ function SectionLabel({ text }: { text: string }) {
 }
 
 /* ─── Account CTA ─── */
-function AccountCTA({ lang }: { lang: "en" | "ar" }) {
+function AccountCTA({ lang, participants }: { lang: "en" | "ar"; participants: string[] }) {
   const { isAuthenticated, user } = useUserAuth();
+  const queryClient = useQueryClient();
+  const [registering, setRegistering] = useState(false);
   const tx = TX[lang];
+
+  const isRegistered = useMemo(() => {
+    if (!user) return false;
+    return participants.some(p => p.toLowerCase() === user.name?.toLowerCase() || p.toLowerCase() === user.username?.toLowerCase());
+  }, [user, participants]);
+
+  async function handleRegister() {
+    if (!isAuthenticated) return;
+    setRegistering(true);
+    try {
+      const res = await fetch("/api/giveaway/register", { method: "POST" });
+      if (res.ok) {
+        queryClient.invalidateQueries({ queryKey: ["/api/giveaway/config"] });
+      }
+    } catch (e) {}
+    setRegistering(false);
+  }
+
   if (isAuthenticated && user) {
     return (
-      <div className="rounded-xl p-5 flex items-center gap-4"
+      <div className="rounded-xl p-5 flex flex-col gap-4"
         style={{ background: CARD, border: `1px solid ${LBLUE}22` }}>
-        <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 font-black text-sm text-white"
-          style={{ background: `${LBLUE}20`, border: `1px solid ${LBLUE}30` }}>
-          {user.name?.charAt(0)?.toUpperCase() ?? "U"}
+        <div className="flex items-center gap-4">
+          <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 font-black text-sm text-white"
+            style={{ background: `${LBLUE}20`, border: `1px solid ${LBLUE}30` }}>
+            {user.name?.charAt(0)?.toUpperCase() ?? "U"}
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-white font-bold text-sm truncate">{user.name}</p>
+            <p className="text-xs mt-0.5" style={{ color: "rgba(255,255,255,0.28)" }}>
+              {isRegistered ? tx.registeredMsg : tx.signInDesc}
+            </p>
+          </div>
+          {isRegistered && (
+            <div className="w-6 h-6 rounded-full bg-green-500/20 flex items-center justify-center">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4ade80" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            </div>
+          )}
         </div>
-        <div>
-          <p className="text-white font-bold text-sm">{user.name}</p>
-          <p className="text-xs mt-0.5" style={{ color: "rgba(255,255,255,0.28)" }}>{tx.signedIn}</p>
-        </div>
+        
+        {!isRegistered && (
+          <button 
+            onClick={handleRegister}
+            disabled={registering}
+            className="w-full py-3 rounded-lg font-black text-sm uppercase tracking-widest transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:scale-100"
+            style={{ background: LBLUE, color: "#fff", boxShadow: `0 4px 15px ${LBLUE}44` }}
+          >
+            {registering ? "..." : tx.registerBtn}
+          </button>
+        )}
       </div>
     );
   }
@@ -609,7 +653,7 @@ function StateStandby({ lang, cfg }: { lang: "en" | "ar"; cfg: GiveawayConfig })
       </div>
 
       <SectionLabel text={tx.acctTitle} />
-      <div className="mb-12"><AccountCTA lang={lang} /></div>
+      <div className="mb-12"><AccountCTA lang={lang} participants={cfg.participants} /></div>
 
       <SectionLabel text={lang === "ar" ? "المشاركون المسجلون" : "Registered Participants"} />
       <div className="mb-12">
@@ -691,7 +735,7 @@ function StateGathering({ lang, cfg }: { lang: "en" | "ar"; cfg: GiveawayConfig 
         </p>
         <ParticipantsList lang={lang} participants={cfg.participants} />
       </div>
-      <AccountCTA lang={lang} />
+      <AccountCTA lang={lang} participants={cfg.participants} />
     </div>
   );
 }

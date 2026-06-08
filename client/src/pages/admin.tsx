@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
-import { Trash2, Edit, Plus, MessageSquare, Bell, Check, AlertCircle, Info, Search, Package, Shield, ShoppingCart, User, Bot, Paperclip, Phone, Image } from 'lucide-react';
+import { Trash2, Edit, Plus, MessageSquare, Bell, Check, AlertCircle, Info, Search, Package, Shield, ShoppingCart, User, Bot, Paperclip, Phone, Image, Gamepad2, Grid3X3, X } from 'lucide-react';
 import { API_BASE_URL, queryClient } from '@/lib/queryClient';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Label } from '@/components/ui/label';
@@ -4434,9 +4434,22 @@ function GiveawayPanel() {
     bg_img: '', event_video: '', event_name: '',
   });
 
-  const { data: cfg, isLoading } = useQuery<any>({
+  const { data: cfg, isLoading: configLoading } = useQuery<any>({
     queryKey: ['/api/giveaway/config'],
     staleTime: 10000,
+  });
+
+  // Fetch all users to allow quick add
+  const { data: usersData, isLoading: usersLoading } = useQuery<any>({
+    queryKey: ['/api/admin/users', '', 1],
+    queryFn: async () => {
+      const token = localStorage.getItem('adminToken');
+      const res = await fetch(apiPath(`/api/admin/users?limit=1000`), {
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+      });
+      if (!res.ok) throw new Error('Failed to fetch users');
+      return res.json();
+    }
   });
 
   useEffect(() => {
@@ -4456,6 +4469,7 @@ function GiveawayPanel() {
   }, [cfg]);
 
   const participants: string[] = cfg?.participants || [];
+  const siteUsers = usersData?.items || [];
 
   async function saveConfig(updates: any) {
     setSaving(true); setSaveMsg('');
@@ -4478,22 +4492,26 @@ function GiveawayPanel() {
     setTimeout(() => setSaveMsg(''), 3000);
   }
 
-  function addParticipant() {
-    const name = newParticipant.trim();
+  function addParticipant(nameToAdd?: string) {
+    const name = (nameToAdd || newParticipant).trim();
     if (!name || participants.includes(name)) return;
     saveConfig({ participants: [...participants, name] });
-    setNewParticipant('');
+    if (!nameToAdd) setNewParticipant('');
   }
 
   function removeParticipant(name: string) {
     saveConfig({ participants: participants.filter(p => p !== name) });
   }
 
-  const filtered = participants.filter(p =>
+  const filteredParticipants = participants.filter(p =>
     !searchQ || p.toLowerCase().includes(searchQ.toLowerCase())
   );
 
-  if (isLoading) return <div className="p-8 text-center text-muted-foreground">جاري التحميل...</div>;
+  const unaddedUsers = siteUsers.filter((u: any) => 
+    !participants.some(p => p.toLowerCase() === u.name.toLowerCase() || p.toLowerCase() === u.username?.toLowerCase())
+  );
+
+  if (configLoading) return <div className="p-8 text-center text-muted-foreground">جاري التحميل...</div>;
 
   return (
     <div className="space-y-6">
@@ -4502,130 +4520,181 @@ function GiveawayPanel() {
         {saveMsg && <span className="text-sm font-medium">{saveMsg}</span>}
       </div>
 
-      {/* URLs & Config */}
-      <Card className="bg-card/50 border-border">
-        <CardHeader><CardTitle>إعدادات السحب</CardTitle></CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label>اسم الحدث</Label>
-              <Input value={fields.event_name} onChange={e => setFields(f => ({ ...f, event_name: e.target.value }))}
-                placeholder="CFS 10TH ANNIVERSARY" />
-            </div>
-            <div>
-              <Label>وقت التجمع (gather time)</Label>
-              <Input value={fields.gather_time} onChange={e => setFields(f => ({ ...f, gather_time: e.target.value }))}
-                placeholder="2026-10-06T21:30:00+03:00" />
-            </div>
-            <div>
-              <Label>وقت السحب (draw time)</Label>
-              <Input value={fields.draw_time} onChange={e => setFields(f => ({ ...f, draw_time: e.target.value }))}
-                placeholder="2026-10-06T22:00:00+03:00" />
-            </div>
-            <div>
-              <Label>رابط واتساب</Label>
-              <Input value={fields.wa_url} onChange={e => setFields(f => ({ ...f, wa_url: e.target.value }))}
-                placeholder="https://www.whatsapp.com/channel/..." />
-            </div>
-            <div>
-              <Label>رابط يوتيوب</Label>
-              <Input value={fields.yt_url} onChange={e => setFields(f => ({ ...f, yt_url: e.target.value }))}
-                placeholder="https://www.youtube.com/@..." />
-            </div>
-          </div>
-          <Button onClick={() => saveConfig(fields)} disabled={saving} className="bg-yellow-500 text-black hover:bg-yellow-400">
-            {saving ? 'جاري الحفظ...' : 'حفظ الإعدادات'}
-          </Button>
-        </CardContent>
-      </Card>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Left Column: Config */}
+        <div className="lg:col-span-2 space-y-6">
+          {/* URLs & Config */}
+          <Card className="bg-card/50 border-border">
+            <CardHeader><CardTitle>إعدادات السحب</CardTitle></CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label>اسم الحدث</Label>
+                  <Input value={fields.event_name} onChange={e => setFields(f => ({ ...f, event_name: e.target.value }))}
+                    placeholder="CFS 10TH ANNIVERSARY" />
+                </div>
+                <div>
+                  <Label>وقت التجمع (gather time)</Label>
+                  <Input value={fields.gather_time} onChange={e => setFields(f => ({ ...f, gather_time: e.target.value }))}
+                    placeholder="2026-10-06T21:30:00+03:00" />
+                </div>
+                <div>
+                  <Label>وقت السحب (draw time)</Label>
+                  <Input value={fields.draw_time} onChange={e => setFields(f => ({ ...f, draw_time: e.target.value }))}
+                    placeholder="2026-10-06T22:00:00+03:00" />
+                </div>
+                <div>
+                  <Label>رابط واتساب</Label>
+                  <Input value={fields.wa_url} onChange={e => setFields(f => ({ ...f, wa_url: e.target.value }))}
+                    placeholder="https://www.whatsapp.com/channel/..." />
+                </div>
+                <div>
+                  <Label>رابط يوتيوب</Label>
+                  <Input value={fields.yt_url} onChange={e => setFields(f => ({ ...f, yt_url: e.target.value }))}
+                    placeholder="https://www.youtube.com/@..." />
+                </div>
+              </div>
+              <Button onClick={() => saveConfig(fields)} disabled={saving} className="bg-yellow-500 text-black hover:bg-yellow-400">
+                {saving ? 'جاري الحفظ...' : 'حفظ الإعدادات'}
+              </Button>
+            </CardContent>
+          </Card>
 
-      {/* Cloudinary Image URLs */}
-      <Card className="bg-card/50 border-border">
-        <CardHeader>
-          <CardTitle>صور الجوائز والخلفية (Cloudinary)</CardTitle>
-          <CardDescription>أدخل روابط Cloudinary مباشرة. تعمل في كل البيئات بما فيها Vercel.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          {[
-            { key: 'prize1_img', label: '🥇 صورة الجائزة الأولى (HK417)' },
-            { key: 'prize2_img', label: '🥈 صورة الجائزة الثانية (Colt 1911)' },
-            { key: 'prize3_img', label: '🥉 صورة الجائزة الثالثة (Kukri)' },
-            { key: 'bg_img',     label: '🖼 صورة خلفية الصفحة' },
-            { key: 'event_video', label: '🎬 رابط فيديو الحدث' },
-          ].map(({ key, label }) => (
-            <div key={key} className="space-y-1">
-              <Label>{label}</Label>
+          {/* Cloudinary Image URLs */}
+          <Card className="bg-card/50 border-border">
+            <CardHeader>
+              <CardTitle>صور الجوائز والخلفية (Cloudinary)</CardTitle>
+              <CardDescription>أدخل روابط Cloudinary مباشرة. تعمل في كل البيئات بما فيها Vercel.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {[
+                { key: 'prize1_img', label: '🥇 صورة الجائزة الأولى (HK417)' },
+                { key: 'prize2_img', label: '🥈 صورة الجائزة الثانية (Colt 1911)' },
+                { key: 'prize3_img', label: '🥉 صورة الجائزة الثالثة (Kukri)' },
+                { key: 'bg_img',     label: '🖼 صورة خلفية الصفحة' },
+                { key: 'event_video', label: '🎬 رابط فيديو الحدث' },
+              ].map(({ key, label }) => (
+                <div key={key} className="space-y-1">
+                  <Label>{label}</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      value={(fields as any)[key]}
+                      onChange={e => setFields(f => ({ ...f, [key]: e.target.value }))}
+                      placeholder="https://res.cloudinary.com/ddzbutb12/..."
+                      className="flex-1"
+                    />
+                    {(fields as any)[key] && (
+                      <img src={(fields as any)[key]} alt={label}
+                        className="w-12 h-12 object-contain rounded border border-border bg-black/40"
+                        onError={e => { (e.target as HTMLImageElement).style.opacity = '0.3'; }} />
+                    )}
+                  </div>
+                </div>
+              ))}
+              <Button onClick={() => saveConfig(fields)} disabled={saving} className="bg-blue-600 hover:bg-blue-500 text-white mt-2">
+                {saving ? 'جاري الحفظ...' : 'حفظ صور Cloudinary'}
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Right Column: Participants Management */}
+        <div className="space-y-6">
+          {/* Add Participant */}
+          <Card className="bg-card/50 border-border">
+            <CardHeader>
+              <CardTitle>إضافة مشارك</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
               <div className="flex gap-2">
                 <Input
-                  value={(fields as any)[key]}
-                  onChange={e => setFields(f => ({ ...f, [key]: e.target.value }))}
-                  placeholder="https://res.cloudinary.com/ddzbutb12/..."
+                  value={newParticipant}
+                  onChange={e => setNewParticipant(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && addParticipant()}
+                  placeholder="اسم اللاعب الجديد..."
                   className="flex-1"
                 />
-                {(fields as any)[key] && (
-                  <img src={(fields as any)[key]} alt={label}
-                    className="w-12 h-12 object-contain rounded border border-border bg-black/40"
-                    onError={e => { (e.target as HTMLImageElement).style.opacity = '0.3'; }} />
+                <Button onClick={() => addParticipant()} disabled={saving || !newParticipant.trim()}
+                  className="bg-green-600 hover:bg-green-500 text-white">
+                  + إضافة
+                </Button>
+              </div>
+
+              {/* Quick Add from Site Users */}
+              <div className="space-y-2">
+                <Label className="text-xs text-muted-foreground">إضافة سريعة من مستخدمي الموقع</Label>
+                <div className="max-h-48 overflow-y-auto border rounded-md p-2 space-y-1 bg-black/20">
+                  {usersLoading ? (
+                    <p className="text-xs text-center py-4">جاري تحميل المستخدمين...</p>
+                  ) : unaddedUsers.length === 0 ? (
+                    <p className="text-xs text-center py-4">تمت إضافة جميع المستخدمين</p>
+                  ) : (
+                    unaddedUsers.map((u: any) => (
+                      <div key={u.id} className="flex items-center justify-between gap-2 p-1.5 hover:bg-white/5 rounded transition-colors group">
+                        <div className="min-w-0">
+                          <p className="text-xs font-bold truncate text-white">{u.name}</p>
+                          <p className="text-[10px] text-muted-foreground truncate">{u.phone}</p>
+                        </div>
+                        <Button 
+                          size="sm" 
+                          variant="ghost" 
+                          className="h-7 px-2 text-[10px] bg-blue-600/20 text-blue-400 hover:bg-blue-600 hover:text-white"
+                          onClick={() => addParticipant(u.name)}
+                        >
+                          إضافة
+                        </Button>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Participants List */}
+          <Card className="bg-card/50 border-border">
+            <CardHeader>
+              <CardTitle>المشاركون ({participants.length})</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <Input
+                value={searchQ} onChange={e => setSearchQ(e.target.value)}
+                placeholder="بحث في المشاركين..."
+                className="h-8 text-xs"
+              />
+              <div className="space-y-1 max-h-96 overflow-y-auto pr-1 custom-scrollbar">
+                {filteredParticipants.map(p => (
+                  <div key={p} className="flex items-center justify-between gap-2 px-3 py-2 rounded bg-muted/30 border border-border/50 group hover:border-yellow-500/50 transition-colors">
+                    <span className="truncate text-sm font-medium text-foreground">{p}</span>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-6 w-6 text-red-400 hover:text-red-500 hover:bg-red-500/10"
+                      onClick={() => removeParticipant(p)}
+                    >
+                      <X className="w-3 h-3" />
+                    </Button>
+                  </div>
+                ))}
+                {filteredParticipants.length === 0 && (
+                  <p className="text-muted-foreground text-center py-8 text-xs italic">لا توجد نتائج</p>
                 )}
               </div>
-            </div>
-          ))}
-          <Button onClick={() => saveConfig(fields)} disabled={saving} className="bg-blue-600 hover:bg-blue-500 text-white mt-2">
-            {saving ? 'جاري الحفظ...' : 'حفظ صور Cloudinary'}
-          </Button>
-        </CardContent>
-      </Card>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
 
-      {/* Participants */}
-      <Card className="bg-card/50 border-border">
-        <CardHeader>
-          <CardTitle>المشاركون ({participants.length})</CardTitle>
-          <CardDescription>أضف أو احذف اللاعبين المشاركين في السحب</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex gap-2">
-            <Input
-              value={newParticipant}
-              onChange={e => setNewParticipant(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && addParticipant()}
-              placeholder="اسم اللاعب الجديد..."
-              className="flex-1"
-            />
-            <Button onClick={addParticipant} disabled={saving || !newParticipant.trim()}
-              className="bg-green-600 hover:bg-green-500 text-white">
-              + إضافة
-            </Button>
-          </div>
-          <Input
-            value={searchQ} onChange={e => setSearchQ(e.target.value)}
-            placeholder="بحث في المشاركين..."
-          />
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 max-h-80 overflow-y-auto">
-            {filtered.map(p => (
-              <div key={p} className="flex items-center justify-between gap-1 px-2 py-1.5 rounded bg-muted/50 border border-border text-xs group">
-                <span className="truncate text-foreground font-medium">{p}</span>
-                <button onClick={() => removeParticipant(p)}
-                  className="text-red-400 hover:text-red-300 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity font-bold">
-                  ✕
-                </button>
-              </div>
-            ))}
-            {filtered.length === 0 && (
-              <p className="text-muted-foreground text-xs col-span-4">لا توجد نتائج</p>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Preview link */}
-      <div className="flex items-center gap-4 text-sm text-muted-foreground">
+      {/* Preview links */}
+      <div className="flex items-center gap-6 p-4 rounded-lg bg-black/20 border border-border/50">
+        <span className="text-sm font-bold text-white">روابط سريعة:</span>
         <a href="/giveaway" target="_blank" rel="noopener noreferrer"
-          className="underline text-blue-400 hover:text-blue-300">
-          → عرض صفحة السحب
+          className="text-xs flex items-center gap-1 text-blue-400 hover:text-blue-300 transition-colors font-medium">
+          <Gamepad2 className="w-3 h-3" /> عرض صفحة السحب
         </a>
         <a href="/giveaway?state=4" target="_blank" rel="noopener noreferrer"
-          className="underline text-yellow-400 hover:text-yellow-300">
-          → معاينة نتائج السحب
+          className="text-xs flex items-center gap-1 text-yellow-400 hover:text-yellow-300 transition-colors font-medium">
+          <Grid3X3 className="w-3 h-3" /> معاينة نتائج السحب
         </a>
       </div>
     </div>
