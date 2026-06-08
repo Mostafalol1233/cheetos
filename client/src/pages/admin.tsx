@@ -65,7 +65,7 @@ interface Game {
 }
 
 // Global queryClient import fix
-import { queryClient } from '@/lib/queryClient';
+// import { queryClient } from '@/lib/queryClient';
 
 // Helper to match customer-facing image logic
 function getGameDisplayImage(game: Game): string {
@@ -113,7 +113,7 @@ function ConsistencyCheck() {
     refetchInterval: 60000, // Check every minute
     queryFn: async () => {
       try {
-        const res = await fetch('/api/health');
+        const res = await fetch(apiPath('/api/health'));
         if (!res.ok) throw new Error('Health check failed');
         const data = await res.json();
         return data;
@@ -1054,7 +1054,7 @@ export default function AdminDashboard() {
       if (alertType !== 'all') params.append('type', alertType);
       if (alertSearch) params.append('q', alertSearch);
 
-      const res = await fetch(`${API_BASE_URL}/api/admin/alerts?${params.toString()}`, {
+      const res = await fetch(apiPath(`/api/admin/alerts?${params.toString()}`), {
         headers: token ? { Authorization: `Bearer ${token}` } : undefined
       });
       if (!res.ok) {
@@ -4486,7 +4486,7 @@ function GiveawayPanel() {
 
   const unaddedUsers = useMemo(() => {
     return siteUsers.filter((u: any) => 
-      u && !participants.some(p => p && (p.toLowerCase() === u.name?.toLowerCase() || p.toLowerCase() === u.username?.toLowerCase()))
+      u && !participants.some(p => p && (p.toLowerCase() === u.name?.toLowerCase() || p.toLowerCase() === u.email?.toLowerCase()))
     );
   }, [siteUsers, participants]);
 
@@ -4494,7 +4494,7 @@ function GiveawayPanel() {
     setSaving(true); setSaveMsg('');
     try {
       const token = localStorage.getItem('adminToken');
-      const res = await fetch('/api/admin/giveaway/config', {
+      const res = await fetch(apiPath('/api/admin/giveaway/config'), {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -5142,7 +5142,7 @@ function CheckoutTemplatesPanel() {
 
 function WhatsAppConnectionPanel() {
   const token = typeof window !== 'undefined' ? localStorage.getItem('adminToken') : null;
-  const authHeaders = token ? { Authorization: `Bearer ${token}` } : {};
+  const authHeaders: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
 
   const { data: status, refetch, isError, isFetching } = useQuery<{ qr: string | null; connected: boolean; status: string }>({
     queryKey: ['/api/admin/whatsapp/qr'],
@@ -5356,14 +5356,14 @@ function SellerAlertsPanel() {
     queryKey: ['/api/admin/alerts'],
     refetchInterval: 60000,
     queryFn: async () => {
-      const res = await fetch(apiPath('/api/admin/alerts'), { headers: token ? { Authorization: `Bearer ${token}` } : undefined });
+      const res = await fetch(apiPath('/api/admin/alerts'), { headers: token ? { Authorization: `Bearer ${token}` } : {} });
       return res.json();
     }
   });
 
   const markRead = useMutation({
     mutationFn: async (id: string) => {
-      const res = await fetch(apiPath(`/api/admin/alerts/${id}/read`), { method: 'POST', headers: token ? { Authorization: `Bearer ${token}` } : undefined });
+      const res = await fetch(apiPath(`/api/admin/alerts/${id}/read`), { method: 'POST', headers: token ? { Authorization: `Bearer ${token}` } : {} });
       return res.json();
     },
     onSuccess: () => refetch()
@@ -5371,7 +5371,7 @@ function SellerAlertsPanel() {
 
   const flagAlert = useMutation({
     mutationFn: async (id: string) => {
-      const res = await fetch(apiPath(`/api/admin/alerts/${id}/flag`), { method: 'POST', headers: token ? { Authorization: `Bearer ${token}` } : undefined });
+      const res = await fetch(apiPath(`/api/admin/alerts/${id}/flag`), { method: 'POST', headers: token ? { Authorization: `Bearer ${token}` } : {} });
       return res.json();
     },
     onSuccess: () => refetch()

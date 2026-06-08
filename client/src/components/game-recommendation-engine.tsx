@@ -3,13 +3,14 @@ import { Game } from '@shared/schema';
 import { InteractiveGamePreview } from './interactive-game-preview';
 import { Shuffle } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import { API_BASE_URL } from '@/lib/queryClient';
 
 export function GameRecommendationEngine() {
   const [randomGames, setRandomGames] = useState<Game[]>([]);
 
   const { data: games, isLoading } = useQuery({
     queryKey: ['/api/games'],
-    queryFn: () => fetch('/api/games').then(res => res.json()) as Promise<Game[]>
+    queryFn: () => fetch(`${API_BASE_URL}/api/games`).then(res => res.json()) as Promise<Game[]>
   });
 
   // Simple random game selection

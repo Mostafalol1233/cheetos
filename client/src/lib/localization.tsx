@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { API_BASE_URL } from "./queryClient";
 
 export type Currency = "EGP";
 export type Country = string | null;
@@ -59,7 +60,7 @@ export function LocalizationProvider({ children }: LocalizationProviderProps) {
 
     setIsLoading(true);
     try {
-      const response = await fetch("/api/localization/detect");
+      const response = await fetch(`${API_BASE_URL}/api/localization/detect`);
       if (response.ok) {
         const data = await response.json();
 

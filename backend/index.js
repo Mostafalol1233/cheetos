@@ -5827,10 +5827,10 @@ const startServer = async () => {
     app.post('/api/giveaway/register', authenticateToken, async (req, res) => {
       try {
         const userId = req.user.id;
-        const userRes = await pool.query('SELECT name, username FROM users WHERE id = $1', [userId]);
+        const userRes = await pool.query('SELECT name, email FROM users WHERE id = $1', [userId]);
         if (userRes.rows.length === 0) return res.status(404).json({ message: 'User not found' });
         
-        const userName = userRes.rows[0].name || userRes.rows[0].username;
+        const userName = userRes.rows[0].name || userRes.rows[0].email;
         
         const configRes = await pool.query('SELECT participants FROM giveaway_settings LIMIT 1');
         const participants = configRes.rows[0]?.participants || [];

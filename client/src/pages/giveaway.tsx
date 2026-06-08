@@ -429,7 +429,7 @@ function AccountCTA({ lang, participants }: { lang: "en" | "ar"; participants: s
   const isRegistered = useMemo(() => {
     if (!user) return false;
     const parts = participants || [];
-    return parts.some(p => p && (p.toLowerCase() === user.name?.toLowerCase() || p.toLowerCase() === user.username?.toLowerCase()));
+    return parts.some(p => p && (p.toLowerCase() === user.name?.toLowerCase() || p.toLowerCase() === user.email?.toLowerCase()));
   }, [user, participants]);
 
   async function handleRegister() {
@@ -437,9 +437,11 @@ function AccountCTA({ lang, participants }: { lang: "en" | "ar"; participants: s
     setRegistering(true);
     try {
       const token = localStorage.getItem("userToken");
+      console.log("Registering for giveaway. Token exists:", !!token);
       const res = await fetch(`${API_BASE_URL}/api/giveaway/register`, { 
         method: "POST",
         headers: {
+          'Content-Type': 'application/json',
           ...(token ? { "Authorization": `Bearer ${token}` } : {})
         }
       });

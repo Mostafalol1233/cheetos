@@ -1,6 +1,7 @@
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { API_BASE_URL } from '@/lib/queryClient';
 
 export type CartItem = {
   id: string;
@@ -187,7 +188,7 @@ export const useCheckout = create<CheckoutState>()(
         },
         fetchPaymentMethods: async () => {
           try {
-            const res = await fetch('/api/payments/config');
+            const res = await fetch(`${API_BASE_URL}/api/payments/config`);
             if (!res.ok) throw new Error('Failed to fetch payment methods');
             const data = await res.json();
             const methods: PaymentConfig[] = data.map((m: any) => ({

@@ -3,6 +3,7 @@ import { Category } from "@shared/schema";
 import { Link } from "wouter";
 import ImageWithFallback from "./image-with-fallback";
 import { useTranslation } from "@/lib/translation";
+import { API_BASE_URL } from "@/lib/queryClient";
 import { ArrowRight, Flame, Smartphone, Gift, Monitor, Zap } from "lucide-react";
 
 const SLUG_DISPLAY_NAMES: Record<string, string> = {
@@ -65,7 +66,7 @@ export function ShoppingCategories() {
   const { t } = useTranslation();
   const { data: categories = [], isLoading, isError } = useQuery({
     queryKey: ["/api/categories"],
-    queryFn: () => fetch("/api/categories").then(res => res.json()) as Promise<Category[]>
+    queryFn: () => fetch(`${API_BASE_URL}/api/categories`).then(res => res.json()) as Promise<Category[]>
   });
 
   if (isLoading) {

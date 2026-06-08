@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Trash2, Phone, Mail, Eye, MessageSquare } from 'lucide-react';
 import { useState } from 'react';
+import { API_BASE_URL } from '@/lib/queryClient';
 
 interface ContactMessage {
   id: string;
@@ -28,14 +29,22 @@ export function SupportMessagesPanel() {
 
   const markReadMutation = useMutation({
     mutationFn: async (id: string) => {
-      await fetch(`/api/contact-messages/${id}/read`, { method: 'PATCH' });
+      const token = localStorage.getItem('adminToken');
+      await fetch(`${API_BASE_URL}/api/contact-messages/${id}/read`, { 
+        method: 'PATCH',
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+      });
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['/api/contact-messages'] }),
   });
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      await fetch(`/api/contact-messages/${id}`, { method: 'DELETE' });
+      const token = localStorage.getItem('adminToken');
+      await fetch(`${API_BASE_URL}/api/contact-messages/${id}`, { 
+        method: 'DELETE',
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+      });
     },
     onSuccess: () => {
       setSelected(null);

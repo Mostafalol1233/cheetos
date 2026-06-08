@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Upload } from 'lucide-react';
-import { apiRequest } from '@/lib/queryClient';
+import { apiRequest, API_BASE_URL } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 
 import { ReceiptUpload } from './receipt-upload';
@@ -47,7 +47,7 @@ export function StepPayment() {
     formData.append('image', file);
 
     try {
-      const res = await fetch('/api/uploads/receipt', {
+      const res = await fetch(`${API_BASE_URL}/api/uploads/receipt`, {
         method: 'POST',
         body: formData,
       });

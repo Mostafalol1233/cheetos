@@ -15,6 +15,8 @@ import {
   Maximize2
 } from "lucide-react";
 
+import { API_BASE_URL } from "@/lib/queryClient";
+
 interface Message {
   id: string;
   text: string;
@@ -56,7 +58,7 @@ export function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
 
   const loadChatHistory = async () => {
     try {
-      const response = await fetch('/api/user/chat/history', {
+      const response = await fetch(`${API_BASE_URL}/api/user/chat/history`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('userToken')}`
         }
@@ -92,7 +94,7 @@ export function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
     setIsLoading(true);
 
     try {
-      const response = await fetch('/api/user/chat/send', {
+      const response = await fetch(`${API_BASE_URL}/api/user/chat/send`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

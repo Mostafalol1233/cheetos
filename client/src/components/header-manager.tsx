@@ -83,7 +83,7 @@ export function HeaderManager() {
       const headers: Record<string, string> = {};
       if (token) headers["Authorization"] = `Bearer ${token}`;
 
-      const res = await fetch("/api/header-images/versions", { headers });
+      const res = await fetch(`${API_BASE_URL}/api/header-images/versions`, { headers });
       if (!res.ok) throw new Error("Failed to fetch versions");
       const data = await res.json();
       setVersions(data);
@@ -152,7 +152,7 @@ export function HeaderManager() {
       const headers: Record<string, string> = {};
       if (token) headers["Authorization"] = `Bearer ${token}`;
 
-      const uploadRes = await fetch("/api/header-images/upload", {
+      const uploadRes = await fetch(`${API_BASE_URL}/api/header-images/upload`, {
         method: "POST",
         headers,
         body: formData,
@@ -200,7 +200,7 @@ export function HeaderManager() {
       };
       if (token) headers["Authorization"] = `Bearer ${token}`;
 
-      const res = await fetch("/api/header-images/save-version", {
+      const res = await fetch(`${API_BASE_URL}/api/header-images/save-version`, {
         method: "POST",
         headers,
         body: JSON.stringify({
@@ -244,7 +244,7 @@ export function HeaderManager() {
       const headers: Record<string, string> = {};
       if (token) headers["Authorization"] = `Bearer ${token}`;
 
-      await fetch(`/api/header-images/versions/${id}`, {
+      await fetch(`${API_BASE_URL}/api/header-images/versions/${id}`, {
         method: "DELETE",
         headers
       });
@@ -263,7 +263,7 @@ export function HeaderManager() {
       const headers: Record<string, string> = { "Content-Type": "application/json" };
       if (token) headers["Authorization"] = `Bearer ${token}`;
 
-      await fetch(`/api/header-images/versions/${id}/activate`, {
+      await fetch(`${API_BASE_URL}/api/header-images/versions/${id}/activate`, {
         method: "POST",
         headers
       });
@@ -281,7 +281,7 @@ export function HeaderManager() {
       const headers: Record<string, string> = { "Content-Type": "application/json" };
       if (token) headers["Authorization"] = `Bearer ${token}`;
 
-      await fetch(`/api/header-images/versions/${id}/deactivate`, {
+      await fetch(`${API_BASE_URL}/api/header-images/versions/${id}/deactivate`, {
         method: "POST",
         headers
       });

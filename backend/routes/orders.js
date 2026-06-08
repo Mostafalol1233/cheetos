@@ -74,18 +74,11 @@ router.post('/', optionalAuthenticateToken, async (req, res) => {
 
         const newUserId = `user_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
 
-        let username = customer_email.split('@')[0];
-        // Ensure username uniqueness
-        const usernameCheck = await pool.query('SELECT * FROM users WHERE username = $1', [username]);
-        if (usernameCheck.rows.length > 0) {
-          username = `${username}_${Math.random().toString(36).slice(2, 5)}`;
-        }
-
         const newUser = await pool.query(
-          `INSERT INTO users (id, username, password, email, role, created_at)
+          `INSERT INTO users (id, name, password_hash, email, role, created_at)
            VALUES ($1, $2, $3, $4, 'user', $5)
-           RETURNING id, username, email, role, created_at`,
-          [newUserId, username, passwordHash, customer_email, Date.now()]
+           RETURNING id, name, email, role, created_at`,
+          [newUserId, customer_name, passwordHash, customer_email, Date.now()]
         );
 
         userId = newUserId;
@@ -93,7 +86,7 @@ router.post('/', optionalAuthenticateToken, async (req, res) => {
 
         // Generate Token
         userToken = jwt.sign({ id: userObj.id, email: userObj.email, role: userObj.role }, JWT_SECRET, { expiresIn: '30d' });
-        userData = { ...userObj, name: userObj.username };
+        userData = { ...userObj, name: userObj.name };
 
         // Log audit event
         logAudit('guest_user_created', `Guest user created during order: ${customer_email}`, { id: userId, email: customer_email });

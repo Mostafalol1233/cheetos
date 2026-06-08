@@ -65,6 +65,11 @@ export async function apiRequest(
   const adminToken = (() => {
     try { return localStorage.getItem('adminToken') || ""; } catch { return ""; }
   })();
+  const userToken = (() => {
+    try { return localStorage.getItem('userToken') || ""; } catch { return ""; }
+  })();
+  const token = adminToken || userToken;
+
   let res: Response;
   try {
     res = await fetch(finalUrl, {
@@ -72,7 +77,7 @@ export async function apiRequest(
       headers: {
         ...(data ? { "Content-Type": "application/json" } : {}),
         ...(csrf ? { "X-CSRF-Token": csrf } : {}),
-        ...(adminToken ? { "Authorization": `Bearer ${adminToken}` } : {}),
+        ...(token ? { "Authorization": `Bearer ${token}` } : {}),
       },
       body: data ? JSON.stringify(data) : undefined,
       credentials: "include",
@@ -111,13 +116,18 @@ export const getQueryFn: <T>(options: {
     const adminToken = (() => {
       try { return localStorage.getItem('adminToken') || ""; } catch { return ""; }
     })();
+    const userToken = (() => {
+      try { return localStorage.getItem('userToken') || ""; } catch { return ""; }
+    })();
+    const token = adminToken || userToken;
+
     let res: Response;
     try {
       res = await fetch(finalUrl, {
         credentials: "include",
         headers: {
           ...(csrf ? { "X-CSRF-Token": csrf } : {}),
-          ...(adminToken ? { "Authorization": `Bearer ${adminToken}` } : {}),
+          ...(token ? { "Authorization": `Bearer ${token}` } : {}),
         },
       });
     } catch (err: any) {
