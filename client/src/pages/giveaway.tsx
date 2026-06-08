@@ -1,9 +1,9 @@
-import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useUserAuth } from "@/lib/user-auth-context";
 import { useTranslation } from "@/lib/translation";
 import { Link } from "wouter";
 import { Header } from "@/components/header";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 const cfsLogoBanner = "https://res.cloudinary.com/ddzbutb12/image/upload/gamecart/giveaway/cfs-emblem.png";
 
 /* ─── Bilingual text ─── */
