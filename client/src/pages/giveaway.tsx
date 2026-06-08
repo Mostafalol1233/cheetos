@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { queryClient } from "@/lib/queryClient";
+import { queryClient, API_BASE_URL } from "@/lib/queryClient";
 import { useUserAuth } from "@/lib/user-auth-context";
 import { useTranslation } from "@/lib/translation";
 import { Link } from "wouter";
@@ -436,9 +436,9 @@ function AccountCTA({ lang, participants }: { lang: "en" | "ar"; participants: s
     if (!isAuthenticated) return;
     setRegistering(true);
     try {
-      const res = await fetch("/api/giveaway/register", { method: "POST" });
+      const res = await fetch(`${API_BASE_URL}/api/giveaway/register`, { method: "POST" });
       if (res.ok) {
-        queryClient.invalidateQueries({ queryKey: ["/api/giveaway/config"] });
+        queryClient.invalidateQueries({ queryKey: [`${API_BASE_URL}/api/giveaway/config`] });
       }
     } catch (e) {}
     setRegistering(false);
@@ -1011,7 +1011,7 @@ export default function GiveawayPage() {
   const lang = (language === "ar" ? "ar" : "en") as "en" | "ar";
 
   const { data: rawConfig } = useQuery<GiveawayConfig>({
-    queryKey: ["/api/giveaway/config"],
+    queryKey: [`${API_BASE_URL}/api/giveaway/config`],
     staleTime: 30000,
   });
 

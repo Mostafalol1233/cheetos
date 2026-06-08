@@ -4437,8 +4437,13 @@ function GiveawayPanel() {
   });
 
   const { data: cfg, isLoading: configLoading } = useQuery<any>({
-    queryKey: ['/api/giveaway/config'],
+    queryKey: [`${API_BASE_URL}/api/giveaway/config`],
     staleTime: 10000,
+    queryFn: async () => {
+      const res = await fetch(apiPath('/api/giveaway/config'));
+      if (!res.ok) throw new Error('Failed');
+      return res.json();
+    }
   });
 
   // Fetch all users to allow quick add
@@ -4499,7 +4504,7 @@ function GiveawayPanel() {
         credentials: 'include',
       });
       if (!res.ok) throw new Error('Failed');
-      queryClient.invalidateQueries({ queryKey: ['/api/giveaway/config'] });
+      queryClient.invalidateQueries({ queryKey: [`${API_BASE_URL}/api/giveaway/config`] });
       setSaveMsg('✅ تم الحفظ');
     } catch { setSaveMsg('❌ خطأ في الحفظ'); }
     setSaving(false);

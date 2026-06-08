@@ -219,8 +219,8 @@ export default function UserLoginPage() {
             onClick={() => window.history.back()} 
             className="inline-flex items-center gap-2 text-gold-primary hover:text-gold-secondary transition-colors bg-transparent border-0 cursor-pointer"
           >
-            <ArrowLeft className="w-4 h-4" />
-            Back
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back to Home
           </button>
         </div>
 

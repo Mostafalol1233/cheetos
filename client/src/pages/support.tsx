@@ -81,7 +81,7 @@ export default function SupportPage() {
             className="inline-flex items-center text-muted-foreground hover:text-gold-primary transition-colors mb-8 text-sm bg-transparent border-0 cursor-pointer"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
-            Back
+            Back to Home
           </button>
 
           <div className="text-center">

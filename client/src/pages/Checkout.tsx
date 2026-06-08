@@ -217,7 +217,7 @@ export function CheckoutContent({ isEmbedded = false }: { isEmbedded?: boolean }
               onClick={() => window.history.back()}
               className="text-muted-foreground hover:text-foreground text-sm flex items-center gap-1.5 mb-5 transition-colors bg-transparent border-0 cursor-pointer"
             >
-              ← Back
+              ← Back to Store
             </button>
             <div className="flex items-center justify-between">
               <h1 className="text-2xl font-bold text-foreground tracking-tight">Checkout</h1>
