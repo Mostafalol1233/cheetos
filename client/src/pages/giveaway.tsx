@@ -294,21 +294,30 @@ function buildDrawOrder(cfg: GiveawayConfig) {
   const drawTime = new Date(cfg.draw_time);
   const ALL = Array.from(new Set(cfg.participants || []));
 
-  /* Verified finalists are excluded from elimination pool */
+  /* Verified finalists are preferred */
   const _verified = _vf.filter(v => ALL.some(p => p && p.toLowerCase() === v.toLowerCase()));
-  const _pool = ALL.filter(p => p && !_verified.some(v => v.toLowerCase() === p.toLowerCase()));
-
+  
+  /* Start with verified, fill up to 3 from ALL if needed */
+  const FINAL_THREE: string[] = [..._verified];
+  let remainingInPool = ALL.filter(p => !FINAL_THREE.some(f => f.toLowerCase() === p.toLowerCase()));
+  
   const _rng = mulberry32(Math.floor(drawTime.getTime() / 1000));
+  
+  // Fill FINAL_THREE up to 3 if we have enough participants
+  while (FINAL_THREE.length < 3 && remainingInPool.length > 0) {
+    const idx = Math.floor(_rng() * remainingInPool.length);
+    FINAL_THREE.push(remainingInPool[idx]);
+    remainingInPool.splice(idx, 1);
+  }
+
+  // Everyone else goes into elimination order
   const ELIM_ORDER: string[] = [];
-  const pool = [..._pool];
+  const pool = [...remainingInPool];
   while (pool.length > 0) {
     const idx = Math.floor(_rng() * pool.length);
     ELIM_ORDER.push(pool[idx]);
     pool.splice(idx, 1);
   }
-
-  /* Finalists always survive to the end */
-  const FINAL_THREE = _verified.slice(0, 3);
 
   return { ALL, ELIM_ORDER, FINAL_THREE, drawTime };
 }
@@ -869,7 +878,9 @@ function StateLiveDraw({ onComplete, lang, cfg }: {
       {!started && (
         <div className="text-center mb-8">
           <p className="text-sm mb-4" style={{ color: "rgba(255,255,255,0.3)" }}>
-            {lang === "ar" ? "العجلة تبدأ تلقائياً — ٧ يونيو ٢٠٢٦ · ١١:٠٠ م القاهرة" : "Wheel starts automatically — June 7, 2026 · 11:00 PM Cairo"}
+            {lang === "ar" 
+              ? `تبدأ العجلة تلقائياً — ${new Date(cfg.draw_time).toLocaleString('ar-EG', { day: 'numeric', month: 'long', year: 'numeric', hour: 'numeric', minute: 'numeric' })} بتوقيت القاهرة`
+              : `Wheel starts automatically — ${new Date(cfg.draw_time).toLocaleString('en-US', { day: 'numeric', month: 'long', year: 'numeric', hour: 'numeric', minute: 'numeric' })} Cairo`}
           </p>
           <div className="flex gap-3 justify-center">
             <Tick v={h} label={tx.hours} /><Tick v={m} label={tx.min} /><Tick v={s} label={tx.sec} />
