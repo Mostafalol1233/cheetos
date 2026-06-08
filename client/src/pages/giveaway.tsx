@@ -201,6 +201,89 @@ function obfuscate(name: string): string {
   return name[0] + mid.replace(/./g, '*') + name[name.length - 1];
 }
 
+/* ─── Strip only dots (not dashes or other chars) ─── */
+function stripDots(s: string): string {
+  return s.replace(/\./g, "");
+}
+
+/* ─── Participants list — auth-gated, blurred until name match ─── */
+function ParticipantsList({ lang, participants }: { lang: "en" | "ar"; participants: string[] }) {
+  const { isAuthenticated } = useUserAuth();
+  const [q, setQ] = useState("");
+  const dir = lang === "ar" ? "rtl" : "ltr";
+  const ALL = useMemo(() => Array.from(new Set(participants)), [participants]);
+
+  /* Only dots stripped. Dashes and all other chars must match literally. */
+  function nameMatches(name: string, query: string): boolean {
+    if (query.length < 2) return false;
+    return stripDots(name).toLowerCase().includes(stripDots(query).toLowerCase());
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <div className="rounded-xl flex flex-col items-center justify-center py-10 gap-3"
+        style={{ background: CARD, border: `1px solid ${LINE}`, direction: dir }}>
+        <div className="w-10 h-10 rounded-full flex items-center justify-center"
+          style={{ background: "rgba(255,255,255,0.04)", border: `1px solid ${LINE}` }}>
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+            fill="none" stroke="rgba(255,255,255,0.28)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+            <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+          </svg>
+        </div>
+        <p className="text-sm text-center" style={{ color: "rgba(255,255,255,0.35)" }}>
+          {lang === "ar" ? "سجّل دخولك لعرض قائمة المشاركين" : "Sign in to view registered participants"}
+        </p>
+        <Link href="/login">
+          <span className="text-xs font-bold px-4 py-2 rounded-lg cursor-pointer"
+            style={{ background: `${LBLUE}18`, border: `1px solid ${LBLUE}44`, color: LBLUE }}>
+            {lang === "ar" ? "تسجيل الدخول" : "Sign In"}
+          </span>
+        </Link>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <div className={`flex items-center gap-2 mb-3 ${lang === "ar" ? "flex-row-reverse" : ""}`}>
+        <input value={q} onChange={e => setQ(e.target.value)}
+          placeholder={lang === "ar" ? "ابحث عن اسمك كاملاً..." : "Search your full name..."}
+          className="flex-1 px-4 py-2.5 rounded-lg text-white text-sm outline-none placeholder-white/20"
+          style={{ background: "rgba(0,0,0,0.5)", border: `1px solid ${LINE}` }} />
+        <span className="text-xs flex-shrink-0 tabular-nums"
+          style={{ color: "rgba(255,255,255,0.2)", fontFamily: "ui-monospace,monospace" }}>
+          {ALL.length}
+        </span>
+      </div>
+      {q.length === 1 && (
+        <p className="text-xs mb-2" style={{ color: "rgba(255,255,255,0.25)", direction: dir }}>
+          {lang === "ar" ? "اكتب حرفين على الأقل للبحث" : "Type at least 2 characters to search"}
+        </p>
+      )}
+      <div className="grid grid-cols-3 sm:grid-cols-4 gap-1.5 max-h-64 overflow-y-auto"
+        style={{ scrollbarWidth: "thin", scrollbarColor: `${LBLUE}33 transparent` }}>
+        {ALL.map(p => {
+          const hit = nameMatches(p, q);
+          return (
+            <div key={p} className="px-2 py-1.5 rounded text-xs text-center truncate transition-all duration-200"
+              style={{
+                background: hit ? `${LBLUE}22` : "rgba(0,0,0,0.38)",
+                border: `1px solid ${hit ? LBLUE + "88" : LINE}`,
+                color: hit ? "#fff" : "rgba(255,255,255,0.15)",
+                fontWeight: hit ? 700 : 400,
+                filter: hit ? "none" : "blur(3px)",
+                userSelect: hit ? "auto" : "none",
+              }}>
+              {hit ? p : obfuscate(p)}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 /* ─── Build draw order from config ─── */
 function buildDrawOrder(cfg: GiveawayConfig) {
   const drawTime = new Date(cfg.draw_time);
@@ -528,6 +611,11 @@ function StateStandby({ lang, cfg }: { lang: "en" | "ar"; cfg: GiveawayConfig })
       <SectionLabel text={tx.acctTitle} />
       <div className="mb-12"><AccountCTA lang={lang} /></div>
 
+      <SectionLabel text={lang === "ar" ? "المشاركون المسجلون" : "Registered Participants"} />
+      <div className="mb-12">
+        <ParticipantsList lang={lang} participants={cfg.participants} />
+      </div>
+
       <SectionLabel text={tx.termsTitle} />
       <div className="rounded-xl overflow-hidden mb-10" style={{ background: CARD, border: `1px solid ${LINE}` }}>
         {tx.terms.map((t, i, arr) => (
@@ -556,10 +644,8 @@ function StateGathering({ lang, cfg }: { lang: "en" | "ar"; cfg: GiveawayConfig 
   const gatherTime = new Date(cfg.gather_time);
   const drawTime   = new Date(cfg.draw_time);
   const { h, m, s } = useCountdown(drawTime);
-  const [q, setQ] = useState("");
   const [pct, setPct] = useState(0);
   const tx = TX[lang];
-  const ALL = Array.from(new Set(cfg.participants));
 
   useEffect(() => {
     const totalMs = drawTime.getTime() - gatherTime.getTime();
@@ -603,28 +689,7 @@ function StateGathering({ lang, cfg }: { lang: "en" | "ar"; cfg: GiveawayConfig 
           style={{ color: "rgba(255,255,255,0.18)", fontFamily: "ui-monospace,monospace" }}>
           {lang === "ar" ? "المشاركون المسجلون" : "Registered Participants"}
         </p>
-        <input value={q} onChange={e => setQ(e.target.value)}
-          placeholder={lang === "ar" ? "ابحث عن اسمك..." : "Search your name..."}
-          className="w-full px-4 py-3 rounded-lg text-white text-sm outline-none placeholder-white/20 mb-4"
-          style={{ background: "rgba(0,0,0,0.5)", border: `1px solid ${LINE}` }} />
-        <div className="grid grid-cols-3 sm:grid-cols-4 gap-1.5 max-h-60 overflow-y-auto"
-          style={{ scrollbarWidth: "thin", scrollbarColor: `${LBLUE}33 transparent` }}>
-          {ALL.filter(p => !q || p.toLowerCase().includes(q.toLowerCase())).map(p => {
-            const exact = q.toLowerCase() === p.toLowerCase();
-            const hit = q && p.toLowerCase().includes(q.toLowerCase());
-            const display = exact ? p : obfuscate(p);
-            return (
-              <div key={p} className="px-2 py-1.5 rounded text-xs text-center truncate"
-                style={{
-                  background: exact ? `${LBLUE}20` : hit ? `${LBLUE}0a` : "rgba(0,0,0,0.4)",
-                  border: `1px solid ${exact ? LBLUE + "88" : hit ? LBLUE + "33" : LINE}`,
-                  color: exact ? "#fff" : hit ? "rgba(255,255,255,0.5)" : "rgba(255,255,255,0.25)",
-                  fontWeight: exact ? 700 : 400,
-                  letterSpacing: exact ? "normal" : "0.08em",
-                }}>{display}</div>
-            );
-          })}
-        </div>
+        <ParticipantsList lang={lang} participants={cfg.participants} />
       </div>
       <AccountCTA lang={lang} />
     </div>
