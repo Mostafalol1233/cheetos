@@ -80,5 +80,5 @@ timeoutMs = 120000
 
 [deployment]
 deploymentTarget = "autoscale"
-run = ["node", "./dist/index.cjs"]
+run = ["node", "backend/index.js"]
 build = ["npm", "run", "build"]

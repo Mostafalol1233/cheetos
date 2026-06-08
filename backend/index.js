@@ -5784,6 +5784,78 @@ const startServer = async () => {
       } catch { res.status(500).json({ message: 'Server error' }); }
     });
 
+    /* ─── Giveaway settings ─── */
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS giveaway_settings (
+        id SERIAL PRIMARY KEY,
+        participants TEXT[] NOT NULL DEFAULT '{}',
+        wa_url TEXT DEFAULT 'https://www.whatsapp.com/channel/0029Vb6jrI44yltQQfvkg41o',
+        yt_url TEXT DEFAULT 'https://www.youtube.com/@Bemora-site/videos',
+        draw_time TEXT DEFAULT '2026-10-06T22:00:00+03:00',
+        gather_time TEXT DEFAULT '2026-10-06T21:30:00+03:00',
+        prize1_img TEXT DEFAULT 'https://res.cloudinary.com/ddzbutb12/image/upload/gamecart/giveaway/cf-hk417.png',
+        prize2_img TEXT DEFAULT 'https://res.cloudinary.com/ddzbutb12/image/upload/gamecart/giveaway/cf-colt1911.png',
+        prize3_img TEXT DEFAULT 'https://res.cloudinary.com/ddzbutb12/image/upload/gamecart/giveaway/cf-kukri.png',
+        bg_img TEXT DEFAULT 'https://res.cloudinary.com/ddzbutb12/image/upload/gamecart/giveaway/cfs-bg-giveaway.png',
+        event_video TEXT DEFAULT '/media/cfs-event.mp4',
+        event_name TEXT DEFAULT 'CFS 10TH ANNIVERSARY',
+        updated_at BIGINT DEFAULT EXTRACT(EPOCH FROM NOW()) * 1000
+      )
+    `);
+    const _gwCheck = await pool.query('SELECT id FROM giveaway_settings LIMIT 1');
+    if (_gwCheck.rows.length === 0) {
+      await pool.query(
+        `INSERT INTO giveaway_settings (draw_time, gather_time) VALUES ($1, $2)`,
+        ['2026-10-06T22:00:00+03:00', '2026-10-06T21:30:00+03:00']
+      );
+    } else {
+      await pool.query(`
+        UPDATE giveaway_settings
+        SET draw_time='2026-10-06T22:00:00+03:00',
+            gather_time='2026-10-06T21:30:00+03:00'
+        WHERE draw_time NOT LIKE '2026-10-06T22%' OR draw_time IS NULL
+      `);
+    }
+
+    app.get('/api/giveaway/config', async (_req, res) => {
+      try {
+        const r = await pool.query('SELECT * FROM giveaway_settings ORDER BY id LIMIT 1');
+        res.json(r.rows[0] || null);
+      } catch { res.status(500).json({ message: 'Server error' }); }
+    });
+
+    app.put('/api/admin/giveaway/config', authenticateToken, ensureAdmin, async (req, res) => {
+      try {
+        const { participants, wa_url, yt_url, draw_time, gather_time,
+                prize1_img, prize2_img, prize3_img, bg_img, event_video, event_name } = req.body;
+        const r = await pool.query(
+          `UPDATE giveaway_settings SET
+            participants=COALESCE($1, participants),
+            wa_url=COALESCE($2, wa_url),
+            yt_url=COALESCE($3, yt_url),
+            draw_time=COALESCE($4, draw_time),
+            gather_time=COALESCE($5, gather_time),
+            prize1_img=COALESCE($6, prize1_img),
+            prize2_img=COALESCE($7, prize2_img),
+            prize3_img=COALESCE($8, prize3_img),
+            bg_img=COALESCE($9, bg_img),
+            event_video=COALESCE($10, event_video),
+            event_name=COALESCE($11, event_name),
+            updated_at=$12
+          WHERE id=(SELECT id FROM giveaway_settings LIMIT 1)
+          RETURNING *`,
+          [
+            participants || null, wa_url || null, yt_url || null,
+            draw_time || null, gather_time || null,
+            prize1_img || null, prize2_img || null, prize3_img || null,
+            bg_img || null, event_video || null, event_name || null,
+            Date.now(),
+          ]
+        );
+        res.json(r.rows[0]);
+      } catch (e) { res.status(500).json({ message: e.message }); }
+    });
+
     // Serve built React frontend (dist/) as a SPA
     const distDir = path.join(__dirname, '..', 'dist');
     if (fs.existsSync(distDir)) {

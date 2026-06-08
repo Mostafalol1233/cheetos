@@ -1096,12 +1096,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       participants TEXT[] NOT NULL DEFAULT '{}',
       wa_url TEXT DEFAULT 'https://www.whatsapp.com/channel/0029Vb6jrI44yltQQfvkg41o',
       yt_url TEXT DEFAULT 'https://www.youtube.com/@Bemora-site/videos',
-      draw_time TEXT DEFAULT '2026-10-06T23:00:00+03:00',
-      gather_time TEXT DEFAULT '2026-10-06T22:30:00+03:00',
-      prize1_img TEXT DEFAULT '/images/cf-hk417.png',
-      prize2_img TEXT DEFAULT '/images/cf-colt1911.png',
-      prize3_img TEXT DEFAULT '/images/cf-kukri.png',
-      bg_img TEXT DEFAULT '/images/cfs-bg-giveaway.png',
+      draw_time TEXT DEFAULT '2026-10-06T22:00:00+03:00',
+      gather_time TEXT DEFAULT '2026-10-06T21:30:00+03:00',
+      prize1_img TEXT DEFAULT 'https://res.cloudinary.com/ddzbutb12/image/upload/gamecart/giveaway/cf-hk417.png',
+      prize2_img TEXT DEFAULT 'https://res.cloudinary.com/ddzbutb12/image/upload/gamecart/giveaway/cf-colt1911.png',
+      prize3_img TEXT DEFAULT 'https://res.cloudinary.com/ddzbutb12/image/upload/gamecart/giveaway/cf-kukri.png',
+      bg_img TEXT DEFAULT 'https://res.cloudinary.com/ddzbutb12/image/upload/gamecart/giveaway/cfs-bg-giveaway.png',
       event_video TEXT DEFAULT '/media/cfs-event.mp4',
       event_name TEXT DEFAULT 'CFS 10TH ANNIVERSARY',
       updated_at BIGINT DEFAULT EXTRACT(EPOCH FROM NOW()) * 1000
@@ -1112,15 +1112,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   if (gwCheck.rows.length === 0) {
     await pool.query(
       `INSERT INTO giveaway_settings (participants, draw_time, gather_time) VALUES ($1, $2, $3)`,
-      [DEFAULT_PARTICIPANTS, '2026-10-06T23:00:00+03:00', '2026-10-06T22:30:00+03:00']
+      [DEFAULT_PARTICIPANTS, '2026-10-06T22:00:00+03:00', '2026-10-06T21:30:00+03:00']
     );
   } else {
     /* Sync draw/gather times back to the official October 6 date */
     await pool.query(`
       UPDATE giveaway_settings
-      SET draw_time='2026-10-06T23:00:00+03:00',
-          gather_time='2026-10-06T22:30:00+03:00'
-      WHERE draw_time NOT LIKE '2026-10-06%'
+      SET draw_time='2026-10-06T22:00:00+03:00',
+          gather_time='2026-10-06T21:30:00+03:00'
+      WHERE draw_time NOT LIKE '2026-10-06T22%'
          OR draw_time IS NULL
     `);
   }

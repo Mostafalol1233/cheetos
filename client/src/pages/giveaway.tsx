@@ -140,12 +140,12 @@ const DEFAULT_CONFIG: GiveawayConfig = {
   ],
   wa_url: "https://www.whatsapp.com/channel/0029Vb6jrI44yltQQfvkg41o",
   yt_url: "https://www.youtube.com/@Bemora-site/videos",
-  draw_time: "2026-10-06T23:00:00+03:00",
-  gather_time: "2026-10-06T22:30:00+03:00",
-  prize1_img: "/images/cf-hk417.png",
-  prize2_img: "/images/cf-colt1911.png",
-  prize3_img: "/images/cf-kukri.png",
-  bg_img: "/images/cfs-bg-giveaway.png",
+  draw_time: "2026-10-06T22:00:00+03:00",
+  gather_time: "2026-10-06T21:30:00+03:00",
+  prize1_img: "https://res.cloudinary.com/ddzbutb12/image/upload/gamecart/giveaway/cf-hk417.png",
+  prize2_img: "https://res.cloudinary.com/ddzbutb12/image/upload/gamecart/giveaway/cf-colt1911.png",
+  prize3_img: "https://res.cloudinary.com/ddzbutb12/image/upload/gamecart/giveaway/cf-kukri.png",
+  bg_img: "https://res.cloudinary.com/ddzbutb12/image/upload/gamecart/giveaway/cfs-bg-giveaway.png",
   event_video: "/media/cfs-event.mp4",
   event_name: "CFS 10TH ANNIVERSARY",
 };
@@ -400,9 +400,9 @@ function StateStandby({ lang, cfg }: { lang: "en" | "ar"; cfg: GiveawayConfig })
   const stepReq   = [true, true, false, false];
 
   const PRIZES = [
-    { rank: "1ST", place: { en: "First Place", ar: "المركز الأول" }, weapon: "HK417 — P.B. Esports Star", type: { en: "Assault Rifle", ar: "بندقية هجومية" }, img: cfg.prize1_img, color: YELLOW, charImg: "/images/cfs-char-pink.png" },
-    { rank: "2ND", place: { en: "Second Place", ar: "المركز الثاني" }, weapon: "Colt 1911 — Esports Star", type: { en: "Pistol", ar: "مسدس" }, img: cfg.prize2_img, color: SILVER, charImg: "/images/cfs-char-purple.png" },
-    { rank: "3RD", place: { en: "Third Place", ar: "المركز الثالث" }, weapon: "Kukri — Kikari Edition", type: { en: "Melee Weapon", ar: "سلاح قريب" }, img: cfg.prize3_img, color: BRONZE, charImg: "/images/cfs-char-blonde.png" },
+    { rank: "1ST", place: { en: "First Place", ar: "المركز الأول" }, weapon: "HK417 — P.B. Esports Star", type: { en: "Assault Rifle", ar: "بندقية هجومية" }, img: cfg.prize1_img, color: YELLOW, charImg: "https://res.cloudinary.com/ddzbutb12/image/upload/gamecart/giveaway/cfs-char-pink.png" },
+    { rank: "2ND", place: { en: "Second Place", ar: "المركز الثاني" }, weapon: "Colt 1911 — Esports Star", type: { en: "Pistol", ar: "مسدس" }, img: cfg.prize2_img, color: SILVER, charImg: "https://res.cloudinary.com/ddzbutb12/image/upload/gamecart/giveaway/cfs-char-purple.png" },
+    { rank: "3RD", place: { en: "Third Place", ar: "المركز الثالث" }, weapon: "Kukri — Kikari Edition", type: { en: "Melee Weapon", ar: "سلاح قريب" }, img: cfg.prize3_img, color: BRONZE, charImg: "https://res.cloudinary.com/ddzbutb12/image/upload/gamecart/giveaway/cfs-char-blonde.png" },
   ];
 
   return (
@@ -864,9 +864,9 @@ function WCard({ w, prize, delay, wide = false, lang }: {
 function StateResults({ winners, lang, cfg }: { winners: Winner[]; lang: "en" | "ar"; cfg: GiveawayConfig }) {
   const tx = TX[lang];
   const prizes = [
-    { rank: "1ST", place: { en: "First Place", ar: "المركز الأول" }, weapon: "HK417 — P.B. Esports Star", charImg: "/images/cfs-char-pink.png" },
-    { rank: "2ND", place: { en: "Second Place", ar: "المركز الثاني" }, weapon: "Colt 1911 — Esports Star", charImg: "/images/cfs-char-purple.png" },
-    { rank: "3RD", place: { en: "Third Place", ar: "المركز الثالث" }, weapon: "Kukri — Kikari Edition", charImg: "/images/cfs-char-blonde.png" },
+    { rank: "1ST", place: { en: "First Place", ar: "المركز الأول" }, weapon: "HK417 — P.B. Esports Star", charImg: "https://res.cloudinary.com/ddzbutb12/image/upload/gamecart/giveaway/cfs-char-pink.png" },
+    { rank: "2ND", place: { en: "Second Place", ar: "المركز الثاني" }, weapon: "Colt 1911 — Esports Star", charImg: "https://res.cloudinary.com/ddzbutb12/image/upload/gamecart/giveaway/cfs-char-purple.png" },
+    { rank: "3RD", place: { en: "Third Place", ar: "المركز الثالث" }, weapon: "Kukri — Kikari Edition", charImg: "https://res.cloudinary.com/ddzbutb12/image/upload/gamecart/giveaway/cfs-char-blonde.png" },
   ];
   return (
     <div className="max-w-2xl mx-auto px-5 pt-10 pb-20" dir={lang === "ar" ? "rtl" : "ltr"}>
