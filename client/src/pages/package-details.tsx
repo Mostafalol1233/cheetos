@@ -112,9 +112,14 @@ export default function PackageDetailsPage() {
         </Breadcrumb>
       </div>
 
-      <Button variant="ghost" onClick={() => window.history.back()} className="mb-6 hover:bg-white/10">
-        <ArrowLeft className="mr-2 h-4 w-4" /> Back
-      </Button>
+      <div className="mb-2">
+        <button 
+          onClick={() => window.history.back()} 
+          className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors text-sm bg-transparent border-0 cursor-pointer mb-6"
+        >
+          <ArrowLeft className="w-4 h-4" /> Back
+        </button>
+      </div>
 
       <div className="grid md:grid-cols-2 gap-8">
         {/* Image */}

@@ -77,12 +77,13 @@ export default function PacksPage() {
         <div className="container mx-auto px-4 py-8">
 
           <div className="mb-2">
-            <Link href="/">
-              <button className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors text-sm">
-                <ArrowLeft className="w-4 h-4" />
-                {language === 'ar' ? 'العودة للرئيسية' : 'Back to Home'}
-              </button>
-            </Link>
+            <button 
+              onClick={() => window.history.back()} 
+              className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors text-sm bg-transparent border-0 cursor-pointer"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              {language === 'ar' ? 'العودة' : 'Back'}
+            </button>
           </div>
 
           <motion.div

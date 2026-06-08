@@ -64,6 +64,9 @@ interface Game {
   deleted?: boolean;
 }
 
+// Global queryClient import fix
+import { queryClient } from '@/lib/queryClient';
+
 // Helper to match customer-facing image logic
 function getGameDisplayImage(game: Game): string {
   if (game.bannerImage) return game.bannerImage;

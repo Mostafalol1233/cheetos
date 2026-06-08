@@ -563,7 +563,7 @@ export default function GamePage() {
       <div className="min-h-screen bg-background">
         <div className="container mx-auto px-4 pt-6 pb-4">
           <Button
-            onClick={() => setLocation("/")}
+            onClick={() => window.history.back()}
             variant="ghost"
             className="mb-4 hover:bg-white/5 text-muted-foreground hover:text-foreground rounded-xl"
           >
