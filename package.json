@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "type": "module",
   "license": "MIT",
+  "packageManager": "npm@10.9.2",
   "scripts": {
     "dev": "tsx server/index.ts",
     "build": "vite build",

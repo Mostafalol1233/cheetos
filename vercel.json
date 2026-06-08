@@ -1,6 +1,5 @@
 {
   "version": 2,
-  "installCommand": "npm cache clean --force && npm install --legacy-peer-deps --ignore-scripts",
   "buildCommand": "npx vite build",
   "outputDirectory": "dist",
   "rewrites": [
