@@ -5824,6 +5824,30 @@ const startServer = async () => {
       } catch { res.status(500).json({ message: 'Server error' }); }
     });
 
+    app.post('/api/giveaway/register', authenticateToken, async (req, res) => {
+      try {
+        const userId = req.user.id;
+        const userRes = await pool.query('SELECT name, username FROM users WHERE id = $1', [userId]);
+        if (userRes.rows.length === 0) return res.status(404).json({ message: 'User not found' });
+        
+        const userName = userRes.rows[0].name || userRes.rows[0].username;
+        
+        const configRes = await pool.query('SELECT participants FROM giveaway_settings LIMIT 1');
+        const participants = configRes.rows[0]?.participants || [];
+        
+        if (participants.includes(userName)) {
+          return res.json({ message: 'Already registered', participants });
+        }
+        
+        const updatedParticipants = [...participants, userName];
+        await pool.query('UPDATE giveaway_settings SET participants = $1 WHERE id = (SELECT id FROM giveaway_settings LIMIT 1)', [updatedParticipants]);
+        
+        res.json({ message: 'Successfully registered', participants: updatedParticipants });
+      } catch (e) {
+        res.status(500).json({ message: e.message });
+      }
+    });
+
     app.put('/api/admin/giveaway/config', authenticateToken, ensureAdmin, async (req, res) => {
       try {
         const { participants, wa_url, yt_url, draw_time, gather_time,
