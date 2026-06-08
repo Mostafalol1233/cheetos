@@ -4423,7 +4423,6 @@ function ChatWidgetConfigPanel() {
 }
 
 function GiveawayPanel() {
-  const queryClient = useQueryClient();
   const [newParticipant, setNewParticipant] = useState('');
   const [searchQ, setSearchQ] = useState('');
   const [saving, setSaving] = useState(false);

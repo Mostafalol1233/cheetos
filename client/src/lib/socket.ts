@@ -9,8 +9,8 @@ export const getSocket = () => {
     const isProduction = window.location.hostname === 'diaasadek.com';
     
     socket = io(socketUrl, {
-      transports: isProduction ? ['polling', 'websocket'] : ['websocket', 'polling'], // Fallback to polling for production issues
-      upgrade: true,
+      transports: isProduction ? ['polling'] : ['websocket', 'polling'], // Force polling in production to avoid WSS errors
+      upgrade: !isProduction, // Disable upgrade in production
       path: '/socket.io',
       reconnectionAttempts: 10,
       reconnectionDelay: 5000,
