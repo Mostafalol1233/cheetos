@@ -5,7 +5,7 @@ import { useTranslation } from "@/lib/translation";
 import { Link } from "wouter";
 import { Header } from "@/components/header";
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
-const cfsLogoBanner = "https://res.cloudinary.com/ddzbutb12/image/upload/gamecart/giveaway/cfs-emblem.png";
+const cfsLogoBanner = "https://res.cloudinary.com/ddzbutb12/image/upload/v1780935346/gamecart/giveaway/cfs-banner-flag.png";
 
 /* ─── Bilingual text ─── */
 const TX = {
