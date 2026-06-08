@@ -445,8 +445,13 @@ function AccountCTA({ lang, participants }: { lang: "en" | "ar"; participants: s
       });
       if (res.ok) {
         queryClient.invalidateQueries({ queryKey: [`${API_BASE_URL}/api/giveaway/config`] });
+      } else {
+        const data = await res.json().catch(() => ({}));
+        console.error("Registration failed:", data.message || res.statusText);
       }
-    } catch (e) {}
+    } catch (e) {
+      console.error("Registration error:", e);
+    }
     setRegistering(false);
   }
 
