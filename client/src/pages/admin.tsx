@@ -4468,18 +4468,18 @@ function GiveawayPanel() {
     });
   }, [cfg]);
 
-  const participants: string[] = cfg?.participants || [];
-  const siteUsers = usersData?.items || [];
+  const participants: string[] = Array.isArray(cfg?.participants) ? cfg.participants : [];
+  const siteUsers = Array.isArray(usersData?.items) ? usersData.items : [];
 
   const filteredParticipants = useMemo(() => {
     return participants.filter(p =>
-      !searchQ || p.toLowerCase().includes(searchQ.toLowerCase())
+      p && (!searchQ || p.toLowerCase().includes(searchQ.toLowerCase()))
     );
   }, [participants, searchQ]);
 
   const unaddedUsers = useMemo(() => {
     return siteUsers.filter((u: any) => 
-      !participants.some(p => p.toLowerCase() === u.name.toLowerCase() || p.toLowerCase() === u.username?.toLowerCase())
+      u && !participants.some(p => p && (p.toLowerCase() === u.name?.toLowerCase() || p.toLowerCase() === u.username?.toLowerCase()))
     );
   }, [siteUsers, participants]);
 

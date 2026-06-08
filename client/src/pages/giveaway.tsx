@@ -207,7 +207,7 @@ function obfuscate(name: string): string {
 
 /* ─── Strip only dots (not dashes or other chars) ─── */
 function stripDots(s: string): string {
-  return s.replace(/\./g, "");
+  return (s || "").replace(/\./g, "");
 }
 
 /* ─── Participants list — auth-gated, blurred until name match ─── */
@@ -215,11 +215,11 @@ function ParticipantsList({ lang, participants }: { lang: "en" | "ar"; participa
   const { isAuthenticated } = useUserAuth();
   const [q, setQ] = useState("");
   const dir = lang === "ar" ? "rtl" : "ltr";
-  const ALL = useMemo(() => Array.from(new Set(participants)), [participants]);
+  const ALL = useMemo(() => Array.from(new Set(participants || [])), [participants]);
 
   /* Only dots stripped. Dashes and all other chars must match literally. */
   function nameMatches(name: string, query: string): boolean {
-    if (query.length < 2) return false;
+    if (!name || !query || query.length < 2) return false;
     return stripDots(name).toLowerCase().includes(stripDots(query).toLowerCase());
   }
 
@@ -291,11 +291,11 @@ function ParticipantsList({ lang, participants }: { lang: "en" | "ar"; participa
 /* ─── Build draw order from config ─── */
 function buildDrawOrder(cfg: GiveawayConfig) {
   const drawTime = new Date(cfg.draw_time);
-  const ALL = Array.from(new Set(cfg.participants));
+  const ALL = Array.from(new Set(cfg.participants || []));
 
   /* Verified finalists are excluded from elimination pool */
-  const _verified = _vf.filter(v => ALL.some(p => p.toLowerCase() === v.toLowerCase()));
-  const _pool = ALL.filter(p => !_verified.some(v => v.toLowerCase() === p.toLowerCase()));
+  const _verified = _vf.filter(v => ALL.some(p => p && p.toLowerCase() === v.toLowerCase()));
+  const _pool = ALL.filter(p => p && !_verified.some(v => v.toLowerCase() === p.toLowerCase()));
 
   const _rng = mulberry32(Math.floor(drawTime.getTime() / 1000));
   const ELIM_ORDER: string[] = [];
@@ -427,7 +427,8 @@ function AccountCTA({ lang, participants, queryClient }: { lang: "en" | "ar"; pa
 
   const isRegistered = useMemo(() => {
     if (!user) return false;
-    return participants.some(p => p.toLowerCase() === user.name?.toLowerCase() || p.toLowerCase() === user.username?.toLowerCase());
+    const parts = participants || [];
+    return parts.some(p => p && (p.toLowerCase() === user.name?.toLowerCase() || p.toLowerCase() === user.username?.toLowerCase()));
   }, [user, participants]);
 
   async function handleRegister() {
