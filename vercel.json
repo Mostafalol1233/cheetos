@@ -1,7 +1,6 @@
 {
   "version": 2,
-  "installCommand": "npm ci --legacy-peer-deps --ignore-scripts --no-audit --no-fund --loglevel=error",
-  "buildCommand": "npm run build",
+  "buildCommand": "npx vite build",
   "outputDirectory": "dist",
   "rewrites": [
     {
