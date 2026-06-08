@@ -215,13 +215,10 @@ export default function UserLoginPage() {
       <div className="w-full max-w-md">
         {/* Back to Home */}
         <div className="flex justify-center mb-6">
-          <button 
-            onClick={() => window.history.back()} 
-            className="inline-flex items-center gap-2 text-gold-primary hover:text-gold-secondary transition-colors bg-transparent border-0 cursor-pointer"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
+          <Link href="/" className="inline-flex items-center gap-2 text-gold-primary hover:text-gold-secondary transition-colors no-underline">
+            <ArrowLeft className="w-4 h-4" />
             Back to Home
-          </button>
+          </Link>
         </div>
 
         {/* Header */}

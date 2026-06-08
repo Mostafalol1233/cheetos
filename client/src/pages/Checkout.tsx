@@ -182,7 +182,7 @@ export function CheckoutContent({ isEmbedded = false }: { isEmbedded?: boolean }
     if (currentStepIndex > 0) {
       setStep(ALL_STEPS[currentStepIndex - 1].key as any);
     } else {
-      window.history.back();
+      setLocation("/");
     }
   };
 
@@ -213,12 +213,12 @@ export function CheckoutContent({ isEmbedded = false }: { isEmbedded?: boolean }
         {/* Header */}
         {!isEmbedded && !isTerminalStep && (
           <div className="mb-8">
-            <button
-              onClick={() => window.history.back()}
-              className="text-muted-foreground hover:text-foreground text-sm flex items-center gap-1.5 mb-5 transition-colors bg-transparent border-0 cursor-pointer"
+            <Link
+              href="/"
+              className="text-muted-foreground hover:text-foreground text-sm flex items-center gap-1.5 mb-5 transition-colors no-underline cursor-pointer"
             >
               ← Back to Store
-            </button>
+            </Link>
             <div className="flex items-center justify-between">
               <h1 className="text-2xl font-bold text-foreground tracking-tight">Checkout</h1>
               <button

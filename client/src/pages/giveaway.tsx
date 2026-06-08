@@ -436,7 +436,13 @@ function AccountCTA({ lang, participants }: { lang: "en" | "ar"; participants: s
     if (!isAuthenticated) return;
     setRegistering(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/api/giveaway/register`, { method: "POST" });
+      const token = localStorage.getItem("userToken");
+      const res = await fetch(`${API_BASE_URL}/api/giveaway/register`, { 
+        method: "POST",
+        headers: {
+          ...(token ? { "Authorization": `Bearer ${token}` } : {})
+        }
+      });
       if (res.ok) {
         queryClient.invalidateQueries({ queryKey: [`${API_BASE_URL}/api/giveaway/config`] });
       }

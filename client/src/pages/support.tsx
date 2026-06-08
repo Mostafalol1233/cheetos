@@ -76,13 +76,10 @@ export default function SupportPage() {
         <div className="absolute bottom-0 left-0 w-72 h-72 bg-red-500/5 rounded-full blur-3xl" />
 
         <div className="container mx-auto relative z-10">
-          <button 
-            onClick={() => window.history.back()} 
-            className="inline-flex items-center text-muted-foreground hover:text-gold-primary transition-colors mb-8 text-sm bg-transparent border-0 cursor-pointer"
-          >
+          <Link href="/" className="inline-flex items-center text-muted-foreground hover:text-gold-primary transition-colors mb-8 text-sm no-underline">
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back to Home
-          </button>
+          </Link>
 
           <div className="text-center">
             <div className="w-20 h-20 bg-gradient-to-br from-gold-primary/20 to-red-900/10 border border-gold-primary/30 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg shadow-gold-primary/10">

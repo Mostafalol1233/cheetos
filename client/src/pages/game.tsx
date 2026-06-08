@@ -562,14 +562,15 @@ export default function GamePage() {
 
       <div className="min-h-screen bg-background">
         <div className="container mx-auto px-4 pt-6 pb-4">
-          <Button
-            onClick={() => window.history.back()}
-            variant="ghost"
-            className="mb-4 hover:bg-white/5 text-muted-foreground hover:text-foreground rounded-xl"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            {language === 'ar' ? 'رجوع' : 'Back'}
-          </Button>
+          <Link href="/">
+            <Button
+              variant="ghost"
+              className="mb-4 hover:bg-white/5 text-muted-foreground hover:text-foreground rounded-xl"
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              {language === 'ar' ? 'رجوع' : 'Back'}
+            </Button>
+          </Link>
         </div>
 
         <div className="container mx-auto px-3 sm:px-4 pb-8">
