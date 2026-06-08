@@ -40,15 +40,19 @@ export function setupAuth(app: Express) {
   app.use(passport.initialize());
   app.use(passport.session());
 
-  passport.use(new LocalStrategy(async (username, password, done) => {
+  passport.use(new LocalStrategy({ usernameField: 'email' }, async (email, password, done) => {
     try {
-      const user = await storage.getUserByUsername(username);
+      const user = await storage.getUserByEmail(email);
       if (!user) {
-        return done(null, false, { message: "Incorrect username." });
+        return done(null, false, { message: "Incorrect email." });
       }
       
       // Verify password
-      const [hash, salt] = user.password.split(".");
+      if (!user.passwordHash) {
+        return done(null, false, { message: "Account not set up for password login." });
+      }
+
+      const [hash, salt] = user.passwordHash.split(".");
       const buf = crypto.scryptSync(password, salt, 64) as Buffer;
       if (buf.toString("hex") !== hash) {
         return done(null, false, { message: "Incorrect password." });

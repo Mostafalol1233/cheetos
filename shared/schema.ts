@@ -117,11 +117,13 @@ export type CartItem = {
 // Users table
 export const users = pgTable("users", {
   id: varchar("id", { length: 50 }).primaryKey(),
-  username: text("username").notNull().unique(),
-  password: text("password").notNull(),
-  email: text("email").notNull().unique(),
+  name: text("name").notNull(),
+  passwordHash: text("password_hash"),
+  email: text("email").unique(),
+  phone: varchar("phone", { length: 50 }),
   role: text("role").notNull().default("user"), // 'admin' or 'user'
   createdAt: integer("created_at").notNull().default(Date.now()),
+  avatarUrl: text("avatar_url"),
 });
 
 export const insertUserSchema = createInsertSchema(users);

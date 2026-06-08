@@ -80,11 +80,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // --- Auth Routes ---
   app.post("/api/auth/register", async (req, res) => {
     try {
-      const { username, password, email } = req.body;
-      if (!username || !password || !email) return res.status(400).json({ message: "Missing fields" });
-
-      const existingUser = await storage.getUserByUsername(username);
-      if (existingUser) return res.status(400).json({ message: "Username already exists" });
+      const { name, password, email } = req.body;
+      if (!name || !password || !email) return res.status(400).json({ message: "Missing fields" });
 
       // Check if email already exists (SECURITY FIX: prevent account takeover vulnerability)
       const existingEmail = await storage.getUserByEmail(email);
@@ -94,8 +91,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       await storage.createUser({
         id: crypto.randomBytes(12).toString("hex"),
-        username,
-        password: hashedPassword,
+        name,
+        passwordHash: hashedPassword,
         email,
         role: "user"
       });
@@ -607,8 +604,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
           user = await storage.createUser({
             id: crypto.randomBytes(12).toString("hex"),
-            username,
-            password: hashedPassword,
+            name: customer_name || customer_email.split('@')[0],
+            passwordHash: hashedPassword,
             email: customer_email,
             role: "user"
           });

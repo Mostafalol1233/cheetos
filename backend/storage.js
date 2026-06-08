@@ -214,8 +214,8 @@ export class MemStorage {
     return this.users.get(id);
   }
 
-  async getUserByUsername(username) {
-    return Array.from(this.users.values()).find(u => u.username === username);
+  async getUserByName(name) {
+    return Array.from(this.users.values()).find(u => u.name === name);
   }
 
   async getUserByEmail(email) {

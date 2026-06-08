@@ -10,9 +10,10 @@ async function main() {
     await pool.query(`
       CREATE TABLE IF NOT EXISTS users (
         id VARCHAR(50) PRIMARY KEY,
-        username VARCHAR(255) NOT NULL UNIQUE,
-        password TEXT NOT NULL,
-        email TEXT NOT NULL UNIQUE,
+        name VARCHAR(255) NOT NULL,
+        password_hash TEXT,
+        email TEXT UNIQUE,
+        phone VARCHAR(50),
         role VARCHAR(50) DEFAULT 'user',
         created_at INTEGER DEFAULT (EXTRACT(EPOCH FROM NOW()) * 1000)
       );

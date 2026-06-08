@@ -21,7 +21,7 @@ export async function getOpenChats() {
     chat: supportChats,
     user: {
       id: users.id,
-      username: users.username,
+      name: users.name,
       email: users.email
     }
   })

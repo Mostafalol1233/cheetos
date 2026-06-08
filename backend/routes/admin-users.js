@@ -127,7 +127,7 @@ router.get('/export', authenticateToken, ensureAdmin, async (req, res) => {
     const result = await pool.query(queryText, params);
 
     // Generate CSV
-    const fields = ['id', 'username', 'email', 'phone', 'role', 'created_at'];
+    const fields = ['id', 'name', 'email', 'phone', 'role', 'created_at'];
     const csv = [
       fields.join(','),
       ...result.rows.map(row => fields.map(field => JSON.stringify(row[field] || '')).join(','))
