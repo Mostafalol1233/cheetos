@@ -24,6 +24,10 @@ export const getSocket = () => {
     });
 
     socket.on('connect_error', (err) => {
+      if (window.location.hostname === 'diaasadek.com' && err.message === 'websocket error') {
+        // Suppress noisy websocket upgrade errors in production console
+        return;
+      }
       console.debug('Socket connection error:', err.message);
     });
   }

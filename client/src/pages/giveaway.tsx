@@ -420,9 +420,8 @@ function SectionLabel({ text }: { text: string }) {
 }
 
 /* ─── Account CTA ─── */
-function AccountCTA({ lang, participants }: { lang: "en" | "ar"; participants: string[] }) {
+function AccountCTA({ lang, participants, queryClient }: { lang: "en" | "ar"; participants: string[]; queryClient: any }) {
   const { isAuthenticated, user } = useUserAuth();
-  const queryClient = useQueryClient();
   const [registering, setRegistering] = useState(false);
   const tx = TX[lang];
 
@@ -1008,6 +1007,7 @@ function StateResults({ winners, lang, cfg }: { winners: Winner[]; lang: "en" | 
 export default function GiveawayPage() {
   const { language } = useTranslation();
   const lang = (language === "ar" ? "ar" : "en") as "en" | "ar";
+  const queryClient = useQueryClient();
 
   const { data: rawConfig } = useQuery<GiveawayConfig>({
     queryKey: ["/api/giveaway/config"],
@@ -1064,6 +1064,12 @@ export default function GiveawayPage() {
         {cur === 4 && <StateResults lang={lang} cfg={cfg} winners={winners.length > 0 ? winners :
           buildDrawOrder(cfg).FINAL_THREE.map((u, i) => ({ username: u, rank: (i + 1) as 1 | 2 | 3 }))
         } />}
+        
+        {/* Pass queryClient to AccountCTA via State components or directly if visible */}
+        <div className="max-w-2xl mx-auto px-5 pb-20">
+          <SectionLabel text={TX[lang].acctTitle} />
+          <AccountCTA lang={lang} participants={cfg.participants} queryClient={queryClient} />
+        </div>
       </div>
     </div>
   );
