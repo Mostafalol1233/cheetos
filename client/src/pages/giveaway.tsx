@@ -4,7 +4,7 @@ import { useTranslation } from "@/lib/translation";
 import { Link } from "wouter";
 import { Header } from "@/components/header";
 import { useQuery } from "@tanstack/react-query";
-import cfsLogoBanner from "@assets/download_1780850227541.png";
+const cfsLogoBanner = "https://res.cloudinary.com/ddzbutb12/image/upload/gamecart/giveaway/cfs-emblem.png";
 
 /* ─── Bilingual text ─── */
 const TX = {
