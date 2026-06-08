@@ -677,24 +677,66 @@ export default function GamePage() {
           {/* CrossFire — Mystery teaser */}
           {gameSlug === 'crossfire' && (
             <a href="/giveaway" className="block mt-8 rounded-2xl overflow-hidden group" style={{ textDecoration: 'none' }}>
-              <div className="relative flex items-center gap-5 px-6 py-5"
-                style={{ background: '#060608', border: '1px solid rgba(159,18,57,0.3)', borderRadius: 16 }}>
-                <div style={{ width: 3, alignSelf: 'stretch', borderRadius: 4, background: '#9f1239', flexShrink: 0 }} />
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs uppercase tracking-[0.3em] mb-1 font-semibold"
-                    style={{ color: 'rgba(159,18,57,0.8)', fontFamily: 'ui-monospace,monospace' }}>
-                    CFS · CLASSIFIED
-                  </p>
-                  <p className="text-white font-black text-xl leading-tight">
-                    {language === 'ar' ? 'هناك مفاجأة تنتظرك...' : 'Something is waiting for you...'}
-                  </p>
-                  <p className="text-white/35 text-sm mt-1">
-                    {language === 'ar' ? 'اضغط لتكتشف ما يحدث في الذكرى العاشرة' : 'Click to discover what\'s happening for the 10th anniversary'}
-                  </p>
+              <div className="relative overflow-hidden" style={{ borderRadius: 16, minHeight: 140 }}>
+                {/* Background image */}
+                <div className="absolute inset-0"
+                  style={{
+                    backgroundImage: `url(https://res.cloudinary.com/ddzbutb12/image/upload/gamecart/giveaway/cfs-bg-giveaway.png)`,
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center top',
+                    filter: 'brightness(0.35) saturate(1.2)',
+                  }}
+                />
+                {/* Red gradient overlay */}
+                <div className="absolute inset-0"
+                  style={{ background: 'linear-gradient(105deg, rgba(120,0,30,0.85) 0%, rgba(10,0,5,0.6) 60%, rgba(0,0,0,0.2) 100%)' }}
+                />
+                {/* Glowing bottom edge */}
+                <div className="absolute bottom-0 left-0 right-0 h-px"
+                  style={{ background: 'linear-gradient(90deg, transparent, rgba(220,38,38,0.8), transparent)' }}
+                />
+                {/* Top scanline accent */}
+                <div className="absolute top-0 left-0 right-0 h-px"
+                  style={{ background: 'linear-gradient(90deg, transparent, rgba(220,38,38,0.5), transparent)' }}
+                />
+
+                {/* Content */}
+                <div className="relative flex items-center gap-5 px-6 py-5">
+                  {/* CFS emblem */}
+                  <img
+                    src="https://res.cloudinary.com/ddzbutb12/image/upload/gamecart/giveaway/cfs-emblem.png"
+                    alt="CFS"
+                    className="flex-shrink-0 opacity-90 transition-transform duration-300 group-hover:scale-105"
+                    style={{ width: 64, height: 64, objectFit: 'contain', filter: 'drop-shadow(0 0 12px rgba(220,38,38,0.7))' }}
+                    onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                  />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs uppercase tracking-[0.35em] mb-1.5 font-bold flex items-center gap-2"
+                      style={{ color: '#f87171', fontFamily: 'ui-monospace,monospace', textShadow: '0 0 10px rgba(220,38,38,0.6)' }}>
+                      <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+                      CFS · CLASSIFIED
+                    </p>
+                    <p className="text-white font-black leading-tight"
+                      style={{ fontSize: '1.2rem', textShadow: '0 2px 12px rgba(0,0,0,0.8)' }}>
+                      {language === 'ar' ? 'هناك مفاجأة تنتظرك...' : 'Something is waiting for you...'}
+                    </p>
+                    <p className="text-white/50 text-sm mt-1.5">
+                      {language === 'ar' ? 'اضغط لتكتشف ما يحدث في الذكرى العاشرة' : 'Click to discover what\'s happening for the 10th anniversary'}
+                    </p>
+                  </div>
+                  {/* Arrow */}
+                  <div className="flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center transition-all duration-200 group-hover:translate-x-1 group-hover:scale-110"
+                    style={{ background: 'rgba(220,38,38,0.25)', border: '1px solid rgba(220,38,38,0.5)' }}>
+                    <svg width="16" height="16" fill="none" stroke="rgba(255,255,255,0.8)" strokeWidth="2.5" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                    </svg>
+                  </div>
                 </div>
-                <svg className="flex-shrink-0 transition-colors group-hover:translate-x-1 duration-200" width="20" height="20" fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="2" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-                </svg>
+
+                {/* Hover shimmer */}
+                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+                  style={{ background: 'linear-gradient(105deg, transparent 30%, rgba(255,255,255,0.03) 50%, transparent 70%)' }}
+                />
               </div>
             </a>
           )}
