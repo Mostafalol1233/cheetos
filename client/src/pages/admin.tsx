@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useLayoutEffect, useRef, Suspense } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useRef, Suspense, useMemo } from 'react';
 import { Link } from 'wouter';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
@@ -4471,6 +4471,18 @@ function GiveawayPanel() {
   const participants: string[] = cfg?.participants || [];
   const siteUsers = usersData?.items || [];
 
+  const filteredParticipants = useMemo(() => {
+    return participants.filter(p =>
+      !searchQ || p.toLowerCase().includes(searchQ.toLowerCase())
+    );
+  }, [participants, searchQ]);
+
+  const unaddedUsers = useMemo(() => {
+    return siteUsers.filter((u: any) => 
+      !participants.some(p => p.toLowerCase() === u.name.toLowerCase() || p.toLowerCase() === u.username?.toLowerCase())
+    );
+  }, [siteUsers, participants]);
+
   async function saveConfig(updates: any) {
     setSaving(true); setSaveMsg('');
     try {
@@ -4502,14 +4514,6 @@ function GiveawayPanel() {
   function removeParticipant(name: string) {
     saveConfig({ participants: participants.filter(p => p !== name) });
   }
-
-  const filteredParticipants = participants.filter(p =>
-    !searchQ || p.toLowerCase().includes(searchQ.toLowerCase())
-  );
-
-  const unaddedUsers = siteUsers.filter((u: any) => 
-    !participants.some(p => p.toLowerCase() === u.name.toLowerCase() || p.toLowerCase() === u.username?.toLowerCase())
-  );
 
   if (configLoading) return <div className="p-8 text-center text-muted-foreground">جاري التحميل...</div>;
 
