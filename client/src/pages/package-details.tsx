@@ -1,6 +1,7 @@
 
 import { useRoute, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
+import { API_BASE_URL } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -37,7 +38,7 @@ export default function PackageDetailsPage() {
   const { data: pkg, isLoading, error } = useQuery({
     queryKey: ["package", slug],
     queryFn: async () => {
-      const res = await fetch(`/api/packages/${slug}`);
+      const res = await fetch(`${API_BASE_URL}/api/packages/${slug}`);
       if (!res.ok) throw new Error("Package not found");
       return res.json();
     },

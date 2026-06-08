@@ -10,6 +10,7 @@ import { useSettings } from "@/lib/settings-context";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
+import { API_BASE_URL } from "@/lib/queryClient";
 import type { Category } from "@shared/schema";
 import { requestNotificationPermission, getNotificationPermission } from "@/lib/notification-service";
 
@@ -74,7 +75,7 @@ export function Header() {
 
   /* ── Giveaway LIVE badge ── */
   const { data: giveawayCfg } = useQuery<{ draw_time?: string } | null>({
-    queryKey: ['/api/giveaway/config'],
+    queryKey: [`${API_BASE_URL}/api/giveaway/config`],
     staleTime: 60000,
     gcTime: Infinity,
   });
@@ -92,8 +93,8 @@ export function Header() {
   }, [giveawayCfg?.draw_time]);
 
   const { data: navCategories = [] } = useQuery<Category[]>({
-    queryKey: ["/api/categories"],
-    queryFn: () => fetch("/api/categories").then(r => r.json()),
+    queryKey: [`${API_BASE_URL}/api/categories`],
+    queryFn: () => fetch(`${API_BASE_URL}/api/categories`).then(r => r.json()),
     staleTime: 5 * 60 * 1000,
   });
 

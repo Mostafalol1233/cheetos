@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { API_BASE_URL } from "@/lib/queryClient";
 import { AnimatePresence, motion } from "framer-motion";
 import { X } from "lucide-react";
 import { Link } from "wouter";
@@ -21,7 +22,7 @@ export function AnnouncementBanner() {
   const { data: announcement } = useQuery<Announcement | null>({
     queryKey: ["announcement-active"],
     queryFn: async () => {
-      const res = await fetch("/api/announcements/active");
+      const res = await fetch(`${API_BASE_URL}/api/announcements/active`);
       if (!res.ok) return null;
       return res.json();
     },

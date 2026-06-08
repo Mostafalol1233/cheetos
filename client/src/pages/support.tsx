@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useEffect, useState } from "react";
+import { queryClient, API_BASE_URL } from "@/lib/queryClient";
 
 export default function SupportPage() {
   const [contactInfo, setContactInfo] = useState<{ instapay: string | null; cash_numbers: string[]; paypal: string | null; etisalat_cash: string | null } | null>(null);
@@ -21,7 +22,7 @@ export default function SupportPage() {
     if (!formData.name.trim() || !formData.message.trim()) return;
     setFormStatus('sending');
     try {
-      const res = await fetch('/api/contact-messages', {
+      const res = await fetch(`${API_BASE_URL}/api/contact-messages`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
@@ -40,7 +41,7 @@ export default function SupportPage() {
   useEffect(() => {
     (async () => {
       try {
-        const res = await fetch("/api/contact-info");
+        const res = await fetch(`${API_BASE_URL}/api/contact-info`);
         if (!res.ok) return;
         const data = await res.json();
         setContactInfo({
