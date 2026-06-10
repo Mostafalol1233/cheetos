@@ -121,6 +121,17 @@ const _vf: string[] = [_rv(_tk2), _rv(_tk0), _rv(_rv(_tk1) === "DarkVenom" ? _tk
 const _V3 = "DarkVenom";
 const _vf_final: string[] = [_rv(_tk2), _rv(_tk0), _V3];
 
+/* ─── State type ─── */
+type S = 1 | 2 | 3 | 4;
+function autoState(cfg: GiveawayConfig): S {
+  const n = cairo();
+  const gather = new Date(cfg.gather_time);
+  const draw   = new Date(cfg.draw_time);
+  if (n < gather) return 1;
+  if (n < draw)   return 2;
+  return 3;
+}
+
 /* ─── Config type ─── */
 interface GiveawayConfig {
   participants: string[];
@@ -162,19 +173,6 @@ const DEFAULT_CONFIG: GiveawayConfig = {
 function cairo() {
   const n = new Date();
   return new Date(n.getTime() + n.getTimezoneOffset() * 60000 + 3 * 3600000);
-}
-type S = 1 | 2 | 3 | 4;
-function forced(): S | null {
-  const s = new URLSearchParams(window.location.search).get("state");
-  return s === "1" ? 1 : s === "2" ? 2 : s === "3" ? 3 : s === "4" ? 4 : null;
-}
-function autoState(cfg: GiveawayConfig): S {
-  const n = cairo();
-  const gather = new Date(cfg.gather_time);
-  const draw   = new Date(cfg.draw_time);
-  if (n < gather) return 1;
-  if (n < draw)   return 2;
-  return 3;
 }
 function useCountdown(target: Date) {
   const [ms, setMs] = useState(0);
@@ -797,7 +795,7 @@ function StateLiveDraw({ onComplete, lang, cfg }: {
   const [trans, setTrans] = useState(false);
   const [lastElim, setLastElim] = useState(syncedElims > 0 ? ELIM_ORDER[syncedElims - 1] : "");
   const [showElim, setShowElim] = useState(syncedElims > 0);
-  const [started, setStarted]   = useState(cairo() >= drawTime || forced() === 3);
+  const [started, setStarted]   = useState(cairo() >= drawTime);
   const busyRef   = useRef(false);
   const rotRef    = useRef(0);
   const remRef    = useRef(syncedRemaining);
@@ -835,7 +833,10 @@ function StateLiveDraw({ onComplete, lang, cfg }: {
     const vi = pool.indexOf(victim);
     const center = (vi + 0.5) * seg;
     const curMod = ((rotRef.current % 360) + 360) % 360;
-    const add = (center - curMod + 360) % 360;
+    // Pointer is fixed at top (0°). To land on segment vi whose center is at `center`°,
+    // the wheel must rotate so that center + newRot ≡ 0 (mod 360),
+    // i.e. newRot mod 360 = 360 - center.
+    const add = (360 - center - curMod + 360) % 360;
     const newRot = rotRef.current + 360 * 5 + add;
     rotRef.current = newRot;
     setRot(newRot); setTrans(true);
@@ -1005,25 +1006,32 @@ function StateResults({ winners, lang, cfg }: { winners: Winner[]; lang: "en" | 
     { rank: "2ND", place: { en: "Second Place", ar: "المركز الثاني" }, weapon: "Colt 1911 — Esports Star", charImg: "https://res.cloudinary.com/ddzbutb12/image/upload/gamecart/giveaway/cfs-char-purple.png" },
     { rank: "3RD", place: { en: "Third Place", ar: "المركز الثالث" }, weapon: "Kukri — Kikari Edition", charImg: "https://res.cloudinary.com/ddzbutb12/image/upload/gamecart/giveaway/cfs-char-blonde.png" },
   ];
+
+  const w1 = winners.find(x => x.rank === 1);
+  const w2 = winners.find(x => x.rank === 2);
+  const w3 = winners.find(x => x.rank === 3);
+
   return (
-    <div className="max-w-2xl mx-auto px-5 pt-10 pb-20" dir={lang === "ar" ? "rtl" : "ltr"}>
-      <div className={`flex items-center gap-3 mb-2 ${lang === "ar" ? "flex-row-reverse" : ""}`}>
-        <img src={cfsLogoBanner} alt="CFS" className="w-9 object-contain flex-shrink-0" />
+    <div className="max-w-2xl mx-auto px-5 pt-8 pb-16" dir={lang === "ar" ? "rtl" : "ltr"}>
+      <div className={`flex items-center gap-3 mb-1 ${lang === "ar" ? "flex-row-reverse" : ""}`}>
+        <img src={cfsLogoBanner} alt="CFS" className="w-8 object-contain flex-shrink-0" />
         <p className="text-xs font-black uppercase tracking-[0.2em]"
           style={{ color: LBLUE, fontFamily: "ui-monospace,monospace" }}>{tx.resultsSubtitle}</p>
       </div>
-      <h1 className="font-black text-white mb-2"
-        style={{ fontSize: "clamp(3rem,10vw,5rem)", letterSpacing: "-0.02em" }}>{tx.resultsTitle}</h1>
-      <p className="mb-10 text-sm" style={{ color: "rgba(255,255,255,0.28)" }}>{tx.resultsNote}</p>
+      <h1 className="font-black text-white mb-1"
+        style={{ fontSize: "clamp(2.2rem,8vw,3.5rem)", letterSpacing: "-0.02em" }}>{tx.resultsTitle}</h1>
+      <p className="mb-6 text-xs" style={{ color: "rgba(255,255,255,0.28)" }}>{tx.resultsNote}</p>
 
-      <div className="flex flex-col gap-4">
-        {[1, 2, 3].map((rank, i) => {
-          const w = winners.find(x => x.rank === rank);
-          if (!w) return null;
-          return <WCard key={w.username} w={w} prize={prizes[rank - 1]} delay={200 + i * 300} wide lang={lang} />;
-        })}
+      {/* 1st place — full-width hero card */}
+      {w1 && <WCard key={w1.username} w={w1} prize={prizes[0]} delay={200} wide lang={lang} />}
+
+      {/* 2nd and 3rd side by side */}
+      <div className="grid grid-cols-2 gap-3 mt-3">
+        {w2 && <WCard key={w2.username} w={w2} prize={prizes[1]} delay={500} wide={false} lang={lang} />}
+        {w3 && <WCard key={w3.username} w={w3} prize={prizes[2]} delay={800} wide={false} lang={lang} />}
       </div>
-      <div className="mt-14 pt-8 text-center" style={{ borderTop: `1px solid ${LINE}` }}>
+
+      <div className="mt-8 pt-6 text-center" style={{ borderTop: `1px solid ${LINE}` }}>
         <a href={cfg.wa_url} target="_blank" rel="noopener noreferrer"
           className="text-xs underline underline-offset-4"
           style={{ color: "rgba(255,255,255,0.18)" }}>{tx.waLink}</a>
@@ -1044,18 +1052,25 @@ export default function GiveawayPage() {
 
   const cfg: GiveawayConfig = rawConfig || DEFAULT_CONFIG;
 
-  const f = forced();
-  const [state, setState] = useState<S>(f ?? autoState(cfg));
+  const [state, setState] = useState<S>(() => autoState(cfg));
   const [winners, setWinners] = useState<Winner[]>([]);
 
+  // Advance state automatically based on Cairo time — no manual override
   useEffect(() => {
-    if (f) return;
-    const id = setInterval(() => setState(s => s >= 3 ? s : autoState(cfg)), 5000);
+    const id = setInterval(() => {
+      setState(s => {
+        if (s >= 3) return s;
+        return autoState(cfg);
+      });
+    }, 5000);
     return () => clearInterval(id);
-  }, [f, cfg]);
+  }, [cfg]);
 
   const handleComplete = (w: Winner[]) => { setWinners(w); setState(4); };
-  const cur = f ?? state;
+
+  const resolvedWinners = winners.length > 0
+    ? winners
+    : buildDrawOrder(cfg).FINAL_THREE.map((u, i) => ({ username: u, rank: (i + 1) as 1 | 2 | 3 }));
 
   return (
     <div className="min-h-screen relative" style={{ fontFamily: "'Inter',system-ui,sans-serif", color: "#fff" }}>
@@ -1073,31 +1088,10 @@ export default function GiveawayPage() {
       </div>
 
       <div className="relative z-10 pt-24">
-        {f !== null && (
-          <div className="fixed top-20 right-3 z-50 flex gap-1">
-            {([1,2,3,4] as S[]).map(n => (
-              <a key={n} href={`?state=${n}`} className="px-2.5 py-1 rounded text-xs font-bold"
-                style={{
-                  background: cur === n ? LBLUE : "rgba(0,0,0,0.7)",
-                  border: `1px solid ${cur === n ? LBLUE : "rgba(255,255,255,0.1)"}`,
-                  color: cur === n ? "#fff" : "rgba(255,255,255,0.3)",
-                }}>S{n}</a>
-            ))}
-          </div>
-        )}
-
-        {cur === 1 && <StateStandby lang={lang} cfg={cfg} />}
-        {cur === 2 && <StateGathering lang={lang} cfg={cfg} />}
-        {cur === 3 && <StateLiveDraw onComplete={handleComplete} lang={lang} cfg={cfg} />}
-        {cur === 4 && <StateResults lang={lang} cfg={cfg} winners={winners.length > 0 ? winners :
-          buildDrawOrder(cfg).FINAL_THREE.map((u, i) => ({ username: u, rank: (i + 1) as 1 | 2 | 3 }))
-        } />}
-        
-        {/* Directly using imported queryClient in AccountCTA */}
-        <div className="max-w-2xl mx-auto px-5 pb-20">
-          <SectionLabel text={TX[lang].acctTitle} />
-          <AccountCTA lang={lang} participants={cfg.participants} />
-        </div>
+        {state === 1 && <StateStandby lang={lang} cfg={cfg} />}
+        {state === 2 && <StateGathering lang={lang} cfg={cfg} />}
+        {state === 3 && <StateLiveDraw onComplete={handleComplete} lang={lang} cfg={cfg} />}
+        {state === 4 && <StateResults lang={lang} cfg={cfg} winners={resolvedWinners} />}
       </div>
     </div>
   );
