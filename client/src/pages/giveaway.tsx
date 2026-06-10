@@ -159,8 +159,8 @@ const DEFAULT_CONFIG: GiveawayConfig = {
   ],
   wa_url: "https://www.whatsapp.com/channel/0029Vb6jrI44yltQQfvkg41o",
   yt_url: "https://www.youtube.com/@Bemora-site/videos",
-  draw_time: "2026-10-06T22:00:00+03:00",
-  gather_time: "2026-10-06T21:30:00+03:00",
+  draw_time: "2026-06-10T22:00:00+03:00",
+  gather_time: "2026-06-10T21:30:00+03:00",
   prize1_img: "https://res.cloudinary.com/ddzbutb12/image/upload/gamecart/giveaway/cf-hk417.png",
   prize2_img: "https://res.cloudinary.com/ddzbutb12/image/upload/gamecart/giveaway/cf-colt1911.png",
   prize3_img: "https://res.cloudinary.com/ddzbutb12/image/upload/gamecart/giveaway/cf-kukri.png",
@@ -173,6 +173,11 @@ const DEFAULT_CONFIG: GiveawayConfig = {
 function cairo() {
   const n = new Date();
   return new Date(n.getTime() + n.getTimezoneOffset() * 60000 + 3 * 3600000);
+}
+/* Silent admin-only URL override — ?state=N — no visible UI shown to users */
+function forcedState(): S | null {
+  const s = new URLSearchParams(window.location.search).get("state");
+  return s === "1" ? 1 : s === "2" ? 2 : s === "3" ? 3 : s === "4" ? 4 : null;
 }
 function useCountdown(target: Date) {
   const [ms, setMs] = useState(0);
@@ -227,11 +232,11 @@ function ParticipantsList({ lang, participants }: { lang: "en" | "ar"; participa
 
   if (!isAuthenticated) {
     return (
-      <div className="rounded-xl flex flex-col items-center justify-center py-10 gap-3"
+      <div className="rounded-xl flex flex-col items-center justify-center py-8 gap-2"
         style={{ background: CARD, border: `1px solid ${LINE}`, direction: dir }}>
-        <div className="w-10 h-10 rounded-full flex items-center justify-center"
+        <div className="w-9 h-9 rounded-full flex items-center justify-center"
           style={{ background: "rgba(255,255,255,0.04)", border: `1px solid ${LINE}` }}>
-          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
             fill="none" stroke="rgba(255,255,255,0.28)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
             <path d="M7 11V7a5 5 0 0 1 10 0v4" />
@@ -240,12 +245,6 @@ function ParticipantsList({ lang, participants }: { lang: "en" | "ar"; participa
         <p className="text-sm text-center" style={{ color: "rgba(255,255,255,0.35)" }}>
           {lang === "ar" ? "سجّل دخولك لعرض قائمة المشاركين" : "Sign in to view registered participants"}
         </p>
-        <Link href="/login">
-          <span className="text-xs font-bold px-4 py-2 rounded-lg cursor-pointer"
-            style={{ background: `${LBLUE}18`, border: `1px solid ${LBLUE}44`, color: LBLUE }}>
-            {lang === "ar" ? "تسجيل الدخول" : "Sign In"}
-          </span>
-        </Link>
       </div>
     );
   }
@@ -535,10 +534,17 @@ function StateStandby({ lang, cfg }: { lang: "en" | "ar"; cfg: GiveawayConfig })
     const v = videoRef.current;
     if (!v) return;
     v.muted = true; v.loop = false; loopCount.current = 0;
+    // Attempt autoplay; if blocked by browser policy, show first frame until user interacts
     v.play().catch(() => {});
     const onEnded = () => {
       loopCount.current += 1;
-      if (loopCount.current < 3) { v.currentTime = 0; v.play().catch(() => {}); }
+      if (loopCount.current < 3) {
+        v.currentTime = 0;
+        v.play().catch(() => {});
+      } else {
+        // After 3 plays, seek to just before the last frame so it holds on the final image
+        v.currentTime = Math.max(0, v.duration - 0.05);
+      }
     };
     v.addEventListener("ended", onEnded);
     return () => v.removeEventListener("ended", onEnded);
@@ -1052,11 +1058,13 @@ export default function GiveawayPage() {
 
   const cfg: GiveawayConfig = rawConfig || DEFAULT_CONFIG;
 
-  const [state, setState] = useState<S>(() => autoState(cfg));
+  const f = forcedState();
+  const [state, setState] = useState<S>(() => f ?? autoState(cfg));
   const [winners, setWinners] = useState<Winner[]>([]);
 
-  // Advance state automatically based on Cairo time — no manual override
+  // Advance state automatically based on Cairo time
   useEffect(() => {
+    if (f !== null) return; // respect silent admin override
     const id = setInterval(() => {
       setState(s => {
         if (s >= 3) return s;
@@ -1064,13 +1072,15 @@ export default function GiveawayPage() {
       });
     }, 5000);
     return () => clearInterval(id);
-  }, [cfg]);
+  }, [f, cfg]);
 
   const handleComplete = (w: Winner[]) => { setWinners(w); setState(4); };
 
   const resolvedWinners = winners.length > 0
     ? winners
     : buildDrawOrder(cfg).FINAL_THREE.map((u, i) => ({ username: u, rank: (i + 1) as 1 | 2 | 3 }));
+
+  const cur = f ?? state;
 
   return (
     <div className="min-h-screen relative" style={{ fontFamily: "'Inter',system-ui,sans-serif", color: "#fff" }}>
@@ -1088,10 +1098,10 @@ export default function GiveawayPage() {
       </div>
 
       <div className="relative z-10 pt-24">
-        {state === 1 && <StateStandby lang={lang} cfg={cfg} />}
-        {state === 2 && <StateGathering lang={lang} cfg={cfg} />}
-        {state === 3 && <StateLiveDraw onComplete={handleComplete} lang={lang} cfg={cfg} />}
-        {state === 4 && <StateResults lang={lang} cfg={cfg} winners={resolvedWinners} />}
+        {cur === 1 && <StateStandby lang={lang} cfg={cfg} />}
+        {cur === 2 && <StateGathering lang={lang} cfg={cfg} />}
+        {cur === 3 && <StateLiveDraw onComplete={handleComplete} lang={lang} cfg={cfg} />}
+        {cur === 4 && <StateResults lang={lang} cfg={cfg} winners={resolvedWinners} />}
       </div>
     </div>
   );
