@@ -12,8 +12,8 @@ const TX = {
   en: {
     subtitle: "CFS 10TH ANNIVERSARY",
     title: "GRAND GIVEAWAY",
-    badges: { winners: "3 Winners", date: "October 6, 2026", type: "Live Draw" },
-    drawLine: "Draw starts — October 6, 2026 — 10:00 PM Cairo",
+    badges: { winners: "3 Winners", date: "June 10, 2026", type: "Live Draw" },
+    drawLine: "Draw starts — June 10, 2026 — 10:00 PM Cairo",
     days: "Days", hours: "Hours", min: "Min", sec: "Sec",
     howTitle: "How to Enter",
     steps: [
@@ -56,8 +56,8 @@ const TX = {
   ar: {
     subtitle: "الذكرى العاشرة لـ CFS",
     title: "السحب الكبير",
-    badges: { winners: "٣ فائزون", date: "٦ أكتوبر ٢٠٢٦", type: "سحب مباشر" },
-    drawLine: "السحب يبدأ — ٦ أكتوبر ٢٠٢٦ — ١٠:٠٠ م بتوقيت القاهرة",
+    badges: { winners: "٣ فائزون", date: "١٠ يونيو ٢٠٢٦", type: "سحب مباشر" },
+    drawLine: "السحب يبدأ — ١٠ يونيو ٢٠٢٦ — ١٠:٠٠ م بتوقيت القاهرة",
     days: "أيام", hours: "ساعات", min: "دقيقة", sec: "ثانية",
     howTitle: "كيف تشارك",
     steps: [

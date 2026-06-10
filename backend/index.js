@@ -5806,15 +5806,8 @@ const startServer = async () => {
     if (_gwCheck.rows.length === 0) {
       await pool.query(
         `INSERT INTO giveaway_settings (draw_time, gather_time) VALUES ($1, $2)`,
-        ['2026-10-06T22:00:00+03:00', '2026-10-06T21:30:00+03:00']
+        ['2026-06-10T22:00:00+03:00', '2026-06-10T21:30:00+03:00']
       );
-    } else {
-      await pool.query(`
-        UPDATE giveaway_settings
-        SET draw_time='2026-10-06T22:00:00+03:00',
-            gather_time='2026-10-06T21:30:00+03:00'
-        WHERE draw_time NOT LIKE '2026-10-06T22%' OR draw_time IS NULL
-      `);
     }
 
     app.get('/api/giveaway/config', async (_req, res) => {
