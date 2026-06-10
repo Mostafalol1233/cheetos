@@ -48,24 +48,37 @@ export function FloatingWhatsAppButton({
       className={`fixed z-50 ${positionClasses}`}
     >
       <motion.div
-        whileHover={{ scale: 1.12 }}
+        whileHover={{ scale: 1.15 }}
         whileTap={{ scale: 0.95 }}
         className="relative"
       >
+        {/* Outer glow pulse */}
         <motion.div
-          animate={{ scale: [1, 1.3, 1], opacity: [0.5, 0.2, 0.5] }}
-          transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+          animate={{ scale: [1, 1.4, 1], opacity: [0.6, 0.2, 0.6] }}
+          transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
           className="absolute inset-0 rounded-full"
           style={{ backgroundColor: '#25D366' }}
         />
+        {/* Inner shine layer */}
+        <motion.div
+          animate={{ 
+            opacity: [0.3, 0.8, 0.3],
+            scale: [1, 1.2, 1]
+          }}
+          transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+          className="absolute inset-0 rounded-full"
+          style={{ 
+            background: 'radial-gradient(circle, rgba(255,255,255,0.6) 0%, transparent 70%)',
+          }}
+        />
         <div
-          className="relative flex items-center justify-center w-14 h-14 rounded-full shadow-2xl"
+          className="relative flex items-center justify-center w-16 h-16 rounded-full"
           style={{
             backgroundColor: '#25D366',
-            boxShadow: '0 4px 24px 0 rgba(37,211,102,0.5)',
+            boxShadow: '0 6px 30px 0 rgba(37,211,102,0.7), 0 0 20px 0 rgba(37,211,102,0.4)',
           }}
         >
-          <SiWhatsapp className="w-7 h-7 text-white" />
+          <SiWhatsapp className="w-8 h-8 text-white" />
         </div>
       </motion.div>
     </a>
