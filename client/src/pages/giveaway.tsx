@@ -348,6 +348,13 @@ function beep(f: number, d: number, v = 0.1) {
 function fanfare() {
   [[523,0],[659,130],[784,260],[1047,400]].forEach(([f,t]) => setTimeout(() => beep(f, 0.7, 0.18), t));
 }
+function playCountdownSound() {
+  try {
+    const audio = new Audio("/sounds/countdown.mp3");
+    audio.volume = 0.9;
+    audio.play().catch(() => {});
+  } catch {}
+}
 
 /* ─── Wheel ─── */
 const CX = 250, CY = 250, OR = 232, IR = 58;
@@ -807,12 +814,18 @@ function StateLiveDraw({ onComplete, lang, cfg }: {
   const remRef    = useRef(syncedRemaining);
   const victimRef = useRef("");
   const typed = useTypewriter(lastElim, showElim);
+  const countdownFiredRef = useRef(false);
 
   useEffect(() => {
     if (started) return;
     const id = setInterval(() => {
-      if (now() >= drawTime.getTime()) { setStarted(true); clearInterval(id); }
-    }, 500);
+      const ms = drawTime.getTime() - now();
+      if (ms <= 10500 && ms > 0 && !countdownFiredRef.current) {
+        countdownFiredRef.current = true;
+        playCountdownSound();
+      }
+      if (ms <= 0) { setStarted(true); clearInterval(id); }
+    }, 300);
     return () => clearInterval(id);
   }, [started, drawTime]);
 
@@ -862,7 +875,7 @@ function StateLiveDraw({ onComplete, lang, cfg }: {
       setTimeout(() => onComplete(FINAL_THREE.map((u, i) => ({ username: u, rank: (i + 1) as 1 | 2 | 3 }))), 2200);
       busyRef.current = false;
     } else {
-      setTimeout(() => { busyRef.current = false; spin(); }, 4200);
+      setTimeout(() => { busyRef.current = false; spin(); }, 6500);
     }
   }, [spin, onComplete, FINAL_THREE]);
 
@@ -922,15 +935,22 @@ function StateLiveDraw({ onComplete, lang, cfg }: {
           </p>
         </div>
       </div>
-      <div className="h-14 flex items-center justify-center w-full mt-4">
+      <div className="w-full mt-4" style={{ minHeight: 96 }}>
         {showElim && lastElim && (
-          <div className="text-center">
-            <p className="text-xs font-black uppercase tracking-[0.2em] mb-1"
-              style={{ color: "rgba(255,255,255,0.16)", fontFamily: "ui-monospace,monospace" }}>
-              {lang === "ar" ? "مُستبعَد" : "Eliminated"}
+          <div className="w-full rounded-2xl px-5 py-4 text-center"
+            style={{
+              background: "linear-gradient(135deg,rgba(200,20,20,0.13) 0%,rgba(140,10,10,0.22) 100%)",
+              border: "1px solid rgba(230,50,50,0.32)",
+              boxShadow: "0 0 32px rgba(220,30,30,0.12)",
+              animation: "elimIn 0.3s ease",
+            }}>
+            <p className="text-xs font-black uppercase tracking-[0.28em] mb-1.5"
+              style={{ color: "rgba(240,80,80,0.75)", fontFamily: "ui-monospace,monospace" }}>
+              {lang === "ar" ? "✕  خارج من السحب" : "✕  OUT OF THE DRAW"}
             </p>
-            <p className="text-2xl font-black" style={{ color: "rgba(255,255,255,0.55)", fontFamily: "ui-monospace,monospace" }}>
-              {typed}<span style={{ opacity: typed.length < lastElim.length ? 0.4 : 0 }}>_</span>
+            <p className="font-black leading-tight"
+              style={{ color: "#fff", fontFamily: "ui-monospace,monospace", fontSize: "clamp(1.35rem,5vw,2rem)", letterSpacing: "-0.01em" }}>
+              {typed}<span style={{ opacity: typed.length < lastElim.length ? 0.45 : 0, color: "rgba(240,80,80,0.6)" }}>█</span>
             </p>
           </div>
         )}
@@ -960,6 +980,60 @@ function StateLiveDraw({ onComplete, lang, cfg }: {
 }
 
 /* ════════════════ STATE 4 — RESULTS ════════════════ */
+
+/* Confetti particles — pure CSS animation, no library */
+function Confetti() {
+  const COLORS = [YELLOW, SILVER, BRONZE, LBLUE, "#e91e8c", "#4caf50", "#ff5722", "#9c27b0"];
+  const [particles] = useState(() =>
+    Array.from({ length: 64 }, (_, i) => ({
+      id: i,
+      left: Math.round(Math.random() * 100),
+      delay: +(Math.random() * 5).toFixed(2),
+      dur: +(2.8 + Math.random() * 2.5).toFixed(2),
+      color: COLORS[i % COLORS.length],
+      size: 4 + (i % 6),
+      isRect: i % 3 !== 0,
+    }))
+  );
+  return (
+    <>
+      <style>{`
+        @keyframes cfFall {
+          0%   { transform: translateY(-30px) rotate(0deg); opacity: 1; }
+          80%  { opacity: 0.7; }
+          100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+        }
+        @keyframes elimIn {
+          from { opacity: 0; transform: scale(0.94) translateY(8px); }
+          to   { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        @keyframes wCardIn {
+          from { opacity: 0; transform: scale(0.82) translateY(28px); }
+          to   { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        @keyframes crownBounce {
+          0%,100% { transform: translateY(0); }
+          50%     { transform: translateY(-5px); }
+        }
+        @keyframes glowPulse {
+          0%,100% { opacity: 0.55; }
+          50%     { opacity: 1; }
+        }
+      `}</style>
+      <div className="fixed inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 1 }} aria-hidden>
+        {particles.map(p => (
+          <div key={p.id} style={{
+            position: "absolute", top: 0, left: `${p.left}%`,
+            width: p.size, height: p.isRect ? p.size * 1.6 : p.size,
+            background: p.color, borderRadius: p.isRect ? "2px" : "50%",
+            animation: `cfFall ${p.dur}s ${p.delay}s linear infinite`,
+          }} />
+        ))}
+      </div>
+    </>
+  );
+}
+
 function WCard({ w, prize, delay, wide = false, lang }: {
   w: Winner; prize: { rank: string; place: { en: string; ar: string }; weapon: string; charImg: string; bundleNote?: string };
   delay: number; wide?: boolean; lang: "en" | "ar"
@@ -967,37 +1041,73 @@ function WCard({ w, prize, delay, wide = false, lang }: {
   const [vis, setVis] = useState(false);
   const tx = TX[lang];
   useEffect(() => { const t = setTimeout(() => setVis(true), delay); return () => clearTimeout(t); }, [delay]);
-  const color = w.rank === 1 ? YELLOW : w.rank === 2 ? SILVER : BRONZE;
+  const color   = w.rank === 1 ? YELLOW : w.rank === 2 ? SILVER : BRONZE;
+  const crown   = w.rank === 1 ? "👑" : w.rank === 2 ? "🥈" : "🥉";
+  const rankLbl = w.rank === 1
+    ? (lang === "ar" ? "المركز الأول" : "1ST PLACE")
+    : w.rank === 2
+    ? (lang === "ar" ? "المركز الثاني" : "2ND PLACE")
+    : (lang === "ar" ? "المركز الثالث" : "3RD PLACE");
+
   return (
     <div style={{
-      opacity: vis ? 1 : 0, transform: vis ? "translateY(0)" : "translateY(24px)",
-      transition: "opacity 0.7s ease,transform 0.7s ease",
-      border: `1px solid ${color}28`, background: CARD, borderRadius: 16, overflow: "hidden",
+      opacity: vis ? 1 : 0,
+      animation: vis ? `wCardIn 0.65s ease both` : "none",
+      border: `1px solid ${color}40`,
+      background: `linear-gradient(160deg,${color}0a 0%,rgba(4,8,20,0.95) 55%)`,
+      borderRadius: 20, overflow: "hidden", position: "relative",
+      boxShadow: vis ? `0 0 40px ${color}22, 0 8px 32px rgba(0,0,0,0.6)` : "none",
     }}>
-      <div style={{ height: 2, background: `linear-gradient(90deg,transparent,${color},transparent)` }} />
+      {/* top glow bar */}
+      <div style={{ height: 3, background: `linear-gradient(90deg,transparent,${color},transparent)`,
+        animation: "glowPulse 2.4s ease infinite" }} />
       {wide ? (
-        <div className={`flex gap-5 items-center p-5 ${lang === "ar" ? "flex-row-reverse" : ""}`}>
-          <img src={prize.charImg} alt={prize.rank} className="rounded-xl object-cover flex-shrink-0"
-            style={{ width: 120, height: 160, objectPosition: "top", background: "rgba(0,0,0,0.3)" }} />
-          <div>
-            <p className="text-xs font-black tracking-[0.25em] mb-3"
-              style={{ color, fontFamily: "ui-monospace,monospace" }}>
-              {prize.rank} — {lang === "ar" ? prize.place.ar : prize.place.en}
+        <div className={`flex gap-4 items-center p-5 ${lang === "ar" ? "flex-row-reverse" : ""}`}>
+          {/* character image with glow */}
+          <div style={{ position: "relative", flexShrink: 0 }}>
+            <div style={{
+              position: "absolute", inset: -6, borderRadius: 18,
+              background: `radial-gradient(ellipse at center,${color}30 0%,transparent 70%)`,
+              animation: "glowPulse 2s ease infinite",
+            }} />
+            <img src={prize.charImg} alt={prize.rank} className="rounded-2xl object-cover relative"
+              style={{ width: 130, height: 170, objectPosition: "top", background: "rgba(0,0,0,0.3)", zIndex: 1 }} />
+          </div>
+          <div className="flex-1 min-w-0">
+            {/* crown + rank */}
+            <div className={`flex items-center gap-2 mb-3 ${lang === "ar" ? "flex-row-reverse" : ""}`}>
+              <span style={{ fontSize: 28, animation: "crownBounce 1.8s ease infinite" }}>{crown}</span>
+              <p className="text-xs font-black tracking-[0.28em]"
+                style={{ color, fontFamily: "ui-monospace,monospace" }}>{rankLbl}</p>
+            </div>
+            <p className="text-white font-black break-all mb-2"
+              style={{ fontSize: "clamp(1.5rem,5vw,2.4rem)", lineHeight: 1.1, letterSpacing: "-0.02em" }}>
+              {w.username}
             </p>
-            <p className="text-white font-black text-3xl sm:text-4xl mb-2 break-all">{w.username}</p>
-            <p className="text-xs mb-0.5" style={{ color: "rgba(255,255,255,0.28)" }}>{prize.weapon}</p>
-            <p className="text-xs" style={{ color: "rgba(255,255,255,0.18)" }}>{tx.bundleNote}</p>
+            <p className="text-xs mb-0.5" style={{ color: "rgba(255,255,255,0.32)" }}>{prize.weapon}</p>
+            <p className="text-xs" style={{ color: "rgba(255,255,255,0.16)" }}>{tx.bundleNote}</p>
           </div>
         </div>
       ) : (
         <div className="p-5 text-center">
-          <p className="text-xs font-black tracking-[0.25em] mb-4"
-            style={{ color, fontFamily: "ui-monospace,monospace" }}>
-            {prize.rank} — {lang === "ar" ? prize.place.ar : prize.place.en}
+          <div className="flex justify-center mb-2">
+            <span style={{ fontSize: 28, animation: "crownBounce 1.8s ease infinite" }}>{crown}</span>
+          </div>
+          <p className="text-xs font-black tracking-[0.28em] mb-3"
+            style={{ color, fontFamily: "ui-monospace,monospace" }}>{rankLbl}</p>
+          <div style={{ position: "relative", display: "inline-block" }}>
+            <div style={{
+              position: "absolute", inset: -8, borderRadius: 16,
+              background: `radial-gradient(ellipse at center,${color}28 0%,transparent 70%)`,
+              animation: "glowPulse 2s ease infinite",
+            }} />
+            <img src={prize.charImg} alt={prize.rank} className="mx-auto rounded-xl object-cover mb-4 relative"
+              style={{ width: 88, height: 118, objectPosition: "top", background: "rgba(0,0,0,0.3)", zIndex: 1 }} />
+          </div>
+          <p className="text-white font-black break-all mb-1"
+            style={{ fontSize: "clamp(1rem,4vw,1.25rem)", letterSpacing: "-0.01em" }}>
+            {w.username}
           </p>
-          <img src={prize.charImg} alt={prize.rank} className="mx-auto rounded-xl object-cover mb-4"
-            style={{ width: 90, height: 120, objectPosition: "top", background: "rgba(0,0,0,0.3)" }} />
-          <p className="text-white font-black text-xl break-all mb-1">{w.username}</p>
           <p className="text-xs" style={{ color: "rgba(255,255,255,0.28)" }}>{prize.weapon}</p>
         </div>
       )}
@@ -1018,31 +1128,40 @@ function StateResults({ winners, lang, cfg }: { winners: Winner[]; lang: "en" | 
   const w3 = winners.find(x => x.rank === 3);
 
   return (
-    <div className="max-w-2xl mx-auto px-5 pt-8 pb-16" dir={lang === "ar" ? "rtl" : "ltr"}>
-      <div className={`flex items-center gap-3 mb-1 ${lang === "ar" ? "flex-row-reverse" : ""}`}>
-        <img src={cfsLogoBanner} alt="CFS" className="w-8 object-contain flex-shrink-0" />
-        <p className="text-xs font-black uppercase tracking-[0.2em]"
-          style={{ color: LBLUE, fontFamily: "ui-monospace,monospace" }}>{tx.resultsSubtitle}</p>
-      </div>
-      <h1 className="font-black text-white mb-1"
-        style={{ fontSize: "clamp(2.2rem,8vw,3.5rem)", letterSpacing: "-0.02em" }}>{tx.resultsTitle}</h1>
-      <p className="mb-6 text-xs" style={{ color: "rgba(255,255,255,0.28)" }}>{tx.resultsNote}</p>
+    <>
+      <Confetti />
+      <div className="max-w-2xl mx-auto px-5 pt-8 pb-16 relative" style={{ zIndex: 2 }}
+        dir={lang === "ar" ? "rtl" : "ltr"}>
 
-      {/* 1st place — full-width hero card */}
-      {w1 && <WCard key={w1.username} w={w1} prize={prizes[0]} delay={200} wide lang={lang} />}
+        {/* Header */}
+        <div className={`flex items-center gap-3 mb-2 ${lang === "ar" ? "flex-row-reverse" : ""}`}>
+          <img src={cfsLogoBanner} alt="CFS" className="w-8 object-contain flex-shrink-0" />
+          <p className="text-xs font-black uppercase tracking-[0.2em]"
+            style={{ color: LBLUE, fontFamily: "ui-monospace,monospace" }}>{tx.resultsSubtitle}</p>
+        </div>
+        <h1 className="font-black text-white mb-1"
+          style={{ fontSize: "clamp(2.4rem,9vw,4rem)", letterSpacing: "-0.03em",
+            textShadow: `0 0 40px ${YELLOW}55` }}>
+          {tx.resultsTitle}
+        </h1>
+        <p className="mb-8 text-xs" style={{ color: "rgba(255,255,255,0.28)" }}>{tx.resultsNote}</p>
 
-      {/* 2nd and 3rd side by side */}
-      <div className="grid grid-cols-2 gap-3 mt-3">
-        {w2 && <WCard key={w2.username} w={w2} prize={prizes[1]} delay={500} wide={false} lang={lang} />}
-        {w3 && <WCard key={w3.username} w={w3} prize={prizes[2]} delay={800} wide={false} lang={lang} />}
-      </div>
+        {/* 1st place — full-width hero */}
+        {w1 && <WCard key={w1.username} w={w1} prize={prizes[0]} delay={200} wide lang={lang} />}
 
-      <div className="mt-8 pt-6 text-center" style={{ borderTop: `1px solid ${LINE}` }}>
-        <a href={cfg.wa_url} target="_blank" rel="noopener noreferrer"
-          className="text-xs underline underline-offset-4"
-          style={{ color: "rgba(255,255,255,0.18)" }}>{tx.waLink}</a>
+        {/* 2nd and 3rd side by side */}
+        <div className="grid grid-cols-2 gap-3 mt-4">
+          {w2 && <WCard key={w2.username} w={w2} prize={prizes[1]} delay={700} wide={false} lang={lang} />}
+          {w3 && <WCard key={w3.username} w={w3} prize={prizes[2]} delay={1100} wide={false} lang={lang} />}
+        </div>
+
+        <div className="mt-10 pt-6 text-center" style={{ borderTop: `1px solid ${LINE}` }}>
+          <a href={cfg.wa_url} target="_blank" rel="noopener noreferrer"
+            className="text-xs underline underline-offset-4"
+            style={{ color: "rgba(255,255,255,0.18)" }}>{tx.waLink}</a>
+        </div>
       </div>
-    </div>
+    </>
   );
 }
 
