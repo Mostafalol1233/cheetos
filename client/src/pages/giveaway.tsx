@@ -124,9 +124,9 @@ const _vf_final: string[] = [_rv(_tk2), _rv(_tk0), _V3];
 /* ─── State type ─── */
 type S = 1 | 2 | 3 | 4;
 function autoState(cfg: GiveawayConfig): S {
-  const n = cairo();
-  const gather = new Date(cfg.gather_time);
-  const draw   = new Date(cfg.draw_time);
+  const n = now();
+  const gather = new Date(cfg.gather_time).getTime();
+  const draw   = new Date(cfg.draw_time).getTime();
   if (n < gather) return 1;
   if (n < draw)   return 2;
   return 3;
@@ -170,10 +170,10 @@ const DEFAULT_CONFIG: GiveawayConfig = {
 };
 
 /* ─── Helpers ─── */
-function cairo() {
-  const n = new Date();
-  return new Date(n.getTime() + n.getTimezoneOffset() * 60000 + 3 * 3600000);
-}
+/* now() returns current UTC ms — works correctly regardless of browser timezone.
+   Draw/gather times are stored as ISO strings with +03:00 offset; JS Date.parse
+   converts them to UTC automatically, so Date.now() comparisons are always exact. */
+function now() { return Date.now(); }
 /* Silent admin-only URL override — ?state=N — no visible UI shown to users */
 function forcedState(): S | null {
   const s = new URLSearchParams(window.location.search).get("state");
@@ -183,7 +183,7 @@ function useCountdown(target: Date) {
   const [ms, setMs] = useState(0);
   const targetMs = target.getTime();
   useEffect(() => {
-    const tick = () => setMs(Math.max(0, targetMs - cairo().getTime()));
+    const tick = () => setMs(Math.max(0, targetMs - now()));
     tick(); const id = setInterval(tick, 1000); return () => clearInterval(id);
   }, [targetMs]);
   return {
@@ -325,7 +325,7 @@ function buildDrawOrder(cfg: GiveawayConfig) {
 const SPIN_MS = 9200;
 
 function elapsedElims(elimLen: number, drawTime: Date): number {
-  const elapsed = cairo().getTime() - drawTime.getTime();
+  const elapsed = now() - drawTime.getTime();
   if (elapsed <= 0) return 0;
   return Math.min(Math.floor(elapsed / SPIN_MS), elimLen);
 }
@@ -724,7 +724,7 @@ function StateGathering({ lang, cfg }: { lang: "en" | "ar"; cfg: GiveawayConfig 
   useEffect(() => {
     const totalMs = drawTime.getTime() - gatherTime.getTime();
     const tick = () => {
-      const elapsed = cairo().getTime() - gatherTime.getTime();
+      const elapsed = now() - gatherTime.getTime();
       setPct(Math.max(0, Math.min(100, (elapsed / totalMs) * 100)));
     };
     tick(); const id = setInterval(tick, 1000); return () => clearInterval(id);
@@ -801,7 +801,7 @@ function StateLiveDraw({ onComplete, lang, cfg }: {
   const [trans, setTrans] = useState(false);
   const [lastElim, setLastElim] = useState(syncedElims > 0 ? ELIM_ORDER[syncedElims - 1] : "");
   const [showElim, setShowElim] = useState(syncedElims > 0);
-  const [started, setStarted]   = useState(cairo() >= drawTime);
+  const [started, setStarted]   = useState(now() >= drawTime.getTime());
   const busyRef   = useRef(false);
   const rotRef    = useRef(0);
   const remRef    = useRef(syncedRemaining);
@@ -811,7 +811,7 @@ function StateLiveDraw({ onComplete, lang, cfg }: {
   useEffect(() => {
     if (started) return;
     const id = setInterval(() => {
-      if (cairo() >= drawTime) { setStarted(true); clearInterval(id); }
+      if (now() >= drawTime.getTime()) { setStarted(true); clearInterval(id); }
     }, 500);
     return () => clearInterval(id);
   }, [started, drawTime]);
