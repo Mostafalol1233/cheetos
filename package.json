@@ -5,7 +5,7 @@
   "license": "MIT",
   "packageManager": "npm@10.9.2",
   "engines": {
-    "node": "20.x",
+    "node": ">=20.x <25.x",
     "npm": "10.x"
   },
   "scripts": {
