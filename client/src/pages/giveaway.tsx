@@ -122,13 +122,16 @@ const _V3 = "DarkVenom";
 const _vf_final: string[] = [_rv(_tk2), _rv(_tk0), _V3];
 
 /* ─── State type ─── */
-type S = 1 | 2 | 3 | 4;
+type S = 1 | 2 | 3 | 4 | 5;
+/* State 5 = pre-draw hype video, fires 5 min before draw time */
+const HYPE_LEAD_MS = 5 * 60 * 1000;
 function autoState(cfg: GiveawayConfig): S {
   const n = now();
   const gather = new Date(cfg.gather_time).getTime();
   const draw   = new Date(cfg.draw_time).getTime();
   if (n < gather) return 1;
-  if (n < draw)   return 2;
+  if (n < draw - HYPE_LEAD_MS) return 2;
+  if (n < draw) return 5;
   return 3;
 }
 
@@ -145,6 +148,7 @@ interface GiveawayConfig {
   bg_img: string;
   event_video: string;
   event_name: string;
+  hype_video_url?: string;
 }
 
 const DEFAULT_CONFIG: GiveawayConfig = {
@@ -177,7 +181,7 @@ function now() { return Date.now(); }
 /* Silent admin-only URL override — ?state=N — no visible UI shown to users */
 function forcedState(): S | null {
   const s = new URLSearchParams(window.location.search).get("state");
-  return s === "1" ? 1 : s === "2" ? 2 : s === "3" ? 3 : s === "4" ? 4 : null;
+  return s === "1" ? 1 : s === "2" ? 2 : s === "3" ? 3 : s === "4" ? 4 : s === "5" ? 5 : null;
 }
 function useCountdown(target: Date) {
   const [ms, setMs] = useState(0);
@@ -777,6 +781,93 @@ function StateGathering({ lang, cfg }: { lang: "en" | "ar"; cfg: GiveawayConfig 
   );
 }
 
+/* ════════════════ STATE 5 — PRE-DRAW HYPE VIDEO ════════════════ */
+function StateHypeVideo({ lang, cfg, onDrawStart }: {
+  lang: "en" | "ar"; cfg: GiveawayConfig; onDrawStart: () => void;
+}) {
+  const drawTime = new Date(cfg.draw_time);
+  const { h, m, s } = useCountdown(drawTime);
+  const videoUrl = cfg.hype_video_url || cfg.event_video || "";
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  /* auto-advance to draw when countdown hits zero */
+  useEffect(() => {
+    const id = setInterval(() => {
+      if (now() >= drawTime.getTime()) { clearInterval(id); onDrawStart(); }
+    }, 500);
+    return () => clearInterval(id);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [drawTime.getTime()]);
+
+  /* autoplay (muted to satisfy browser policy; user can unmute) */
+  useEffect(() => {
+    const v = videoRef.current;
+    if (!v) return;
+    v.muted = true;
+    v.play().catch(() => {});
+  }, [videoUrl]);
+
+  const totalSec = Math.max(0, Math.round((drawTime.getTime() - now()) / 1000));
+  const totalMax = HYPE_LEAD_MS / 1000;
+  const pct      = Math.max(0, Math.min(100, ((totalMax - totalSec) / totalMax) * 100));
+
+  return (
+    <div className="min-h-[calc(100vh-80px)] flex flex-col items-center justify-center px-4 py-10"
+      dir={lang === "ar" ? "rtl" : "ltr"}>
+
+      {/* label */}
+      <p className="text-xs font-black uppercase tracking-[0.22em] mb-6"
+        style={{ color: LBLUE, fontFamily: "ui-monospace,monospace" }}>
+        {lang === "ar" ? "السحب يبدأ خلال" : "Draw starts in"}
+      </p>
+
+      {/* big countdown */}
+      <div className="flex gap-3 mb-8">
+        {h > 0 && <Tick v={h} label={TX[lang].hours} />}
+        <Tick v={m} label={TX[lang].min} />
+        <Tick v={s} label={TX[lang].sec} />
+      </div>
+
+      {/* hype video — full-width, max 720px */}
+      {videoUrl ? (
+        <div className="w-full max-w-2xl rounded-2xl overflow-hidden mb-8"
+          style={{ border: `1px solid ${LINE}`, background: "#000",
+            boxShadow: `0 0 60px rgba(33,150,243,0.12)` }}>
+          <video
+            ref={videoRef}
+            src={videoUrl}
+            loop
+            playsInline
+            controls
+            className="w-full"
+            style={{ maxHeight: "62vh", display: "block", background: "#000" }}
+          />
+        </div>
+      ) : (
+        <div className="w-full max-w-2xl rounded-2xl mb-8 flex items-center justify-center"
+          style={{ height: 260, background: CARD, border: `1px solid ${LINE}` }}>
+          <p className="text-sm font-black uppercase tracking-widest"
+            style={{ color: "rgba(255,255,255,0.12)", fontFamily: "ui-monospace,monospace" }}>
+            {lang === "ar" ? "لم يتم تحميل فيديو" : "NO VIDEO CONFIGURED"}
+          </p>
+        </div>
+      )}
+
+      {/* progress bar */}
+      <div className="w-full max-w-2xl">
+        <div className="w-full h-1 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.05)" }}>
+          <div className="h-full rounded-full transition-all duration-1000"
+            style={{ width: `${pct}%`, background: `linear-gradient(90deg,${LBLUE}88,${LBLUE})` }} />
+        </div>
+        <p className="text-[10px] font-black uppercase tracking-widest mt-2 text-center"
+          style={{ color: "rgba(255,255,255,0.14)", fontFamily: "ui-monospace,monospace" }}>
+          {lang === "ar" ? cfg.event_name : cfg.event_name}
+        </p>
+      </div>
+    </div>
+  );
+}
+
 /* ════════════════ STATE 3 — LIVE DRAW ════════════════ */
 interface Winner { username: string; rank: 1 | 2 | 3 }
 
@@ -1042,7 +1133,7 @@ function WCard({ w, prize, delay, wide = false, lang }: {
   const tx = TX[lang];
   useEffect(() => { const t = setTimeout(() => setVis(true), delay); return () => clearTimeout(t); }, [delay]);
   const color   = w.rank === 1 ? YELLOW : w.rank === 2 ? SILVER : BRONZE;
-  const crown   = w.rank === 1 ? "👑" : w.rank === 2 ? "🥈" : "🥉";
+  const rankNum = w.rank === 1 ? "I" : w.rank === 2 ? "II" : "III";
   const rankLbl = w.rank === 1
     ? (lang === "ar" ? "المركز الأول" : "1ST PLACE")
     : w.rank === 2
@@ -1074,9 +1165,16 @@ function WCard({ w, prize, delay, wide = false, lang }: {
               style={{ width: 130, height: 170, objectPosition: "top", background: "rgba(0,0,0,0.3)", zIndex: 1 }} />
           </div>
           <div className="flex-1 min-w-0">
-            {/* crown + rank */}
-            <div className={`flex items-center gap-2 mb-3 ${lang === "ar" ? "flex-row-reverse" : ""}`}>
-              <span style={{ fontSize: 28, animation: "crownBounce 1.8s ease infinite" }}>{crown}</span>
+            {/* rank badge */}
+            <div className={`flex items-center gap-3 mb-3 ${lang === "ar" ? "flex-row-reverse" : ""}`}>
+              <div style={{
+                width: 36, height: 36, borderRadius: "50%", flexShrink: 0,
+                border: `2px solid ${color}`, display: "flex", alignItems: "center", justifyContent: "center",
+                background: `${color}14`, animation: "glowPulse 2s ease infinite",
+                boxShadow: `0 0 12px ${color}44`,
+              }}>
+                <span style={{ color, fontFamily: "ui-monospace,monospace", fontWeight: 900, fontSize: 13 }}>{rankNum}</span>
+              </div>
               <p className="text-xs font-black tracking-[0.28em]"
                 style={{ color, fontFamily: "ui-monospace,monospace" }}>{rankLbl}</p>
             </div>
@@ -1090,8 +1188,16 @@ function WCard({ w, prize, delay, wide = false, lang }: {
         </div>
       ) : (
         <div className="p-5 text-center">
-          <div className="flex justify-center mb-2">
-            <span style={{ fontSize: 28, animation: "crownBounce 1.8s ease infinite" }}>{crown}</span>
+          {/* rank badge */}
+          <div className="flex justify-center mb-3">
+            <div style={{
+              width: 40, height: 40, borderRadius: "50%",
+              border: `2px solid ${color}`, display: "flex", alignItems: "center", justifyContent: "center",
+              background: `${color}14`, animation: "glowPulse 2s ease infinite",
+              boxShadow: `0 0 14px ${color}44`,
+            }}>
+              <span style={{ color, fontFamily: "ui-monospace,monospace", fontWeight: 900, fontSize: 14 }}>{rankNum}</span>
+            </div>
           </div>
           <p className="text-xs font-black tracking-[0.28em] mb-3"
             style={{ color, fontFamily: "ui-monospace,monospace" }}>{rankLbl}</p>
@@ -1186,7 +1292,7 @@ export default function GiveawayPage() {
     if (f !== null) return; // respect silent admin override
     const id = setInterval(() => {
       setState(s => {
-        if (s >= 3) return s;
+        if (s >= 3 && s !== 5) return s;
         return autoState(cfg);
       });
     }, 5000);
@@ -1219,6 +1325,7 @@ export default function GiveawayPage() {
       <div className="relative z-10 pt-24">
         {cur === 1 && <StateStandby lang={lang} cfg={cfg} />}
         {cur === 2 && <StateGathering lang={lang} cfg={cfg} />}
+        {cur === 5 && <StateHypeVideo lang={lang} cfg={cfg} onDrawStart={() => setState(3)} />}
         {cur === 3 && <StateLiveDraw onComplete={handleComplete} lang={lang} cfg={cfg} />}
         {cur === 4 && <StateResults lang={lang} cfg={cfg} winners={resolvedWinners} />}
       </div>

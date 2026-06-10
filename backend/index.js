@@ -5799,9 +5799,11 @@ const startServer = async () => {
         bg_img TEXT DEFAULT 'https://res.cloudinary.com/ddzbutb12/image/upload/gamecart/giveaway/cfs-bg-giveaway.png',
         event_video TEXT DEFAULT '/media/cfs-event.mp4',
         event_name TEXT DEFAULT 'CFS 10TH ANNIVERSARY',
+        hype_video_url TEXT DEFAULT '',
         updated_at BIGINT DEFAULT EXTRACT(EPOCH FROM NOW()) * 1000
       )
     `);
+    await pool.query(`ALTER TABLE giveaway_settings ADD COLUMN IF NOT EXISTS hype_video_url TEXT DEFAULT ''`);
     const _gwCheck = await pool.query('SELECT id FROM giveaway_settings LIMIT 1');
     if (_gwCheck.rows.length === 0) {
       await pool.query(
@@ -5844,7 +5846,8 @@ const startServer = async () => {
     app.put('/api/admin/giveaway/config', authenticateToken, ensureAdmin, async (req, res) => {
       try {
         const { participants, wa_url, yt_url, draw_time, gather_time,
-                prize1_img, prize2_img, prize3_img, bg_img, event_video, event_name } = req.body;
+                prize1_img, prize2_img, prize3_img, bg_img, event_video, event_name,
+                hype_video_url } = req.body;
         const r = await pool.query(
           `UPDATE giveaway_settings SET
             participants=COALESCE($1, participants),
@@ -5858,7 +5861,8 @@ const startServer = async () => {
             bg_img=COALESCE($9, bg_img),
             event_video=COALESCE($10, event_video),
             event_name=COALESCE($11, event_name),
-            updated_at=$12
+            hype_video_url=COALESCE($12, hype_video_url),
+            updated_at=$13
           WHERE id=(SELECT id FROM giveaway_settings LIMIT 1)
           RETURNING *`,
           [
@@ -5866,6 +5870,7 @@ const startServer = async () => {
             draw_time || null, gather_time || null,
             prize1_img || null, prize2_img || null, prize3_img || null,
             bg_img || null, event_video || null, event_name || null,
+            hype_video_url !== undefined ? hype_video_url : null,
             Date.now(),
           ]
         );

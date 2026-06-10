@@ -4433,7 +4433,7 @@ function GiveawayPanel() {
   const [fields, setFields] = useState({
     wa_url: '', yt_url: '', draw_time: '', gather_time: '',
     prize1_img: '', prize2_img: '', prize3_img: '',
-    bg_img: '', event_video: '', event_name: '',
+    bg_img: '', event_video: '', event_name: '', hype_video_url: '',
   });
 
   const { data: cfg, isLoading: configLoading } = useQuery<any>({
@@ -4472,6 +4472,7 @@ function GiveawayPanel() {
       bg_img: cfg.bg_img || '',
       event_video: cfg.event_video || '',
       event_name: cfg.event_name || '',
+      hype_video_url: cfg.hype_video_url || '',
     });
   }, [cfg]);
 
@@ -4582,8 +4583,9 @@ function GiveawayPanel() {
                 { key: 'prize1_img', label: '🥇 صورة الجائزة الأولى (HK417)' },
                 { key: 'prize2_img', label: '🥈 صورة الجائزة الثانية (Colt 1911)' },
                 { key: 'prize3_img', label: '🥉 صورة الجائزة الثالثة (Kukri)' },
-                { key: 'bg_img',     label: '🖼 صورة خلفية الصفحة' },
-                { key: 'event_video', label: '🎬 رابط فيديو الحدث' },
+                { key: 'bg_img',       label: 'صورة خلفية الصفحة' },
+                { key: 'event_video',  label: 'رابط فيديو الحدث' },
+                { key: 'hype_video_url', label: 'فيديو ما قبل السحب — يعمل 5 دقائق قبل البداية (Cloudinary)' },
               ].map(({ key, label }) => (
                 <div key={key} className="space-y-1">
                   <Label>{label}</Label>
