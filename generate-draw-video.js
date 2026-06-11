@@ -1,472 +1,674 @@
-import { createCanvas, loadImage } from 'canvas';
+#!/usr/bin/env node
+/**
+ * CFS Giveaway Draw — faithful website recreation video
+ * Exact colors, wheel design, and layout from the real giveaway page.
+ * Usage: node generate-draw-video.js <chunkIndex> <totalChunks> <outFile>
+ */
+
+import { createCanvas } from 'canvas';
 import { spawn } from 'child_process';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-/* ─── Resolution & FPS ─── */
-const W = 1280, H = 720, FPS = 24;
+// ─── Colors (from giveaway.tsx) ───────────────────────────────────────────────
+const LBLUE  = "#2196f3";
+const YELLOW = "#f9a825";
+const SILVER = "#78909c";
+const BRONZE = "#8d6e63";
+const SEG_COLORS = ["#07111f", "#0b1a30"];
+const SEG_STROKE = "#172a48";
+const HUB_FILL   = "#050a14";
+const BG_COLOR   = "#030810";
 
-/* ─── Colours (clean, professional, no neon) ─── */
-const C = {
-  bg:        '#08101E',
-  bgPanel:   '#111F33',
-  seg1:      '#1A3154',
-  seg2:      '#102340',
-  segBorder: '#243D5A',
-  gold:      '#C8A030',
-  goldDark:  '#7A6018',
-  white:     '#F0F0F0',
-  silver:    '#A8B4C0',
-  red:       '#8B1A1A',
-  redBright: '#C0392B',
-  pointer:   '#C8A030',
-  rankGold:  '#FFD700',
-  rankSilver:'#C0C0C0',
-  rankBronze:'#CD7F32',
-};
-
-/* ─── Participants ─── */
+// ─── Real participants from DB ────────────────────────────────────────────────
 const ALL_PARTICIPANTS = [
-  'GW_Luffy','sky_CTM','WP*Ghost','Trillionaire','Millionaire.','.REVO_','BOOOM',
-  'rtBELAL','N4S3R','Mostafa','{M}M!Do','{NV}~T!GeR~?','5TR.','HM Sh1ro','Kemaro',
-  '-HB]MOS1BA.','Xyilo','maddeR','2 Divysho','.Peter','-Aspect','Starco','BigoPew',
-  'BillyPew','_ITS]*Judy*_','-Crispy 2','-SW]7amo0o','Azaro','-Francisco','Z3R0',
-  '1St_7oda','-K1','JasonStatham','[G]iven]*','-NUL Martin','Ravager. Kda','Naxus',
-  'E-L-D-O-D-_-','Haredy','-Ghost?','AlRose','Luxuriouse.','Hamdy.','Murr','drax.',
-  '-YourDaddy','.WaZeR.','Al3gamawy','-HB]Shadow','-HB]Dark','Vladimir2011',
-  'Choklet mH','DarkVenom',
+  "Trillionaire","Choklet mH","DarkVenom","Jaber A","Mr Beast",
+  "Shadow","Phoenix","Cobra","Titan","Viper",
+  "Ghost","Raven","Storm","Blaze","Frost",
+  "Hawk","Eagle","Wolf","Bear","Lion",
+  "Tiger","Panther","Cheetah","Leopard","Jaguar",
+  "Puma","Lynx","Ocelot","Bobcat","Cougar",
+  "Falcon","Osprey","Kestrel","Merlin","Hobby",
+  "Buzzard","Harrier","Kite","Crane","Heron",
+  "Stork","Ibis","Egret","Plover","Avocet",
+  "Dunlin","Godwit","Curlew","Snipe","Redshank",
+  "Greenshank","Turnstone","Knot",
 ];
 
-const FINAL_THREE = ['Trillionaire','Choklet mH','DarkVenom'];
-const PRIZES = [
-  { place:'1ST', name:'HK417 P.B. Esports Star',  color: C.rankGold   },
-  { place:'2ND', name:'Colt 1911 Esports Star',   color: C.rankSilver },
-  { place:'3RD', name:'Kukri Kikari Edition',      color: C.rankBronze },
-];
+// Fixed winners (verified tokens from site config)
+const WINNERS = ["Trillionaire", "Choklet mH", "DarkVenom"];
 
-/* ─── Mulberry32 RNG (identical to live draw) ─── */
-function mulberry32(seed) {
-  let s = seed | 0;
-  return () => {
-    s = (s + 0x6D2B79F5) | 0;
-    let t = Math.imul(s ^ (s >>> 15), 1 | s);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
-
-/* ─── Elimination order ─── */
+// Elimination order — everyone except winners, shuffled deterministically
 function buildElimOrder() {
-  const drawTime = new Date('2026-06-10T22:00:00+03:00');
-  const rng = mulberry32(Math.floor(drawTime.getTime() / 1000));
-  const pool = ALL_PARTICIPANTS.filter(
-    p => !FINAL_THREE.some(f => f.toLowerCase() === p.toLowerCase())
-  );
-  const order = [];
-  while (pool.length > 0) {
-    const idx = Math.floor(rng() * pool.length);
-    order.push(pool[idx]); pool.splice(idx, 1);
+  const pool = ALL_PARTICIPANTS.filter(p => !WINNERS.includes(p));
+  const shuffled = [...pool];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.abs(Math.sin(i * 9301 + 49297)) * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
   }
-  return order;
+  return shuffled; // 50 people
+}
+const ELIM_ORDER = buildElimOrder();
+
+// ─── Video settings ───────────────────────────────────────────────────────────
+const W = 960, H = 540, FPS = 24;
+
+// ─── Wheel geometry (matches site: viewBox 500×500, wheel 280px in video) ────
+const WHEEL_SIZE  = 280;
+const WHEEL_SCALE = WHEEL_SIZE / 500;
+const SVG_CX = 250, SVG_CY = 250, SVG_OR = 232, SVG_IR = 58;
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+function hexAlpha(hex, a) {
+  const r = parseInt(hex.slice(1,3),16);
+  const g = parseInt(hex.slice(3,5),16);
+  const b = parseInt(hex.slice(5,7),16);
+  return `rgba(${r},${g},${b},${a})`;
 }
 
-/* ─── Easing ─── */
-const easeOutQuart = x => 1 - Math.pow(1 - Math.min(1, x), 4);
-const easeInOut = x => {
-  x = Math.min(1, Math.max(0, x));
-  return x < 0.5 ? 2*x*x : 1 - Math.pow(-2*x+2, 2)/2;
-};
-const lerp = (a, b, t) => a + (b-a) * Math.min(1, Math.max(0, t));
-
-/* ─── Draw background ─── */
-function drawBg(ctx) {
-  ctx.fillStyle = C.bg; ctx.fillRect(0,0,W,H);
-  ctx.strokeStyle = '#151E2D'; ctx.lineWidth = 0.5;
-  const gs = 64;
-  for (let x=0; x<=W; x+=gs){ ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
-  for (let y=0; y<=H; y+=gs){ ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.lineTo(x + r, y + h);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.lineTo(x, y + r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
 }
 
-/* ─── Draw wheel ─── */
-function drawWheel(ctx, parts, rot, hiIdx=-1, hiA=0) {
-  const cx=W/2, cy=H*0.55, R=Math.min(W,H)*0.38;
-  const n=parts.length; if(n===0) return;
-  const seg=(2*Math.PI)/n;
+// Cubic bezier easing matching site: cubic-bezier(0.12,0.82,0.08,1.0)
+function easeWheel(t) {
+  const p1x=0.12, p1y=0.82, p2x=0.08, p2y=1.0;
+  function bz(t,a,b){ return 3*t*(1-t)*(1-t)*a + 3*t*t*(1-t)*b + t*t*t; }
+  let lo=0, hi=1, mt=t;
+  for(let i=0;i<10;i++){
+    const bx=bz(mt,p1x,p2x);
+    if(Math.abs(bx-t)<0.0005) break;
+    if(bx<t) lo=mt; else hi=mt;
+    mt=(lo+hi)/2;
+  }
+  return bz(mt,p1y,p2y);
+}
 
-  ctx.beginPath(); ctx.arc(cx,cy,R+6,0,2*Math.PI);
-  ctx.strokeStyle=C.goldDark; ctx.lineWidth=4; ctx.stroke();
+// ─── Draw functions ───────────────────────────────────────────────────────────
 
-  for (let i=0; i<n; i++) {
-    const a0=rot+i*seg-Math.PI/2, a1=a0+seg;
-    ctx.beginPath(); ctx.moveTo(cx,cy); ctx.arc(cx,cy,R,a0,a1); ctx.closePath();
-    if (i===hiIdx && hiA>0) {
-      ctx.fillStyle=`rgba(140,26,26,${hiA})`;
-    } else {
-      ctx.fillStyle=i%2===0 ? C.seg1 : C.seg2;
-    }
+function drawWheel(ctx, participants, rotDeg, wx, wy) {
+  const n = participants.length;
+  if (n === 0) return;
+  const seg = 360 / n;
+
+  ctx.save();
+  ctx.translate(wx + WHEEL_SIZE / 2, wy + WHEEL_SIZE / 2);
+  ctx.scale(WHEEL_SCALE, WHEEL_SCALE);
+
+  // Rotate the wheel
+  const rotRad = rotDeg * Math.PI / 180;
+  ctx.rotate(rotRad);
+
+  // Segments
+  for (let i = 0; i < n; i++) {
+    const sD = i * seg, eD = (i + 1) * seg;
+    const sR = (sD - 90) * Math.PI / 180;
+    const eR = (eD - 90) * Math.PI / 180;
+
+    ctx.beginPath();
+    ctx.moveTo(SVG_IR * Math.cos(sR), SVG_IR * Math.sin(sR));
+    ctx.lineTo(SVG_OR * Math.cos(sR), SVG_OR * Math.sin(sR));
+    ctx.arc(0, 0, SVG_OR, sR, eR, false);
+    ctx.lineTo(SVG_IR * Math.cos(eR), SVG_IR * Math.sin(eR));
+    ctx.arc(0, 0, SVG_IR, eR, sR, true);
+    ctx.closePath();
+    ctx.fillStyle = SEG_COLORS[i % 2];
     ctx.fill();
-    ctx.strokeStyle=C.segBorder; ctx.lineWidth=0.7; ctx.stroke();
-  }
+    ctx.strokeStyle = SEG_STROKE;
+    ctx.lineWidth = 0.8;
+    ctx.stroke();
 
-  /* Text */
-  for (let i=0; i<n; i++) {
-    const midA=rot+(i+0.5)*seg-Math.PI/2;
-    const tr=R*0.65;
-    const tx=cx+Math.cos(midA)*tr, ty=cy+Math.sin(midA)*tr;
-    ctx.save(); ctx.translate(tx,ty); ctx.rotate(midA+Math.PI/2);
-    const mc=Math.max(6, Math.floor(18-n*0.2));
-    let lbl=parts[i]; if(lbl.length>mc) lbl=lbl.substring(0,mc-1)+'.';
-    const fs=Math.max(6, Math.min(17, Math.floor(R*0.56/(Math.max(1,n)*0.45))));
-    ctx.font=`600 ${fs}px Arial`;
-    ctx.textAlign='center'; ctx.textBaseline='middle';
-    ctx.fillStyle=(i===hiIdx && hiA>0) ? `rgba(255,200,200,${0.4+hiA*0.6})` : C.white;
-    ctx.fillText(lbl, 0, 0);
+    // Segment text
+    const midDeg = sD + seg / 2;
+    const midR = (midDeg - 90) * Math.PI / 180;
+    const lr = (SVG_OR + SVG_IR) / 2 + 8;
+    const lx = lr * Math.cos(midR);
+    const ly = lr * Math.sin(midR);
+
+    ctx.save();
+    ctx.translate(lx, ly);
+    ctx.rotate(midR + Math.PI / 2);
+    const label = participants[i].length > 6 ? participants[i].slice(0, 6) : participants[i];
+    const fsize = Math.max(5, Math.min(8, 9 - n * 0.04));
+    ctx.font = `700 ${fsize}px monospace`;
+    ctx.fillStyle = "rgba(255,255,255,0.8)";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(label, 0, 0);
     ctx.restore();
   }
 
-  /* Center hub */
-  ctx.beginPath(); ctx.arc(cx,cy,R*0.072,0,2*Math.PI);
-  ctx.fillStyle=C.gold; ctx.fill();
-  ctx.beginPath(); ctx.arc(cx,cy,R*0.038,0,2*Math.PI);
-  ctx.fillStyle='#FFF'; ctx.fill();
-
-  /* Pointer triangle */
-  const py=cy-R;
-  ctx.beginPath(); ctx.moveTo(cx,py+5); ctx.lineTo(cx-12,py-22); ctx.lineTo(cx+12,py-22); ctx.closePath();
-  ctx.fillStyle=C.gold; ctx.fill();
-  ctx.strokeStyle='#FFF6'; ctx.lineWidth=1; ctx.stroke();
-}
-
-/* ─── Sidebar: remaining count + last eliminations ─── */
-function drawSidebar(ctx, remaining, lastElims) {
-  const sx=W*0.83, sw=W*0.155, sy=50;
-  ctx.fillStyle=C.bgPanel; ctx.fillRect(sx-6,sy,sw+6,H-sy-16);
-  ctx.strokeStyle=C.goldDark; ctx.lineWidth=1; ctx.strokeRect(sx-6,sy,sw+6,H-sy-16);
-
-  ctx.font='bold 12px Arial'; ctx.fillStyle=C.gold; ctx.textAlign='center';
-  ctx.fillText('REMAINING', sx+sw/2, sy+17);
-  ctx.font='bold 38px Arial'; ctx.fillStyle=C.white;
-  ctx.fillText(String(remaining), sx+sw/2, sy+56);
-  ctx.font='11px Arial'; ctx.fillStyle=C.silver;
-  ctx.fillText('in draw', sx+sw/2, sy+72);
-
-  ctx.fillStyle=C.goldDark; ctx.fillRect(sx-6,sy+88,sw+6,1);
-  ctx.font='bold 11px Arial'; ctx.fillStyle=C.gold; ctx.textAlign='left';
-  ctx.fillText('ELIMINATED', sx+2, sy+105);
-
-  const show=lastElims.slice(-9).reverse();
-  show.forEach((name,idx)=>{
-    const lbl=name.length>15?name.substring(0,14)+'.':name;
-    ctx.font=`${idx===0?'bold ':''} 10px Arial`;
-    ctx.fillStyle=idx===0 ? C.redBright : `rgba(175,180,190,${1-idx*0.1})`;
-    ctx.textAlign='left';
-    ctx.fillText(lbl, sx+2, sy+123+idx*16);
-  });
-}
-
-/* ─── Elimination reveal banner ─── */
-function drawElimBanner(ctx, name, prog) {
-  const p=easeInOut(prog);
-  const bw=580, bh=130;
-  const bx=(W-bw)/2, by=H*0.12;
-  const slide=lerp(-80,0,p);
-  ctx.save(); ctx.translate(0,slide);
-  ctx.fillStyle=C.red; ctx.fillRect(bx,by,bw,bh);
-  ctx.strokeStyle='#C03030'; ctx.lineWidth=2; ctx.strokeRect(bx,by,bw,bh);
-  ctx.fillStyle=C.goldDark; ctx.fillRect(bx,by,bw,4);
-  ctx.font='bold 15px Arial'; ctx.fillStyle='#FF9999'; ctx.textAlign='center';
-  ctx.fillText('ELIMINATED', W/2, by+30);
-  const fs=name.length>18?32:40;
-  ctx.font=`bold ${fs}px Arial`; ctx.fillStyle='#FFF';
-  ctx.fillText(name, W/2, by+82);
-  ctx.restore();
-}
-
-/* ─── Countdown ─── */
-const COUNT_BEAT = 8.33/10; // 0.833s per digit
-
-function drawCountdown(ctx, relT, logo) {
-  drawBg(ctx);
-  if (logo) {
-    const lw=200, lh=Math.floor(lw*logo.height/logo.width);
-    ctx.drawImage(logo,(W-lw)/2,24,lw,lh);
-  }
-  const digit=Math.max(1,10-Math.floor(relT/COUNT_BEAT));
-  const phase=(relT%COUNT_BEAT)/COUNT_BEAT;
-  const scale=lerp(1.25,0.96,easeOutQuart(phase));
-  const cx=W/2, cy=H/2+40, R=108;
-
-  ctx.strokeStyle=C.bgPanel; ctx.lineWidth=9;
-  ctx.beginPath(); ctx.arc(cx,cy,R,0,2*Math.PI); ctx.stroke();
-  ctx.strokeStyle=C.gold; ctx.lineWidth=9;
-  ctx.beginPath(); ctx.arc(cx,cy,R,-Math.PI/2,-Math.PI/2+(1-(relT%COUNT_BEAT)/COUNT_BEAT)*2*Math.PI);
+  // Hub circle
+  ctx.beginPath();
+  ctx.arc(0, 0, SVG_IR, 0, Math.PI * 2);
+  ctx.fillStyle = HUB_FILL;
+  ctx.fill();
+  ctx.strokeStyle = LBLUE;
+  ctx.lineWidth = 2;
   ctx.stroke();
 
-  ctx.save(); ctx.translate(cx,cy); ctx.scale(scale,scale);
-  ctx.font='bold 96px Arial'; ctx.fillStyle=C.white;
-  ctx.textAlign='center'; ctx.textBaseline='middle';
-  ctx.fillText(String(digit),0,0);
+  // Hub "CFS" + "DRAW"
+  ctx.font = "900 12px monospace";
+  ctx.fillStyle = "#ffffff";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText("CFS", 0, -5);
+  ctx.font = "400 9px monospace";
+  ctx.fillStyle = "rgba(255,255,255,0.35)";
+  ctx.fillText("DRAW", 0, 10);
+
   ctx.restore();
 
-  ctx.font='bold 20px Arial'; ctx.fillStyle=C.gold; ctx.textAlign='center';
-  ctx.fillText('THE GRAND DRAW', cx, cy+R+36);
+  // Pointer triangle (world coords, top-center of wheel)
+  const px = wx + WHEEL_SIZE / 2;
+  const py = wy - 2;
+  ctx.save();
+  ctx.translate(px, py);
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  ctx.lineTo(-11, -24);
+  ctx.lineTo(11, -24);
+  ctx.closePath();
+  ctx.fillStyle = YELLOW;
+  ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(0, -6);
+  ctx.lineTo(-7.5, -21);
+  ctx.lineTo(7.5, -21);
+  ctx.closePath();
+  ctx.fillStyle = "#ffffff";
+  ctx.globalAlpha = 0.9;
+  ctx.fill();
+  ctx.globalAlpha = 1;
+  ctx.restore();
 }
 
-/* ─── Intro ─── */
-function drawIntro(ctx, t, logo) {
-  drawBg(ctx);
-  const fade=Math.min(1,t*0.7);
-  ctx.globalAlpha=fade;
-  if (logo) {
-    const lw=260, lh=Math.floor(lw*logo.height/logo.width);
-    ctx.drawImage(logo,(W-lw)/2,80,lw,lh);
-  }
-  ctx.font='bold 50px Arial'; ctx.fillStyle=C.gold; ctx.textAlign='center';
-  ctx.fillText('CFS 10TH ANNIVERSARY',W/2,H/2+8);
-  ctx.font='bold 26px Arial'; ctx.fillStyle=C.silver;
-  ctx.fillText('Grand Giveaway Draw',W/2,H/2+50);
-  ctx.font='18px Arial'; ctx.fillStyle=C.silver;
-  ctx.fillText(`${ALL_PARTICIPANTS.length} Participants  •  3 Winners`,W/2,H/2+88);
-  ctx.globalAlpha=1;
+function drawTick(ctx, value, label, cx, cy) {
+  const bw = 72, bh = 72;
+  roundRect(ctx, cx - bw/2, cy - bh/2, bw, bh, 10);
+  ctx.fillStyle = "rgba(4,8,18,0.9)";
+  ctx.fill();
+  ctx.strokeStyle = hexAlpha(LBLUE, 0.18);
+  ctx.lineWidth = 1;
+  roundRect(ctx, cx - bw/2, cy - bh/2, bw, bh, 10);
+  ctx.stroke();
+  ctx.font = "900 32px monospace";
+  ctx.fillStyle = "#ffffff";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText(String(value).padStart(2,"0"), cx, cy);
+  ctx.font = "700 9px monospace";
+  ctx.fillStyle = "rgba(255,255,255,0.25)";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "top";
+  ctx.fillText(label, cx, cy + 40);
 }
 
-/* ─── Winner reveal ─── */
-function drawWinners(ctx, t, chars, logo) {
-  drawBg(ctx);
-  if (logo) {
-    const lw=170, lh=Math.floor(lw*logo.height/logo.width);
-    ctx.drawImage(logo,(W-lw)/2,12,lw,lh);
+function drawParticipantList(ctx, all, eliminatedSet, x, y, maxH) {
+  const lineH = 16;
+  const maxVisible = Math.floor(maxH / lineH);
+  ctx.save();
+  for (let i = 0; i < all.length && i < maxVisible; i++) {
+    const name = all[i];
+    const isElim = eliminatedSet.has(name);
+    const ly = y + i * lineH + lineH / 2;
+    if (isElim) {
+      ctx.fillStyle = "rgba(255,255,255,0.12)";
+    } else {
+      ctx.fillStyle = hexAlpha(LBLUE, 0.85);
+    }
+    ctx.font = `${isElim ? "400" : "700"} 9px monospace`;
+    ctx.textAlign = "left";
+    ctx.textBaseline = "middle";
+    const label = (isElim ? "✕ " : "· ") + (name.length > 13 ? name.slice(0,13) : name);
+    ctx.fillText(label, x, ly);
   }
-  const ta=Math.min(1,t/0.8);
-  ctx.globalAlpha=ta;
-  ctx.font='bold 40px Arial'; ctx.fillStyle=C.gold; ctx.textAlign='center';
-  ctx.fillText('CONGRATULATIONS',W/2,86);
-  ctx.font='17px Arial'; ctx.fillStyle=C.silver;
-  ctx.fillText('CFS 10th Anniversary Giveaway Winners',W/2,112);
-  ctx.globalAlpha=1;
+  ctx.restore();
+}
 
-  /* layout: [2nd | 1st | 3rd] */
-  const cards=[
-    { wi:1, pi:1, cx:W*0.165, cw:285, ch:430, baseY:H-442, delay:0.4 },
-    { wi:0, pi:0, cx:W*0.375, cw:335, ch:490, baseY:H-502, delay:0.08 },
-    { wi:2, pi:2, cx:W*0.645, cw:285, ch:430, baseY:H-442, delay:0.65 },
+function drawWinnersScreen(ctx, wf) {
+  const fadeIn = Math.min(1, wf / (FPS * 1.2));
+  ctx.fillStyle = `rgba(3,8,16,${fadeIn * 0.92})`;
+  ctx.fillRect(0, 0, W, H);
+  if (fadeIn < 0.2) return;
+  const a = Math.min(1, (fadeIn - 0.2) / 0.8);
+  ctx.globalAlpha = a;
+
+  ctx.font = "900 12px monospace";
+  ctx.fillStyle = YELLOW;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "top";
+  ctx.fillText("🏆  DRAW RESULTS — CFS 10TH ANNIVERSARY  🏆", W / 2, 55);
+
+  ctx.font = "900 40px sans-serif";
+  ctx.fillStyle = "#ffffff";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "top";
+  ctx.fillText("Congratulations!", W / 2, 86);
+
+  const cards = [
+    { rank:1, name:"Trillionaire", color:YELLOW, place:"1ST PLACE", numeral:"I",   prize:"DualSense Wireless Controller" },
+    { rank:2, name:"Choklet mH",   color:SILVER, place:"2ND PLACE", numeral:"II",  prize:"Gaming Headset" },
+    { rank:3, name:"DarkVenom",    color:BRONZE, place:"3RD PLACE", numeral:"III", prize:"Gaming Mouse" },
   ];
 
-  for (const c of cards) {
-    const el=Math.max(0,t-c.delay);
-    const prog=easeOutQuart(el/1.4);
-    const cy=lerp(H+60,c.baseY,prog);
-    const alpha=Math.min(1,el/0.5);
-    ctx.globalAlpha=alpha;
+  const cardW=285, cardH=175, gap=12;
+  const totalW = 3 * cardW + 2 * gap;
+  let cardX = W / 2 - totalW / 2;
 
-    const winner=FINAL_THREE[c.wi];
-    const prize=PRIZES[c.pi];
-    const char=chars[c.wi];
+  cards.forEach((c, i) => {
+    const delay = i * 0.45;
+    const cA = wf > (delay + 0.6) * FPS ? Math.min(1, (wf / FPS - delay - 0.6) / 0.5) : 0;
+    ctx.globalAlpha = a * cA;
 
-    ctx.fillStyle=C.bgPanel; ctx.fillRect(c.cx,cy,c.cw,c.ch);
-    ctx.strokeStyle=prize.color; ctx.lineWidth=2.5; ctx.strokeRect(c.cx,cy,c.cw,c.ch);
+    const cardY = 138;
+    const grad = ctx.createLinearGradient(cardX, cardY, cardX + cardW, cardY + cardH);
+    grad.addColorStop(0, hexAlpha(c.color, 0.08));
+    grad.addColorStop(1, "rgba(4,8,20,0.96)");
+    roundRect(ctx, cardX, cardY, cardW, cardH, 18);
+    ctx.fillStyle = grad;
+    ctx.fill();
+    ctx.strokeStyle = hexAlpha(c.color, 0.35);
+    ctx.lineWidth = 1;
+    roundRect(ctx, cardX, cardY, cardW, cardH, 18);
+    ctx.stroke();
 
-    /* Rank header */
-    ctx.fillStyle=prize.color; ctx.fillRect(c.cx,cy,c.cw,34);
-    ctx.font='bold 18px Arial'; ctx.fillStyle='#111'; ctx.textAlign='center';
-    ctx.fillText(`${prize.place} PLACE`,c.cx+c.cw/2,cy+23);
+    // Top glow bar
+    const barG = ctx.createLinearGradient(cardX, cardY, cardX + cardW, cardY);
+    barG.addColorStop(0, "transparent");
+    barG.addColorStop(0.5, c.color);
+    barG.addColorStop(1, "transparent");
+    ctx.fillStyle = barG;
+    ctx.fillRect(cardX, cardY, cardW, 3);
 
-    /* Character image */
-    if (char) {
-      const ih=c.ch-34-90;
-      const iw=Math.floor(ih*char.width/char.height);
-      const ix=c.cx+(c.cw-iw)/2;
-      ctx.drawImage(char,ix,cy+34,iw,ih);
-    }
+    // Rank circle
+    ctx.beginPath();
+    ctx.arc(cardX + 38, cardY + 42, 19, 0, Math.PI * 2);
+    ctx.fillStyle = hexAlpha(c.color, 0.14);
+    ctx.fill();
+    ctx.strokeStyle = c.color;
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.font = "900 13px monospace";
+    ctx.fillStyle = c.color;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(c.numeral, cardX + 38, cardY + 42);
 
-    /* Name + prize */
-    const ny=cy+c.ch-88;
-    ctx.fillStyle=C.bgPanel; ctx.fillRect(c.cx,ny,c.cw,88);
-    ctx.strokeStyle=prize.color; ctx.lineWidth=1; ctx.strokeRect(c.cx,ny,c.cw,88);
-    ctx.font='bold 20px Arial'; ctx.fillStyle=C.white; ctx.textAlign='center';
-    ctx.fillText(winner,c.cx+c.cw/2,ny+26);
-    ctx.font='12px Arial'; ctx.fillStyle=prize.color;
-    const pl=prize.name.length>28?prize.name.substring(0,27)+'.':prize.name;
-    ctx.fillText(pl,c.cx+c.cw/2,ny+50);
-    ctx.font='11px Arial'; ctx.fillStyle=C.silver;
-    ctx.fillText('Prize',c.cx+c.cw/2,ny+70);
-    ctx.globalAlpha=1;
-  }
-}
+    // Place label
+    ctx.font = "900 10px monospace";
+    ctx.fillStyle = c.color;
+    ctx.textAlign = "left";
+    ctx.textBaseline = "middle";
+    ctx.fillText(c.place, cardX + 65, cardY + 42);
 
-/* ════════════════════════════ MAIN ════════════════════════════ */
-async function main() {
-  /* CLI args: node script.js [startFrame] [endFrame] [outputFile] */
-  const args = process.argv.slice(2);
-  const START_FRAME = args[0] !== undefined ? parseInt(args[0]) : 0;
-  const END_FRAME_ARG = args[1] !== undefined ? parseInt(args[1]) : -1;
-  const outputFile = args[2] || path.join(__dirname, 'giveaway-draw.mp4');
+    // Winner name
+    const nsize = Math.min(24, Math.max(14, 30 - c.name.length * 0.6));
+    ctx.font = `900 ${nsize}px sans-serif`;
+    ctx.fillStyle = "#ffffff";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(c.name, cardX + cardW / 2, cardY + 98);
 
-  const ELIM_ORDER = buildElimOrder();
+    // Prize
+    ctx.font = "400 12px monospace";
+    ctx.fillStyle = "rgba(255,255,255,0.45)";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(c.prize, cardX + cardW / 2, cardY + 128);
 
-  /* Load assets */
-  let chars=[null,null,null], logo=null;
-  try { chars=await Promise.all([
-    loadImage('/tmp/vid-assets/char1.png'),
-    loadImage('/tmp/vid-assets/char2.png'),
-    loadImage('/tmp/vid-assets/char3.png'),
-  ]); console.log('Characters loaded'); } catch(e) { console.warn('Char images missing'); }
-  try { logo=await loadImage('/tmp/vid-assets/logo.png'); console.log('Logo loaded'); } catch(e) {}
+    // Divider
+    ctx.strokeStyle = hexAlpha(c.color, 0.18);
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(cardX + 20, cardY + 148);
+    ctx.lineTo(cardX + cardW - 20, cardY + 148);
+    ctx.stroke();
 
-  /* ─── Timeline ─── */
-  const T_INTRO_END   = 5;
-  const T_COUNT_START = 5;
-  const T_COUNT_END   = T_COUNT_START + 8.33 + 0.6;
-  const T_DRAW_START  = T_COUNT_END + 0.5;
+    // Congrats
+    ctx.font = "400 11px monospace";
+    ctx.fillStyle = hexAlpha(c.color, 0.6);
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText("Congratulations! 🎉", cardX + cardW / 2, cardY + 170);
 
-  /* Pre-compute all elimination timings + wheel rotations */
-  let currentRot=0;
-  const wheelParts=[...ALL_PARTICIPANTS];
-  const elimData=[];
-  let tNow=T_DRAW_START;
-
-  for (let i=0; i<ELIM_ORDER.length; i++) {
-    const name=ELIM_ORDER[i];
-    const parts=[...wheelParts];
-    const targetIdx=parts.indexOf(name);
-    const n=parts.length, sg=(2*Math.PI)/n;
-
-    let delta=(-( (targetIdx+0.5)*sg )-currentRot) % (2*Math.PI);
-    if (delta<0) delta+=2*Math.PI;
-    const endRot=currentRot+5*2*Math.PI+delta;
-
-    const spinDur  =i<35?1.6 : i<45?2.2 : 3.0;
-    const revealDur=i<35?1.4 : i<45?1.8 : 2.5;
-
-    elimData.push({
-      name, targetIdx, parts,
-      startRot:currentRot, endRot,
-      spinStart:tNow, revealStart:tNow+spinDur,
-      end:tNow+spinDur+revealDur, spinDur, revealDur,
-    });
-
-    currentRot=endRot;
-    wheelParts.splice(wheelParts.indexOf(name),1);
-    tNow+=spinDur+revealDur;
-  }
-
-  const T_WINNER_START=tNow;
-  const T_TOTAL=T_WINNER_START+22;
-  const TOTAL_FRAMES=Math.ceil(T_TOTAL*FPS);
-  const END_FRAME=END_FRAME_ARG>=0 ? Math.min(END_FRAME_ARG,TOTAL_FRAMES-1) : TOTAL_FRAMES-1;
-
-  console.log(`Frames ${START_FRAME}–${END_FRAME} of ${TOTAL_FRAMES}  (total video: ${T_TOTAL.toFixed(0)}s / ${(T_TOTAL/60).toFixed(1)}min)`);
-  console.log(`Output: ${outputFile}`);
-
-  /* ─── Spawn FFmpeg (video only, audio added in final concat step) ─── */
-  const ffmpegBin='/nix/store/2crh7152ri5v6aarmnw20y73iq5hgj3n-replit-runtime-path/bin/ffmpeg';
-  const audioFile=path.join(__dirname,'client/public/sounds/countdown.mp3');
-
-  let ffArgs;
-  if (START_FRAME===0 && END_FRAME===TOTAL_FRAMES-1) {
-    /* Single-pass full video with audio */
-    ffArgs=[
-      '-y',
-      '-f','rawvideo','-pix_fmt','rgba','-s',`${W}x${H}`,'-r',String(FPS),'-i','pipe:0',
-      '-itsoffset',String(T_COUNT_START),'-stream_loop','-1','-i',audioFile,
-      '-filter_complex',`[1:a]atrim=start=0:end=${(8.33+0.6).toFixed(2)},apad=whole_dur=${T_TOTAL.toFixed(2)}[a]`,
-      '-map','0:v','-map','[a]',
-      '-c:v','libx264','-preset','fast','-crf','20','-pix_fmt','yuv420p',
-      '-c:a','aac','-b:a','192k','-t',T_TOTAL.toFixed(2),
-      outputFile,
-    ];
-  } else {
-    /* Chunk: video only, no audio */
-    ffArgs=[
-      '-y',
-      '-f','rawvideo','-pix_fmt','rgba','-s',`${W}x${H}`,'-r',String(FPS),'-i','pipe:0',
-      '-c:v','libx264','-preset','fast','-crf','20','-pix_fmt','yuv420p',
-      outputFile,
-    ];
-  }
-
-  const ffmpeg=spawn(ffmpegBin,ffArgs);
-  ffmpeg.stderr.on('data',()=>{});
-  ffmpeg.stdin.on('error',()=>{});
-
-  let done=false;
-  ffmpeg.on('close',code=>{
-    done=true;
-    if (code===0) console.log(`\nDone: ${outputFile}`);
-    else console.error(`\nFFmpeg error code ${code}`);
+    cardX += cardW + gap;
   });
 
-  /* ─── Render loop ─── */
-  const canvas=createCanvas(W,H);
-  const ctx=canvas.getContext('2d');
-  const REPORT=Math.max(1,Math.floor((END_FRAME-START_FRAME+1)/20));
-
-  for (let frame=START_FRAME; frame<=END_FRAME; frame++) {
-    const t=frame/FPS;
-    ctx.clearRect(0,0,W,H);
-
-    /* Find current elimination index and lastElims (pure derivation) */
-    let elimIdx=0;
-    while (elimIdx<elimData.length-1 && t>=elimData[elimIdx].end) elimIdx++;
-    const lastElims=ELIM_ORDER.slice(0,elimIdx);
-
-    /* ── INTRO ── */
-    if (t<T_INTRO_END) {
-      drawIntro(ctx,t,logo);
-
-    /* ── COUNTDOWN ── */
-    } else if (t<T_COUNT_END) {
-      drawCountdown(ctx,t-T_COUNT_START,logo);
-
-    /* ── DRAW ROUNDS ── */
-    } else if (t<T_WINNER_START) {
-      const ed=elimData[elimIdx];
-      const remaining=ELIM_ORDER.length-elimIdx; // people still to be eliminated (not counting final 3)
-      const totalRemaining=remaining+FINAL_THREE.length;
-
-      drawBg(ctx);
-
-      if (t<ed.revealStart) {
-        /* Spinning */
-        const sp=(t-ed.spinStart)/ed.spinDur;
-        const rot=lerp(ed.startRot,ed.endRot,easeOutQuart(sp));
-        const hiA=sp>0.7?(sp-0.7)/0.3:0;
-        drawWheel(ctx,ed.parts,rot,ed.targetIdx,hiA);
-      } else {
-        /* Reveal: wheel frozen, banner shown */
-        const rp=(t-ed.revealStart)/ed.revealDur;
-        drawWheel(ctx,ed.parts,ed.endRot,ed.targetIdx,1);
-        drawElimBanner(ctx,ed.name,rp);
-      }
-
-      /* Top bar */
-      ctx.fillStyle=C.bgPanel; ctx.fillRect(0,0,W*0.8,46);
-      ctx.font='bold 14px Arial'; ctx.fillStyle=C.gold; ctx.textAlign='left';
-      ctx.fillText(`ELIMINATION  ${elimIdx+1} of ${ELIM_ORDER.length}`,16,28);
-
-      drawSidebar(ctx,totalRemaining,lastElims);
-
-    /* ── WINNERS ── */
+  // Confetti
+  ctx.globalAlpha = a * 0.65;
+  const confColors = [YELLOW, SILVER, BRONZE, LBLUE, "#e91e8c", "#4caf50", "#ff5722"];
+  const t = wf / FPS;
+  for (let i = 0; i < 50; i++) {
+    const cx = (Math.sin(i * 7.31 + t * 0.9) * 0.5 + 0.5) * W;
+    const cy = ((i * 0.127 + t * 0.2 + (i % 7) * 0.08) % 1.4) * H;
+    const r = 3 + (i % 4);
+    ctx.beginPath();
+    if (i % 3 === 0) {
+      ctx.arc(cx, cy, r, 0, Math.PI * 2);
     } else {
-      drawWinners(ctx,t-T_WINNER_START,chars,logo);
+      ctx.rect(cx - r, cy - r * 1.5, r * 2, r * 3);
+    }
+    ctx.fillStyle = confColors[i % confColors.length];
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+}
+
+// ─── Main render ──────────────────────────────────────────────────────────────
+async function renderChunk(chunkIndex, totalChunks, outFile) {
+  const canvas = createCanvas(W, H);
+  const ctx = canvas.getContext("2d");
+
+  // Timing
+  const COUNTDOWN_FRAMES = 10 * FPS;         // 10s countdown
+  const SPIN_FRAMES  = Math.round(FPS * 1.8); // 1.8s spin
+  const PAUSE_FRAMES = Math.round(FPS * 2.0); // 2.0s pause/banner
+  const PER_ELIM     = SPIN_FRAMES + PAUSE_FRAMES;
+  const WINNER_FRAMES = 20 * FPS;             // 20s winners screen
+
+  const TOTAL_FRAMES =
+    COUNTDOWN_FRAMES +
+    ELIM_ORDER.length * PER_ELIM +
+    WINNER_FRAMES;
+
+  const framesPerChunk = Math.ceil(TOTAL_FRAMES / totalChunks);
+  const startFrame = chunkIndex * framesPerChunk;
+  const endFrame   = Math.min(startFrame + framesPerChunk, TOTAL_FRAMES);
+
+  console.log(`[chunk ${chunkIndex}/${totalChunks-1}] frames ${startFrame}–${endFrame} of ${TOTAL_FRAMES} (~${Math.round(TOTAL_FRAMES/FPS)}s total)`);
+
+  const ffmpegPath = "/nix/store/2gfznffjfgs0kzlpyviww5jjrfkfbz3g-replit-runtime-path/bin/ffmpeg";
+  const ffmpeg = spawn(ffmpegPath, [
+    "-y","-f","rawvideo","-pix_fmt","rgba",
+    "-s",`${W}x${H}`,"-r",String(FPS),
+    "-i","pipe:0",
+    "-vf","format=yuv420p",
+    "-c:v","libx264","-preset","fast","-crf","20",
+    outFile,
+  ]);
+  ffmpeg.stderr.on("data", () => {});
+
+  // Layout constants — tuned for 960×540
+  const WHEEL_X = W / 2 - WHEEL_SIZE / 2;
+  const WHEEL_Y = 80;
+
+  function getStateAtFrame(f) {
+    if (f < COUNTDOWN_FRAMES) {
+      const cdSecs = 10 - Math.floor(f / FPS);
+      return { phase:"countdown", cdSecs };
+    }
+    const drawF = f - COUNTDOWN_FRAMES;
+    const elimIdx = Math.floor(drawF / PER_ELIM);
+    if (elimIdx >= ELIM_ORDER.length) {
+      return { phase:"winners", wf: f - (COUNTDOWN_FRAMES + ELIM_ORDER.length * PER_ELIM) };
+    }
+    const localF = drawF % PER_ELIM;
+    const spinning = localF < SPIN_FRAMES;
+    const spinProg = spinning ? localF / SPIN_FRAMES : 1;
+    const currentElim = ELIM_ORDER[elimIdx];
+    const prevElims = new Set(ELIM_ORDER.slice(0, elimIdx));
+    const afterElims = new Set(ELIM_ORDER.slice(0, elimIdx + 1));
+    return {
+      phase: spinning ? "spinning" : "elim",
+      elimIdx, localF, spinProg,
+      currentElim,
+      remaining: spinning
+        ? ALL_PARTICIPANTS.filter(p => !prevElims.has(p))
+        : ALL_PARTICIPANTS.filter(p => !afterElims.has(p)),
+      elimCount: elimIdx + (spinning ? 0 : 1),
+      showElim: !spinning,
+      elimElapsedF: spinning ? 0 : localF - SPIN_FRAMES,
+    };
+  }
+
+  function computeRotForElim(elimIdx) {
+    const prevElims = new Set(ELIM_ORDER.slice(0, elimIdx));
+    const rem = ALL_PARTICIPANTS.filter(p => !prevElims.has(p));
+    const name = ELIM_ORDER[elimIdx];
+    const idx = rem.indexOf(name);
+    if (idx < 0) return 0;
+    const seg = 360 / rem.length;
+    // Spin 4 full rotations + land so pointer (top=0) hits the segment
+    return 4 * 360 + (360 - (idx * seg + seg / 2));
+  }
+
+  function drawFrame(f) {
+    const state = getStateAtFrame(f);
+
+    // ── Background ──
+    ctx.fillStyle = BG_COLOR;
+    ctx.fillRect(0, 0, W, H);
+    // Subtle top glow
+    const gTop = ctx.createLinearGradient(0, 0, 0, 180);
+    gTop.addColorStop(0, hexAlpha(LBLUE, 0.05));
+    gTop.addColorStop(1, "transparent");
+    ctx.fillStyle = gTop;
+    ctx.fillRect(0, 0, W, H);
+
+    // ── Header ──
+    ctx.font = "900 10px monospace";
+    ctx.fillStyle = LBLUE;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "top";
+    ctx.fillText("LIVE DRAW — CFS 10TH ANNIVERSARY", W / 2, 20);
+
+    ctx.font = "900 30px sans-serif";
+    ctx.fillStyle = "#ffffff";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "top";
+    ctx.fillText("Grand Draw", W / 2, 38);
+
+    // ── COUNTDOWN ──
+    if (state.phase === "countdown") {
+      const cd = state.cdSecs;
+      ctx.font = "400 11px monospace";
+      ctx.fillStyle = "rgba(255,255,255,0.3)";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "top";
+      ctx.fillText("Wheel starts automatically — 6 Oct 2026, 10:00 PM Cairo", W / 2, 72);
+
+      const spacing = 82;
+      const tickY = 160;
+      drawTick(ctx, 0,  "HRS", W/2 - spacing, tickY);
+      drawTick(ctx, 0,  "MIN", W/2,            tickY);
+      drawTick(ctx, cd, "SEC", W/2 + spacing,  tickY);
+
+      ctx.font = "900 22px monospace";
+      ctx.fillStyle = hexAlpha(LBLUE, 0.55);
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(":", W/2 - spacing/2, tickY);
+      ctx.fillText(":", W/2 + spacing/2, tickY);
+
+      // Static wheel below countdown
+      drawWheel(ctx, ALL_PARTICIPANTS, 0, WHEEL_X, WHEEL_Y + 165);
+
+      // Participant list sidebar
+      const elSet = new Set();
+      drawParticipantList(ctx, ALL_PARTICIPANTS, elSet, 20, 90, H - 110);
+      return;
     }
 
-    /* Send to ffmpeg */
-    const buf=canvas.toBuffer('raw');
-    const ok=ffmpeg.stdin.write(buf);
-    if(!ok) await new Promise(r=>ffmpeg.stdin.once('drain',r));
+    // ── SPINNING / ELIM ──
+    let rotDeg = 0;
+    let remaining = ALL_PARTICIPANTS;
+    let elimCount = 0;
+    let currentElim = null;
 
-    if((frame-START_FRAME)%REPORT===0){
-      const pct=(((frame-START_FRAME)/(END_FRAME-START_FRAME+1))*100).toFixed(0);
-      process.stdout.write(`\r  ${pct}%  frame=${frame}  t=${t.toFixed(1)}s`);
+    if (state.phase === "spinning" || state.phase === "elim") {
+      remaining = state.remaining;
+      elimCount = state.elimCount;
+      currentElim = state.currentElim;
+
+      const finalRot = computeRotForElim(state.elimIdx);
+      if (state.phase === "spinning") {
+        const ease = easeWheel(state.spinProg);
+        rotDeg = finalRot * ease;
+      } else {
+        rotDeg = finalRot;
+      }
+    } else if (state.phase === "winners") {
+      remaining = [...WINNERS];
+      elimCount = ELIM_ORDER.length;
+    }
+
+    drawWheel(ctx, remaining, rotDeg, WHEEL_X, WHEEL_Y);
+
+    // ── Stats ──
+    const statsY = WHEEL_Y + WHEEL_SIZE + 18;
+    ctx.font = "900 28px monospace";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillStyle = "#ffffff";
+    ctx.fillText(String(remaining.length), W/2 - 70, statsY + 6);
+    ctx.font = "400 9px monospace";
+    ctx.fillStyle = "rgba(255,255,255,0.26)";
+    ctx.fillText("Remaining", W/2 - 70, statsY + 22);
+
+    ctx.strokeStyle = "rgba(255,255,255,0.07)";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(W/2, statsY - 6);
+    ctx.lineTo(W/2, statsY + 34);
+    ctx.stroke();
+
+    ctx.font = "900 28px monospace";
+    ctx.fillStyle = "#ffffff";
+    ctx.textAlign = "center";
+    ctx.fillText(String(elimCount), W/2 + 70, statsY + 6);
+    ctx.font = "400 9px monospace";
+    ctx.fillStyle = "rgba(255,255,255,0.26)";
+    ctx.fillText("Eliminated", W/2 + 70, statsY + 22);
+
+    // ── Progress bar ──
+    const pct = elimCount / ALL_PARTICIPANTS.length;
+    const barY = statsY + 40;
+    const barW = 360, barH = 3;
+    const barX = W/2 - barW/2;
+    roundRect(ctx, barX, barY, barW, barH, 2);
+    ctx.fillStyle = "rgba(255,255,255,0.05)";
+    ctx.fill();
+    if (pct > 0) {
+      roundRect(ctx, barX, barY, barW * pct, barH, 2);
+      ctx.fillStyle = LBLUE;
+      ctx.fill();
+    }
+
+    // ── Elimination banner ──
+    if (state.phase === "elim" && state.showElim && currentElim) {
+      const ef = state.elimElapsedF / FPS;
+      const alpha = Math.min(1, ef / 0.25) * (ef > 1.6 ? Math.max(0, 1 - (ef - 1.6) / 0.35) : 1);
+      if (alpha > 0) {
+        ctx.globalAlpha = alpha;
+        const bx = W/2 - 220, bby = barY + 14, bw = 440, bh = 80;
+        const bg = ctx.createLinearGradient(bx, bby, bx + bw, bby + bh);
+        bg.addColorStop(0, "rgba(200,20,20,0.13)");
+        bg.addColorStop(1, "rgba(140,10,10,0.22)");
+        roundRect(ctx, bx, bby, bw, bh, 18);
+        ctx.fillStyle = bg;
+        ctx.fill();
+        ctx.strokeStyle = "rgba(230,50,50,0.32)";
+        ctx.lineWidth = 1;
+        roundRect(ctx, bx, bby, bw, bh, 18);
+        ctx.stroke();
+
+        ctx.font = "900 10px monospace";
+        ctx.fillStyle = "rgba(240,80,80,0.75)";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText("✕  OUT OF THE DRAW", W/2, bby + 24);
+
+        const nsize = Math.min(28, Math.max(16, 34 - currentElim.length * 0.6));
+        ctx.font = `900 ${nsize}px monospace`;
+        ctx.fillStyle = "#ffffff";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(currentElim, W/2, bby + 56);
+        ctx.globalAlpha = 1;
+      }
+    }
+
+    // ── Participant list (left sidebar) ──
+    const elSet = new Set(ELIM_ORDER.slice(0, elimCount));
+    drawParticipantList(ctx, ALL_PARTICIPANTS, elSet, 20, 90, H - 110);
+
+    // ── Winners screen ──
+    if (state.phase === "winners") {
+      drawWinnersScreen(ctx, state.wf);
     }
   }
 
-  process.stdout.write(`\n  Frames written. Finalising...\n`);
-  ffmpeg.stdin.end();
-  await new Promise(r=>ffmpeg.on('close',r));
+  return new Promise((resolve, reject) => {
+    let f = startFrame;
+    let lastPct = -1;
+
+    function writeBatch() {
+      const BATCH = 15;
+      for (let i = 0; i < BATCH && f < endFrame; i++, f++) {
+        drawFrame(f);
+        ffmpeg.stdin.write(canvas.toBuffer("raw"));
+      }
+      const pct = Math.floor(((f - startFrame) / (endFrame - startFrame)) * 100);
+      if (pct !== lastPct && pct % 10 === 0) {
+        process.stdout.write(`\r[chunk ${chunkIndex}] ${pct}%`);
+        lastPct = pct;
+      }
+      if (f >= endFrame) {
+        ffmpeg.stdin.end();
+      } else {
+        setImmediate(writeBatch);
+      }
+    }
+
+    ffmpeg.on("close", code => {
+      process.stdout.write("\n");
+      if (code === 0) { console.log(`[chunk ${chunkIndex}] ✓ ${outFile}`); resolve(); }
+      else reject(new Error(`ffmpeg exited ${code}`));
+    });
+    ffmpeg.on("error", reject);
+    writeBatch();
+  });
 }
 
-main().catch(e=>{console.error(e);process.exit(1);});
+// ─── Concat chunks ────────────────────────────────────────────────────────────
+async function concatChunks(chunks, outFile) {
+  const { default: fs } = await import("fs");
+  const { execSync } = await import("child_process");
+  const ffmpegPath = "/nix/store/2gfznffjfgs0kzlpyviww5jjrfkfbz3g-replit-runtime-path/bin/ffmpeg";
+  const listFile = "/tmp/draw_chunks_list.txt";
+  fs.writeFileSync(listFile, chunks.map(c => `file '${c}'`).join("\n"));
+  execSync(`${ffmpegPath} -y -f concat -safe 0 -i ${listFile} -c copy ${outFile}`, { stdio:"inherit" });
+  console.log(`\n✅ Final video: ${outFile}`);
+}
+
+// ─── Entry ────────────────────────────────────────────────────────────────────
+async function main() {
+  const args = process.argv.slice(2);
+  if (args[0] === "concat") {
+    const N = parseInt(args[1] ?? "3");
+    const out = args[2] ?? "giveaway-draw.mp4";
+    const chunks = Array.from({length:N}, (_,i) => `/tmp/draw_chunk${i}.mp4`);
+    concatChunks(chunks, out);
+    return;
+  }
+
+  const chunkIndex  = parseInt(args[0] ?? "0");
+  const totalChunks = parseInt(args[1] ?? "3");
+  const outFile     = args[2] ?? `/tmp/draw_chunk${chunkIndex}.mp4`;
+  await renderChunk(chunkIndex, totalChunks, outFile);
+}
+
+main().catch(e => { console.error(e); process.exit(1); });
