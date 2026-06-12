@@ -6,6 +6,7 @@ import { insertChatMessageSchema, orders as ordersTable } from "../shared/schema
 import { heroSlides, type InsertHeroSlide } from "../shared/hero-slides-schema";
 import { eq } from "drizzle-orm";
 import crypto from "crypto";
+import jwt from "jsonwebtoken";
 import { getQRCode, getConnectionStatus, sendWhatsAppMessage } from "./whatsapp";
 import { setupAuth, hashPassword } from "./auth";
 import fs from "fs";
@@ -1186,6 +1187,214 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(r.rows[0]);
     } catch (e: any) { res.status(500).json({ message: e.message }); }
   });
+
+  // ─── World Cup Prediction Routes ────────────────────────────────────
+  const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret_key_change_this_in_production';
+
+  const requireJwtUser = (req: any, res: any, next: any) => {
+    const token = req.headers['authorization']?.split(' ')[1];
+    if (!token) return res.status(401).json({ message: 'يجب تسجيل الدخول' });
+    try {
+      const decoded: any = jwt.verify(token, JWT_SECRET);
+      req.jwtUser = decoded;
+      next();
+    } catch {
+      res.status(403).json({ message: 'جلسة منتهية — سجّل دخولك مجدداً' });
+    }
+  };
+
+  const requireJwtAdmin = (req: any, res: any, next: any) => {
+    const token = req.headers['authorization']?.split(' ')[1];
+    if (!token) return res.status(401).json({ message: 'Unauthorized' });
+    try {
+      const decoded: any = jwt.verify(token, JWT_SECRET);
+      if (decoded.role !== 'admin') return res.status(403).json({ message: 'Admin only' });
+      req.jwtUser = decoded;
+      next();
+    } catch {
+      res.status(403).json({ message: 'Invalid token' });
+    }
+  };
+
+  // Init World Cup tables
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS worldcup_matches (
+      id TEXT PRIMARY KEY,
+      home_team TEXT NOT NULL,
+      away_team TEXT NOT NULL,
+      home_flag TEXT DEFAULT '',
+      away_flag TEXT DEFAULT '',
+      match_date TIMESTAMP,
+      home_score INTEGER DEFAULT NULL,
+      away_score INTEGER DEFAULT NULL,
+      status TEXT DEFAULT 'upcoming',
+      round TEXT DEFAULT '',
+      api_match_id TEXT DEFAULT '',
+      created_at TIMESTAMP DEFAULT NOW()
+    );
+    CREATE TABLE IF NOT EXISTS worldcup_predictions (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      match_id TEXT NOT NULL,
+      home_score_pred INTEGER NOT NULL,
+      away_score_pred INTEGER NOT NULL,
+      is_correct BOOLEAN DEFAULT FALSE,
+      created_at TIMESTAMP DEFAULT NOW(),
+      UNIQUE(user_id, match_id)
+    );
+    CREATE TABLE IF NOT EXISTS worldcup_settings (
+      id INTEGER PRIMARY KEY DEFAULT 1,
+      title TEXT DEFAULT 'كأس العالم 2026',
+      subtitle TEXT DEFAULT 'توقع النتيجة واربح كوداً مجاناً',
+      video_url TEXT DEFAULT '',
+      prize_description TEXT DEFAULT 'كود مجاني لأحد منتجات المتجر',
+      is_active BOOLEAN DEFAULT TRUE,
+      created_at TIMESTAMP DEFAULT NOW()
+    );
+    INSERT INTO worldcup_settings (id) VALUES (1) ON CONFLICT (id) DO NOTHING;
+  `);
+
+  app.get('/api/worldcup/settings', async (_req, res) => {
+    try {
+      const r = await pool.query('SELECT * FROM worldcup_settings WHERE id = 1');
+      res.json(r.rows[0] || {});
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
+  app.get('/api/worldcup/matches', async (_req, res) => {
+    try {
+      const r = await pool.query('SELECT * FROM worldcup_matches ORDER BY match_date ASC');
+      res.json(r.rows);
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
+  app.get('/api/worldcup/my-predictions', requireJwtUser, async (req: any, res) => {
+    try {
+      const userId = req.jwtUser.userId || req.jwtUser.id;
+      const r = await pool.query(
+        `SELECT p.*, m.home_team, m.away_team, m.home_score, m.away_score, m.status, m.match_date, m.round
+         FROM worldcup_predictions p
+         JOIN worldcup_matches m ON p.match_id = m.id
+         WHERE p.user_id = $1 ORDER BY m.match_date ASC`,
+        [userId]
+      );
+      res.json(r.rows);
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
+  app.post('/api/worldcup/predict', requireJwtUser, async (req: any, res) => {
+    try {
+      const userId = req.jwtUser.userId || req.jwtUser.id;
+      const { match_id, home_score_pred, away_score_pred } = req.body;
+      if (!match_id || home_score_pred === undefined || away_score_pred === undefined) {
+        return res.status(400).json({ message: 'بيانات ناقصة' });
+      }
+      const matchRes = await pool.query('SELECT * FROM worldcup_matches WHERE id = $1', [match_id]);
+      if (!matchRes.rows.length) return res.status(404).json({ message: 'مباراة غير موجودة' });
+      const match = matchRes.rows[0];
+      if (match.status === 'finished') return res.status(400).json({ message: 'انتهت المباراة' });
+      const h = parseInt(home_score_pred), a = parseInt(away_score_pred);
+      if (isNaN(h) || isNaN(a) || h < 0 || a < 0 || h > 20 || a > 20) {
+        return res.status(400).json({ message: 'نتيجة غير صالحة' });
+      }
+      const id = crypto.randomUUID();
+      await pool.query(
+        `INSERT INTO worldcup_predictions (id, user_id, match_id, home_score_pred, away_score_pred)
+         VALUES ($1,$2,$3,$4,$5) ON CONFLICT (user_id, match_id)
+         DO UPDATE SET home_score_pred=$4, away_score_pred=$5, created_at=NOW()`,
+        [id, userId, match_id, h, a]
+      );
+      res.json({ success: true, message: 'تم حفظ توقعك' });
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
+  app.get('/api/worldcup/admin/predictions', requireJwtAdmin, async (req: any, res) => {
+    try {
+      const { match_id } = req.query;
+      let q = `SELECT p.*, u.name as user_name, u.email as user_email, u.phone as user_phone,
+               m.home_team, m.away_team, m.home_score, m.away_score, m.status as match_status,
+               m.match_date, m.round
+               FROM worldcup_predictions p
+               JOIN users u ON p.user_id = u.id
+               JOIN worldcup_matches m ON p.match_id = m.id`;
+      const params: any[] = [];
+      if (match_id) { q += ' WHERE p.match_id = $1'; params.push(match_id); }
+      q += ' ORDER BY m.match_date ASC, p.created_at ASC';
+      const r = await pool.query(q, params);
+      res.json(r.rows);
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
+  app.get('/api/worldcup/admin/matches', requireJwtAdmin, async (_req, res) => {
+    try {
+      const r = await pool.query('SELECT * FROM worldcup_matches ORDER BY match_date ASC');
+      res.json(r.rows);
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
+  app.post('/api/worldcup/admin/matches', requireJwtAdmin, async (req: any, res) => {
+    try {
+      const { home_team, away_team, home_flag, away_flag, match_date, round } = req.body;
+      if (!home_team || !away_team) return res.status(400).json({ message: 'اسما الفريقين مطلوبان' });
+      const id = crypto.randomUUID();
+      const r = await pool.query(
+        `INSERT INTO worldcup_matches (id,home_team,away_team,home_flag,away_flag,match_date,round,status)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,'upcoming') RETURNING *`,
+        [id, home_team, away_team, home_flag || '', away_flag || '', match_date || null, round || '']
+      );
+      res.json(r.rows[0]);
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
+  app.put('/api/worldcup/admin/matches/:id', requireJwtAdmin, async (req: any, res) => {
+    try {
+      const { home_team, away_team, home_flag, away_flag, match_date, round, home_score, away_score, status } = req.body;
+      const r = await pool.query(
+        `UPDATE worldcup_matches SET
+          home_team=COALESCE($1,home_team), away_team=COALESCE($2,away_team),
+          home_flag=COALESCE($3,home_flag), away_flag=COALESCE($4,away_flag),
+          match_date=COALESCE($5,match_date), round=COALESCE($6,round),
+          home_score=$7, away_score=$8, status=COALESCE($9,status)
+         WHERE id=$10 RETURNING *`,
+        [home_team||null, away_team||null, home_flag||null, away_flag||null, match_date||null, round||null,
+         home_score !== undefined ? parseInt(home_score) : null,
+         away_score !== undefined ? parseInt(away_score) : null,
+         status||null, req.params.id]
+      );
+      if (!r.rows.length) return res.status(404).json({ message: 'Not found' });
+      if (status === 'finished' && home_score !== undefined && away_score !== undefined) {
+        await pool.query(
+          `UPDATE worldcup_predictions SET is_correct=(home_score_pred=$1 AND away_score_pred=$2) WHERE match_id=$3`,
+          [parseInt(home_score), parseInt(away_score), req.params.id]
+        );
+      }
+      res.json(r.rows[0]);
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
+  app.delete('/api/worldcup/admin/matches/:id', requireJwtAdmin, async (req: any, res) => {
+    try {
+      await pool.query('DELETE FROM worldcup_predictions WHERE match_id=$1', [req.params.id]);
+      await pool.query('DELETE FROM worldcup_matches WHERE id=$1', [req.params.id]);
+      res.json({ success: true });
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+
+  app.put('/api/worldcup/admin/settings', requireJwtAdmin, async (req: any, res) => {
+    try {
+      const { title, subtitle, video_url, prize_description, is_active } = req.body;
+      const r = await pool.query(
+        `UPDATE worldcup_settings SET
+          title=COALESCE($1,title), subtitle=COALESCE($2,subtitle),
+          video_url=COALESCE($3,video_url), prize_description=COALESCE($4,prize_description),
+          is_active=COALESCE($5,is_active) WHERE id=1 RETURNING *`,
+        [title||null, subtitle||null, video_url||null, prize_description||null,
+         is_active !== undefined ? is_active : null]
+      );
+      res.json(r.rows[0]);
+    } catch (e: any) { res.status(500).json({ message: e.message }); }
+  });
+  // ─── End World Cup Routes ────────────────────────────────────────────
 
   return createServer(app);
 }

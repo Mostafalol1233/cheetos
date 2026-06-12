@@ -1,0 +1,2 @@
+- [Server routing architecture](server-routing.md) — routes must go in server/routes.ts, not backend/index.js (which is unused in dev)
+- [World Cup feature](worldcup-feature.md) — World Cup prediction page built at /world-cup, admin tab at worldcup in admin panel

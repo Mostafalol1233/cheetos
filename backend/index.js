@@ -39,6 +39,7 @@ import promoRouter from './routes/promo.js';
 import reviewsRouter from './routes/reviews.js';
 import abandonedCartRouter, { startAbandonedCartSchedule } from './routes/abandoned-cart.js';
 import livePricingRouter from './routes/live-pricing.js';
+import worldcupRouter from './routes/worldcup.js';
 import { startBotPolling } from './telegram.js';
 import { authenticateToken, ensureAdmin } from './middleware/auth.js';
 import { sendEmail, sendRawEmail } from './utils/email.js';
@@ -1574,6 +1575,7 @@ app.use('/api/promo', promoRouter);
 app.use('/api/reviews', reviewsRouter);
 app.use('/api/abandoned-cart', abandonedCartRouter);
 app.use('/api/admin/live-pricing', livePricingRouter);
+app.use('/api/worldcup', worldcupRouter);
 
 // Admin Image Upload Endpoint
 app.post('/api/admin/upload-image', authenticateToken, ensureAdmin, imageUpload.single('file'), async (req, res) => {

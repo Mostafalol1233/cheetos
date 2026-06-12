@@ -24,6 +24,18 @@ uri = "file://attached_assets/generated_images/worldcup-prediction-mockup.png"
 type = "image"
 title = "generated_image"
 
+[[generated]]
+id = "QDN8jirSfAisfVSmGTMiH"
+uri = "file://attached_assets/generated_images/worldcup-hero-bg.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "m_8UTWUkMJuun2P9ock8a"
+uri = "file://attached_assets/generated_images/worldcup-trophy.png"
+type = "image"
+title = "generated_image"
+
 [[outputs]]
 id = "ZuqfEHg3SRIyn9YHU_Yji"
 uri = "file://backend-clean.zip"

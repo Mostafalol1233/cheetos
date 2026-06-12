@@ -40,6 +40,7 @@ import PackageDetailsPage from "./pages/package-details";
 import PackageCheckoutPage from "./pages/package-checkout";
 import MaintenancePage from "./pages/maintenance";
 import GiveawayPage from "./pages/giveaway";
+import WorldCupPage from "./pages/world-cup";
 
 // Protected admin route component
 function ProtectedAdminRoute() {
@@ -86,6 +87,7 @@ function Router() {
         <Route path="/package/:gameSlug/:packageIndex" component={PackageCheckoutPage} />
         <Route path="/packages/:slug" component={PackageDetailsPage} />
         <Route path="/giveaway" component={GiveawayPage} />
+        <Route path="/world-cup" component={WorldCupPage} />
         <Route path="/faq" component={FAQPage} />
         <Route path="/terms" component={TermsPage} />
         <Route path="/privacy" component={PrivacyPage} />
@@ -222,7 +224,7 @@ function AppShell() {
   }, [toast, location]);
 
   const isAdminRoute = location === "/admin" || location.startsWith("/admin/") || location === "/admin/login";
-  const isGiveawayRoute = location === "/giveaway";
+  const isGiveawayRoute = location === "/giveaway" || location === "/world-cup";
   const isProfileRoute = location === "/profile";
   const isHomeRoute = location === "/" || location.startsWith("/#");
 

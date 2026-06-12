@@ -28,6 +28,7 @@ import { SupportMessagesPanel } from '@/components/support-messages-panel';
 const RichTextEditor = React.lazy(() => import('@/components/rich-text-editor'));
 import { io, Socket } from 'socket.io-client';
 import { HeaderManager } from '@/components/header-manager';
+import { WorldCupAdminPanel } from '@/components/admin-worldcup-panel';
 
 class ErrorBoundary extends React.Component<{ fallback?: React.ReactNode; children?: React.ReactNode }, { hasError: boolean }> {
   constructor(props: any) {
@@ -2340,6 +2341,7 @@ export default function AdminDashboard() {
               <TabsTrigger value="advanced-editor" data-testid="tab-advanced-editor" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">🛠 Advanced Editor</TabsTrigger>
               <TabsTrigger value="preview-home" data-testid="tab-preview-home" className="data-[state=active]:bg-gold-primary data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black">👁 Home Preview</TabsTrigger>
               <TabsTrigger value="giveaway" data-testid="tab-giveaway" className="data-[state=active]:bg-yellow-500 data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-yellow-700 font-semibold">🎁 السحب</TabsTrigger>
+              <TabsTrigger value="worldcup" data-testid="tab-worldcup" className="data-[state=active]:bg-yellow-400 data-[state=active]:text-black px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-yellow-600 font-semibold">⚽ كأس العالم</TabsTrigger>
             </TabsList>
             <ScrollBar orientation="horizontal" />
           </ScrollArea>
@@ -3311,6 +3313,11 @@ export default function AdminDashboard() {
           {/* Giveaway Management Tab */}
           <TabsContent value="giveaway" className="space-y-6">
             <GiveawayPanel />
+          </TabsContent>
+
+          {/* World Cup Tab */}
+          <TabsContent value="worldcup" className="space-y-6">
+            <WorldCupAdminPanel />
           </TabsContent>
 
           {/* Main Page Content Tab */}
