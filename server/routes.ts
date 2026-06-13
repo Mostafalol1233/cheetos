@@ -1025,6 +1025,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     )
   `);
 
+  // Seed: World Cup 2026 announcement (disabled — admin enables via panel)
+  (async () => {
+    try {
+      const exists = await pool.query(
+        `SELECT id FROM announcements WHERE message LIKE '%كأس العالم%' OR message LIKE '%World Cup%' LIMIT 1`
+      );
+      if (!exists.rows.length) {
+        await pool.query(
+          `INSERT INTO announcements (title, message, bg_color, text_color, icon, is_active, dismissible)
+           VALUES ($1, $2, $3, $4, $5, false, true)`,
+          [
+            'كأس العالم 2026',
+            'توقع نتائج مباريات كأس العالم 2026 واربح كوداً مجانياً من متجر ضياء! — Predict World Cup 2026 results and win free store codes!',
+            '#1a1200',
+            '#c9a84c',
+            '🏆',
+          ]
+        );
+      }
+    } catch { /* non-critical */ }
+  })();
+
   app.get("/api/announcements/active", async (_req, res) => {
     try {
       const now = Date.now();
@@ -1394,9 +1416,86 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(r.rows[0]);
     } catch (e: any) { res.status(500).json({ message: e.message }); }
   });
+  // ─── API-Football Auto-Refresh (internal, called by scheduler) ───────
+  // Exported so server/index.ts can schedule automatic refreshes every 2h.
+  // Uses ~8-10 calls/day automatically; 90+ remain for manual admin triggers.
+
+  async function internalRefreshWorldCupScores(): Promise<{ updated: number; skipped: boolean }> {
+    const apiKey = process.env.FOOTBALL_API_KEY || process.env.API_FOOTBALL_KEY;
+    if (!apiKey) return { updated: 0, skipped: true };
+    try {
+      const liveMatches = await pool.query(
+        `SELECT id, api_match_id FROM worldcup_matches WHERE api_match_id IS NOT NULL AND api_match_id != '' AND status != 'finished'`
+      );
+      if (!liveMatches.rows.length) return { updated: 0, skipped: false };
+
+      const ids = liveMatches.rows.map((r: any) => r.api_match_id).join('-');
+      const response = await fetch(`https://v3.football.api-sports.io/fixtures?ids=${ids}`, {
+        headers: {
+          'x-apisports-key': apiKey,
+          'x-rapidapi-key': apiKey,
+          'x-rapidapi-host': 'v3.football.api-sports.io',
+        },
+      });
+      if (!response.ok) return { updated: 0, skipped: true };
+      const data: any = await response.json();
+      const fixtures: any[] = data.response || [];
+
+      let updated = 0;
+      for (const f of fixtures) {
+        const fixture = f.fixture;
+        const goals = f.goals;
+        const short = fixture.status?.short || 'NS';
+        let status = 'upcoming';
+        if (['FT','AET','PEN','AWD','WO'].includes(short)) status = 'finished';
+        else if (['1H','HT','2H','ET','BT','P','SUSP','INT','LIVE'].includes(short)) status = 'live';
+
+        const homeScore = goals?.home ?? null;
+        const awayScore = goals?.away ?? null;
+        const apiMatchId = String(fixture.id);
+
+        const mRow = await pool.query('SELECT id FROM worldcup_matches WHERE api_match_id=$1', [apiMatchId]);
+        if (mRow.rows.length) {
+          await pool.query(
+            'UPDATE worldcup_matches SET home_score=$1, away_score=$2, status=$3 WHERE api_match_id=$4',
+            [homeScore, awayScore, status, apiMatchId]
+          );
+          if (status === 'finished' && homeScore !== null && awayScore !== null) {
+            await pool.query(
+              `UPDATE worldcup_predictions SET is_correct=(home_score_pred=$1 AND away_score_pred=$2) WHERE match_id=$3`,
+              [homeScore, awayScore, mRow.rows[0].id]
+            );
+          }
+          updated++;
+        }
+      }
+      return { updated, skipped: false };
+    } catch {
+      return { updated: 0, skipped: true };
+    }
+  }
+
+  // Expose the internal refresh for the scheduler
+  (app as any)._wcAutoRefresh = internalRefreshWorldCupScores;
+
+  // Seed Egypt vs Belgium (first Group C match) if not already present
+  (async () => {
+    try {
+      const existing = await pool.query(
+        `SELECT id FROM worldcup_matches WHERE home_team='Egypt' AND away_team='Belgium' LIMIT 1`
+      );
+      if (!existing.rows.length) {
+        await pool.query(
+          `INSERT INTO worldcup_matches (id, home_team, away_team, home_flag, away_flag, match_date, home_score, away_score, status, round, api_match_id)
+           VALUES ($1,'Egypt','Belgium','🇪🇬','🇧🇪',$2,NULL,NULL,'upcoming','Group C','')
+           ON CONFLICT DO NOTHING`,
+          [crypto.randomUUID(), '2026-06-15T20:00:00Z']
+        );
+      }
+    } catch { /* table may not exist yet on first boot */ }
+  })();
+
   // ─── API-Football Sync (api-football.com v3) ─────────────────────────
-  // Smart caching: stores result in DB, only calls API when admin triggers sync.
-  // This preserves your 100 req/day limit — the API is NEVER called automatically.
   app.post('/api/worldcup/admin/sync', requireJwtAdmin, async (_req, res) => {
     const apiKey = process.env.FOOTBALL_API_KEY || process.env.API_FOOTBALL_KEY;
     if (!apiKey) {
@@ -1463,13 +1562,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const apiMatchId = String(fixture.id);
 
         // Upsert by api_match_id — won't duplicate on re-sync
-        await pool.query(
-          `INSERT INTO worldcup_matches (id, home_team, away_team, home_flag, away_flag, match_date, home_score, away_score, status, round, api_match_id)
-           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
-           ON CONFLICT (id) DO UPDATE SET
-             home_score=$7, away_score=$8, status=$9, match_date=$6`,
-          [crypto.randomUUID(), homeTeam, awayTeam, homeFlag, awayFlag, matchDate, homeScore, awayScore, status, round, apiMatchId]
+        // First check if this api_match_id already exists; update if so, insert if not
+        const existingMatch = await pool.query(
+          'SELECT id FROM worldcup_matches WHERE api_match_id=$1', [apiMatchId]
         );
+        if (existingMatch.rows.length) {
+          await pool.query(
+            `UPDATE worldcup_matches SET home_team=$1, away_team=$2, home_flag=$3, away_flag=$4,
+             match_date=$5, home_score=$6, away_score=$7, status=$8, round=$9 WHERE api_match_id=$10`,
+            [homeTeam, awayTeam, homeFlag, awayFlag, matchDate, homeScore, awayScore, status, round, apiMatchId]
+          );
+        } else {
+          await pool.query(
+            `INSERT INTO worldcup_matches (id, home_team, away_team, home_flag, away_flag, match_date, home_score, away_score, status, round, api_match_id)
+             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
+            [crypto.randomUUID(), homeTeam, awayTeam, homeFlag, awayFlag, matchDate, homeScore, awayScore, status, round, apiMatchId]
+          );
+        }
 
         // If we just synced a finished match, recalculate is_correct
         if (status === 'finished' && homeScore !== null && awayScore !== null) {

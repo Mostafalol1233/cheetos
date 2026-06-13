@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { Sun, Moon, Gamepad2, User, LogOut, Menu, X, Home, Grid3X3, MessageCircle, Package, Flame, Smartphone, Gift, Monitor, ChevronRight, ChevronDown, Bell, BellOff } from "lucide-react";
+import { Sun, Moon, Gamepad2, User, LogOut, Menu, X, Home, Grid3X3, MessageCircle, Package, Flame, Smartphone, Gift, Monitor, ChevronRight, ChevronDown, Bell, BellOff, Trophy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { LanguageCurrencySwitcher } from "@/components/language-currency-switcher";
 import { useTheme } from "@/components/theme-provider";
@@ -150,6 +150,7 @@ export function Header() {
   const navLinks = [
     { href: "/", label: t('home'), icon: Home },
     { href: "/games", label: t('games') || "Games", icon: Gamepad2 },
+    { href: "/world-cup", label: "كأس العالم", icon: Trophy, highlight: true },
     { href: "/support", label: t('support'), icon: MessageCircle },
   ];
 
@@ -169,6 +170,23 @@ export function Header() {
       >
         {/* Gold accent line at top */}
         <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-gold-primary/60 to-transparent" />
+
+        {/* World Cup 2026 — subtle marquee strip just below the gold line */}
+        <div className="absolute top-[2px] left-0 right-0 h-[22px] overflow-hidden pointer-events-none"
+          style={{ background: "linear-gradient(90deg, transparent, rgba(201,168,76,0.04) 30%, rgba(201,168,76,0.04) 70%, transparent)" }}>
+          <div className="flex items-center h-full gap-8 text-[9px] font-bold tracking-[0.25em] text-[#c9a84c]/30 uppercase whitespace-nowrap animate-[marquee_28s_linear_infinite]"
+            style={{ width: "max-content" }}>
+            {Array(8).fill(null).map((_, i) => (
+              <span key={i} className="flex items-center gap-3">
+                <Trophy className="w-2.5 h-2.5 inline-block" />
+                FIFA World Cup 2026
+                <span className="opacity-40">·</span>
+                توقع النتيجة واربح
+                <span className="opacity-40">·</span>
+              </span>
+            ))}
+          </div>
+        </div>
         
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between">
@@ -197,20 +215,24 @@ export function Header() {
             <nav className="hidden lg:flex items-center gap-1">
               {navLinks.map((link) => {
                 const isActive = location === link.href;
+                const isWC = (link as any).highlight;
                 return (
                   <Link key={link.href} href={link.href}>
                     <div
                       className={cn(
                         "relative px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-2 cursor-pointer",
-                        isActive
+                        isWC && !isActive
+                          ? "text-[#c9a84c] hover:bg-[#c9a84c]/10"
+                          : isActive
                           ? "text-foreground bg-white/8"
                           : "text-muted-foreground hover:text-foreground hover:bg-white/5"
                       )}
                     >
-                      <span className="relative inline-flex items-center">
+                      <span className="relative inline-flex items-center gap-1.5">
+                        {isWC && <Trophy className="w-3.5 h-3.5" />}
                         {link.label}
                         {link.href === "/track-order" && hasOrderNotification && (
-                          <span className="ml-2 inline-flex h-2.5 w-2.5 rounded-full bg-red-500 shadow-[0_0_0_3px_rgba(248,113,113,0.4)]" />
+                          <span className="ml-1 inline-flex h-2.5 w-2.5 rounded-full bg-red-500 shadow-[0_0_0_3px_rgba(248,113,113,0.4)]" />
                         )}
                       </span>
                       {isActive && (
@@ -453,6 +475,7 @@ export function Header() {
                   {navLinks.map((link, index) => {
                     const Icon = link.icon;
                     const isActive = location === link.href;
+                    const isWC = (link as any).highlight;
                     return (
                       <motion.div
                         key={link.href}
@@ -466,12 +489,14 @@ export function Header() {
                               "flex items-center gap-3 px-4 py-3.5 rounded-xl transition-all duration-200 cursor-pointer",
                               isActive
                                 ? "bg-gold-primary/15 text-gold-primary border border-gold-primary/30"
+                                : isWC
+                                ? "bg-[#c9a84c]/8 text-[#c9a84c] border border-[#c9a84c]/20 hover:bg-[#c9a84c]/15"
                                 : "hover:bg-muted text-foreground"
                             )}
                           >
                             <div className={cn(
                               "w-8 h-8 rounded-lg flex items-center justify-center shrink-0",
-                              isActive ? "bg-gold-primary/20" : "bg-muted"
+                              isActive ? "bg-gold-primary/20" : isWC ? "bg-[#c9a84c]/15" : "bg-muted"
                             )}>
                               <Icon className="w-4 h-4" />
                             </div>
@@ -481,6 +506,9 @@ export function Header() {
                                 <span className="ml-2 inline-flex h-2.5 w-2.5 rounded-full bg-red-500 shadow-[0_0_0_3px_rgba(248,113,113,0.4)]" />
                               )}
                             </span>
+                            {isWC && !isActive && (
+                              <span className="text-[10px] font-bold tracking-widest text-[#c9a84c]/60 uppercase">2026</span>
+                            )}
                             {isActive && <ChevronRight className="w-4 h-4 text-gold-primary" />}
                           </div>
                         </Link>

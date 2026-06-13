@@ -384,7 +384,8 @@ export default function WorldCupPage() {
       if (!res.ok) return [];
       return res.json();
     },
-    enabled: isAuthenticated,
+    enabled: isAuthenticated && !authLoading,
+    retry: 1,
   });
 
   const predictMutation = useMutation({
@@ -551,15 +552,19 @@ export default function WorldCupPage() {
             {/* ── AUTH GATE ── */}
             {!authLoading && !isAuthenticated && (
               <div className="mb-10 bg-[#111] border border-[#c9a84c]/20 rounded-2xl p-8 text-center">
-                <div className="text-4xl mb-4">🔐</div>
-                <div className="text-white/60 text-sm mb-5 font-medium">{T.loginToPredict}</div>
+                <div className="w-12 h-12 rounded-2xl bg-[#c9a84c]/10 border border-[#c9a84c]/20 flex items-center justify-center mx-auto mb-4">
+                  <svg className="w-5 h-5 text-[#c9a84c]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                </div>
+                <div className="text-white/70 text-sm mb-6 font-medium">{T.loginToPredict}</div>
                 <div className="flex gap-3 justify-center flex-wrap">
                   <Link href="/login">
                     <Button className="bg-[#c9a84c] hover:bg-[#b8973e] text-black font-black px-7 rounded-xl h-11">
                       {T.login}
                     </Button>
                   </Link>
-                  <Link href="/login">
+                  <Link href="/login?tab=register">
                     <Button variant="outline" className="border-white/20 text-white hover:bg-white/5 px-7 rounded-xl h-11">
                       {T.createAccount}
                     </Button>
@@ -632,7 +637,11 @@ export default function WorldCupPage() {
 
             {matches.length === 0 && (
               <div className="text-center py-24">
-                <div className="text-5xl mb-4">⚽</div>
+                <div className="w-14 h-14 rounded-2xl bg-white/4 border border-white/8 flex items-center justify-center mx-auto mb-5">
+                  <svg className="w-7 h-7 text-white/20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                </div>
                 <div className="text-white/20 text-sm">{T.noMatches}</div>
               </div>
             )}

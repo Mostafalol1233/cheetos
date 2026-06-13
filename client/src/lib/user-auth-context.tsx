@@ -38,30 +38,39 @@ export const UserAuthProvider: FC<{ children: ReactNode }> = ({ children }: { ch
         const userData = localStorage.getItem('userData');
 
         if (token) {
-          // Verify token is still valid
-          const response = await fetch(`${API_BASE_URL}/api/auth/verify`, {
-            headers: {
-              Authorization: `Bearer ${token}`
-            }
-          });
+          try {
+            // Verify token is still valid
+            const response = await fetch(`${API_BASE_URL}/api/auth/verify`, {
+              headers: { Authorization: `Bearer ${token}` }
+            });
 
-          if (response.ok) {
-            const data = await response.json();
-            setIsAuthenticated(true);
-            // If the verify endpoint returns the full user object, use it. 
-            // Otherwise fall back to local storage or the partial data from verify.
-            setUser(data.user || (userData ? JSON.parse(userData) : null));
-          } else {
-            // Token expired, clear storage
-            localStorage.removeItem('userToken');
-            localStorage.removeItem('userData');
-            setIsAuthenticated(false);
-            setUser(null);
+            if (response.ok) {
+              const data = await response.json();
+              setIsAuthenticated(true);
+              setUser(data.user || (userData ? JSON.parse(userData) : null));
+            } else if (response.status === 401 || response.status === 403) {
+              // Token actually rejected by server — clear it
+              localStorage.removeItem('userToken');
+              localStorage.removeItem('userData');
+              setIsAuthenticated(false);
+              setUser(null);
+            } else {
+              // Server error or network issue — trust localStorage to keep user logged in
+              if (userData) {
+                setIsAuthenticated(true);
+                setUser(JSON.parse(userData));
+              }
+            }
+          } catch {
+            // Network error — don't log out the user, trust localStorage
+            if (userData) {
+              setIsAuthenticated(true);
+              setUser(JSON.parse(userData));
+            }
           }
         }
       } catch (err) {
-        // console.error('Auth check failed:', err);
-        setIsAuthenticated(false);
+        // Outer error — keep silent
       } finally {
         setIsLoading(false);
       }

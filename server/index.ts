@@ -116,6 +116,26 @@ app.use((req, res, next) => {
   const server = await registerRoutes(app);
   log("Routes registered");
 
+  // ── World Cup auto-refresh scheduler ──────────────────────────────────
+  // Refreshes live scores every 2 hours automatically (≤12 calls/day).
+  // The remaining 88+ daily API calls are reserved for admin manual triggers.
+  const WC_REFRESH_INTERVAL_MS = 2 * 60 * 60 * 1000; // 2 hours
+  const runAutoRefresh = async () => {
+    const fn = (app as any)._wcAutoRefresh;
+    if (typeof fn === 'function') {
+      try {
+        const result = await fn();
+        if (!result.skipped) log(`[WC Auto-Refresh] updated ${result.updated} matches`);
+      } catch { /* non-critical */ }
+    }
+  };
+  // First run 30 seconds after boot (let DB settle), then every 2h
+  setTimeout(() => {
+    runAutoRefresh();
+    setInterval(runAutoRefresh, WC_REFRESH_INTERVAL_MS);
+  }, 30_000);
+  // ─────────────────────────────────────────────────────────────────────
+
   // Start Telegram bot polling for order notifications & commands
   const { startBotPolling } = await import("./telegram");
   startBotPolling();
