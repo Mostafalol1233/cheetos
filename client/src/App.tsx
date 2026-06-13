@@ -11,8 +11,43 @@ import { TranslationProvider } from "./lib/translation";
 import { LocalizationProvider } from "./lib/localization";
 import { AuthProvider, useAuth } from "./lib/auth-context";
 import { UserAuthProvider } from "./lib/user-auth-context";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
+
+function GlobalAudio() {
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  useEffect(() => {
+    if (localStorage.getItem('site_audio_played')) return;
+
+    const audio = new Audio('/media/worldcup-anthem.mp4');
+    audio.volume = 0.25;
+    audioRef.current = audio;
+
+    const playOnce = () => {
+      if (!audioRef.current) return;
+      audioRef.current.play().then(() => {
+        localStorage.setItem('site_audio_played', '1');
+      }).catch(() => {});
+      document.removeEventListener('click', playOnce);
+      document.removeEventListener('touchstart', playOnce);
+    };
+
+    document.addEventListener('click', playOnce, { once: true });
+    document.addEventListener('touchstart', playOnce, { once: true });
+
+    return () => {
+      document.removeEventListener('click', playOnce);
+      document.removeEventListener('touchstart', playOnce);
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+    };
+  }, []);
+
+  return null;
+}
 import { AnnouncementBanner } from "@/components/announcement-banner";
 import { Button } from "@/components/ui/button";
 import Home from "./pages/home";
@@ -316,6 +351,7 @@ function App() {
                   <AccessibilityProvider>
                     <TooltipProvider>
                       <CartProvider>
+                        <GlobalAudio />
                         <Toaster />
                         <AppShell />
                       </CartProvider>

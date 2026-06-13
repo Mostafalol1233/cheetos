@@ -74,12 +74,20 @@ export function PopularGames() {
                     src={imgSrc}
                     alt=""
                     aria-hidden="true"
+                    width={400}
+                    height={533}
+                    loading="lazy"
+                    decoding="async"
                     className="absolute inset-0 w-full h-full object-cover scale-110 blur-2xl opacity-50 saturate-150"
                   />
                   {/* Main image — fully contained so nothing gets cut off */}
                   <img
                     src={imgSrc}
                     alt={game.name}
+                    width={400}
+                    height={533}
+                    loading="lazy"
+                    decoding="async"
                     className="absolute inset-0 w-full h-full object-contain transition-transform duration-500 group-hover:scale-105 drop-shadow-2xl"
                   />
 

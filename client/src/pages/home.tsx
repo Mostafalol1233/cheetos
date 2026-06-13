@@ -15,7 +15,7 @@ import { ReviewsMarquee } from "@/components/reviews-marquee";
 import { GameSearchOverlay } from "@/components/game-search-overlay";
 import type { Game } from "@shared/schema";
 
-const TRENDING = ["Free Fire", "PUBG", "PlayStation", "Roblox", "Steam", "iTunes"];
+const TRENDING_FALLBACK = ["Free Fire", "PUBG", "PlayStation", "Roblox", "Steam", "iTunes"];
 
 function AnimatedGameRow({ games, direction = "left", speed = 40 }: { games: Game[]; direction?: "left" | "right"; speed?: number }) {
   if (!games.length) return null;
@@ -118,9 +118,12 @@ export default function Home() {
     staleTime: 5 * 60 * 1000,
   });
 
-  const row1 = allGames.slice(0, Math.ceil(allGames.length / 3));
-  const row2 = allGames.slice(Math.ceil(allGames.length / 3), Math.ceil(allGames.length * 2 / 3));
-  const row3 = allGames.slice(Math.ceil(allGames.length * 2 / 3));
+  const row1 = allGames.slice(0, 25);
+  const row2 = allGames.slice(25, 50);
+  const row3 = allGames.slice(50, 75);
+
+  const trendingTerms = (allGames as any[]).filter(g => g.isPopular).slice(0, 6).map((g: any) => g.name);
+  const displayTrending = trendingTerms.length > 0 ? trendingTerms : TRENDING_FALLBACK;
 
   return (
     <>
@@ -217,7 +220,7 @@ export default function Home() {
                   <Sparkles className="w-3 h-3" />
                   {language === 'ar' ? 'الأكثر بحثاً:' : 'Trending:'}
                 </span>
-                {TRENDING.map((term) => (
+                {displayTrending.map((term) => (
                   <button
                     key={term}
                     onClick={() => { navigate(`/games?q=${encodeURIComponent(term)}`); }}

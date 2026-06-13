@@ -468,8 +468,8 @@ export default function GamePage() {
           ? `${isGiftCard ? 'شراء كرت' : 'شحن'} ${game.name} - متجر ضياء | أرخص سعر في مصر`
           : `${isGiftCard ? 'Buy' : 'Top Up'} ${game.name} Cheap - Diaa Gaming Store Egypt`}
         description={language === 'ar'
-          ? `${isGiftCard ? 'اشتري كرت' : 'اشحن عملات'} ${game.name} بأرخص سعر في مصر مع متجر ضياء. ${packagesArr.length > 0 ? `باقات تبدأ من ${getPricing(packagesArr[0], 0).final} جنيه. ` : ''}دفع آمن وتسليم سريع عبر فودافون كاش وإنستاباي.`
-          : `${isGiftCard ? 'Buy' : 'Top up'} ${game.name} at the best price in Egypt. ${packagesArr.length > 0 ? `Packages starting from ${getPricing(packagesArr[0], 0).final} EGP. ` : ''}Safe payment via Vodafone Cash & InstaPay.`}
+          ? (`${isGiftCard ? 'اشتري كرت' : 'اشحن عملات'} ${game.name} بأرخص سعر في مصر مع متجر ضياء. ${packagesArr.length > 0 ? `باقات تبدأ من ${getPricing(packagesArr[0], 0).final} جنيه. ` : ''}دفع آمن وتسليم سريع عبر فودافون كاش وإنستاباي.`).slice(0, 160)
+          : (`${isGiftCard ? 'Buy' : 'Top up'} ${game.name} at the best price in Egypt. ${packagesArr.length > 0 ? `Packages starting from ${getPricing(packagesArr[0], 0).final} EGP. ` : ''}Safe payment via Vodafone Cash & InstaPay.`).slice(0, 160)}
         keywords={[
           game.name,
           `شحن ${game.name}`,
