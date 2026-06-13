@@ -7,6 +7,97 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Header } from "@/components/header";
+import { SEO } from "@/components/SEO";
+
+/* ─── Bilingual text ─── */
+type Lang = "ar" | "en";
+
+const TX = {
+  ar: {
+    pageTitle: "كأس العالم 2026 — توقع النتيجة | متجر ضياء",
+    pageDesc: "شارك في مسابقة توقع نتائج كأس العالم 2026 واربح جوائز مجانية من متجر ضياء.",
+    live: "مباشر",
+    finished: "انتهت",
+    group: "مجموعة",
+    upcoming: "المباريات القادمة",
+    finishedSection: "المباريات المنتهية",
+    predict: "توقع",
+    update: "تعديل",
+    yourPrediction: "توقعك المسجل",
+    predictScore: "توقع النتيجة",
+    yourResults: "نتائجك",
+    fromFinished: "من المباريات المنتهية",
+    correct: "توقع صحيح من",
+    hit: "· أصبت!",
+    noMatches: "لم تُضَف مباريات بعد — تابع القسم قريباً",
+    loginToPredict: "يجب تسجيل الدخول للمشاركة في التوقعات",
+    login: "تسجيل الدخول",
+    createAccount: "إنشاء حساب",
+    step1t: "سجّل دخولك",
+    step1s: "يجب أن يكون لديك حساب في المتجر",
+    step2t: "توقع النتيجة",
+    step2s: "اختر نتيجتك لكل مباراة قبل انطلاقها",
+    step3t: "اربح كوداً",
+    step3s: "الإدارة تراجع التوقعات الصحيحة وترسل الكود",
+    termsTitle: "الشروط والأحكام",
+    terms: [
+      "يجب امتلاك حساب فعّال في المتجر للمشاركة",
+      "يُسمح بتوقع واحد فقط لكل مباراة لكل مستخدم",
+      "يمكن تعديل التوقع قبل انطلاق المباراة فقط",
+      "الإدارة تراجع التوقعات الصحيحة بعد انتهاء كل مباراة وتختار الفائزين",
+      "يتم التواصل مع الفائزين عبر الواتساب المسجل في الحساب",
+      "قرار الإدارة في اختيار الفائزين نهائي وغير قابل للطعن",
+    ],
+    defaultTitle: "كأس العالم 2026",
+    defaultSubtitle: "توقع النتيجة واربح كوداً مجاناً",
+    saved: "تم الحفظ",
+    savedDesc: "تم تسجيل توقعك بنجاح",
+    error: "خطأ",
+    langBtn: "English",
+  },
+  en: {
+    pageTitle: "World Cup 2026 Prediction | Diaa Store",
+    pageDesc: "Predict World Cup 2026 match results and win free prizes from Diaa Store.",
+    live: "LIVE",
+    finished: "Finished",
+    group: "Group",
+    upcoming: "Upcoming Matches",
+    finishedSection: "Finished Matches",
+    predict: "Predict",
+    update: "Update",
+    yourPrediction: "Your Prediction",
+    predictScore: "Predict the Score",
+    yourResults: "Your Results",
+    fromFinished: "from finished matches",
+    correct: "correct from",
+    hit: "· Correct!",
+    noMatches: "No matches added yet — check back soon",
+    loginToPredict: "You must be logged in to participate",
+    login: "Sign In",
+    createAccount: "Create Account",
+    step1t: "Sign In",
+    step1s: "You need an active store account",
+    step2t: "Predict the Score",
+    step2s: "Choose your result for each match before kick-off",
+    step3t: "Win a Code",
+    step3s: "Admin reviews correct predictions and sends your prize",
+    termsTitle: "Terms & Conditions",
+    terms: [
+      "An active store account is required to participate",
+      "Only one prediction per match per user is allowed",
+      "Predictions can be edited before the match starts only",
+      "Admin reviews correct predictions after each match ends and selects winners",
+      "Winners are contacted via the WhatsApp registered on their account",
+      "Admin's decision on winners is final and binding",
+    ],
+    defaultTitle: "World Cup 2026",
+    defaultSubtitle: "Predict the score and win a free code",
+    saved: "Saved",
+    savedDesc: "Your prediction was saved successfully",
+    error: "Error",
+    langBtn: "عربي",
+  },
+};
 
 interface Match {
   id: string;
@@ -49,34 +140,40 @@ function getYoutubeEmbedUrl(url: string): string {
   return url;
 }
 
-function formatMatchDate(dateStr: string): string {
+function formatMatchDate(dateStr: string, lang: Lang): string {
   if (!dateStr) return "";
   try {
     const d = new Date(dateStr);
-    return d.toLocaleDateString("ar-EG", {
-      weekday: "long", day: "numeric", month: "long",
-      hour: "2-digit", minute: "2-digit"
+    return d.toLocaleDateString(lang === "ar" ? "ar-EG" : "en-US", {
+      weekday: "short", day: "numeric", month: "short",
+      hour: "2-digit", minute: "2-digit",
     });
   } catch { return dateStr; }
 }
 
 function MatchCard({
-  match,
-  prediction,
-  onPredict,
-  isSubmitting,
+  match, prediction, onPredict, isSubmitting, lang,
 }: {
   match: Match;
   prediction?: Prediction;
   onPredict: (matchId: string, home: number, away: number) => void;
   isSubmitting: boolean;
+  lang: Lang;
 }) {
+  const T = TX[lang];
   const [homeInput, setHomeInput] = useState<string>(
     prediction ? String(prediction.home_score_pred) : ""
   );
   const [awayInput, setAwayInput] = useState<string>(
     prediction ? String(prediction.away_score_pred) : ""
   );
+
+  useEffect(() => {
+    if (prediction) {
+      setHomeInput(String(prediction.home_score_pred));
+      setAwayInput(String(prediction.away_score_pred));
+    }
+  }, [prediction]);
 
   const isFinished = match.status === "finished";
   const isLive = match.status === "live";
@@ -91,85 +188,94 @@ function MatchCard({
 
   return (
     <div
-      className={`relative bg-[#111111] border rounded-xl p-6 transition-all duration-300 ${
-        isLive ? "border-[#c9a84c]/80 shadow-[0_0_20px_rgba(201,168,76,0.15)]" : "border-white/8"
-      } ${isFinished && hasPrediction && prediction!.is_correct ? "border-emerald-500/40" : ""}`}
-      data-testid={`match-card-${match.id}`}
+      className={`relative rounded-2xl p-5 transition-all duration-300 overflow-hidden ${
+        isLive
+          ? "bg-gradient-to-br from-[#1a1200] to-[#111] border border-[#c9a84c]/60 shadow-[0_0_30px_rgba(201,168,76,0.12)]"
+          : isFinished && hasPrediction && prediction!.is_correct
+          ? "bg-gradient-to-br from-[#001a0a] to-[#111] border border-emerald-500/40"
+          : "bg-[#111111] border border-white/8 hover:border-white/15"
+      }`}
     >
+      {/* Status badge */}
       {isLive && (
-        <div className="absolute top-3 right-3 flex items-center gap-1.5">
-          <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-          <span className="text-xs text-red-400 font-medium tracking-wide uppercase">مباشر</span>
+        <div className="absolute top-3 right-3 flex items-center gap-1.5 bg-red-500/15 border border-red-500/30 rounded-full px-2.5 py-1">
+          <span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse" />
+          <span className="text-xs text-red-400 font-semibold tracking-wider uppercase">{T.live}</span>
         </div>
       )}
       {isFinished && (
         <div className="absolute top-3 right-3">
-          <span className="text-xs text-white/40 font-medium tracking-wide uppercase">انتهت</span>
+          <span className="text-[10px] text-white/30 font-medium tracking-widest uppercase bg-white/5 px-2 py-0.5 rounded-full">{T.finished}</span>
         </div>
       )}
 
-      <div className="text-center mb-1">
-        <span className="text-xs text-[#c9a84c]/60 font-medium tracking-widest uppercase">
-          {match.round || "مجموعة"}
+      {/* Round */}
+      <div className="text-center mb-3">
+        <span className="text-[10px] text-[#c9a84c]/50 font-semibold tracking-widest uppercase">
+          {match.round || T.group}
         </span>
       </div>
 
-      <div className="flex items-center justify-between gap-4 my-4">
+      {/* Teams */}
+      <div className="flex items-center justify-between gap-4 my-3">
         <div className="flex-1 text-center">
           {match.home_flag && (
-            <div className="text-4xl mb-2">{match.home_flag}</div>
+            <div className="text-5xl mb-2 drop-shadow-lg">{match.home_flag}</div>
           )}
-          <div className="text-white font-semibold text-sm leading-tight">{match.home_team}</div>
+          <div className="text-white font-bold text-sm leading-tight">{match.home_team}</div>
         </div>
 
-        <div className="flex flex-col items-center gap-1 min-w-[80px]">
+        <div className="flex flex-col items-center gap-1 min-w-[90px]">
           {isFinished && match.home_score !== null ? (
-            <div className="text-2xl font-bold text-white tabular-nums">
-              {match.home_score} – {match.away_score}
+            <div className="text-3xl font-black text-white tabular-nums tracking-tight">
+              {match.home_score} <span className="text-white/30">–</span> {match.away_score}
+            </div>
+          ) : isLive && match.home_score !== null ? (
+            <div className="text-3xl font-black text-[#c9a84c] tabular-nums tracking-tight animate-pulse">
+              {match.home_score} <span className="text-[#c9a84c]/50">–</span> {match.away_score}
             </div>
           ) : (
-            <div className="text-sm text-white/30 font-light tracking-widest">VS</div>
+            <div className="text-sm text-white/20 font-light tracking-[0.3em]">VS</div>
           )}
-          <div className="text-xs text-white/30 text-center mt-1">
-            {formatMatchDate(match.match_date)}
+          <div className="text-[10px] text-white/25 text-center mt-1 leading-relaxed px-1">
+            {formatMatchDate(match.match_date, lang)}
           </div>
         </div>
 
         <div className="flex-1 text-center">
           {match.away_flag && (
-            <div className="text-4xl mb-2">{match.away_flag}</div>
+            <div className="text-5xl mb-2 drop-shadow-lg">{match.away_flag}</div>
           )}
-          <div className="text-white font-semibold text-sm leading-tight">{match.away_team}</div>
+          <div className="text-white font-bold text-sm leading-tight">{match.away_team}</div>
         </div>
       </div>
 
+      {/* Finished — show prediction result */}
       {isFinished && hasPrediction && (
-        <div className={`text-center text-xs mt-3 py-1.5 px-3 rounded-lg ${
+        <div className={`text-center text-xs mt-4 py-2 px-4 rounded-xl ${
           prediction!.is_correct
-            ? "bg-emerald-500/10 text-emerald-400"
-            : "bg-white/5 text-white/40"
+            ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+            : "bg-white/4 text-white/35 border border-white/8"
         }`}>
-          توقعك: {prediction!.home_score_pred} – {prediction!.away_score_pred}
-          {prediction!.is_correct && " · اصبت!"}
+          {lang === "ar" ? "توقعك:" : "Your pick:"}{" "}
+          {prediction!.home_score_pred} – {prediction!.away_score_pred}
+          {prediction!.is_correct && <span className="text-emerald-400 font-semibold"> {T.hit}</span>}
         </div>
       )}
 
+      {/* Predict / Edit section */}
       {!isFinished && (
         <div className="mt-4 pt-4 border-t border-white/6">
           {hasPrediction ? (
             <div className="space-y-3">
-              <div className="text-center text-xs text-white/40">توقعك المسجل</div>
+              <div className="text-center text-xs text-white/35 font-medium">{T.yourPrediction}</div>
               <div className="flex items-center justify-center gap-3">
-                <div className="w-16 text-center">
-                  <div className="bg-[#1a1a1a] border border-[#c9a84c]/30 rounded-lg py-2 px-3 text-[#c9a84c] font-bold text-lg tabular-nums">
-                    {prediction!.home_score_pred}
-                  </div>
+                <div className="w-14 text-center bg-[#1a1a1a] border border-[#c9a84c]/30 rounded-xl py-2 px-2 text-[#c9a84c] font-black text-xl tabular-nums">
+                  {prediction!.home_score_pred}
                 </div>
-                <span className="text-white/20 text-sm">–</span>
-                <div className="w-16 text-center">
-                  <div className="bg-[#1a1a1a] border border-[#c9a84c]/30 rounded-lg py-2 px-3 text-[#c9a84c] font-bold text-lg tabular-nums">
-                    {prediction!.away_score_pred}
-                  </div>
+                <span className="text-white/20 text-sm font-light">–</span>
+                <div className="w-14 text-center bg-[#1a1a1a] border border-[#c9a84c]/30 rounded-xl py-2 px-2 text-[#c9a84c] font-black text-xl tabular-nums">
+                  {prediction!.away_score_pred}
                 </div>
               </div>
               <div className="flex items-center justify-center gap-2 mt-2">
@@ -177,59 +283,51 @@ function MatchCard({
                   type="number" min="0" max="20"
                   value={homeInput}
                   onChange={e => setHomeInput(e.target.value)}
-                  className="w-16 text-center bg-[#1a1a1a] border-white/10 text-white text-sm h-9"
-                  data-testid={`input-home-${match.id}`}
+                  className="w-14 text-center bg-[#0d0d0d] border-white/10 text-white text-sm h-9 rounded-xl"
                 />
                 <span className="text-white/20">–</span>
                 <Input
                   type="number" min="0" max="20"
                   value={awayInput}
                   onChange={e => setAwayInput(e.target.value)}
-                  className="w-16 text-center bg-[#1a1a1a] border-white/10 text-white text-sm h-9"
-                  data-testid={`input-away-${match.id}`}
+                  className="w-14 text-center bg-[#0d0d0d] border-white/10 text-white text-sm h-9 rounded-xl"
                 />
                 <Button
                   size="sm"
                   onClick={handleSubmit}
                   disabled={isSubmitting || homeInput === "" || awayInput === ""}
-                  className="bg-[#c9a84c]/20 hover:bg-[#c9a84c]/30 text-[#c9a84c] border border-[#c9a84c]/30 text-xs h-9"
-                  data-testid={`btn-update-${match.id}`}
+                  className="bg-[#c9a84c]/15 hover:bg-[#c9a84c]/25 text-[#c9a84c] border border-[#c9a84c]/30 text-xs h-9 rounded-xl font-semibold"
                 >
-                  تعديل
+                  {isSubmitting ? "..." : T.update}
                 </Button>
               </div>
             </div>
           ) : (
-            <div className="flex items-center gap-2 justify-center">
-              <div className="text-center">
-                <div className="text-xs text-white/30 mb-2">توقع النتيجة</div>
-                <div className="flex items-center gap-2">
-                  <Input
-                    type="number" min="0" max="20"
-                    value={homeInput}
-                    onChange={e => setHomeInput(e.target.value)}
-                    placeholder="0"
-                    className="w-16 text-center bg-[#0d0d0d] border-white/10 text-white text-base h-10 tabular-nums"
-                    data-testid={`input-home-${match.id}`}
-                  />
-                  <span className="text-white/20 text-sm">–</span>
-                  <Input
-                    type="number" min="0" max="20"
-                    value={awayInput}
-                    onChange={e => setAwayInput(e.target.value)}
-                    placeholder="0"
-                    className="w-16 text-center bg-[#0d0d0d] border-white/10 text-white text-base h-10 tabular-nums"
-                    data-testid={`input-away-${match.id}`}
-                  />
-                  <Button
-                    onClick={handleSubmit}
-                    disabled={isSubmitting || homeInput === "" || awayInput === ""}
-                    className="bg-[#c9a84c] hover:bg-[#b8973e] text-black text-sm font-semibold h-10 px-5"
-                    data-testid={`btn-predict-${match.id}`}
-                  >
-                    توقع
-                  </Button>
-                </div>
+            <div className="text-center space-y-2">
+              <div className="text-xs text-white/25 font-medium">{T.predictScore}</div>
+              <div className="flex items-center gap-2 justify-center">
+                <Input
+                  type="number" min="0" max="20"
+                  value={homeInput}
+                  onChange={e => setHomeInput(e.target.value)}
+                  placeholder="0"
+                  className="w-14 text-center bg-[#0d0d0d] border-white/10 text-white text-base h-11 rounded-xl tabular-nums"
+                />
+                <span className="text-white/20 text-base font-light">–</span>
+                <Input
+                  type="number" min="0" max="20"
+                  value={awayInput}
+                  onChange={e => setAwayInput(e.target.value)}
+                  placeholder="0"
+                  className="w-14 text-center bg-[#0d0d0d] border-white/10 text-white text-base h-11 rounded-xl tabular-nums"
+                />
+                <Button
+                  onClick={handleSubmit}
+                  disabled={isSubmitting || homeInput === "" || awayInput === ""}
+                  className="bg-[#c9a84c] hover:bg-[#b8973e] text-black text-sm font-black h-11 px-5 rounded-xl"
+                >
+                  {isSubmitting ? "..." : T.predict}
+                </Button>
               </div>
             </div>
           )}
@@ -240,9 +338,21 @@ function MatchCard({
 }
 
 export default function WorldCupPage() {
-  const { isAuthenticated, isLoading: authLoading, user } = useUserAuth();
+  const { isAuthenticated, isLoading: authLoading } = useUserAuth();
   const { toast } = useToast();
   const [submittingMatchId, setSubmittingMatchId] = useState<string | null>(null);
+
+  // Language: default Arabic, remember preference
+  const [lang, setLang] = useState<Lang>(() => {
+    try { return (localStorage.getItem("wc_lang") as Lang) || "ar"; } catch { return "ar"; }
+  });
+  const toggleLang = () => {
+    const next: Lang = lang === "ar" ? "en" : "ar";
+    setLang(next);
+    try { localStorage.setItem("wc_lang", next); } catch {}
+  };
+  const T = TX[lang];
+  const dir = lang === "ar" ? "rtl" : "ltr";
 
   const { data: settings } = useQuery<Settings>({
     queryKey: ["/api/worldcup/settings"],
@@ -282,25 +392,22 @@ export default function WorldCupPage() {
       const token = localStorage.getItem("userToken");
       const res = await fetch(`${API_BASE_URL}/api/worldcup/predict`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ match_id: matchId, home_score_pred: home, away_score_pred: away }),
       });
       if (!res.ok) {
         const data = await res.json();
-        throw new Error(data.message || "فشل الحفظ");
+        throw new Error(data.message || (lang === "ar" ? "فشل الحفظ" : "Save failed"));
       }
       return res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/worldcup/my-predictions"] });
-      toast({ title: "تم الحفظ", description: "تم تسجيل توقعك بنجاح" });
+      toast({ title: T.saved, description: T.savedDesc });
       setSubmittingMatchId(null);
     },
     onError: (err: any) => {
-      toast({ title: "خطأ", description: err.message, variant: "destructive" });
+      toast({ title: T.error, description: err.message, variant: "destructive" });
       setSubmittingMatchId(null);
     },
   });
@@ -310,184 +417,241 @@ export default function WorldCupPage() {
     predictMutation.mutate({ matchId, home, away });
   };
 
-  const predictionMap = Object.fromEntries(
-    myPredictions.map((p) => [p.match_id, p])
-  );
-
+  const predictionMap = Object.fromEntries(myPredictions.map(p => [p.match_id, p]));
   const upcomingMatches = matches.filter(m => m.status !== "finished");
   const finishedMatches = matches.filter(m => m.status === "finished");
   const embedUrl = settings?.video_url ? getYoutubeEmbedUrl(settings.video_url) : "";
-
   const correctCount = myPredictions.filter(p => p.is_correct).length;
 
-  return (
-    <div
-      className="min-h-screen bg-[#0a0a0a] text-white"
-      dir="rtl"
-      style={{
-        backgroundImage: "url(/images/worldcup-hero-bg.png)",
-        backgroundSize: "cover",
-        backgroundPosition: "center top",
-        backgroundAttachment: "fixed",
-      }}
-    >
-      <div className="min-h-screen" style={{ background: "linear-gradient(to bottom, rgba(10,10,10,0.55) 0%, rgba(10,10,10,0.85) 40%, rgba(10,10,10,0.97) 70%, #0a0a0a 100%)" }}>
-        <Header />
-        <div className="pt-28 pb-20 px-4 max-w-3xl mx-auto">
+  const steps = [
+    { n: "01", t: T.step1t, s: T.step1s },
+    { n: "02", t: T.step2t, s: T.step2s },
+    { n: "03", t: T.step3t, s: T.step3s },
+  ];
 
-          {/* ── HERO ── */}
-          <div className="text-center mb-16">
-            <img
-              src="/images/worldcup-trophy.png"
-              alt="كأس العالم"
-              className="w-40 h-auto mx-auto mb-8 drop-shadow-2xl"
-            />
-            <h1 className="text-4xl sm:text-5xl font-bold text-white tracking-tight mb-3">
-              {settings?.title || "كأس العالم 2026"}
-            </h1>
-            <div className="w-16 h-px bg-[#c9a84c] mx-auto mb-4" />
-            <p className="text-white/50 text-lg font-light">
-              {settings?.subtitle || "توقع النتيجة واربح كوداً مجاناً"}
-            </p>
-            {settings?.prize_description && (
-              <div className="mt-5 inline-block px-5 py-2 border border-[#c9a84c]/25 rounded-full text-[#c9a84c]/80 text-sm font-medium">
-                {settings.prize_description}
+  return (
+    <>
+      <SEO
+        title={T.pageTitle}
+        description={T.pageDesc}
+        keywords={["world cup 2026", "كأس العالم 2026", "توقع المباريات", "diaa store", "متجر ضياء", "world cup prediction"]}
+        url={typeof window !== "undefined" ? window.location.href : "https://diaasadek.com/world-cup"}
+      />
+      <div
+        className="min-h-screen bg-[#080808] text-white"
+        dir={dir}
+        style={{
+          backgroundImage: "url(/images/worldcup-hero-bg.png)",
+          backgroundSize: "cover",
+          backgroundPosition: "center top",
+          backgroundAttachment: "fixed",
+        }}
+      >
+        <div
+          className="min-h-screen"
+          style={{
+            background: "linear-gradient(to bottom, rgba(8,8,8,0.5) 0%, rgba(8,8,8,0.82) 35%, rgba(8,8,8,0.96) 65%, #080808 100%)",
+          }}
+        >
+          <Header />
+
+          {/* Language toggle */}
+          <div className={`fixed top-20 z-40 ${lang === "ar" ? "left-4" : "right-4"}`}>
+            <button
+              onClick={toggleLang}
+              className="text-xs font-semibold bg-white/8 hover:bg-white/15 border border-white/10 text-white/60 hover:text-white px-3 py-1.5 rounded-full transition-all"
+            >
+              {T.langBtn}
+            </button>
+          </div>
+
+          <div className="pt-28 pb-24 px-4 max-w-3xl mx-auto">
+
+            {/* ── HERO ── */}
+            <div className="text-center mb-16">
+              <div className="relative inline-block mb-8">
+                <img
+                  src="/images/worldcup-trophy.png"
+                  alt="World Cup Trophy"
+                  className="w-36 h-auto mx-auto drop-shadow-2xl"
+                  onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                />
+                {/* Glow ring */}
+                <div className="absolute inset-0 rounded-full bg-[#c9a84c]/10 blur-2xl pointer-events-none" />
+              </div>
+
+              <h1 className="text-4xl sm:text-5xl font-black text-white tracking-tight mb-3 leading-tight">
+                {settings?.title || T.defaultTitle}
+              </h1>
+              <div className="w-20 h-px bg-gradient-to-r from-transparent via-[#c9a84c] to-transparent mx-auto mb-5" />
+              <p className="text-white/45 text-lg font-light">
+                {settings?.subtitle || T.defaultSubtitle}
+              </p>
+              {settings?.prize_description && (
+                <div className="mt-6 inline-flex items-center gap-2 px-5 py-2 bg-[#c9a84c]/8 border border-[#c9a84c]/25 rounded-full text-[#c9a84c]/80 text-sm font-semibold">
+                  <span>🏆</span>
+                  <span>{settings.prize_description}</span>
+                </div>
+              )}
+
+              {/* Stats bar */}
+              {matches.length > 0 && (
+                <div className="mt-8 flex items-center justify-center gap-6">
+                  <div className="text-center">
+                    <div className="text-2xl font-black text-white">{matches.length}</div>
+                    <div className="text-[10px] text-white/30 uppercase tracking-widest">{lang === "ar" ? "مباراة" : "Matches"}</div>
+                  </div>
+                  <div className="w-px h-8 bg-white/10" />
+                  <div className="text-center">
+                    <div className="text-2xl font-black text-[#c9a84c]">{upcomingMatches.length}</div>
+                    <div className="text-[10px] text-white/30 uppercase tracking-widest">{lang === "ar" ? "قادمة" : "Upcoming"}</div>
+                  </div>
+                  <div className="w-px h-8 bg-white/10" />
+                  <div className="text-center">
+                    <div className="text-2xl font-black text-emerald-400">{finishedMatches.length}</div>
+                    <div className="text-[10px] text-white/30 uppercase tracking-widest">{lang === "ar" ? "منتهية" : "Finished"}</div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* ── VIDEO ── */}
+            {embedUrl && (
+              <div className="mb-14">
+                <div
+                  className="relative w-full rounded-2xl overflow-hidden border border-white/8 shadow-2xl"
+                  style={{ paddingTop: "56.25%" }}
+                >
+                  <iframe
+                    src={embedUrl}
+                    title="World Cup video"
+                    className="absolute inset-0 w-full h-full"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  />
+                </div>
               </div>
             )}
-          </div>
 
-          {/* ── VIDEO ── */}
-          {embedUrl && (
-            <div className="mb-14">
-              <div className="relative w-full rounded-xl overflow-hidden border border-white/8" style={{ paddingTop: "56.25%" }}>
-                <iframe
-                  src={embedUrl}
-                  title="World Cup video"
-                  className="absolute inset-0 w-full h-full"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                />
-              </div>
-            </div>
-          )}
-
-          {/* ── HOW IT WORKS ── */}
-          <div className="mb-12 grid grid-cols-1 sm:grid-cols-3 gap-4">
-            {[
-              { n: "01", t: "سجّل دخولك", s: "يجب أن يكون لديك حساب في المتجر" },
-              { n: "02", t: "توقع النتيجة", s: "اختر نتيجتك لكل مباراة قبل انطلاقها" },
-              { n: "03", t: "اربح كوداً", s: "الإدارة تراجع التوقعات الصحيحة وترسل الكود" },
-            ].map(item => (
-              <div key={item.n} className="bg-[#111111] border border-white/8 rounded-xl p-5 text-center">
-                <div className="text-[#c9a84c] text-xs font-semibold tracking-widest mb-2">{item.n}</div>
-                <div className="text-white font-semibold mb-1">{item.t}</div>
-                <div className="text-white/40 text-xs leading-relaxed">{item.s}</div>
-              </div>
-            ))}
-          </div>
-
-          {/* ── AUTH GATE ── */}
-          {!authLoading && !isAuthenticated && (
-            <div className="mb-10 bg-[#111111] border border-[#c9a84c]/20 rounded-xl p-8 text-center">
-              <div className="text-white/60 text-sm mb-4">يجب تسجيل الدخول للمشاركة في التوقعات</div>
-              <div className="flex gap-3 justify-center flex-wrap">
-                <Link href="/login">
-                  <Button className="bg-[#c9a84c] hover:bg-[#b8973e] text-black font-semibold px-6" data-testid="btn-login-worldcup">
-                    تسجيل الدخول
-                  </Button>
-                </Link>
-                <Link href="/login">
-                  <Button variant="outline" className="border-white/20 text-white hover:bg-white/5 px-6" data-testid="btn-register-worldcup">
-                    إنشاء حساب
-                  </Button>
-                </Link>
-              </div>
-            </div>
-          )}
-
-          {/* ── SCORE SUMMARY ── */}
-          {isAuthenticated && myPredictions.length > 0 && finishedMatches.length > 0 && (
-            <div className="mb-8 bg-[#111111] border border-white/8 rounded-xl p-5 flex items-center justify-between">
-              <div>
-                <div className="text-white font-semibold">نتائجك</div>
-                <div className="text-white/40 text-xs mt-0.5">من المباريات المنتهية</div>
-              </div>
-              <div className="text-right">
-                <div className="text-2xl font-bold text-[#c9a84c]">{correctCount}</div>
-                <div className="text-white/30 text-xs">توقع صحيح من {finishedMatches.filter(m => predictionMap[m.id]).length}</div>
-              </div>
-            </div>
-          )}
-
-          {/* ── UPCOMING MATCHES ── */}
-          {upcomingMatches.length > 0 && (
-            <div className="mb-12">
-              <h2 className="text-lg font-semibold text-white mb-5 flex items-center gap-3">
-                <span className="w-px h-5 bg-[#c9a84c]" />
-                المباريات القادمة
-              </h2>
-              <div className="space-y-4">
-                {upcomingMatches.map(match => (
-                  <MatchCard
-                    key={match.id}
-                    match={match}
-                    prediction={predictionMap[match.id]}
-                    onPredict={handlePredict}
-                    isSubmitting={submittingMatchId === match.id}
-                  />
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* ── FINISHED MATCHES ── */}
-          {finishedMatches.length > 0 && (
-            <div className="mb-12">
-              <h2 className="text-lg font-semibold text-white/60 mb-5 flex items-center gap-3">
-                <span className="w-px h-5 bg-white/20" />
-                المباريات المنتهية
-              </h2>
-              <div className="space-y-4">
-                {finishedMatches.map(match => (
-                  <MatchCard
-                    key={match.id}
-                    match={match}
-                    prediction={predictionMap[match.id]}
-                    onPredict={handlePredict}
-                    isSubmitting={false}
-                  />
-                ))}
-              </div>
-            </div>
-          )}
-
-          {matches.length === 0 && (
-            <div className="text-center py-20 text-white/20 text-sm">
-              لم تُضَف مباريات بعد — تابع القسم قريباً
-            </div>
-          )}
-
-          {/* ── TERMS ── */}
-          <div className="mt-16 border-t border-white/8 pt-10">
-            <h3 className="text-sm font-semibold text-white/50 mb-4 tracking-wide uppercase">الشروط والأحكام</h3>
-            <ul className="space-y-2 text-white/30 text-xs leading-relaxed">
-              {[
-                "يجب امتلاك حساب فعّال في المتجر للمشاركة",
-                "يُسمح بتوقع واحد فقط لكل مباراة لكل مستخدم",
-                "يمكن تعديل التوقع قبل انطلاق المباراة فقط",
-                "الإدارة تراجع التوقعات الصحيحة بعد انتهاء كل مباراة وتختار الفائزين",
-                "يتم التواصل مع الفائزين عبر الواتساب المسجل في الحساب",
-                "قرار الإدارة في اختيار الفائزين نهائي وغير قابل للطعن",
-              ].map((t, i) => (
-                <li key={i} className="flex gap-2">
-                  <span className="text-[#c9a84c]/30 mt-0.5">—</span>
-                  <span>{t}</span>
-                </li>
+            {/* ── HOW IT WORKS ── */}
+            <div className="mb-12 grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {steps.map(item => (
+                <div
+                  key={item.n}
+                  className="relative bg-[#111] border border-white/8 rounded-2xl p-5 text-center overflow-hidden group hover:border-[#c9a84c]/25 transition-all"
+                >
+                  <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#c9a84c]/20 to-transparent" />
+                  <div className="text-[#c9a84c] text-xs font-black tracking-widest mb-3">{item.n}</div>
+                  <div className="text-white font-bold mb-1.5 text-sm">{item.t}</div>
+                  <div className="text-white/35 text-xs leading-relaxed">{item.s}</div>
+                </div>
               ))}
-            </ul>
+            </div>
+
+            {/* ── AUTH GATE ── */}
+            {!authLoading && !isAuthenticated && (
+              <div className="mb-10 bg-[#111] border border-[#c9a84c]/20 rounded-2xl p-8 text-center">
+                <div className="text-4xl mb-4">🔐</div>
+                <div className="text-white/60 text-sm mb-5 font-medium">{T.loginToPredict}</div>
+                <div className="flex gap-3 justify-center flex-wrap">
+                  <Link href="/login">
+                    <Button className="bg-[#c9a84c] hover:bg-[#b8973e] text-black font-black px-7 rounded-xl h-11">
+                      {T.login}
+                    </Button>
+                  </Link>
+                  <Link href="/login">
+                    <Button variant="outline" className="border-white/20 text-white hover:bg-white/5 px-7 rounded-xl h-11">
+                      {T.createAccount}
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+            )}
+
+            {/* ── SCORE SUMMARY ── */}
+            {isAuthenticated && myPredictions.length > 0 && finishedMatches.length > 0 && (
+              <div className="mb-8 bg-gradient-to-r from-[#c9a84c]/8 to-transparent border border-[#c9a84c]/20 rounded-2xl p-5 flex items-center justify-between">
+                <div>
+                  <div className="text-white font-bold">{T.yourResults}</div>
+                  <div className="text-white/35 text-xs mt-0.5">{T.fromFinished}</div>
+                </div>
+                <div className={lang === "ar" ? "text-left" : "text-right"}>
+                  <div className="text-3xl font-black text-[#c9a84c]">{correctCount}</div>
+                  <div className="text-white/30 text-xs">
+                    {T.correct} {finishedMatches.filter(m => predictionMap[m.id]).length}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ── UPCOMING MATCHES ── */}
+            {upcomingMatches.length > 0 && (
+              <div className="mb-12">
+                <h2 className="text-base font-bold text-white mb-5 flex items-center gap-3">
+                  <span className="w-0.5 h-5 bg-[#c9a84c] rounded-full" />
+                  {T.upcoming}
+                  <span className="text-xs text-white/30 font-normal">({upcomingMatches.length})</span>
+                </h2>
+                <div className="space-y-4">
+                  {upcomingMatches.map(match => (
+                    <MatchCard
+                      key={match.id}
+                      match={match}
+                      prediction={predictionMap[match.id]}
+                      onPredict={handlePredict}
+                      isSubmitting={submittingMatchId === match.id}
+                      lang={lang}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* ── FINISHED MATCHES ── */}
+            {finishedMatches.length > 0 && (
+              <div className="mb-12">
+                <h2 className="text-base font-bold text-white/50 mb-5 flex items-center gap-3">
+                  <span className="w-0.5 h-5 bg-white/15 rounded-full" />
+                  {T.finishedSection}
+                  <span className="text-xs text-white/20 font-normal">({finishedMatches.length})</span>
+                </h2>
+                <div className="space-y-4">
+                  {finishedMatches.map(match => (
+                    <MatchCard
+                      key={match.id}
+                      match={match}
+                      prediction={predictionMap[match.id]}
+                      onPredict={handlePredict}
+                      isSubmitting={false}
+                      lang={lang}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {matches.length === 0 && (
+              <div className="text-center py-24">
+                <div className="text-5xl mb-4">⚽</div>
+                <div className="text-white/20 text-sm">{T.noMatches}</div>
+              </div>
+            )}
+
+            {/* ── TERMS ── */}
+            <div className="mt-16 border-t border-white/6 pt-10">
+              <h3 className="text-xs font-bold text-white/40 mb-5 tracking-widest uppercase">{T.termsTitle}</h3>
+              <ul className="space-y-2.5 text-white/25 text-xs leading-relaxed">
+                {T.terms.map((t, i) => (
+                  <li key={i} className="flex gap-2.5">
+                    <span className="text-[#c9a84c]/25 mt-0.5 shrink-0">—</span>
+                    <span>{t}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }

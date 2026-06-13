@@ -116,9 +116,28 @@ function SettingsPanel() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/worldcup/matches"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/worldcup/matches/admin"] });
       toast({ title: "تمت المزامنة", description: data.message });
     },
     onError: (err: any) => toast({ title: "خطأ في المزامنة", description: err.message, variant: "destructive" }),
+  });
+
+  const refreshScoresMutation = useMutation({
+    mutationFn: async () => {
+      const res = await fetch(apiPath("/api/worldcup/admin/refresh-scores"), {
+        method: "POST",
+        headers: adminHeaders(),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message);
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/worldcup/matches"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/worldcup/matches/admin"] });
+      toast({ title: "تم التحديث", description: data.message });
+    },
+    onError: (err: any) => toast({ title: "خطأ", description: err.message, variant: "destructive" }),
   });
 
   if (isLoading) return <div className="text-white/40 text-sm">جارٍ التحميل...</div>;
@@ -167,17 +186,27 @@ function SettingsPanel() {
               </SelectContent>
             </Select>
           </div>
-          <div className="flex gap-3">
+          <div className="flex gap-2 flex-wrap">
             <Button onClick={() => mutation.mutate(form)} disabled={mutation.isPending || Object.keys(form).length === 0}
               className="bg-yellow-500 hover:bg-yellow-600 text-black font-semibold">
               {mutation.isPending ? "جارٍ الحفظ..." : "حفظ الإعدادات"}
             </Button>
             <Button variant="outline" onClick={() => syncMutation.mutate()} disabled={syncMutation.isPending}
-              className="border-white/20 text-white hover:bg-white/5">
-              {syncMutation.isPending ? "جارٍ المزامنة..." : "مزامنة من API"}
+              className="border-blue-500/40 text-blue-400 hover:bg-blue-500/10">
+              {syncMutation.isPending ? "جارٍ المزامنة..." : "⚡ مزامنة كاملة من API"}
+            </Button>
+            <Button variant="outline" onClick={() => refreshScoresMutation.mutate()} disabled={refreshScoresMutation.isPending}
+              className="border-emerald-500/40 text-emerald-400 hover:bg-emerald-500/10">
+              {refreshScoresMutation.isPending ? "جارٍ التحديث..." : "🔄 تحديث النتائج الحية"}
             </Button>
           </div>
-          <p className="text-xs text-white/30">مزامنة API تتطلب إضافة FOOTBALL_DATA_API_KEY في متغيرات البيئة</p>
+          <div className="bg-white/3 border border-white/8 rounded-lg p-3 space-y-1" dir="rtl">
+            <p className="text-xs text-white/50 font-semibold">ملاحظات API:</p>
+            <p className="text-xs text-white/30">• أضف <code className="text-yellow-400/80">FOOTBALL_API_KEY</code> في متغيرات البيئة (api-football.com v3)</p>
+            <p className="text-xs text-white/30">• "مزامنة كاملة" تستهلك طلباً واحداً — استخدمها لجلب كل مباريات البطولة</p>
+            <p className="text-xs text-white/30">• "تحديث النتائج الحية" يحدّث المباريات غير المنتهية فقط — استخدمه أثناء المباريات</p>
+            <p className="text-xs text-white/30">• حدك اليومي 100 طلب — لا تحديث تلقائي حفاظاً على رصيدك</p>
+          </div>
         </CardContent>
       </Card>
     </div>

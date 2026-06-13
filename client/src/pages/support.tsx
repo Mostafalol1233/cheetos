@@ -1,4 +1,5 @@
 import { ArrowLeft, MessageCircle, Mail, Clock, HelpCircle, Headphones, Zap, Shield, Phone, CheckCircle } from "lucide-react";
+import { SEO } from "@/components/SEO";
 import { SiWhatsapp, SiTelegram, SiFacebook } from "react-icons/si";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
@@ -69,6 +70,12 @@ export default function SupportPage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
+      <SEO
+        title="الدعم والمساعدة — متجر ضياء | تواصل معنا"
+        description="تواصل مع فريق دعم متجر ضياء عبر واتساب أو تيليجرام أو فيسبوك. نرد على استفساراتك 24/7 لمساعدتك في طلباتك وشحن ألعابك."
+        keywords={["دعم متجر ضياء", "تواصل معنا", "خدمة عملاء ألعاب مصر", "واتساب شحن ألعاب", "support diaa store"]}
+        url={typeof window !== "undefined" ? window.location.href : "https://diaasadek.com/support"}
+      />
 
       {/* Hero Section */}
       <div className="relative overflow-hidden bg-gradient-to-br from-background via-card to-background py-16 px-4 border-b border-border/40">

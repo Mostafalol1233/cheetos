@@ -5,6 +5,7 @@ import { useTranslation } from "@/lib/translation";
 import { Link } from "wouter";
 import { Header } from "@/components/header";
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { SEO } from "@/components/SEO";
 const cfsLogoBanner = "https://res.cloudinary.com/ddzbutb12/image/upload/v1780935346/gamecart/giveaway/cfs-banner-flag.png";
 
 /* ─── Bilingual text ─── */
@@ -1309,6 +1310,14 @@ export default function GiveawayPage() {
 
   return (
     <div className="min-h-screen relative" style={{ fontFamily: "'Inter',system-ui,sans-serif", color: "#fff" }}>
+      <SEO
+        title={lang === "ar" ? "السحب الكبير — ذكرى CFS العاشرة | متجر ضياء" : "Grand Giveaway — CFS 10th Anniversary | Diaa Store"}
+        description={lang === "ar"
+          ? "شارك في السحب الكبير لمتجر ضياء واربح حزمة Battle Pass E-Sports الكاملة. سجّل دخولك وانضم إلى قناة الواتساب للمشاركة."
+          : "Join Diaa Store's Grand Giveaway and win a full Battle Pass E-Sports bundle. Sign in and join our WhatsApp channel to participate."}
+        keywords={["giveaway diaa store", "سحب متجر ضياء", "CFS anniversary", "battle pass giveaway", "free gaming prizes egypt"]}
+        url={typeof window !== "undefined" ? window.location.href : "https://diaasadek.com/giveaway"}
+      />
       <div className="fixed top-0 left-0 right-0 z-50">
         <Header />
       </div>

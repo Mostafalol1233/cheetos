@@ -8,6 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import type { Game, Category } from "@shared/schema";
 import { useTranslation } from "@/lib/translation";
 import { motion } from "framer-motion";
+import { SEO } from "@/components/SEO";
 
 const GAME_SLUG_IMAGES: Record<string, string> = {
   'free-fire': '/images/free-fire-game.png',
@@ -69,6 +70,7 @@ export default function GamesPage() {
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const { t } = useTranslation();
 
+
   const { data: categories = [] } = useQuery<Category[]>({
     queryKey: ["/api/categories"],
   });
@@ -104,6 +106,12 @@ export default function GamesPage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
+      <SEO
+        title="الألعاب — متجر ضياء | شحن ألعاب إلكترونية في مصر"
+        description="تصفح جميع الألعاب المتاحة في متجر ضياء. شحن فري فاير، PUBG، كروس فاير، روبلوكس، فورتنايت وأكثر. أسعار تنافسية ودفع سريع."
+        keywords={["شحن ألعاب", "متجر ألعاب مصر", "فري فاير", "PUBG", "كروس فاير", "روبلوكس", "فورتنايت", "gaming store egypt", "top up games"]}
+        url={typeof window !== "undefined" ? window.location.href : "https://diaasadek.com/games"}
+      />
 
       {/* Page Header — animated game tiles background */}
       <div className="relative overflow-hidden bg-black border-b border-border/40" style={{ minHeight: "180px" }}>

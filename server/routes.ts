@@ -1394,6 +1394,161 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(r.rows[0]);
     } catch (e: any) { res.status(500).json({ message: e.message }); }
   });
+  // ─── API-Football Sync (api-football.com v3) ─────────────────────────
+  // Smart caching: stores result in DB, only calls API when admin triggers sync.
+  // This preserves your 100 req/day limit — the API is NEVER called automatically.
+  app.post('/api/worldcup/admin/sync', requireJwtAdmin, async (_req, res) => {
+    const apiKey = process.env.FOOTBALL_API_KEY || process.env.API_FOOTBALL_KEY;
+    if (!apiKey) {
+      return res.status(400).json({ message: 'FOOTBALL_API_KEY غير مضبوط في متغيرات البيئة' });
+    }
+    try {
+      // World Cup 2026 — tournament ID 1 on api-football.com
+      // We fetch fixtures for the tournament. Season 2026.
+      const fetchUrl = 'https://v3.football.api-sports.io/fixtures?league=1&season=2026';
+      const response = await fetch(fetchUrl, {
+        headers: {
+          'x-apisports-key': apiKey,
+          'x-rapidapi-key': apiKey,
+          'x-rapidapi-host': 'v3.football.api-sports.io',
+        },
+      });
+      if (!response.ok) {
+        return res.status(502).json({ message: `فشل الاتصال بـ API: ${response.status}` });
+      }
+      const data: any = await response.json();
+      if (data.errors && Object.keys(data.errors).length > 0) {
+        return res.status(400).json({ message: `خطأ API: ${JSON.stringify(data.errors)}` });
+      }
+      const fixtures: any[] = data.response || [];
+      if (!fixtures.length) {
+        return res.json({ message: 'لا توجد مباريات من API — تأكد من صحة league/season', count: 0 });
+      }
+
+      // Country-code to flag emoji helper
+      const countryFlag: Record<string, string> = {
+        "Argentina":"🇦🇷","Brazil":"🇧🇷","France":"🇫🇷","Germany":"🇩🇪","Spain":"🇪🇸",
+        "England":"🏴󠁧󠁢󠁥󠁮󠁧󠁿","Portugal":"🇵🇹","Netherlands":"🇳🇱","Belgium":"🇧🇪","Italy":"🇮🇹",
+        "Egypt":"🇪🇬","Morocco":"🇲🇦","Senegal":"🇸🇳","Nigeria":"🇳🇬","Ghana":"🇬🇭",
+        "USA":"🇺🇸","Mexico":"🇲🇽","Canada":"🇨🇦","Japan":"🇯🇵","South Korea":"🇰🇷",
+        "Australia":"🇦🇺","Saudi Arabia":"🇸🇦","Qatar":"🇶🇦","Iran":"🇮🇷","Uruguay":"🇺🇾",
+        "Colombia":"🇨🇴","Chile":"🇨🇱","Ecuador":"🇪🇨","Peru":"🇵🇪","Venezuela":"🇻🇪",
+        "Switzerland":"🇨🇭","Croatia":"🇭🇷","Denmark":"🇩🇰","Sweden":"🇸🇪","Poland":"🇵🇱",
+        "Serbia":"🇷🇸","Czech Republic":"🇨🇿","Austria":"🇦🇹","Turkey":"🇹🇷","Greece":"🇬🇷",
+        "Cameroon":"🇨🇲","Tunisia":"🇹🇳","Algeria":"🇩🇿","Mali":"🇲🇱","Ivory Coast":"🇨🇮",
+        "South Africa":"🇿🇦","Zambia":"🇿🇲","Costa Rica":"🇨🇷","Panama":"🇵🇦","Honduras":"🇭🇳",
+        "Jamaica":"🇯🇲","Wales":"🏴󠁧󠁢󠁷󠁬󠁳󠁿","Scotland":"🏴󠁧󠁢󠁳󠁣󠁴󠁿","New Zealand":"🇳🇿","Indonesia":"🇮🇩",
+        "Iraq":"🇮🇶","Jordan":"🇯🇴","Kuwait":"🇰🇼","Bahrain":"🇧🇭","UAE":"🇦🇪",
+      };
+
+      let upserted = 0;
+      for (const f of fixtures) {
+        const fixture = f.fixture;
+        const teams = f.teams;
+        const goals = f.goals;
+        const fixtureStatus = fixture.status?.short || 'NS';
+
+        let status = 'upcoming';
+        if (['FT','AET','PEN','AWD','WO'].includes(fixtureStatus)) status = 'finished';
+        else if (['1H','HT','2H','ET','BT','P','SUSP','INT','LIVE'].includes(fixtureStatus)) status = 'live';
+
+        const homeTeam = teams.home?.name || '';
+        const awayTeam = teams.away?.name || '';
+        const homeFlag = countryFlag[homeTeam] || '🏳️';
+        const awayFlag = countryFlag[awayTeam] || '🏳️';
+        const round = f.league?.round || '';
+        const matchDate = fixture.date ? new Date(fixture.date).toISOString() : null;
+        const homeScore = goals?.home ?? null;
+        const awayScore = goals?.away ?? null;
+        const apiMatchId = String(fixture.id);
+
+        // Upsert by api_match_id — won't duplicate on re-sync
+        await pool.query(
+          `INSERT INTO worldcup_matches (id, home_team, away_team, home_flag, away_flag, match_date, home_score, away_score, status, round, api_match_id)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
+           ON CONFLICT (id) DO UPDATE SET
+             home_score=$7, away_score=$8, status=$9, match_date=$6`,
+          [crypto.randomUUID(), homeTeam, awayTeam, homeFlag, awayFlag, matchDate, homeScore, awayScore, status, round, apiMatchId]
+        );
+
+        // If we just synced a finished match, recalculate is_correct
+        if (status === 'finished' && homeScore !== null && awayScore !== null) {
+          // find our internal id for this api_match_id
+          const mRow = await pool.query('SELECT id FROM worldcup_matches WHERE api_match_id=$1 ORDER BY created_at DESC LIMIT 1', [apiMatchId]);
+          if (mRow.rows.length) {
+            await pool.query(
+              `UPDATE worldcup_predictions SET is_correct=(home_score_pred=$1 AND away_score_pred=$2) WHERE match_id=$3`,
+              [homeScore, awayScore, mRow.rows[0].id]
+            );
+          }
+        }
+        upserted++;
+      }
+
+      return res.json({ message: `تمت المزامنة — ${upserted} مباراة`, count: upserted });
+    } catch (e: any) {
+      return res.status(500).json({ message: e.message });
+    }
+  });
+
+  // Live score refresh for matches that are currently 'live' or upcoming today
+  // Admin-triggered only — protects your daily quota
+  app.post('/api/worldcup/admin/refresh-scores', requireJwtAdmin, async (_req, res) => {
+    const apiKey = process.env.FOOTBALL_API_KEY || process.env.API_FOOTBALL_KEY;
+    if (!apiKey) return res.status(400).json({ message: 'FOOTBALL_API_KEY غير مضبوط' });
+    try {
+      // Only update matches that have an api_match_id and are not finished
+      const liveMatches = await pool.query(
+        `SELECT id, api_match_id FROM worldcup_matches WHERE api_match_id != '' AND api_match_id IS NOT NULL AND status != 'finished'`
+      );
+      if (!liveMatches.rows.length) return res.json({ message: 'لا توجد مباريات نشطة للتحديث', count: 0 });
+
+      const ids = liveMatches.rows.map((r: any) => r.api_match_id).join('-');
+      const fetchUrl = `https://v3.football.api-sports.io/fixtures?ids=${ids}`;
+      const response = await fetch(fetchUrl, {
+        headers: {
+          'x-apisports-key': apiKey,
+          'x-rapidapi-key': apiKey,
+          'x-rapidapi-host': 'v3.football.api-sports.io',
+        },
+      });
+      if (!response.ok) return res.status(502).json({ message: `فشل الاتصال: ${response.status}` });
+      const data: any = await response.json();
+      const fixtures: any[] = data.response || [];
+
+      let updated = 0;
+      for (const f of fixtures) {
+        const fixture = f.fixture;
+        const goals = f.goals;
+        const fixtureStatus = fixture.status?.short || 'NS';
+        let status = 'upcoming';
+        if (['FT','AET','PEN','AWD','WO'].includes(fixtureStatus)) status = 'finished';
+        else if (['1H','HT','2H','ET','BT','P','SUSP','INT','LIVE'].includes(fixtureStatus)) status = 'live';
+
+        const homeScore = goals?.home ?? null;
+        const awayScore = goals?.away ?? null;
+        const apiMatchId = String(fixture.id);
+
+        const mRow = await pool.query('SELECT id FROM worldcup_matches WHERE api_match_id=$1', [apiMatchId]);
+        if (mRow.rows.length) {
+          await pool.query(
+            'UPDATE worldcup_matches SET home_score=$1, away_score=$2, status=$3 WHERE api_match_id=$4',
+            [homeScore, awayScore, status, apiMatchId]
+          );
+          if (status === 'finished' && homeScore !== null && awayScore !== null) {
+            await pool.query(
+              `UPDATE worldcup_predictions SET is_correct=(home_score_pred=$1 AND away_score_pred=$2) WHERE match_id=$3`,
+              [homeScore, awayScore, mRow.rows[0].id]
+            );
+          }
+          updated++;
+        }
+      }
+      return res.json({ message: `تم تحديث ${updated} مباراة`, count: updated });
+    } catch (e: any) {
+      return res.status(500).json({ message: e.message });
+    }
+  });
   // ─── End World Cup Routes ────────────────────────────────────────────
 
   return createServer(app);

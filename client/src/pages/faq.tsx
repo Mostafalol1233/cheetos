@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { useTranslation } from "@/lib/translation";
 import { LanguageSwitcher } from "@/components/language-switcher";
+import { SEO } from "@/components/SEO";
 
 export default function FAQPage() {
   const { t } = useTranslation();
@@ -45,6 +46,12 @@ export default function FAQPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-900 dark:via-blue-900 dark:to-purple-900">
+      <SEO
+        title="الأسئلة الشائعة — متجر ضياء | كل ما تحتاج معرفته"
+        description="إجابات على أكثر الأسئلة الشائعة حول شحن الألعاب، طرق الدفع، التسليم والاسترداد في متجر ضياء."
+        keywords={["أسئلة شائعة ضياء", "FAQ diaa store", "شحن ألعاب كيف", "طرق الدفع متجر ضياء", "استرداد شحن ألعاب"]}
+        url={typeof window !== "undefined" ? window.location.href : "https://diaasadek.com/faq"}
+      />
       <div className="container mx-auto px-4 py-8">
         <Link href="/">
           <Button variant="outline" className="mb-6">
