@@ -1,9 +1,10 @@
-﻿﻿# runtime logs
+﻿# runtime logs
 backend/logs/*.log
 
 # ignore seeders if they cause permission issues / are generated
 seeders/
 node_modules
+backend/node_modules
 
 # backend sensitive/runtime directories
 backend/baileys_auth_info/
@@ -19,6 +20,17 @@ backend/.env*
 
 # archives and large binaries
 backend/*.rar
+*.zip
+*.rar
+*.tar.gz
+*.tgz
+
+# large media files
+*.mp4
+*.mp3
+*.wav
+*.webm
+*.mkv
 
 # build outputs
 dist/
@@ -27,3 +39,10 @@ build/
 # logs and temp files
 *.log
 *.tmp
+
+# attached assets (except needed ones)
+attached_assets/*.zip
+attached_assets/generated_images/*.zip
+.agents/
+.replit
+replit.nix
