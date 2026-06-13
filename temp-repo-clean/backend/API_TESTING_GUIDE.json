@@ -1,0 +1,281 @@
+{
+  "info": {
+    "name": "GameCart Backend API",
+    "description": "Complete REST API for GameCart ecommerce platform",
+    "version": "1.0.0",
+    "baseUrl": "http://localhost:3001"
+  },
+  "variables": {
+    "BASE_URL": "http://localhost:3001",
+    "GAME_ID": "game_1",
+    "GAME_SLUG": "valorant",
+    "CATEGORY": "shooters",
+    "CATEGORY_ID": "cat_1"
+  },
+  "endpoints": {
+    "Health & Info": [
+      {
+        "method": "GET",
+        "path": "/api/health",
+        "description": "Health check",
+        "curl": "curl {{BASE_URL}}/api/health"
+      },
+      {
+        "method": "GET",
+        "path": "/",
+        "description": "API info and endpoints",
+        "curl": "curl {{BASE_URL}}/"
+      }
+    ],
+    "Games - Read": [
+      {
+        "method": "GET",
+        "path": "/api/games",
+        "description": "Get all games",
+        "curl": "curl {{BASE_URL}}/api/games",
+        "response": "array of games"
+      },
+      {
+        "method": "GET",
+        "path": "/api/games/:id",
+        "description": "Get game by ID",
+        "curl": "curl {{BASE_URL}}/api/games/{{GAME_ID}}",
+        "example": "{{BASE_URL}}/api/games/game_1"
+      },
+      {
+        "method": "GET",
+        "path": "/api/games/slug/:slug",
+        "description": "Get game by slug",
+        "curl": "curl {{BASE_URL}}/api/games/slug/{{GAME_SLUG}}",
+        "example": "{{BASE_URL}}/api/games/slug/valorant"
+      },
+      {
+        "method": "GET",
+        "path": "/api/games/popular",
+        "description": "Get popular games",
+        "curl": "curl {{BASE_URL}}/api/games/popular"
+      },
+      {
+        "method": "GET",
+        "path": "/api/games/category/:category",
+        "description": "Get games by category",
+        "curl": "curl {{BASE_URL}}/api/games/category/{{CATEGORY}}",
+        "example": "{{BASE_URL}}/api/games/category/shooters"
+      }
+    ],
+    "Games - Create & Update": [
+      {
+        "method": "POST",
+        "path": "/api/admin/games",
+        "description": "Create new game",
+        "contentType": "multipart/form-data",
+        "fields": {
+          "name": "string (required)",
+          "slug": "string (required)",
+          "description": "string (required)",
+          "price": "string (default: 0)",
+          "currency": "string (default: EGP)",
+          "category": "string (required)",
+          "isPopular": "boolean",
+          "stock": "number (default: 50)",
+          "packages": "array (optional)",
+          "packagePrices": "array (optional)",
+          "image": "file (optional)"
+        },
+        "example": {
+          "name": "Counter-Strike 2",
+          "slug": "cs2",
+          "description": "Competitive tactical shooter",
+          "price": "0",
+          "currency": "EGP",
+          "category": "shooters",
+          "isPopular": true,
+          "stock": 100
+        }
+      },
+      {
+        "method": "PUT",
+        "path": "/api/admin/games/:id",
+        "description": "Update game",
+        "contentType": "multipart/form-data",
+        "fields": {
+          "name": "string",
+          "price": "string",
+          "stock": "number",
+          "isPopular": "boolean",
+          "image": "file (optional)"
+        }
+      },
+      {
+        "method": "DELETE",
+        "path": "/api/admin/games/:id",
+        "description": "Delete game",
+        "curl": "curl -X DELETE {{BASE_URL}}/api/admin/games/{{GAME_ID}}"
+      },
+      {
+        "method": "PUT",
+        "path": "/api/admin/games-bulk/stock",
+        "description": "Update multiple game stocks",
+        "contentType": "application/json",
+        "body": {
+          "updates": [
+            { "id": "game_1", "stock": 50 },
+            { "id": "game_2", "stock": 30 }
+          ]
+        }
+      }
+    ],
+    "Categories": [
+      {
+        "method": "GET",
+        "path": "/api/categories",
+        "description": "Get all categories",
+        "curl": "curl {{BASE_URL}}/api/categories"
+      },
+      {
+        "method": "GET",
+        "path": "/api/categories/:id",
+        "description": "Get category by ID",
+        "curl": "curl {{BASE_URL}}/api/categories/{{CATEGORY_ID}}"
+      },
+      {
+        "method": "POST",
+        "path": "/api/admin/categories",
+        "description": "Create category",
+        "contentType": "multipart/form-data",
+        "fields": {
+          "name": "string (required)",
+          "slug": "string (required)",
+          "description": "string (required)",
+          "gradient": "string (default: from-blue-600 to-cyan-600)",
+          "icon": "string (default: Package)",
+          "image": "file (optional)"
+        }
+      },
+      {
+        "method": "PUT",
+        "path": "/api/admin/categories/:id",
+        "description": "Update category",
+        "contentType": "multipart/form-data"
+      },
+      {
+        "method": "DELETE",
+        "path": "/api/admin/categories/:id",
+        "description": "Delete category",
+        "curl": "curl -X DELETE {{BASE_URL}}/api/admin/categories/{{CATEGORY_ID}}"
+      }
+    ],
+    "Search & Filter": [
+      {
+        "method": "GET",
+        "path": "/api/search",
+        "description": "Search games with filters",
+        "queryParams": {
+          "q": "search query",
+          "category": "filter by category",
+          "minPrice": "minimum price",
+          "maxPrice": "maximum price",
+          "inStock": "true/false"
+        },
+        "examples": [
+          "{{BASE_URL}}/api/search?q=valorant",
+          "{{BASE_URL}}/api/search?category=shooters&minPrice=0&maxPrice=100",
+          "{{BASE_URL}}/api/search?inStock=true"
+        ]
+      }
+    ],
+    "Admin & Dashboard": [
+      {
+        "method": "GET",
+        "path": "/api/admin/stats",
+        "description": "Get dashboard statistics",
+        "curl": "curl {{BASE_URL}}/api/admin/stats",
+        "response": {
+          "totalGames": "number",
+          "totalCategories": "number",
+          "totalStock": "number",
+          "totalValue": "number",
+          "popularGames": "number",
+          "lowStockGames": "number"
+        }
+      },
+      {
+        "method": "GET",
+        "path": "/api/admin/export",
+        "description": "Export all data (backup)",
+        "curl": "curl {{BASE_URL}}/api/admin/export",
+        "response": {
+          "games": "array",
+          "categories": "array",
+          "exportedAt": "timestamp"
+        }
+      },
+      {
+        "method": "POST",
+        "path": "/api/admin/import",
+        "description": "Import data (restore from backup)",
+        "contentType": "application/json",
+        "body": {
+          "games": [],
+          "categories": []
+        }
+      },
+      {
+        "method": "POST",
+        "path": "/api/admin/upload",
+        "description": "Upload a file",
+        "contentType": "multipart/form-data",
+        "fields": {
+          "file": "file (required)"
+        },
+        "response": {
+          "message": "File uploaded successfully",
+          "filename": "string",
+          "path": "string",
+          "url": "string"
+        }
+      }
+    ]
+  },
+  "errorResponses": {
+    "400": {
+      "message": "Bad request",
+      "example": { "message": "Invalid game data", "error": "..." }
+    },
+    "404": {
+      "message": "Not found",
+      "example": { "message": "Game not found" }
+    },
+    "500": {
+      "message": "Server error",
+      "example": { "message": "Internal Server Error", "error": "..." }
+    }
+  },
+  "testing": {
+    "tools": [
+      {
+        "name": "Postman",
+        "url": "https://www.postman.com",
+        "instructions": "Import this JSON as a collection"
+      },
+      {
+        "name": "Insomnia",
+        "url": "https://insomnia.rest",
+        "instructions": "Import this JSON as a collection"
+      },
+      {
+        "name": "cURL",
+        "instructions": "Use curl commands provided in this documentation"
+      },
+      {
+        "name": "Browser",
+        "instructions": "Use browser console with fetch API"
+      }
+    ]
+  },
+  "examples": {
+    "createGameWithPowerShell": "# Create game (Windows PowerShell)\n$form = @{\n    name = 'Valorant'\n    slug = 'valorant'\n    description = 'Tactical 5v5 shooter'\n    price = '0'\n    currency = 'EGP'\n    category = 'shooters'\n    isPopular = 'true'\n    stock = '100'\n    image = Get-Item 'C:\\path\\to\\image.jpg'\n}\n\n$response = Invoke-WebRequest -Uri 'http://localhost:3001/api/admin/games' -Method POST -Form $form\n$response.Content | ConvertFrom-Json",
+    "createGameWithBash": "# Create game (Linux/Mac)\ncurl -X POST http://localhost:3001/api/admin/games \\\n  -F \"name=Valorant\" \\\n  -F \"slug=valorant\" \\\n  -F \"description=Tactical 5v5 shooter\" \\\n  -F \"price=0\" \\\n  -F \"currency=EGP\" \\\n  -F \"category=shooters\" \\\n  -F \"isPopular=true\" \\\n  -F \"stock=100\" \\\n  -F \"image=@/path/to/image.jpg\"",
+    "updateStockWithJavaScript": "const gameId = 'game_1';\nconst stock = 50;\n\nconst response = await fetch('http://localhost:3001/api/admin/games/' + gameId, {\n  method: 'PUT',\n  headers: { 'Content-Type': 'application/json' },\n  body: JSON.stringify({ stock })\n});\n\nconst updated = await response.json();\nconsole.log('Updated game:', updated);"
+  }
+}

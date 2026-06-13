@@ -1,0 +1,20 @@
+[
+  {
+    "id": "user_1774152316450_qh2orwj",
+    "name": "Test User",
+    "email": "test@test.com",
+    "password_hash": "$2b$10$z6uINmx9TuPy7buDzMDsGevnOfbyrmbiovp2aEccHG3KRB55bTajO",
+    "phone": "",
+    "role": "user",
+    "created_at": "2026-03-22T04:05:16.538Z"
+  },
+  {
+    "id": "user_1774152746790_rrqjcmb",
+    "name": "Mobile Test",
+    "email": "mobiletest@test.com",
+    "password_hash": "$2b$10$N1i503Mz7Hu4KNPjrF.DJebKOhCaJZW0ldfAllpGswe/2V71N4yea",
+    "phone": "",
+    "role": "user",
+    "created_at": "2026-03-22T04:12:26.878Z"
+  }
+]

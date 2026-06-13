@@ -1,0 +1,47 @@
+To fix this deployment error, you need to configure Vercel to explicitly use the --legacy-peer-deps flag during the installation phase.
+
+The error "Command npm install exited with 1" indicates that npm is failing, likely due to a conflict between the dependencies in your package.json.
+
+How to Fix
+Method 1: Use Vercel Project Settings (Recommended)
+This is the cleanest approach as it doesn't require modifying your project files.
+
+Log in to your Vercel Dashboard.
+
+Select your project: cheetoss.
+
+Go to Settings > General.
+
+Scroll down to the Build & Development Settings section.
+
+Find the Install Command field.
+
+Override the default command by entering:
+
+Bash
+npm install --legacy-peer-deps
+Click Save.
+
+Go to the Deployments tab and Redeploy your latest commit.
+
+Method 2: Use vercel.json
+If you prefer to keep your configuration in the repository, create or update the vercel.json file in the root of your project:
+
+JSON
+{
+  "installCommand": "npm install --legacy-peer-deps"
+}
+Commit and push this file to your GitHub repository to trigger a new deployment.
+
+If it still fails:
+If overriding the command doesn't work, the issue may be more specific than just peer dependency conflicts. Check these common culprits in your build logs:
+
+Check the full log: Scroll up in the Vercel Build Logs from the point where it says "Error: Command 'npm install' exited with 1." Look for lines starting with npm error. These will often explicitly state why it failed (e.g., Invalid Version, network issue, or EBADENGINE).
+
+Delete package-lock.json: Sometimes the lockfile becomes corrupted or contains references to local paths that don't exist on the Vercel build machine. Try deleting package-lock.json, running npm install locally to generate a fresh one, and pushing the new lockfile.
+
+Node.js Version: Ensure the Node.js version used on Vercel matches your local environment. Go to Settings > General > Node.js Version in your Vercel project settings to verify.
+
+Environment Variables: If your install script requires environment variables (e.g., for private npm registries), ensure they are set in Settings > Environment Variables.
+
+Pro-tip: To reproduce the failure locally exactly as Vercel does, run vercel build in your terminal. This will simulate the Vercel environment and usually provides clearer error messages than a standard npm install.
