@@ -483,7 +483,7 @@ export default function WorldCupPage() {
           <div className="pt-28 pb-20 px-4 text-center">
             <div className="relative inline-block mb-7">
               <img
-                src="/images/worldcup-trophy.png"
+                src={settings?.trophy_image || "https://res.cloudinary.com/ddzbutb12/image/upload/v1781368111/gamecart/worldcup/worldcup-trophy.png"}
                 alt="World Cup Trophy"
                 className="w-32 h-auto mx-auto drop-shadow-2xl"
                 style={{ filter: "drop-shadow(0 0 24px rgba(201,168,76,0.5))" }}

@@ -1336,8 +1336,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       video_url TEXT DEFAULT '',
       prize_description TEXT DEFAULT 'كود مجاني لأحد منتجات المتجر',
       is_active BOOLEAN DEFAULT TRUE,
+      trophy_image TEXT DEFAULT 'https://res.cloudinary.com/ddzbutb12/image/upload/v1781368111/gamecart/worldcup/worldcup-trophy.png',
+      hero_bg_image TEXT DEFAULT 'https://res.cloudinary.com/ddzbutb12/image/upload/v1781368123/gamecart/worldcup/worldcup-hero-bg.png',
       created_at TIMESTAMP DEFAULT NOW()
     );
+    ALTER TABLE worldcup_settings ADD COLUMN IF NOT EXISTS trophy_image TEXT DEFAULT 'https://res.cloudinary.com/ddzbutb12/image/upload/v1781368111/gamecart/worldcup/worldcup-trophy.png';
+    ALTER TABLE worldcup_settings ADD COLUMN IF NOT EXISTS hero_bg_image TEXT DEFAULT 'https://res.cloudinary.com/ddzbutb12/image/upload/v1781368123/gamecart/worldcup/worldcup-hero-bg.png';
     INSERT INTO worldcup_settings (id) VALUES (1) ON CONFLICT (id) DO NOTHING;
   `);
 
@@ -1469,14 +1473,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put('/api/worldcup/admin/settings', requireJwtAdmin, async (req: any, res) => {
     try {
-      const { title, subtitle, video_url, prize_description, is_active } = req.body;
+      const { title, subtitle, video_url, prize_description, is_active, trophy_image, hero_bg_image } = req.body;
       const r = await pool.query(
         `UPDATE worldcup_settings SET
           title=COALESCE($1,title), subtitle=COALESCE($2,subtitle),
           video_url=COALESCE($3,video_url), prize_description=COALESCE($4,prize_description),
-          is_active=COALESCE($5,is_active) WHERE id=1 RETURNING *`,
+          is_active=COALESCE($5,is_active),
+          trophy_image=COALESCE($6,trophy_image),
+          hero_bg_image=COALESCE($7,hero_bg_image)
+          WHERE id=1 RETURNING *`,
         [title||null, subtitle||null, video_url||null, prize_description||null,
-         is_active !== undefined ? is_active : null]
+         is_active !== undefined ? is_active : null,
+         trophy_image||null, hero_bg_image||null]
       );
       res.json(r.rows[0]);
     } catch (e: any) { res.status(500).json({ message: e.message }); }
