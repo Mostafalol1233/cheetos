@@ -2,16 +2,41 @@ import { useParams, useLocation, Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Zap, Star, ShieldCheck, Clock, HelpCircle, BookOpen, RefreshCw, FileText, Send } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion, useScroll, useTransform } from "framer-motion";
 import type { Game, Category } from "@shared/schema";
 import ImageWithFallback from "@/components/image-with-fallback";
 import { useTranslation } from "@/lib/translation";
 import { SEO } from "@/components/SEO";
 import { Footer } from "@/components/footer";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { API_BASE_URL } from "@/lib/queryClient";
 
 const CDN = 'https://res.cloudinary.com/ddzbutb12/image/upload/gamecart/currency';
+
+const GAME_BRAND_COLORS: Record<string, string> = {
+  'crossfire': '220, 38, 38',
+  'free-fire': '234, 88, 12',
+  'pubg-mobile': '202, 138, 4',
+  'pubg': '202, 138, 4',
+  'roblox': '239, 68, 68',
+  'fortnite': '99, 102, 241',
+  'league-of-legends': '202, 138, 4',
+  'valorant': '255, 70, 85',
+  'discord-nitro': '88, 101, 242',
+  'steam': '100, 149, 237',
+  'google-play': '52, 168, 83',
+  'amazon': '255, 153, 0',
+  'psn': '0, 120, 215',
+  'xbox': '16, 124, 16',
+  'netflix': '229, 9, 20',
+  'spotify': '30, 215, 96',
+  'tiktok': '255, 255, 255',
+  'wolf-team': '147, 51, 234',
+  'efootball': '37, 99, 235',
+  'call-of-duty-mobile': '107, 114, 128',
+  'mobile-legends': '202, 138, 4',
+  'clash-of-clans': '251, 191, 36',
+};
 
 const CURRENCY_IMAGES: Record<string, string> = {
   'pubg-mobile': `${CDN}/currency-pubg-uc.png`,
@@ -332,6 +357,7 @@ export default function GamePage() {
   const { language } = useTranslation();
   const [, setLocation] = useLocation();
   const [selectedPkg, setSelectedPkg] = useState<number | null>(null);
+  const [buyFlashIndex, setBuyFlashIndex] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState<'description' | 'faq' | 'redeem' | 'terms'>('description');
   const [reviews, setReviews] = useState<any[]>([]);
   const [reviewStats, setReviewStats] = useState<any>(null);
@@ -339,6 +365,9 @@ export default function GamePage() {
   const [reviewSubmitting, setReviewSubmitting] = useState(false);
   const [reviewSubmitted, setReviewSubmitted] = useState(false);
   const [reviewError, setReviewError] = useState('');
+  const bannerRef = useRef<HTMLDivElement>(null);
+  const { scrollY } = useScroll();
+  const bannerY = useTransform(scrollY, [0, 600], [0, 35]);
 
   const { data: game, isLoading } = useQuery<Game>({
     queryKey: [`/api/games/${slug}`],
@@ -560,7 +589,7 @@ export default function GamePage() {
         })()}
       />
 
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-background" style={GAME_BRAND_COLORS[gameSlug] ? { background: `radial-gradient(ellipse 90% 35% at 50% 0%, rgba(${GAME_BRAND_COLORS[gameSlug]}, 0.07) 0%, transparent 55%)` } : undefined}>
         <div className="container mx-auto px-4 pt-6 pb-4">
           <Link href="/">
             <Button
@@ -581,12 +610,14 @@ export default function GamePage() {
               transition={{ duration: 0.4 }}
               className="relative"
             >
-              <div className="relative rounded-2xl overflow-hidden aspect-[4/3] bg-card border border-border/30 shadow-xl">
-                <ImageWithFallback
-                  src={heroImage}
-                  alt={game.name}
-                  className="w-full h-full object-cover"
-                />
+              <div ref={bannerRef} className="relative rounded-2xl overflow-hidden aspect-[4/3] bg-card border border-border/30 shadow-xl">
+                <motion.div style={{ y: bannerY }} className="absolute inset-0 scale-110 origin-center will-change-transform">
+                  <ImageWithFallback
+                    src={heroImage}
+                    alt={game.name}
+                    className="w-full h-full object-cover"
+                  />
+                </motion.div>
                 <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
 
                 <div className="absolute top-3 left-3 flex flex-col gap-2">
@@ -769,14 +800,31 @@ export default function GamePage() {
                       transition={{ duration: 0.3, delay: index * 0.04 }}
                       whileHover={{ y: -6, scale: 1.03 }}
                       whileTap={{ scale: 0.97 }}
-                      onClick={() => !isOutOfStock && (setSelectedPkg(index), handleBuyNow(index))}
-                      className={`relative cursor-pointer rounded-2xl border-2 transition-all duration-200 overflow-hidden
+                      onClick={() => {
+                        if (!isOutOfStock) {
+                          setBuyFlashIndex(index);
+                          setTimeout(() => setBuyFlashIndex(null), 420);
+                          setSelectedPkg(index);
+                          handleBuyNow(index);
+                        }
+                      }}
+                      className={`relative cursor-pointer rounded-2xl border transition-all duration-200 overflow-hidden backdrop-blur-sm
                         ${isOutOfStock ? 'opacity-40 cursor-not-allowed' : ''}
                         ${isSelected
-                          ? 'border-gold-primary bg-gold-primary/10 shadow-xl shadow-gold-primary/25'
-                          : 'border-border/40 bg-card hover:border-gold-primary/60 hover:bg-card/80 hover:shadow-lg'}
+                          ? 'border-gold-primary/80 bg-white/8 shadow-2xl shadow-gold-primary/30 ring-1 ring-gold-primary/20'
+                          : 'border-white/10 bg-white/[0.04] hover:border-gold-primary/50 hover:bg-white/[0.07] hover:shadow-xl hover:shadow-gold-primary/12'}
                       `}
                     >
+                      {/* Gold buy-pulse flash */}
+                      {buyFlashIndex === index && (
+                        <motion.div
+                          className="absolute inset-0 bg-gold-primary/30 z-30 pointer-events-none rounded-2xl"
+                          initial={{ opacity: 1 }}
+                          animate={{ opacity: 0 }}
+                          transition={{ duration: 0.42, ease: "easeOut" }}
+                        />
+                      )}
+
                       {isHot && (
                         <div className="absolute top-3 left-3 z-10">
                           <span className="bg-red-500 text-white text-xs font-black px-2.5 py-1 rounded-full uppercase tracking-wide shadow-md">

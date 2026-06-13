@@ -198,7 +198,7 @@ export default function GamesPage() {
                   transition={{ duration: 0.3, delay: Math.min(index * 0.03, 0.4) }}
                 >
                   <Link href={`/game/${game.slug}`} className="group block h-full">
-                    <div className="relative flex flex-col rounded-2xl overflow-hidden border border-border/50 bg-card hover:border-gold-primary/40 transition-all duration-300 shadow-sm hover:shadow-xl hover:shadow-gold-primary/8 hover:-translate-y-1 h-full shimmer-card">
+                    <div className="relative flex flex-col rounded-2xl overflow-hidden border border-border/50 bg-card hover:border-gold-primary/65 transition-all duration-300 shadow-sm hover:shadow-xl hover:shadow-gold-primary/18 hover:-translate-y-1.5 h-full shimmer-card">
 
                       {/* Image area */}
                       <div className="relative aspect-[3/4] overflow-hidden bg-gray-900">
@@ -209,12 +209,14 @@ export default function GamesPage() {
                           aria-hidden="true"
                           className="absolute inset-0 w-full h-full object-cover scale-110 blur-2xl opacity-50 saturate-150"
                         />
-                        {/* Main image — fully visible, not cropped */}
+                        {/* Main image — Ken Burns zoom */}
                         <img
                           src={getGameImage(game)}
                           alt={game.name}
-                          className="absolute inset-0 w-full h-full object-contain transition-transform duration-500 group-hover:scale-105 drop-shadow-2xl"
+                          className="absolute inset-0 w-full h-full object-contain transition-transform duration-700 group-hover:scale-115 drop-shadow-2xl"
                         />
+                        {/* Gold ring on hover */}
+                        <div className="absolute inset-0 rounded-2xl ring-2 ring-inset ring-gold-primary/0 group-hover:ring-gold-primary/55 transition-all duration-300 pointer-events-none z-10" />
 
                         {/* Gradient overlay bottom */}
                         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />

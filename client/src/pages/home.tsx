@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useMemo } from "react";
 import { Zap, Headphones, Shield, Tag, ArrowRight, Sparkles, Trophy, Clock, Search } from "lucide-react";
 import { motion } from "framer-motion";
 import { Link, useLocation } from "wouter";
@@ -16,6 +16,37 @@ import { GameSearchOverlay } from "@/components/game-search-overlay";
 import type { Game } from "@shared/schema";
 
 const TRENDING_FALLBACK = ["Free Fire", "PUBG", "PlayStation", "Roblox", "Steam", "iTunes"];
+
+function HeroStarfield() {
+  const stars = useMemo(() => Array.from({ length: 55 }, (_, i) => ({
+    id: i,
+    size: ((i * 7) % 3) + 1,
+    left: ((i * 31 + 17) % 100),
+    top: ((i * 53 + 11) % 100),
+    opacity: 0.1 + (i % 5) * 0.07,
+    duration: 2.2 + (i % 4) * 0.9,
+    delay: (i * 0.13) % 4,
+  })), []);
+  return (
+    <div className="absolute inset-0 overflow-hidden pointer-events-none z-[1]">
+      {stars.map(s => (
+        <div
+          key={s.id}
+          className="absolute rounded-full bg-white"
+          style={{
+            width: s.size + 'px',
+            height: s.size + 'px',
+            left: s.left + '%',
+            top: s.top + '%',
+            opacity: s.opacity,
+            animation: `twinkle ${s.duration}s ease-in-out infinite`,
+            animationDelay: `${s.delay}s`,
+          }}
+        />
+      ))}
+    </div>
+  );
+}
 
 function AnimatedGameRow({ games, direction = "left", speed = 40 }: { games: Game[]; direction?: "left" | "right"; speed?: number }) {
   if (!games.length) return null;
@@ -172,6 +203,9 @@ export default function Home() {
             {row2.length > 0 && <AnimatedGameRow games={row2} direction="right" speed={44} />}
             {row3.length > 0 && <AnimatedGameRow games={row3} direction="left" speed={36} />}
           </div>
+
+          {/* Starfield particles */}
+          <HeroStarfield />
 
           {/* Dark overlay */}
           <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/60 to-black/80" />

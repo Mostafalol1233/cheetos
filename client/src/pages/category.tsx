@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useEffect } from "react";
+import { motion } from "framer-motion";
 import type { Game, Category } from "@shared/schema";
 import ImageWithFallback from "@/components/image-with-fallback";
 import { useCart } from "@/lib/cart-context";
@@ -192,7 +193,7 @@ export default function CategoryPage() {
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                {games.map((game) => {
+                {games.map((game, index) => {
                   const packages = Array.isArray(game.packages) ? game.packages : [];
                   const packagePrices = Array.isArray(game.packagePrices) ? game.packagePrices : [];
                   const packageDiscountPrices = Array.isArray((game as any).packageDiscountPrices)
@@ -246,7 +247,13 @@ export default function CategoryPage() {
                   };
 
                   return (
-                    <Card key={game.id} className="overflow-hidden border-gold-primary/10 hover:border-gold-primary/50 hover:shadow-xl hover:scale-105 transition-all duration-300 group">
+                    <motion.div
+                      key={game.id}
+                      initial={{ opacity: 0, y: 28 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.42, delay: Math.min(index * 0.07, 0.55), ease: [0.22, 1, 0.36, 1] }}
+                    >
+                    <Card className="overflow-hidden border-gold-primary/10 hover:border-gold-primary/55 hover:shadow-xl hover:shadow-gold-primary/10 hover:-translate-y-1 transition-all duration-300 group">
                       <div className="aspect-[4/3] relative overflow-hidden bg-gradient-to-br from-muted to-card">
                         <ImageWithFallback
                           src={(game as any).banner_image || game.image}
@@ -312,6 +319,7 @@ export default function CategoryPage() {
                         </Link>
                       </CardContent>
                     </Card>
+                    </motion.div>
                   );
                 })}
               </div>

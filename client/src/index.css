@@ -1085,15 +1085,28 @@
   background: linear-gradient(
     90deg,
     transparent 0%,
-    rgba(255, 255, 255, 0.08) 40%,
-    rgba(255, 255, 255, 0.22) 50%,
-    rgba(255, 255, 255, 0.08) 60%,
+    rgba(201, 168, 76, 0.06) 30%,
+    rgba(201, 168, 76, 0.22) 50%,
+    rgba(255, 255, 255, 0.12) 55%,
+    rgba(201, 168, 76, 0.06) 70%,
     transparent 100%
   );
   transform: translateX(-150%) skewX(-15deg);
   pointer-events: none;
   z-index: 30;
   transition: none;
+}
+
+/* Gold-tinted Skeleton shimmer */
+[data-slot="skeleton"] {
+  background: linear-gradient(
+    90deg,
+    hsl(var(--muted)) 0%,
+    rgba(201, 168, 76, 0.12) 50%,
+    hsl(var(--muted)) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer-slide 2s ease-in-out infinite;
 }
 
 .shimmer-card:hover::after {

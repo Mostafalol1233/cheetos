@@ -88,7 +88,7 @@ export function PopularGames() {
                     height={533}
                     loading="lazy"
                     decoding="async"
-                    className="absolute inset-0 w-full h-full object-contain transition-transform duration-500 group-hover:scale-105 drop-shadow-2xl"
+                    className="absolute inset-0 w-full h-full object-contain transition-transform duration-700 group-hover:scale-115 drop-shadow-2xl"
                   />
 
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent" />
