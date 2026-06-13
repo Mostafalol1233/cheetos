@@ -521,6 +521,48 @@ export default function Home() {
           </div>
         </section>
 
+        {/* ── World Cup 2026 Promo Banner ── */}
+        <section className="container mx-auto px-4 py-10">
+          <Link href="/world-cup">
+            <div className="relative overflow-hidden rounded-2xl border border-[#c9a84c]/25 bg-gradient-to-r from-[#0d0a00] via-[#111008] to-[#080808] cursor-pointer group hover:border-[#c9a84c]/45 transition-all duration-300">
+              {/* Background texture */}
+              <div className="absolute inset-0 opacity-20" style={{ backgroundImage: "radial-gradient(circle at 80% 50%, #c9a84c22 0%, transparent 60%), radial-gradient(circle at 20% 50%, #c9a84c11 0%, transparent 50%)" }} />
+              <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#c9a84c]/40 to-transparent" />
+              <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#c9a84c]/15 to-transparent" />
+
+              <div className="relative flex items-center gap-6 px-7 py-6">
+                {/* Trophy icon */}
+                <div className="shrink-0 w-14 h-14 rounded-2xl bg-[#c9a84c]/10 border border-[#c9a84c]/25 flex items-center justify-center shadow-lg">
+                  <Trophy className="w-7 h-7 text-[#c9a84c]" />
+                </div>
+
+                {/* Text */}
+                <div className="flex-1 min-w-0">
+                  <div className="text-[10px] font-bold text-[#c9a84c]/60 uppercase tracking-[0.2em] mb-1">FIFA World Cup 2026</div>
+                  <div className="text-white font-bold text-lg leading-tight">
+                    {language === 'ar' ? (
+                      <>توقّع نتائج المباريات واربح <span className="text-[#c9a84c]">كوداً مجانياً</span></>
+                    ) : (
+                      <>Predict match results and win a <span className="text-[#c9a84c]">free code</span></>
+                    )}
+                  </div>
+                  <div className="text-white/40 text-xs mt-1">
+                    {language === 'ar' ? 'مسابقة حصرية لعملاء متجر ضياء' : 'Exclusive contest for Diaa Store customers'}
+                  </div>
+                </div>
+
+                {/* CTA Arrow */}
+                <div className="shrink-0 flex items-center gap-2 text-[#c9a84c] group-hover:gap-3 transition-all duration-200">
+                  <span className="text-xs font-bold uppercase tracking-wider hidden sm:block">
+                    {language === 'ar' ? 'توقّع الآن' : 'Predict Now'}
+                  </span>
+                  <ArrowRight className="w-5 h-5" />
+                </div>
+              </div>
+            </div>
+          </Link>
+        </section>
+
         {/* Customer Reviews - Scrolling Marquee */}
         <section className="py-16 overflow-hidden">
           <div className="container mx-auto px-4 mb-8">

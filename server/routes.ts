@@ -18,6 +18,9 @@ import { notifyNewOrder, notifyOrderStatusChange, notifyNewCustomer, updateLastO
 import { sendOrderConfirmationEmail, sendNewAccountEmail } from "./email";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // JWT secret used for user tokens (World Cup predictions etc.)
+  const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret_key_change_this_in_production';
+
   // Setup Auth
   setupAuth(app);
 
@@ -81,31 +84,95 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // --- Auth Routes ---
   app.post("/api/auth/register", async (req, res) => {
     try {
-      const { name, password, email } = req.body;
+      const { name, password, email, phone } = req.body;
       if (!name || !password || !email) return res.status(400).json({ message: "Missing fields" });
 
-      // Check if email already exists (SECURITY FIX: prevent account takeover vulnerability)
       const existingEmail = await storage.getUserByEmail(email);
       if (existingEmail) return res.status(400).json({ message: "Email already registered. Please login instead." });
 
       const hashedPassword = hashPassword(password);
+      const userId = crypto.randomBytes(12).toString("hex");
 
-      await storage.createUser({
-        id: crypto.randomBytes(12).toString("hex"),
-        name,
-        passwordHash: hashedPassword,
-        email,
-        role: "user"
-      });
+      await storage.createUser({ id: userId, name, passwordHash: hashedPassword, email, phone: phone || '', role: "user" });
 
-      res.json({ message: "Registered successfully" });
+      const newUser = await storage.getUserByEmail(email);
+      const userObj = { id: newUser?.id || userId, name, email, phone: phone || '', role: 'user' };
+      const token = jwt.sign({ userId: userObj.id, id: userObj.id, role: 'user' }, JWT_SECRET, { expiresIn: '30d' });
+      res.json({ message: "Registered successfully", token, user: userObj });
     } catch (err: any) {
       res.status(500).json({ message: err.message });
     }
   });
 
-  app.post("/api/auth/login", passport.authenticate("local"), (req, res) => {
-    res.json({ message: "Logged in", user: req.user });
+  app.post("/api/auth/login", async (req: any, res, next) => {
+    const { phone, name, password, email } = req.body;
+
+    // Phone-based login — find or create user by phone number
+    if (phone && !password) {
+      try {
+        const phoneEmail = `phone_${phone.replace(/\D/g, '')}@diaastore.internal`;
+        let user: any = await storage.getUserByEmail(phoneEmail).catch(() => null);
+        if (!user) {
+          const uid = crypto.randomBytes(12).toString("hex");
+          await storage.createUser({ id: uid, name: name || phone, email: phoneEmail, passwordHash: '', phone, role: 'user' });
+          user = await storage.getUserByEmail(phoneEmail).catch(() => null);
+        }
+        if (!user) return res.status(400).json({ message: 'فشل تسجيل الدخول' });
+        const token = jwt.sign({ userId: user.id, id: user.id, role: 'user' }, JWT_SECRET, { expiresIn: '30d' });
+        return res.json({ message: 'Logged in', token, user: { id: user.id, name: user.name, email: user.email, phone: user.phone || '', role: 'user' } });
+      } catch (err: any) {
+        return res.status(500).json({ message: err.message });
+      }
+    }
+
+    // Email + password login via passport
+    passport.authenticate("local", (err: any, user: any, info: any) => {
+      if (err) return res.status(500).json({ message: err.message });
+      if (!user) return res.status(401).json({ message: info?.message || 'Invalid credentials' });
+      req.logIn(user, (loginErr: any) => {
+        if (loginErr) return res.status(500).json({ message: loginErr.message });
+        const token = jwt.sign({ userId: user.id, id: user.id, role: user.role || 'user' }, JWT_SECRET, { expiresIn: '30d' });
+        res.json({ message: "Logged in", token, user: { id: user.id, name: user.name, email: user.email, phone: user.phone || '', role: user.role || 'user' } });
+      });
+    })(req, res, next);
+  });
+
+  // Verify JWT token (used by user-auth-context on mount)
+  app.get("/api/auth/verify", (req: any, res) => {
+    const token = req.headers['authorization']?.split(' ')[1];
+    if (!token) return res.status(401).json({ message: 'No token' });
+    try {
+      const decoded: any = jwt.verify(token, JWT_SECRET);
+      res.json({ valid: true, user: { id: decoded.userId || decoded.id, role: decoded.role || 'user' } });
+    } catch {
+      res.status(401).json({ message: 'Invalid or expired token' });
+    }
+  });
+
+  // Google OAuth login
+  app.post("/api/auth/google", async (req: any, res) => {
+    try {
+      const { credential } = req.body;
+      if (!credential) return res.status(400).json({ message: 'Missing credential' });
+      const parts = credential.split('.');
+      if (parts.length !== 3) return res.status(400).json({ message: 'Invalid credential' });
+      const payload = JSON.parse(Buffer.from(parts[1], 'base64url').toString());
+      const { email, name } = payload;
+      if (!email) return res.status(400).json({ message: 'No email in Google credential' });
+
+      let user: any = await storage.getUserByEmail(email).catch(() => null);
+      if (!user) {
+        const uid = crypto.randomBytes(12).toString("hex");
+        await storage.createUser({ id: uid, name: name || email, email, passwordHash: '', phone: '', role: 'user' });
+        user = await storage.getUserByEmail(email).catch(() => null);
+      }
+      if (!user) return res.status(500).json({ message: 'Login failed' });
+
+      const token = jwt.sign({ userId: user.id, id: user.id, role: user.role || 'user' }, JWT_SECRET, { expiresIn: '30d' });
+      res.json({ token, user: { id: user.id, name: user.name, email: user.email, phone: user.phone || '', role: user.role || 'user' } });
+    } catch (err: any) {
+      res.status(400).json({ message: 'Google login failed' });
+    }
   });
 
   app.post("/api/auth/logout", (req, res) => {
@@ -1211,8 +1278,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // ─── World Cup Prediction Routes ────────────────────────────────────
-  const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret_key_change_this_in_production';
-
   const requireJwtUser = (req: any, res: any, next: any) => {
     const token = req.headers['authorization']?.split(' ')[1];
     if (!token) return res.status(401).json({ message: 'يجب تسجيل الدخول' });

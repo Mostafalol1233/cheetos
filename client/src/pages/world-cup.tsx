@@ -438,22 +438,35 @@ export default function WorldCupPage() {
         keywords={["world cup 2026", "كأس العالم 2026", "توقع المباريات", "diaa store", "متجر ضياء", "world cup prediction"]}
         url={typeof window !== "undefined" ? window.location.href : "https://diaasadek.com/world-cup"}
       />
-      <div
-        className="min-h-screen bg-[#080808] text-white"
-        dir={dir}
-        style={{
-          backgroundImage: "url(/images/worldcup-hero-bg.png)",
-          backgroundSize: "cover",
-          backgroundPosition: "center top",
-          backgroundAttachment: "fixed",
-        }}
-      >
-        <div
-          className="min-h-screen"
-          style={{
-            background: "linear-gradient(to bottom, rgba(8,8,8,0.5) 0%, rgba(8,8,8,0.82) 35%, rgba(8,8,8,0.96) 65%, #080808 100%)",
-          }}
+      {/* ── CINEMATIC VIDEO HERO ── */}
+      <div className="relative overflow-hidden bg-black" style={{ minHeight: "600px" }}>
+        {/* Background video — muted autoplay loop */}
+        <video
+          autoPlay
+          muted
+          loop
+          playsInline
+          preload="metadata"
+          className="absolute inset-0 w-full h-full object-cover opacity-35"
+          style={{ objectPosition: "center 20%" }}
         >
+          <source src="/media/worldcup-anthem.mp4" type="video/mp4" />
+        </video>
+
+        {/* Dark cinematic gradient overlay */}
+        <div
+          className="absolute inset-0"
+          style={{
+            background: "linear-gradient(to bottom, rgba(0,0,0,0.55) 0%, rgba(8,8,8,0.65) 50%, rgba(8,8,8,0.96) 90%, #080808 100%)",
+          }}
+        />
+
+        {/* Gold vignette on sides */}
+        <div className="absolute inset-0 pointer-events-none" style={{
+          background: "radial-gradient(ellipse at 50% 80%, rgba(201,168,76,0.07) 0%, transparent 70%)"
+        }} />
+
+        <div className="relative z-10">
           <Header />
 
           {/* Language toggle */}
@@ -466,57 +479,90 @@ export default function WorldCupPage() {
             </button>
           </div>
 
-          <div className="pt-28 pb-24 px-4 max-w-3xl mx-auto">
-
-            {/* ── HERO ── */}
-            <div className="text-center mb-16">
-              <div className="relative inline-block mb-8">
-                <img
-                  src="/images/worldcup-trophy.png"
-                  alt="World Cup Trophy"
-                  className="w-36 h-auto mx-auto drop-shadow-2xl"
-                  onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                />
-                {/* Glow ring */}
-                <div className="absolute inset-0 rounded-full bg-[#c9a84c]/10 blur-2xl pointer-events-none" />
-              </div>
-
-              <h1 className="text-4xl sm:text-5xl font-black text-white tracking-tight mb-3 leading-tight">
-                {settings?.title || T.defaultTitle}
-              </h1>
-              <div className="w-20 h-px bg-gradient-to-r from-transparent via-[#c9a84c] to-transparent mx-auto mb-5" />
-              <p className="text-white/45 text-lg font-light">
-                {settings?.subtitle || T.defaultSubtitle}
-              </p>
-              {settings?.prize_description && (
-                <div className="mt-6 inline-flex items-center gap-2 px-5 py-2 bg-[#c9a84c]/8 border border-[#c9a84c]/25 rounded-full text-[#c9a84c]/80 text-sm font-semibold">
-                  <span>🏆</span>
-                  <span>{settings.prize_description}</span>
-                </div>
-              )}
-
-              {/* Stats bar */}
-              {matches.length > 0 && (
-                <div className="mt-8 flex items-center justify-center gap-6">
-                  <div className="text-center">
-                    <div className="text-2xl font-black text-white">{matches.length}</div>
-                    <div className="text-[10px] text-white/30 uppercase tracking-widest">{lang === "ar" ? "مباراة" : "Matches"}</div>
-                  </div>
-                  <div className="w-px h-8 bg-white/10" />
-                  <div className="text-center">
-                    <div className="text-2xl font-black text-[#c9a84c]">{upcomingMatches.length}</div>
-                    <div className="text-[10px] text-white/30 uppercase tracking-widest">{lang === "ar" ? "قادمة" : "Upcoming"}</div>
-                  </div>
-                  <div className="w-px h-8 bg-white/10" />
-                  <div className="text-center">
-                    <div className="text-2xl font-black text-emerald-400">{finishedMatches.length}</div>
-                    <div className="text-[10px] text-white/30 uppercase tracking-widest">{lang === "ar" ? "منتهية" : "Finished"}</div>
-                  </div>
-                </div>
-              )}
+          {/* Hero content */}
+          <div className="pt-28 pb-20 px-4 text-center">
+            <div className="relative inline-block mb-7">
+              <img
+                src="/images/worldcup-trophy.png"
+                alt="World Cup Trophy"
+                className="w-32 h-auto mx-auto drop-shadow-2xl"
+                style={{ filter: "drop-shadow(0 0 24px rgba(201,168,76,0.5))" }}
+                onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
+              />
             </div>
 
-            {/* ── VIDEO ── */}
+            <h1 className="text-4xl sm:text-5xl md:text-6xl font-black text-white tracking-tight mb-3 leading-tight">
+              {settings?.title || T.defaultTitle}
+            </h1>
+            <div className="w-24 h-px bg-gradient-to-r from-transparent via-[#c9a84c] to-transparent mx-auto mb-5" />
+            <p className="text-white/50 text-lg font-light max-w-md mx-auto">
+              {settings?.subtitle || T.defaultSubtitle}
+            </p>
+
+            {settings?.prize_description && (
+              <div className="mt-6 inline-flex items-center gap-2.5 px-5 py-2.5 bg-[#c9a84c]/10 border border-[#c9a84c]/30 rounded-full text-[#c9a84c] text-sm font-bold shadow-lg">
+                <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                <span>{settings.prize_description}</span>
+              </div>
+            )}
+
+            {/* Stats bar */}
+            {matches.length > 0 && (
+              <div className="mt-8 inline-flex items-center gap-6 bg-white/5 border border-white/10 backdrop-blur-sm rounded-2xl px-6 py-3">
+                <div className="text-center">
+                  <div className="text-2xl font-black text-white">{matches.length}</div>
+                  <div className="text-[10px] text-white/35 uppercase tracking-widest">{lang === "ar" ? "مباراة" : "Matches"}</div>
+                </div>
+                <div className="w-px h-8 bg-white/10" />
+                <div className="text-center">
+                  <div className="text-2xl font-black text-[#c9a84c]">{upcomingMatches.length}</div>
+                  <div className="text-[10px] text-white/35 uppercase tracking-widest">{lang === "ar" ? "قادمة" : "Upcoming"}</div>
+                </div>
+                <div className="w-px h-8 bg-white/10" />
+                <div className="text-center">
+                  <div className="text-2xl font-black text-emerald-400">{finishedMatches.length}</div>
+                  <div className="text-[10px] text-white/35 uppercase tracking-widest">{lang === "ar" ? "منتهية" : "Finished"}</div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* ── MAIN CONTENT ── */}
+      <div
+        className="min-h-screen bg-[#080808] text-white"
+        dir={dir}
+      >
+          <div className="pb-24 px-4 max-w-3xl mx-auto">
+
+            {/* ── OFFICIAL ANTHEM VIDEO PLAYER ── */}
+            <div className="mt-10 mb-14">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-0.5 h-5 bg-[#c9a84c] rounded-full" />
+                <span className="text-sm font-bold text-white/70 tracking-wide uppercase">
+                  {lang === "ar" ? "النشيد الرسمي · Shakira ft. Burna Boy — Dai Dai" : "Official Anthem · Shakira ft. Burna Boy — Dai Dai"}
+                </span>
+              </div>
+              <div className="relative rounded-2xl overflow-hidden border border-[#c9a84c]/15 shadow-2xl bg-black">
+                <video
+                  controls
+                  preload="metadata"
+                  className="w-full"
+                  style={{ maxHeight: "420px" }}
+                  poster=""
+                >
+                  <source src="/media/worldcup-anthem.mp4" type="video/mp4" />
+                </video>
+                <div className="absolute top-3 right-3 bg-black/60 border border-[#c9a84c]/30 backdrop-blur-sm rounded-full px-3 py-1">
+                  <span className="text-[10px] text-[#c9a84c] font-bold uppercase tracking-widest">
+                    {lang === "ar" ? "النشيد الرسمي" : "FIFA WC 2026"}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* ── YouTube embed (from admin settings) ── */}
             {embedUrl && (
               <div className="mb-14">
                 <div
@@ -660,7 +706,6 @@ export default function WorldCupPage() {
             </div>
           </div>
         </div>
-      </div>
     </>
   );
 }
