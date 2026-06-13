@@ -213,15 +213,22 @@ export function Header() {
                 return (
                   <Link key={link.href} href={link.href}>
                     <div className={cn(
-                      "px-3 py-1.5 rounded-md text-sm font-semibold transition-colors cursor-pointer flex items-center gap-1.5",
+                      "relative px-3 py-2 rounded-md text-sm font-semibold transition-colors cursor-pointer flex items-center gap-1.5",
                       isWC
-                        ? isActive ? "text-[#c9a84c] bg-[#c9a84c]/10" : "text-[#c9a84c]/80 hover:text-[#c9a84c] hover:bg-[#c9a84c]/8"
-                        : isActive ? "text-foreground bg-white/8" : "text-muted-foreground hover:text-foreground hover:bg-white/6"
+                        ? isActive ? "text-[#c9a84c]" : "text-[#c9a84c]/70 hover:text-[#c9a84c]"
+                        : isActive ? "text-foreground" : "text-muted-foreground hover:text-foreground hover:bg-white/5"
                     )}>
                       {isWC && <Trophy className="w-3.5 h-3.5 shrink-0" />}
                       {link.label}
                       {link.href === "/track-order" && hasOrderNotification && (
                         <span className="inline-flex h-2 w-2 rounded-full bg-red-500" />
+                      )}
+                      {isActive && (
+                        <motion.div
+                          layoutId="activeTab"
+                          className="absolute bottom-0 left-2 right-2 h-[2px] rounded-full bg-gold-primary"
+                          transition={{ type: "spring", bounce: 0.2, duration: 0.35 }}
+                        />
                       )}
                     </div>
                   </Link>
@@ -474,8 +481,8 @@ export function Header() {
                   </Button>
                 </div>
 
-                {/* Navigation Links — GitHub style flat list */}
-                <nav className="space-y-0.5">
+                {/* Navigation Links — premium */}
+                <nav className="space-y-1">
                   {navLinks.map((link, index) => {
                     const Icon = link.icon;
                     const isActive = location === link.href;
@@ -483,71 +490,92 @@ export function Header() {
                     return (
                       <motion.div
                         key={link.href}
-                        initial={{ opacity: 0, x: 12 }}
+                        initial={{ opacity: 0, x: 16 }}
                         animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: index * 0.05 }}
+                        transition={{ delay: index * 0.055, type: "spring", stiffness: 260, damping: 22 }}
                       >
                         <Link href={link.href}>
                           <div className={cn(
-                            "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors cursor-pointer",
-                            isActive
-                              ? "bg-muted text-foreground"
-                              : isWC
-                              ? "text-[#c9a84c]/80 hover:text-[#c9a84c] hover:bg-[#c9a84c]/8"
-                              : "text-foreground/70 hover:text-foreground hover:bg-muted/60"
+                            "relative flex items-center gap-3.5 px-4 py-3.5 rounded-xl overflow-hidden transition-all duration-200 cursor-pointer",
+                            isActive ? "text-foreground" : isWC ? "text-[#c9a84c]/80 hover:text-[#c9a84c]" : "text-foreground/65 hover:text-foreground"
                           )}>
-                            <Icon className={cn("w-4 h-4 shrink-0", isActive ? "text-foreground" : isWC ? "text-[#c9a84c]" : "text-muted-foreground")} />
-                            <span className="font-semibold text-sm flex-1">{link.label}</span>
+                            {/* active gradient sweep */}
+                            {isActive && <div className="absolute inset-0 bg-gradient-to-r from-gold-primary/14 via-gold-primary/6 to-transparent pointer-events-none" />}
+                            {/* active left accent bar */}
+                            {isActive && <div className="absolute left-0 top-2.5 bottom-2.5 w-[3px] rounded-r-full bg-gold-primary" />}
+                            {/* hover bg */}
+                            {!isActive && <div className={cn("absolute inset-0 opacity-0 hover:opacity-100 rounded-xl transition-opacity", isWC ? "bg-[#c9a84c]/5" : "bg-white/4")} />}
+
+                            <div className={cn(
+                              "relative z-10 w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition-colors",
+                              isActive ? "bg-gold-primary/18" : isWC ? "bg-[#c9a84c]/10" : "bg-white/6"
+                            )}>
+                              <Icon className={cn("w-[17px] h-[17px]", isActive ? "text-gold-primary" : isWC ? "text-[#c9a84c]" : "text-foreground/40")} />
+                            </div>
+
+                            <span className="relative z-10 font-semibold text-[14.5px] flex-1 leading-none">{link.label}</span>
+
                             {isWC && !isActive && (
-                              <span className="text-[9px] font-black text-[#c9a84c]/50 uppercase tracking-wider">2026</span>
+                              <span className="relative z-10 text-[9px] font-black text-[#c9a84c]/45 uppercase tracking-[0.18em]">2026</span>
                             )}
-                            {isActive && <div className="w-1.5 h-1.5 rounded-full bg-gold-primary shrink-0" />}
+                            {isActive && <ChevronRight className="relative z-10 w-3.5 h-3.5 text-gold-primary/40 shrink-0" />}
                           </div>
                         </Link>
                       </motion.div>
                     );
                   })}
 
-                  {/* Categories Section */}
-                  <div className="pt-5">
-                    <p className="text-[10px] font-bold text-muted-foreground/50 uppercase tracking-widest px-3 mb-1">Categories</p>
+                  {/* Categories */}
+                  <motion.div
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.28 }}
+                    className="pt-5"
+                  >
+                    <p className="text-[10px] font-black text-muted-foreground/45 uppercase tracking-[0.22em] px-4 mb-3">Categories</p>
 
+                    {/* All Games — wide row */}
                     <Link href="/games">
-                      <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-muted/60 transition-colors cursor-pointer group">
-                        <Gamepad2 className="w-4 h-4 shrink-0 text-muted-foreground group-hover:text-foreground transition-colors" />
-                        <div className="flex-1 min-w-0">
-                          <p className="font-semibold text-sm text-foreground/80 group-hover:text-foreground transition-colors">All Games</p>
+                      <div className="flex items-center gap-3.5 px-4 py-3.5 rounded-xl bg-gold-primary/6 border border-gold-primary/14 hover:bg-gold-primary/10 hover:border-gold-primary/25 transition-all cursor-pointer group mb-3">
+                        <div className="w-9 h-9 rounded-xl bg-gold-primary/15 flex items-center justify-center shrink-0 group-hover:bg-gold-primary/22 transition-colors">
+                          <Gamepad2 className="w-4.5 h-4.5 text-gold-primary" />
                         </div>
-                        <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/30 shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <p className="font-bold text-sm text-foreground">All Games</p>
+                          <p className="text-[11px] text-muted-foreground/60 mt-0.5">Browse complete catalog</p>
+                        </div>
+                        <ChevronRight className="w-3.5 h-3.5 text-gold-primary/40 group-hover:text-gold-primary/70 transition-colors shrink-0" />
                       </div>
                     </Link>
 
-                    {navCategories.map((cat, idx) => {
-                      const IconComp = CATEGORY_ICON_MAP[cat.slug] || Gift;
-                      const desc = CATEGORY_DESC[cat.slug] || "";
-                      return (
-                        <motion.div
-                          key={cat.id}
-                          initial={{ opacity: 0, x: 12 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ delay: 0.25 + idx * 0.05 }}
-                        >
-                          <Link href={`/category/${cat.slug}`}>
-                            <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-muted/60 transition-colors cursor-pointer group">
-                              <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center shrink-0 group-hover:bg-border transition-colors">
-                                <IconComp className="w-4 h-4 text-foreground/50 group-hover:text-foreground transition-colors" />
+                    {/* Category grid — 2 cols */}
+                    <div className="grid grid-cols-2 gap-2">
+                      {navCategories.map((cat, idx) => {
+                        const IconComp = CATEGORY_ICON_MAP[cat.slug] || Gift;
+                        const desc = CATEGORY_DESC[cat.slug] || "";
+                        return (
+                          <motion.div
+                            key={cat.id}
+                            initial={{ opacity: 0, scale: 0.93 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ delay: 0.32 + idx * 0.055 }}
+                          >
+                            <Link href={`/category/${cat.slug}`}>
+                              <div className="flex flex-col gap-2.5 p-3.5 rounded-xl bg-white/[0.035] border border-white/8 hover:border-white/16 hover:bg-white/6 transition-all cursor-pointer group h-full">
+                                <div className="w-9 h-9 rounded-lg bg-white/8 group-hover:bg-white/12 flex items-center justify-center transition-colors">
+                                  <IconComp className="w-[18px] h-[18px] text-foreground/50 group-hover:text-foreground/80 transition-colors" />
+                                </div>
+                                <div>
+                                  <p className="font-bold text-xs text-foreground/80 group-hover:text-foreground transition-colors leading-tight">{cat.name}</p>
+                                  {desc && <p className="text-[10px] text-muted-foreground/50 mt-0.5 leading-tight">{desc}</p>}
+                                </div>
                               </div>
-                              <div className="flex-1 min-w-0">
-                                <p className="font-semibold text-sm text-foreground/80 group-hover:text-foreground transition-colors">{cat.name}</p>
-                                {desc && <p className="text-[11px] text-muted-foreground/60 mt-0.5">{desc}</p>}
-                              </div>
-                              <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/30 shrink-0" />
-                            </div>
-                          </Link>
-                        </motion.div>
-                      );
-                    })}
-                  </div>
+                            </Link>
+                          </motion.div>
+                        );
+                      })}
+                    </div>
+                  </motion.div>
                 </nav>
 
                 {/* User Section */}

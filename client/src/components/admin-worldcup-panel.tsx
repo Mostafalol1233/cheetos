@@ -167,9 +167,15 @@ function SettingsPanel() {
               placeholder="https://youtube.com/watch?v=..." className="bg-background border-white/10 text-white" dir="ltr" />
           </div>
           <div className="space-y-1">
-            <Label>وصف الجائزة</Label>
-            <Input value={merged.prize_description || ""} onChange={e => setForm(f => ({ ...f, prize_description: e.target.value }))}
-              className="bg-background border-white/10 text-white" />
+            <Label>نص الجائزة / البطاقة المقدَّمة</Label>
+            <p className="text-[11px] text-white/40 mb-1">مثال: اربح كود كروس فاير — أو بطاقة فري فاير — أو شحن PUBG. هذا النص يظهر كإعلان في أعلى صفحة كأس العالم.</p>
+            <Textarea
+              value={merged.prize_description || ""}
+              onChange={e => setForm(f => ({ ...f, prize_description: e.target.value }))}
+              className="bg-background border-white/10 text-white min-h-[80px] resize-none"
+              placeholder="مثال: توقع صحيح = كود كروس فاير مجاناً 🎮"
+              dir="auto"
+            />
           </div>
           <div className="flex items-center gap-3">
             <Label>تفعيل الصفحة</Label>
