@@ -171,6 +171,20 @@ export default function GamesPage() {
           </Select>
         </div>
 
+        {/* World Cup 2026 prediction strip */}
+        <Link href="/world-cup">
+          <div className="mb-6 flex items-center gap-3 bg-gradient-to-r from-[#0d0a00] to-[#0a0800] border border-[#c9a84c]/20 hover:border-[#c9a84c]/40 rounded-xl px-4 py-3 cursor-pointer transition-all group">
+            <div className="w-8 h-8 rounded-lg bg-[#c9a84c]/10 border border-[#c9a84c]/20 flex items-center justify-center shrink-0">
+              <svg className="w-4 h-4 text-[#c9a84c]" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="text-[10px] font-bold text-[#c9a84c]/50 uppercase tracking-widest">FIFA World Cup 2026</div>
+              <div className="text-white text-xs font-semibold">توقّع نتائج المباريات واربح كوداً مجانياً · Predict & Win</div>
+            </div>
+            <svg className="w-4 h-4 text-[#c9a84c]/40 group-hover:text-[#c9a84c] transition-colors shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 18l6-6-6-6"/></svg>
+          </div>
+        </Link>
+
         {filteredGames.length > 0 ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-5">
             {filteredGames.map((game, index) => {

@@ -547,10 +547,11 @@ export default function WorldCupPage() {
               <div className="relative rounded-2xl overflow-hidden border border-[#c9a84c]/15 shadow-2xl bg-black">
                 <video
                   controls
-                  preload="metadata"
+                  autoPlay
+                  muted
+                  preload="auto"
                   className="w-full"
                   style={{ maxHeight: "420px" }}
-                  poster=""
                 >
                   <source src="/media/worldcup-anthem.mp4" type="video/mp4" />
                 </video>
