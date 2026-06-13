@@ -20,7 +20,7 @@ function GlobalAudio() {
   useEffect(() => {
     if (localStorage.getItem('site_audio_played')) return;
 
-    const audio = new Audio('/media/worldcup-anthem.mp4');
+    const audio = new Audio('/media/cfs-event.mp4');
     audio.volume = 0.25;
     audioRef.current = audio;
 

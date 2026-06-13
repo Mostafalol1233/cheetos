@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { Sun, Moon, Gamepad2, User, LogOut, Menu, X, Home, MessageCircle, ChevronRight, ChevronDown, Bell, Trophy } from "lucide-react";
+import { Sun, Moon, Gamepad2, User, LogOut, Menu, X, Home, MessageCircle, ChevronRight, ChevronDown, Bell, Trophy, Flame, Smartphone, Gift, Monitor } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { LanguageCurrencySwitcher } from "@/components/language-currency-switcher";
 import { useTheme } from "@/components/theme-provider";
@@ -14,6 +14,13 @@ import { API_BASE_URL } from "@/lib/queryClient";
 import type { Category } from "@shared/schema";
 import { requestNotificationPermission, getNotificationPermission } from "@/lib/notification-service";
 
+
+const CATEGORY_ICON_MAP: Record<string, React.ElementType> = {
+  "hot-deals":    Flame,
+  "mobile-games": Smartphone,
+  "gift-cards":   Gift,
+  "online-games": Monitor,
+};
 
 function NotificationButton() {
   const notifSupported = typeof window !== 'undefined' && 'Notification' in window;
@@ -179,7 +186,7 @@ export function Header() {
               >
                 <div className={cn("flex items-center transition-all duration-300", isScrolled ? "h-12 sm:h-14" : "h-20 sm:h-24")}>
                   <img
-                    src="https://res.cloudinary.com/ddzbutb12/image/upload/gamecart/logo.png"
+                    src="https://files.catbox.moe/brmkrj.png"
                     alt="Diaa Store Logo"
                     className="h-full w-auto object-contain drop-shadow-[0_0_8px_rgba(212,175,55,0.4)] group-hover:drop-shadow-[0_0_12px_rgba(212,175,55,0.7)] transition-all duration-300"
                     style={{ maxWidth: 'none' }}
@@ -259,9 +266,11 @@ export function Header() {
                         </Link>
                         <div className="h-px bg-border/40 my-1" />
                         {navCategories.map((cat) => {
+                          const IconComp = CATEGORY_ICON_MAP[cat.slug] || Gift;
                           return (
                             <Link key={cat.id} href={`/category/${cat.slug}`} onClick={() => setCategoriesOpen(false)}>
-                              <div className="flex items-center px-3 py-2.5 rounded-lg hover:bg-muted transition-colors cursor-pointer">
+                              <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg hover:bg-muted transition-colors cursor-pointer">
+                                <IconComp className="w-3.5 h-3.5 shrink-0 text-muted-foreground" />
                                 <span className="text-sm font-medium text-foreground">{cat.name}</span>
                               </div>
                             </Link>
@@ -431,7 +440,7 @@ export function Header() {
                 <div className="flex items-center justify-between mb-7">
                   <div className="flex items-center gap-2">
                     <img
-                      src="https://res.cloudinary.com/ddzbutb12/image/upload/gamecart/logo.png"
+                      src="https://files.catbox.moe/brmkrj.png"
                       alt="Diaa Store Logo"
                       className="h-11 w-auto object-contain"
                       onError={(e) => { (e.target as HTMLImageElement).src = "/images/diaa-logo-new.png"; }}
@@ -450,6 +459,7 @@ export function Header() {
                 {/* Navigation Links */}
                 <nav className="space-y-1">
                   {navLinks.map((link, index) => {
+                    const Icon = link.icon;
                     const isActive = location === link.href;
                     const isWC = (link as any).highlight;
                     return (
@@ -462,26 +472,25 @@ export function Header() {
                         <Link href={link.href}>
                           <div
                             className={cn(
-                              "flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200 cursor-pointer border-l-2",
+                              "flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 cursor-pointer",
                               isActive
-                                ? "border-gold-primary bg-gold-primary/6 text-gold-primary"
+                                ? "bg-gold-primary/10 text-gold-primary"
                                 : isWC
-                                ? "border-[#c9a84c]/40 text-[#c9a84c] hover:bg-[#c9a84c]/5"
-                                : "border-transparent hover:border-white/15 hover:bg-white/4 text-foreground"
+                                ? "text-[#c9a84c]/80 hover:text-[#c9a84c] hover:bg-[#c9a84c]/6"
+                                : "text-foreground/70 hover:text-foreground hover:bg-white/5"
                             )}
                           >
-                            <span className="font-medium flex items-center gap-2">
+                            <Icon className={cn("w-4 h-4 shrink-0", isActive ? "text-gold-primary" : isWC ? "text-[#c9a84c]/70" : "text-muted-foreground")} />
+                            <span className="font-medium text-sm flex-1 flex items-center gap-2">
                               {link.label}
                               {link.href === "/track-order" && hasOrderNotification && (
-                                <span className="inline-flex h-2 w-2 rounded-full bg-red-500" />
+                                <span className="inline-flex h-1.5 w-1.5 rounded-full bg-red-500" />
                               )}
                             </span>
-                            <div className="flex items-center gap-2">
-                              {isWC && !isActive && (
-                                <span className="text-[10px] font-semibold text-[#c9a84c]/50 uppercase tracking-wider">2026</span>
-                              )}
-                              {isActive && <ChevronRight className="w-3.5 h-3.5 opacity-60" />}
-                            </div>
+                            {isWC && !isActive && (
+                              <span className="text-[10px] font-semibold text-[#c9a84c]/40 uppercase tracking-wider">2026</span>
+                            )}
+                            {isActive && <div className="w-1 h-4 rounded-full bg-gold-primary/70 shrink-0" />}
                           </div>
                         </Link>
                       </motion.div>
@@ -495,15 +504,17 @@ export function Header() {
                     transition={{ delay: 0.28 }}
                     className="pt-5"
                   >
-                    <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-widest px-4 mb-2">Categories</p>
+                    <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-widest px-3 mb-1">Categories</p>
 
                     <Link href="/games">
-                      <div className="flex items-center justify-between px-4 py-2.5 rounded-xl hover:bg-white/4 border-l-2 border-transparent hover:border-gold-primary/30 transition-all text-foreground cursor-pointer mb-0.5">
+                      <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/5 hover:text-gold-primary transition-all text-foreground/70 cursor-pointer">
+                        <Gamepad2 className="w-4 h-4 shrink-0 text-muted-foreground" />
                         <span className="font-medium text-sm">All Games</span>
                       </div>
                     </Link>
 
                     {navCategories.map((cat, idx) => {
+                      const IconComp = CATEGORY_ICON_MAP[cat.slug] || Gift;
                       return (
                         <motion.div
                           key={cat.id}
@@ -512,7 +523,8 @@ export function Header() {
                           transition={{ delay: 0.32 + idx * 0.06 }}
                         >
                           <Link href={`/category/${cat.slug}`}>
-                            <div className="flex items-center justify-between px-4 py-2.5 rounded-xl hover:bg-white/4 border-l-2 border-transparent hover:border-gold-primary/30 transition-all text-foreground cursor-pointer mb-0.5">
+                            <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/5 hover:text-foreground transition-all text-foreground/70 cursor-pointer">
+                              <IconComp className="w-4 h-4 shrink-0 text-muted-foreground" />
                               <span className="font-medium text-sm">{cat.name}</span>
                             </div>
                           </Link>

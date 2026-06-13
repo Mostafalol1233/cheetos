@@ -64,10 +64,9 @@ export function Footer() {
                 <div className="flex items-center gap-3 cursor-pointer group">
                   <div className="h-12 w-auto flex items-center">
                     <img
-                      src="https://res.cloudinary.com/ddzbutb12/image/upload/gamecart/logo.png"
-                      alt="Diaa Store Logo"
+                      src="https://i.postimg.cc/bJWDcc9V/logo.png"
+                      alt="GameCart Logo"
                       className="h-full w-auto max-h-12 object-contain hover:scale-105 transition-transform"
-                      onError={(e) => { (e.target as HTMLImageElement).src = "/images/diaa-logo-new.png"; }}
                     />
                   </div>
                   <div>
