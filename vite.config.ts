@@ -28,6 +28,9 @@ export default defineConfig({
     port: 5000,
     strictPort: true,
     allowedHosts: true,
+    headers: {
+      "Content-Security-Policy": "default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob: https:; media-src 'self' https://res.cloudinary.com blob: https:; img-src 'self' data: blob: https:; connect-src 'self' https: wss:;"
+    },
     fs: {
       strict: false,
       deny: ["**/.*"],
