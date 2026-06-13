@@ -30,30 +30,126 @@ const CATEGORY_DESC: Record<string, string> = {
 };
 
 function NotificationButton() {
-  const notifSupported = typeof window !== 'undefined' && 'Notification' in window;
-  const [perm, setPerm] = useState<NotificationPermission>(
-    notifSupported ? Notification.permission : 'denied'
-  );
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
 
-  const handleClick = async () => {
-    const granted = await requestNotificationPermission();
-    setPerm(granted ? 'granted' : 'denied');
+  const { data: announcement } = useQuery<{
+    id: number; title: string; message: string; html_content: string | null;
+    bg_color: string; text_color: string; icon: string; dismissible: boolean; created_at: number;
+  } | null>({
+    queryKey: ["announcement-active"],
+    queryFn: async () => {
+      const res = await fetch(`${API_BASE_URL}/api/announcements/active`);
+      if (!res.ok) return null;
+      return res.json();
+    },
+    refetchInterval: 60000,
+    staleTime: 30000,
+  });
+
+  const [dismissed, setDismissed] = useState<Set<number>>(new Set());
+  useEffect(() => {
+    if (!announcement) return;
+    const key = `ann_dismissed_${announcement.id}`;
+    if (localStorage.getItem(key)) setDismissed(s => new Set(s).add(announcement.id));
+  }, [announcement?.id]);
+
+  useEffect(() => {
+    const handleOutside = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handleOutside);
+    return () => document.removeEventListener("mousedown", handleOutside);
+  }, []);
+
+  const hasNew = !!(announcement && !dismissed.has(announcement.id));
+
+  const handleDismissInPanel = () => {
+    if (!announcement) return;
+    localStorage.setItem(`ann_dismissed_${announcement.id}`, "1");
+    setDismissed(s => new Set(s).add(announcement.id));
   };
 
-  if (!notifSupported || perm === 'denied') return null;
-
   return (
-    <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
-      <Button
-        variant="ghost"
-        size="icon"
-        onClick={handleClick}
-        title={perm === 'granted' ? 'Order notifications enabled' : 'Enable order notifications'}
-        className={`rounded-xl transition-all duration-300 ${perm === 'granted' ? 'text-gold-primary hover:bg-gold-primary/10' : 'hover:bg-gold-primary/10 hover:text-gold-primary'}`}
-      >
-        <Bell className={`h-5 w-5 ${perm !== 'granted' ? 'opacity-60' : ''}`} />
-      </Button>
-    </motion.div>
+    <div className="relative" ref={ref}>
+      <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setOpen(v => !v)}
+          className={`rounded-xl transition-all duration-300 relative ${open ? 'text-gold-primary bg-gold-primary/10' : 'hover:bg-gold-primary/10 hover:text-gold-primary'}`}
+        >
+          <Bell className="h-5 w-5" />
+          {hasNew && (
+            <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-500 ring-2 ring-background animate-pulse" />
+          )}
+        </Button>
+      </motion.div>
+
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, y: 8, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 8, scale: 0.96 }}
+            transition={{ duration: 0.15 }}
+            className="absolute top-full right-0 mt-2 w-80 bg-popover border border-border rounded-xl shadow-2xl overflow-hidden z-50"
+          >
+            <div className="px-4 py-3 border-b border-border/60 bg-muted/30 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Bell className="w-3.5 h-3.5 text-gold-primary" />
+                <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest">الإشعارات</p>
+              </div>
+              {hasNew && <span className="text-[10px] font-bold text-red-400 bg-red-500/10 px-2 py-0.5 rounded-full">جديد</span>}
+            </div>
+
+            {announcement && !dismissed.has(announcement.id) ? (
+              <div className="p-3">
+                <div
+                  className="rounded-xl p-3.5 relative overflow-hidden"
+                  style={{ backgroundColor: announcement.bg_color }}
+                >
+                  <div className="absolute inset-0 pointer-events-none"
+                    style={{ background: "linear-gradient(135deg, transparent 40%, rgba(255,255,255,0.07) 50%, transparent 60%)" }} />
+                  <div className="flex items-start gap-2.5 relative">
+                    <span className="text-2xl shrink-0 mt-0.5">{announcement.icon || "📢"}</span>
+                    <div className="flex-1 min-w-0">
+                      {announcement.title && (
+                        <p className="text-xs font-black uppercase tracking-wider mb-1"
+                          style={{ color: announcement.text_color, opacity: 0.75, fontFamily: "ui-monospace,monospace" }}>
+                          {announcement.title}
+                        </p>
+                      )}
+                      {announcement.html_content ? (
+                        <div className="text-sm font-semibold leading-snug [&_a]:underline [&_a]:font-bold"
+                          style={{ color: announcement.text_color }}
+                          dangerouslySetInnerHTML={{ __html: announcement.html_content }} />
+                      ) : (
+                        <p className="text-sm font-semibold leading-snug" style={{ color: announcement.text_color }}>
+                          {announcement.message}
+                        </p>
+                      )}
+                    </div>
+                    {announcement.dismissible && (
+                      <button onClick={handleDismissInPanel}
+                        className="shrink-0 rounded-full p-0.5 hover:bg-black/20 transition-colors"
+                        style={{ color: announcement.text_color }}>
+                        <X className="w-3.5 h-3.5 opacity-70" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="py-10 text-center text-muted-foreground text-sm">
+                <Bell className="w-8 h-8 mx-auto mb-2 opacity-20" />
+                <p>لا توجد إشعارات جديدة</p>
+              </div>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
   );
 }
 

@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Megaphone, Plus, Pencil, Trash2, Eye, EyeOff, X } from "lucide-react";
+import { Megaphone, Plus, Pencil, Trash2, Eye, EyeOff, X, Zap } from "lucide-react";
 import { API_BASE_URL } from "@/lib/queryClient";
 
 interface Announcement {
@@ -37,6 +37,17 @@ const PRESET_COLORS = [
 ];
 
 const PRESET_ICONS = ["📢", "🎉", "🔥", "⚡", "🎁", "💎", "🚀", "⚠️", "✅", "🏆", "💥", "🌟", "🎮", "🛒", "💸"];
+
+const QUICK_SENDS = [
+  { game: "CROSSFIRE", slug: "crossfire", icon: "🎯", color: "#dc2626", msg: "🔥 عرض خاص على كروس فاير! اشحن الآن واحصل على أفضل سعر في مصر", title: "عرض كروس فاير" },
+  { game: "FREE FIRE", slug: "free-fire", icon: "🔥", color: "#f97316", msg: "💎 متاح شحن Free Fire بأسعار مميزة — جرب الآن!", title: "عرض فري فاير" },
+  { game: "PUBG MOBILE", slug: "pubg-mobile", icon: "🎮", color: "#eab308", msg: "⚡ شحن UC ببجي موبايل متاح الآن — أسرع قبل نفاد الكمية!", title: "عرض ببجي" },
+  { game: "FORTNITE", slug: "fortnite", icon: "💫", color: "#a855f7", msg: "🚀 شحن V-Bucks فورتنايت متاح! اشتري الآن واحصل على مفاجأة", title: "عرض فورتنايت" },
+  { game: "ROBLOX", slug: "roblox", icon: "🎁", color: "#ef4444", msg: "🎮 Robux متاح الآن بأقل سعر في مصر — اشتري الآن!", title: "عرض روبلوكس" },
+  { game: "STEAM", slug: "steam", icon: "🖥️", color: "#1d4ed8", msg: "🎁 بطاقات Steam Gift Card متاحة الآن — ألعاب لا نهاية لها!", title: "عرض ستيم" },
+  { game: "DISCORD NITRO", slug: "discord-nitro", icon: "💬", color: "#5865f2", msg: "✨ Discord Nitro متاح الآن — اشترك واستمتع بكل المميزات!", title: "عرض ديسكورد" },
+  { game: "عرض مخصص", slug: "", icon: "📢", color: "#c2185b", msg: "", title: "" },
+];
 
 const EMPTY_FORM = {
   title: "",
@@ -153,7 +164,7 @@ export function AnnouncementsPanel() {
             إعلانات الموقع
           </h2>
           <p className="text-sm text-muted-foreground mt-0.5">
-            أضف إعلانات تظهر لجميع زوار الموقع في شريط أعلى الصفحة
+            أضف إعلانات تظهر لجميع زوار الموقع في شريط أعلى الصفحة وفي جرس الإشعارات
           </p>
         </div>
         {!showForm && (
@@ -163,6 +174,54 @@ export function AnnouncementsPanel() {
           </Button>
         )}
       </div>
+
+      {/* Quick-send presets */}
+      {!showForm && (
+        <Card className="border-gold-primary/20 bg-gold-primary/[0.03]">
+          <CardContent className="pt-4 pb-5">
+            <div className="flex items-center gap-2 mb-3">
+              <Zap className="w-4 h-4 text-gold-primary" />
+              <p className="text-sm font-bold text-foreground">إرسال سريع — اختر لعبة وأرسل إعلان فوراً</p>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              {QUICK_SENDS.map((q) => (
+                <button
+                  key={q.game}
+                  onClick={() => {
+                    setForm({
+                      title: q.title,
+                      message: q.msg,
+                      html_content: q.slug
+                        ? `${q.msg} <a href="/game/${q.slug}" style="font-weight:900;text-decoration:underline">اشتري الآن →</a>`
+                        : "",
+                      bg_color: q.color,
+                      text_color: "#ffffff",
+                      icon: q.icon,
+                      is_active: true,
+                      dismissible: true,
+                    });
+                    setUseHtml(!!q.slug);
+                    setEditing(null);
+                    setShowForm(true);
+                    setPreview(true);
+                  }}
+                  className="flex flex-col items-center gap-1.5 p-3 rounded-xl border border-border/40 hover:border-pink-500/50 hover:bg-muted/60 transition-all cursor-pointer text-center group"
+                >
+                  <span
+                    className="text-2xl w-10 h-10 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110"
+                    style={{ backgroundColor: q.color + "22" }}
+                  >
+                    {q.icon}
+                  </span>
+                  <span className="text-[11px] font-bold text-muted-foreground group-hover:text-foreground transition-colors leading-tight">
+                    {q.game}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Form */}
       {showForm && (
