@@ -9,6 +9,76 @@ import { useToast } from "@/hooks/use-toast";
 import { Header } from "@/components/header";
 import { SEO } from "@/components/SEO";
 
+/* ─── Flag Mapping ─── */
+const FLAG_MAP: Record<string, string> = {
+  "Argentina": "🇦🇷",
+  "Australia": "🇦🇺",
+  "Austria": "🇦🇹",
+  "Belgium": "🇧🇪",
+  "BE": "🇧🇪",
+  "Brazil": "🇧🇷",
+  "Cameroon": "🇨🇲",
+  "Canada": "🇨🇦",
+  "Chile": "🇨🇱",
+  "Colombia": "🇨🇴",
+  "Costa Rica": "🇨🇷",
+  "Croatia": "🇭🇷",
+  "Denmark": "🇩🇰",
+  "Ecuador": "🇪🇨",
+  "Egypt": "🇪🇬",
+  "EG": "🇪🇬",
+  "England": "🏴",
+  "France": "🇫🇷",
+  "Germany": "🇩🇪",
+  "Ghana": "🇬🇭",
+  "Greece": "🇬🇷",
+  "Iran": "🇮🇷",
+  "Italy": "🇮🇹",
+  "Japan": "🇯🇵",
+  "Mexico": "🇲🇽",
+  "Morocco": "🇲🇦",
+  "Netherlands": "🇳🇱",
+  "Nigeria": "🇳🇬",
+  "Norway": "🇳🇴",
+  "Paraguay": "🇵🇾",
+  "Peru": "🇵🇪",
+  "Poland": "🇵🇱",
+  "Portugal": "🇵🇹",
+  "Qatar": "🇶🇦",
+  "Russia": "🇷🇺",
+  "Saudi Arabia": "🇸🇦",
+  "Scotland": "🏴󠁧󠁢󠁳󠁣󠁴󠁿",
+  "Senegal": "🇸🇳",
+  "Serbia": "🇷🇸",
+  "South Korea": "🇰🇷",
+  "Spain": "🇪🇸",
+  "Sweden": "🇸🇪",
+  "Switzerland": "🇨🇭",
+  "Tunisia": "🇹🇳",
+  "Turkey": "🇹🇷",
+  "Ukraine": "🇺🇦",
+  "Uruguay": "🇺🇾",
+  "USA": "🇺🇸",
+  "United States": "🇺🇸",
+  "Venezuela": "🇻🇪",
+  "Wales": "🏴󠁧󠁢󠁷󠁬󠁳󠁿",
+};
+
+function getFlag(teamName: string, existingFlag?: string): string {
+  if (existingFlag) return existingFlag;
+  // Check exact match
+  if (FLAG_MAP[teamName]) return FLAG_MAP[teamName];
+  // Check partial match (case insensitive)
+  for (const [name, flag] of Object.entries(FLAG_MAP)) {
+    if (teamName.toLowerCase().includes(name.toLowerCase()) || 
+        name.toLowerCase().includes(teamName.toLowerCase())) {
+      return flag;
+    }
+  }
+  // Fallback to generic flag emoji
+  return "🏳️";
+}
+
 /* ─── Bilingual text ─── */
 type Lang = "ar" | "en";
 
@@ -219,9 +289,7 @@ function MatchCard({
       {/* Teams */}
       <div className="flex items-center justify-between gap-4 my-3">
         <div className="flex-1 text-center">
-          {match.home_flag && (
-            <div className="text-5xl mb-2 drop-shadow-lg">{match.home_flag}</div>
-          )}
+          <div className="text-5xl mb-2 drop-shadow-lg">{getFlag(match.home_team, match.home_flag)}</div>
           <div className="text-white font-bold text-sm leading-tight">{match.home_team}</div>
         </div>
 
@@ -243,9 +311,7 @@ function MatchCard({
         </div>
 
         <div className="flex-1 text-center">
-          {match.away_flag && (
-            <div className="text-5xl mb-2 drop-shadow-lg">{match.away_flag}</div>
-          )}
+          <div className="text-5xl mb-2 drop-shadow-lg">{getFlag(match.away_team, match.away_flag)}</div>
           <div className="text-white font-bold text-sm leading-tight">{match.away_team}</div>
         </div>
       </div>
