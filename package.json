@@ -3,10 +3,10 @@
   "version": "1.0.0",
   "type": "module",
   "license": "MIT",
-  "packageManager": "npm@10.9.2",
+  "packageManager": "npm@11.12.1",
   "engines": {
     "node": ">=20.x <25.x",
-    "npm": "10.x"
+    "npm": "10.x || 11.x"
   },
   "scripts": {
     "dev": "tsx server/index.ts",
