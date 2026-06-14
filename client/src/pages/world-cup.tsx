@@ -10,97 +10,73 @@ import { Header } from "@/components/header";
 import { SEO } from "@/components/SEO";
 import { CircleFlag } from "react-circle-flags";
 
-/* ─── Flag Mapping ─── */
-const FLAG_MAP: Record<string, string> = {
-  "Argentina": "🇦🇷",
-  "Australia": "🇦🇺",
-  "Austria": "🇦🇹",
-  "Belgium": "🇧🇪",
-  "BE": "🇧🇪",
-  "Brazil": "🇧🇷",
-  "Cameroon": "🇨🇲",
-  "Canada": "🇨🇦",
-  "Chile": "🇨🇱",
-  "Colombia": "🇨🇴",
-  "Costa Rica": "🇨🇷",
-  "Croatia": "🇭🇷",
-  "Denmark": "🇩🇰",
-  "Ecuador": "🇪🇨",
-  "Egypt": "🇪🇬",
-  "EG": "🇪🇬",
-  "England": "🏴",
-  "France": "🇫🇷",
-  "Germany": "🇩🇪",
-  "Ghana": "🇬🇭",
-  "Greece": "🇬🇷",
-  "Iran": "🇮🇷",
-  "Italy": "🇮🇹",
-  "Japan": "🇯🇵",
-  "Mexico": "🇲🇽",
-  "Morocco": "🇲🇦",
-  "Netherlands": "🇳🇱",
-  "Nigeria": "🇳🇬",
-  "Norway": "🇳🇴",
-  "Paraguay": "🇵🇾",
-  "Peru": "🇵🇪",
-  "Poland": "🇵🇱",
-  "Portugal": "🇵🇹",
-  "Qatar": "🇶🇦",
-  "Russia": "🇷🇺",
-  "Saudi Arabia": "🇸🇦",
-  "Scotland": "🏴󠁧󠁢󠁳󠁣󠁴󠁿",
-  "Senegal": "🇸🇳",
-  "Serbia": "🇷🇸",
-  "South Korea": "🇰🇷",
-  "Spain": "🇪🇸",
-  "Sweden": "🇸🇪",
-  "Switzerland": "🇨🇭",
-  "Tunisia": "🇹🇳",
-  "Turkey": "🇹🇷",
-  "Ukraine": "🇺🇦",
-  "Uruguay": "🇺🇾",
-  "USA": "🇺🇸",
-  "United States": "🇺🇸",
-  "Venezuela": "🇻🇪",
-  "Wales": "🏴󠁧󠁢󠁷󠁬󠁳󠁿",
-};
+/* ─── Country list with ISO 2-digit codes ─── */
+const COUNTRIES = [
+  { name: "Argentina", code: "ar" },
+  { name: "Australia", code: "au" },
+  { name: "Austria", code: "at" },
+  { name: "Belgium", code: "be" },
+  { name: "Brazil", code: "br" },
+  { name: "Cameroon", code: "cm" },
+  { name: "Canada", code: "ca" },
+  { name: "Chile", code: "cl" },
+  { name: "Colombia", code: "co" },
+  { name: "Costa Rica", code: "cr" },
+  { name: "Croatia", code: "hr" },
+  { name: "Denmark", code: "dk" },
+  { name: "Ecuador", code: "ec" },
+  { name: "Egypt", code: "eg" },
+  { name: "England", code: "gb-eng" },
+  { name: "France", code: "fr" },
+  { name: "Germany", code: "de" },
+  { name: "Ghana", code: "gh" },
+  { name: "Greece", code: "gr" },
+  { name: "Iran", code: "ir" },
+  { name: "Italy", code: "it" },
+  { name: "Japan", code: "jp" },
+  { name: "Mexico", code: "mx" },
+  { name: "Morocco", code: "ma" },
+  { name: "Netherlands", code: "nl" },
+  { name: "Nigeria", code: "ng" },
+  { name: "Norway", code: "no" },
+  { name: "Paraguay", code: "py" },
+  { name: "Peru", code: "pe" },
+  { name: "Poland", code: "pl" },
+  { name: "Portugal", code: "pt" },
+  { name: "Qatar", code: "qa" },
+  { name: "Russia", code: "ru" },
+  { name: "Saudi Arabia", code: "sa" },
+  { name: "Scotland", code: "gb-sct" },
+  { name: "Senegal", code: "sn" },
+  { name: "Serbia", code: "rs" },
+  { name: "South Korea", code: "kr" },
+  { name: "Spain", code: "es" },
+  { name: "Sweden", code: "se" },
+  { name: "Switzerland", code: "ch" },
+  { name: "Tunisia", code: "tn" },
+  { name: "Turkey", code: "tr" },
+  { name: "Ukraine", code: "ua" },
+  { name: "Uruguay", code: "uy" },
+  { name: "USA", code: "us" },
+  { name: "United States", code: "us" },
+  { name: "Venezuela", code: "ve" },
+  { name: "Wales", code: "gb-wls" },
+];
 
-function getFlag(teamName: string, existingFlag?: string): string {
-  if (existingFlag) return existingFlag;
-  const normalized = teamName.trim();
-  // Check exact match first
-  if (FLAG_MAP[normalized]) return FLAG_MAP[normalized];
-  // Check case-insensitive exact match
-  const lowerName = normalized.toLowerCase();
-  for (const [name, flag] of Object.entries(FLAG_MAP)) {
-    if (name.toLowerCase() === lowerName) return flag;
-  }
-  // Check partial match (case insensitive)
-  for (const [name, flag] of Object.entries(FLAG_MAP)) {
-    const lowerTeam = lowerName;
-    const lowerFlagName = name.toLowerCase();
-    if (lowerTeam.includes(lowerFlagName) || lowerFlagName.includes(lowerTeam)) {
-      return flag;
+function getCountryCode(teamName: string): string {
+  const normalized = teamName.trim().toLowerCase();
+  for (const c of COUNTRIES) {
+    if (c.name.toLowerCase() === normalized || normalized.includes(c.name.toLowerCase()) || c.name.toLowerCase().includes(normalized)) {
+      return c.code;
     }
   }
-  // Special cases for short codes (like BE, EG)
-  const codeMap: Record<string, string> = {
-    'BE': '🇧🇪', 'be': '🇧🇪',
-    'EG': '🇪🇬', 'eg': '🇪🇬',
-    'BR': '🇧🇷', 'br': '🇧🇷',
-    'FR': '🇫🇷', 'fr': '🇫🇷',
-    'DE': '🇩🇪', 'de': '🇩🇪',
-    'ES': '🇪🇸', 'es': '🇪🇸',
-    'IT': '🇮🇹', 'it': '🇮🇹',
-    'PT': '🇵🇹', 'pt': '🇵🇹',
-    'AR': '🇦🇷', 'ar': '🇦🇷',
-    'GB': '🏴', 'gb': '🏴',
-    'US': '🇺🇸', 'us': '🇺🇸',
-    'MX': '🇲🇽', 'mx': '🇲🇽',
+  const shortMap: Record<string, string> = {
+    "be": "be", "eg": "eg", "br": "br", "fr": "fr", "de": "de",
+    "es": "es", "it": "it", "pt": "pt", "ar": "ar", "gb": "gb-eng",
+    "us": "us", "mx": "mx", "nl": "nl", "ma": "ma", "sn": "sn",
   };
-  if (codeMap[normalized]) return codeMap[normalized];
-  // Fallback to generic flag emoji
-  return "🏳️";
+  if (shortMap[normalized]) return shortMap[normalized];
+  return "us";
 }
 
 /* ─── Bilingual text ─── */
@@ -245,91 +221,6 @@ function formatMatchDate(dateStr: string, lang: Lang): string {
   } catch { return dateStr; }
 }
 
-/* ─── Country Code Mapping ─── */
-const COUNTRY_CODE_MAP: Record<string, string> = {
-  "Argentina": "ar",
-  "Australia": "au",
-  "Austria": "at",
-  "Belgium": "be",
-  "BE": "be",
-  "Brazil": "br",
-  "Cameroon": "cm",
-  "Canada": "ca",
-  "Chile": "cl",
-  "Colombia": "co",
-  "Costa Rica": "cr",
-  "Croatia": "hr",
-  "Denmark": "dk",
-  "Ecuador": "ec",
-  "Egypt": "eg",
-  "EG": "eg",
-  "England": "gb-eng",
-  "France": "fr",
-  "Germany": "de",
-  "Ghana": "gh",
-  "Greece": "gr",
-  "Iran": "ir",
-  "Italy": "it",
-  "Japan": "jp",
-  "Mexico": "mx",
-  "Morocco": "ma",
-  "Netherlands": "nl",
-  "Nigeria": "ng",
-  "Norway": "no",
-  "Paraguay": "py",
-  "Peru": "pe",
-  "Poland": "pl",
-  "Portugal": "pt",
-  "Qatar": "qa",
-  "Russia": "ru",
-  "Saudi Arabia": "sa",
-  "Scotland": "gb-sct",
-  "Senegal": "sn",
-  "Serbia": "rs",
-  "South Korea": "kr",
-  "Spain": "es",
-  "Sweden": "se",
-  "Switzerland": "ch",
-  "Tunisia": "tn",
-  "Turkey": "tr",
-  "Ukraine": "ua",
-  "Uruguay": "uy",
-  "USA": "us",
-  "United States": "us",
-  "Venezuela": "ve",
-  "Wales": "gb-wls",
-};
-
-function getCountryCode(teamName: string): string {
-  const normalized = teamName.trim();
-  if (COUNTRY_CODE_MAP[normalized]) return COUNTRY_CODE_MAP[normalized];
-  const lowerName = normalized.toLowerCase();
-  for (const [name, code] of Object.entries(COUNTRY_CODE_MAP)) {
-    if (name.toLowerCase() === lowerName) return code;
-  }
-  for (const [name, code] of Object.entries(COUNTRY_CODE_MAP)) {
-    if (lowerName.includes(name.toLowerCase()) || name.toLowerCase().includes(lowerName)) {
-      return code;
-    }
-  }
-  const shortCodeMap: Record<string, string> = {
-    'BE': 'be', 'be': 'be',
-    'EG': 'eg', 'eg': 'eg',
-    'BR': 'br', 'br': 'br',
-    'FR': 'fr', 'fr': 'fr',
-    'DE': 'de', 'de': 'de',
-    'ES': 'es', 'es': 'es',
-    'IT': 'it', 'it': 'it',
-    'PT': 'pt', 'pt': 'pt',
-    'AR': 'ar', 'ar': 'ar',
-    'GB': 'gb-eng', 'gb': 'gb-eng',
-    'US': 'us', 'us': 'us',
-    'MX': 'mx', 'mx': 'mx',
-  };
-  if (shortCodeMap[normalized]) return shortCodeMap[normalized];
-  return "us";
-}
-
 function MatchCard({
   match, prediction, onPredict, isSubmitting, lang,
 }: {
@@ -375,7 +266,6 @@ function MatchCard({
           : "bg-[#111111] border border-white/8 hover:border-white/15"
       }`}
     >
-      {/* Status badge */}
       {isLive && (
         <div className="absolute top-3 right-3 flex items-center gap-1.5 bg-red-500/15 border border-red-500/30 rounded-full px-2.5 py-1">
           <span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse" />
@@ -388,14 +278,12 @@ function MatchCard({
         </div>
       )}
 
-      {/* Round */}
       <div className="text-center mb-3">
         <span className="text-[10px] text-[#c9a84c]/50 font-semibold tracking-widest uppercase">
           {match.round || T.group}
         </span>
       </div>
 
-      {/* Teams */}
       <div className="flex items-center justify-between gap-4 my-3">
         <div className="flex-1 text-center">
           <div className="flex justify-center mb-2">
@@ -429,7 +317,6 @@ function MatchCard({
         </div>
       </div>
 
-      {/* Finished — show prediction result */}
       {isFinished && hasPrediction && (
         <div className={`text-center text-xs mt-4 py-2 px-4 rounded-xl ${
           prediction!.is_correct
@@ -442,7 +329,6 @@ function MatchCard({
         </div>
       )}
 
-      {/* Predict / Edit section */}
       {!isFinished && (
         <div className="mt-4 pt-4 border-t border-white/6">
           {hasPrediction ? (
@@ -517,13 +403,12 @@ function MatchCard({
 }
 
 export default function WorldCupPage() {
-  const { isAuthenticated, isLoading: authLoading } = useUserAuth();
+  const { isAuthenticated, isLoading: authLoading, user } = useUserAuth();
   const { toast } = useToast();
   const [submittingMatchId, setSubmittingMatchId] = useState<string | null>(null);
   const [showHeroVideo, setShowHeroVideo] = useState(true);
   const [showAnthemVideo, setShowAnthemVideo] = useState(true);
 
-  // Language: default Arabic, remember preference
   const [lang, setLang] = useState<Lang>(() => {
     try { return (localStorage.getItem("wc_lang") as Lang) || "ar"; } catch { return "ar"; }
   });
@@ -611,6 +496,8 @@ export default function WorldCupPage() {
     { n: "03", t: T.step3t, s: T.step3s },
   ];
 
+  const isAdmin = user?.role === "admin";
+
   return (
     <>
       <SEO
@@ -619,9 +506,7 @@ export default function WorldCupPage() {
         keywords={["world cup 2026", "كأس العالم 2026", "توقع المباريات", "diaa store", "متجر ضياء", "world cup prediction"]}
         url={typeof window !== "undefined" ? window.location.href : "https://diaasadek.com/world-cup"}
       />
-      {/* ─── CINEMATIC VIDEO HERO ── */}
       <div className="relative overflow-hidden bg-black" style={{ minHeight: "600px" }}>
-        {/* Background video — muted autoplay loop (fallback to image if video missing) */}
         {showHeroVideo && (
           <video
             autoPlay
@@ -636,24 +521,17 @@ export default function WorldCupPage() {
             <source src="https://res.cloudinary.com/ddzbutb12/video/upload/v1781447401/gamecart/worldcup/worldcup-anthem.mp4" type="video/mp4" />
           </video>
         )}
-
-        {/* Dark cinematic gradient overlay */}
         <div
           className="absolute inset-0"
           style={{
             background: "linear-gradient(to bottom, rgba(0,0,0,0.55) 0%, rgba(8,8,8,0.65) 50%, rgba(8,8,8,0.96) 90%, #080808 100%)",
           }}
         />
-
-        {/* Gold vignette on sides */}
         <div className="absolute inset-0 pointer-events-none" style={{
           background: "radial-gradient(ellipse at 50% 80%, rgba(201,168,76,0.07) 0%, transparent 70%)"
         }} />
-
         <div className="relative z-10">
           <Header />
-
-          {/* Language toggle */}
           <div className={`fixed top-20 z-40 ${lang === "ar" ? "left-4" : "right-4"}`}>
             <button
               onClick={toggleLang}
@@ -662,8 +540,6 @@ export default function WorldCupPage() {
               {T.langBtn}
             </button>
           </div>
-
-          {/* Hero content */}
           <div className="pt-28 pb-20 px-4 text-center">
             <div className="relative inline-block mb-7">
               <img
@@ -674,7 +550,6 @@ export default function WorldCupPage() {
                 onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
               />
             </div>
-
             <h1 className="text-4xl sm:text-5xl md:text-6xl font-black text-white tracking-tight mb-3 leading-tight">
               {settings?.title || T.defaultTitle}
             </h1>
@@ -682,15 +557,12 @@ export default function WorldCupPage() {
             <p className="text-white/50 text-lg font-light max-w-md mx-auto">
               {settings?.subtitle || T.defaultSubtitle}
             </p>
-
             {settings?.prize_description && (
               <div className="mt-6 inline-flex items-center gap-2.5 px-5 py-2.5 bg-[#c9a84c]/10 border border-[#c9a84c]/30 rounded-full text-[#c9a84c] text-sm font-bold shadow-lg">
                 <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
                 <span>{settings.prize_description}</span>
               </div>
             )}
-
-            {/* Stats bar */}
             {matches.length > 0 && (
               <div className="mt-8 inline-flex items-center gap-6 bg-white/5 border border-white/10 backdrop-blur-sm rounded-2xl px-6 py-3">
                 <div className="text-center">
@@ -712,186 +584,123 @@ export default function WorldCupPage() {
           </div>
         </div>
       </div>
-
-      {/* ── MAIN CONTENT ── */}
-      <div
-        className="min-h-screen bg-[#080808] text-white"
-        dir={dir}
-      >
-          <div className="pb-24 px-4 max-w-3xl mx-auto">
-
-            {/* ── OFFICIAL ANTHEM VIDEO PLAYER ── */}
-            {showAnthemVideo && (
-              <div className="mt-10 mb-14">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-0.5 h-5 bg-[#c9a84c] rounded-full" />
-                  <span className="text-sm font-bold text-white/70 tracking-wide uppercase">
-                    {lang === "ar" ? "النشيد الرسمي" : "Official Anthem"}
+      <div className="min-h-screen bg-[#080808] text-white" dir={dir}>
+        <div className="pb-24 px-4 max-w-3xl mx-auto">
+          {showAnthemVideo && (
+            <div className="mt-10 mb-14">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-0.5 h-5 bg-[#c9a84c] rounded-full" />
+                <span className="text-sm font-bold text-white/70 tracking-wide uppercase">
+                  {lang === "ar" ? "النشيد الرسمي" : "Official Anthem"}
+                </span>
+              </div>
+              <div className="relative rounded-2xl overflow-hidden border border-[#c9a84c]/15 shadow-2xl bg-black">
+                <video
+                  controls
+                  preload="auto"
+                  className="w-full"
+                  style={{ maxHeight: "420px" }}
+                  onError={() => setShowAnthemVideo(false)}
+                >
+                  <source src="https://res.cloudinary.com/ddzbutb12/video/upload/v1781447401/gamecart/worldcup/worldcup-anthem.mp4" type="video/mp4" />
+                </video>
+                <div className="absolute top-3 right-3 bg-black/60 border border-[#c9a84c]/30 backdrop-blur-sm rounded-full px-3 py-1">
+                  <span className="text-[10px] text-[#c9a84c] font-bold uppercase tracking-widest">
+                    {lang === "ar" ? "النشيد الرسمي" : "FIFA WC 2026"}
                   </span>
                 </div>
-                <div className="relative rounded-2xl overflow-hidden border border-[#c9a84c]/15 shadow-2xl bg-black">
-                  <video
-                    controls
-                    preload="auto"
-                    className="w-full"
-                    style={{ maxHeight: "420px" }}
-                    onError={() => setShowAnthemVideo(false)}
-                  >
-                    <source src="https://res.cloudinary.com/ddzbutb12/video/upload/v1781447401/gamecart/worldcup/worldcup-anthem.mp4" type="video/mp4" />
-                  </video>
-                  <div className="absolute top-3 right-3 bg-black/60 border border-[#c9a84c]/30 backdrop-blur-sm rounded-full px-3 py-1">
-                    <span className="text-[10px] text-[#c9a84c] font-bold uppercase tracking-widest">
-                      {lang === "ar" ? "النشيد الرسمي" : "FIFA WC 2026"}
-                    </span>
-                  </div>
-                </div>
               </div>
-            )}
-
-            {/* ── YouTube embed (from admin settings) ── */}
-            {embedUrl && (
-              <div className="mb-14">
-                <div
-                  className="relative w-full rounded-2xl overflow-hidden border border-white/8 shadow-2xl"
-                  style={{ paddingTop: "56.25%" }}
-                >
-                  <iframe
-                    src={embedUrl}
-                    title="World Cup video"
-                    className="absolute inset-0 w-full h-full"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
-                  />
-                </div>
-              </div>
-            )}
-
-            {/* ── HOW IT WORKS ── */}
-            <div className="mb-12 grid grid-cols-1 sm:grid-cols-3 gap-4">
-              {steps.map(item => (
-                <div
-                  key={item.n}
-                  className="relative bg-[#111] border border-white/8 rounded-2xl p-5 text-center overflow-hidden group hover:border-[#c9a84c]/25 transition-all"
-                >
-                  <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#c9a84c]/20 to-transparent" />
-                  <div className="text-[#c9a84c] text-xs font-black tracking-widest mb-3">{item.n}</div>
-                  <div className="text-white font-bold mb-1.5 text-sm">{item.t}</div>
-                  <div className="text-white/35 text-xs leading-relaxed">{item.s}</div>
-                </div>
-              ))}
             </div>
-
-            {/* ── AUTH GATE ── */}
-            {!authLoading && !isAuthenticated && (
-              <div className="mb-10 bg-[#111] border border-[#c9a84c]/20 rounded-2xl p-8 text-center">
-                <div className="w-12 h-12 rounded-2xl bg-[#c9a84c]/10 border border-[#c9a84c]/20 flex items-center justify-center mx-auto mb-4">
-                  <svg className="w-5 h-5 text-[#c9a84c]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                  </svg>
-                </div>
-                <div className="text-white/70 text-sm mb-6 font-medium">{T.loginToPredict}</div>
-                <div className="flex gap-3 justify-center flex-wrap">
-                  <Link href="/login">
-                    <Button className="bg-[#c9a84c] hover:bg-[#b8973e] text-black font-black px-7 rounded-xl h-11">
-                      {T.login}
-                    </Button>
-                  </Link>
-                  <Link href="/login?tab=register">
-                    <Button variant="outline" className="border-white/20 text-white hover:bg-white/5 px-7 rounded-xl h-11">
-                      {T.createAccount}
-                    </Button>
-                  </Link>
-                </div>
+          )}
+          {embedUrl && (
+            <div className="mb-14">
+              <div className="relative w-full rounded-2xl overflow-hidden border border-white/8 shadow-2xl" style={{ paddingTop: "56.25%" }}>
+                <iframe src={embedUrl} title="World Cup video" className="absolute inset-0 w-full h-full" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen />
               </div>
-            )}
-
-            {/* ── SCORE SUMMARY ── */}
-            {isAuthenticated && myPredictions.length > 0 && finishedMatches.length > 0 && (
-              <div className="mb-8 bg-gradient-to-r from-[#c9a84c]/8 to-transparent border border-[#c9a84c]/20 rounded-2xl p-5 flex items-center justify-between">
-                <div>
-                  <div className="text-white font-bold">{T.yourResults}</div>
-                  <div className="text-white/35 text-xs mt-0.5">{T.fromFinished}</div>
-                </div>
-                <div className={lang === "ar" ? "text-left" : "text-right"}>
-                  <div className="text-3xl font-black text-[#c9a84c]">{correctCount}</div>
-                  <div className="text-white/30 text-xs">
-                    {T.correct} {finishedMatches.filter(m => predictionMap[m.id]).length}
-                  </div>
-                </div>
+            </div>
+          )}
+          <div className="mb-12 grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {steps.map(item => (
+              <div key={item.n} className="relative bg-[#111] border border-white/8 rounded-2xl p-5 text-center overflow-hidden group hover:border-[#c9a84c]/25 transition-all">
+                <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#c9a84c]/20 to-transparent" />
+                <div className="text-[#c9a84c] text-xs font-black tracking-widest mb-3">{item.n}</div>
+                <div className="text-white font-bold mb-1.5 text-sm">{item.t}</div>
+                <div className="text-white/35 text-xs leading-relaxed">{item.s}</div>
               </div>
-            )}
-
-            {/* ── UPCOMING MATCHES ── */}
-            {upcomingMatches.length > 0 && (
-              <div className="mb-12">
-                <h2 className="text-base font-bold text-white mb-5 flex items-center gap-3">
-                  <span className="w-0.5 h-5 bg-[#c9a84c] rounded-full" />
-                  {T.upcoming}
-                  <span className="text-xs text-white/30 font-normal">({upcomingMatches.length})</span>
-                </h2>
-                <div className="space-y-4">
-                  {upcomingMatches.map(match => (
-                    <MatchCard
-                      key={match.id}
-                      match={match}
-                      prediction={predictionMap[match.id]}
-                      onPredict={handlePredict}
-                      isSubmitting={submittingMatchId === match.id}
-                      lang={lang}
-                    />
-                  ))}
-                </div>
+            ))}
+          </div>
+          {!authLoading && !isAuthenticated && (
+            <div className="mb-10 bg-[#111] border border-[#c9a84c]/20 rounded-2xl p-8 text-center">
+              <div className="w-12 h-12 rounded-2xl bg-[#c9a84c]/10 border border-[#c9a84c]/20 flex items-center justify-center mx-auto mb-4">
+                <svg className="w-5 h-5 text-[#c9a84c]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
               </div>
-            )}
-
-            {/* ── FINISHED MATCHES ── */}
-            {finishedMatches.length > 0 && (
-              <div className="mb-12">
-                <h2 className="text-base font-bold text-white/50 mb-5 flex items-center gap-3">
-                  <span className="w-0.5 h-5 bg-white/15 rounded-full" />
-                  {T.finishedSection}
-                  <span className="text-xs text-white/20 font-normal">({finishedMatches.length})</span>
-                </h2>
-                <div className="space-y-4">
-                  {finishedMatches.map(match => (
-                    <MatchCard
-                      key={match.id}
-                      match={match}
-                      prediction={predictionMap[match.id]}
-                      onPredict={handlePredict}
-                      isSubmitting={false}
-                      lang={lang}
-                    />
-                  ))}
-                </div>
+              <div className="text-white/70 text-sm mb-6 font-medium">{T.loginToPredict}</div>
+              <div className="flex gap-3 justify-center flex-wrap">
+                <Link href="/login">
+                  <Button className="bg-[#c9a84c] hover:bg-[#b8973e] text-black font-black px-7 rounded-xl h-11">{T.login}</Button>
+                </Link>
+                <Link href="/login?tab=register">
+                  <Button variant="outline" className="border-white/20 text-white hover:bg-white/5 px-7 rounded-xl h-11">{T.createAccount}</Button>
+                </Link>
               </div>
-            )}
-
-            {matches.length === 0 && (
-              <div className="text-center py-24">
-                <div className="w-14 h-14 rounded-2xl bg-white/4 border border-white/8 flex items-center justify-center mx-auto mb-5">
-                  <svg className="w-7 h-7 text-white/20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
-                </div>
-                <div className="text-white/20 text-sm">{T.noMatches}</div>
+            </div>
+          )}
+          {isAuthenticated && myPredictions.length > 0 && finishedMatches.length > 0 && (
+            <div className="mb-8 bg-gradient-to-r from-[#c9a84c]/8 to-transparent border border-[#c9a84c]/20 rounded-2xl p-5 flex items-center justify-between">
+              <div>
+                <div className="text-white font-bold">{T.yourResults}</div>
+                <div className="text-white/35 text-xs mt-0.5">{T.fromFinished}</div>
               </div>
-            )}
-
-            {/* ── TERMS ── */}
-            <div className="mt-16 border-t border-white/6 pt-10">
-              <h3 className="text-xs font-bold text-white/40 mb-5 tracking-widest uppercase">{T.termsTitle}</h3>
-              <ul className="space-y-2.5 text-white/25 text-xs leading-relaxed">
-                {T.terms.map((t, i) => (
-                  <li key={i} className="flex gap-2.5">
-                    <span className="text-[#c9a84c]/25 mt-0.5 shrink-0">—</span>
-                    <span>{t}</span>
-                  </li>
+              <div className={lang === "ar" ? "text-left" : "text-right"}>
+                <div className="text-3xl font-black text-[#c9a84c]">{correctCount}</div>
+                <div className="text-white/30 text-xs">{T.correct} {finishedMatches.filter(m => predictionMap[m.id]).length}</div>
+              </div>
+            </div>
+          )}
+          {upcomingMatches.length > 0 && (
+            <div className="mb-12">
+              <h2 className="text-base font-bold text-white mb-5 flex items-center gap-3">
+                <span className="w-0.5 h-5 bg-[#c9a84c] rounded-full" />
+                {T.upcoming}
+                <span className="text-xs text-white/30 font-normal">({upcomingMatches.length})</span>
+              </h2>
+              <div className="space-y-4">
+                {upcomingMatches.map(match => (
+                  <MatchCard key={match.id} match={match} prediction={predictionMap[match.id]} onPredict={handlePredict} isSubmitting={submittingMatchId === match.id} lang={lang} />
                 ))}
-              </ul>
+              </div>
             </div>
+          )}
+          {finishedMatches.length > 0 && (
+            <div className="mb-12">
+              <h2 className="text-base font-bold text-white/50 mb-5 flex items-center gap-3">
+                <span className="w-0.5 h-5 bg-white/15 rounded-full" />
+                {T.finishedSection}
+                <span className="text-xs text-white/20 font-normal">({finishedMatches.length})</span>
+              </h2>
+              <div className="space-y-4">
+                {finishedMatches.map(match => (
+                  <MatchCard key={match.id} match={match} prediction={predictionMap[match.id]} onPredict={handlePredict} isSubmitting={false} lang={lang} />
+                ))}
+              </div>
+            </div>
+          )}
+          {matches.length === 0 && (
+            <div className="text-center py-24">
+              <div className="w-14 h-14 rounded-2xl bg-white/4 border border-white/8 flex items-center justify-center mx-auto mb-5">
+                <svg className="w-7 h-7 text-white/20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+              </div>
+              <div className="text-white/20 text-sm">{T.noMatches}</div>
+            </div>
+          )}
+          <div className="mt-16 border-t border-white/6 pt-10">
+            <h3 className="text-xs font-bold text-white/40 mb-5 tracking-widest uppercase">{T.termsTitle}</h3>
+            <ul className="space-y-2.5 text-white/25 text-xs leading-relaxed">
+              {T.terms.map((t, i) => <li key={i} className="flex gap-2.5"><span className="text-[#c9a84c]/25 mt-0.5 shrink-0">—</span><span>{t}</span></li>)}
+            </ul>
           </div>
         </div>
+      </div>
     </>
   );
 }
