@@ -6,6 +6,42 @@ import https from 'https';
 
 const router = express.Router();
 
+// Country name to flag emoji mapping
+const countryFlags = {
+  "algeria": "🇩🇿", "argentina": "🇦🇷", "australia": "🇦🇺", "austria": "🇦🇹",
+  "belgium": "🇧🇪", "brazil": "🇧🇷", "bulgaria": "🇧🇬", "cameroon": "🇨🇲",
+  "canada": "🇨🇦", "chile": "🇨🇱", "china": "🇨🇳", "colombia": "🇨🇴",
+  "costa rica": "🇨🇷", "croatia": "🇭🇷", "denmark": "🇩🇰", "egypt": "🇪🇬",
+  "england": "🏴", "finland": "🇫🇮", "france": "🇫🇷", "germany": "🇩🇪",
+  "ghana": "🇬🇭", "greece": "🇬🇷", "honduras": "🇭🇳", "iceland": "🇮🇸",
+  "iran": "🇮🇷", "iraq": "🇮🇶", "ireland": "🇮🇪", "israel": "🇮🇱",
+  "italy": "🇮🇹", "ivory coast": "🇨🇮", "jamaica": "🇯🇲", "japan": "🇯🇵",
+  "mexico": "🇲🇽", "morocco": "🇲🇦", "netherlands": "🇳🇱", "new zealand": "🇳🇿",
+  "nigeria": "🇳🇬", "northern ireland": "🏴", "norway": "🇳🇴", "panama": "🇵🇦",
+  "paraguay": "🇵🇾", "peru": "🇵🇪", "poland": "🇵🇱", "portugal": "🇵🇹",
+  "qatar": "🇶🇦", "romania": "🇷🇴", "russia": "🇷🇺", "saudi arabia": "🇸🇦",
+  "scotland": "🏴", "senegal": "🇸🇳", "serbia": "🇷🇸", "slovakia": "🇸🇰",
+  "slovenia": "🇸🇮", "south africa": "🇿🇦", "south korea": "🇰🇷", "spain": "🇪🇸",
+  "sweden": "🇸🇪", "switzerland": "🇨🇭", "tunisia": "🇹🇳", "turkey": "🇹🇷",
+  "ukraine": "🇺🇦", "united arab emirates": "🇦🇪", "united kingdom": "🇬🇧",
+  "united states": "🇺🇸", "usa": "🇺🇸", "uruguay": "🇺🇾", "venezuela": "🇻🇪",
+  "wales": "🏴"
+};
+
+function getFlag(countryName) {
+  if (!countryName) return "";
+  const normalized = countryName.toLowerCase().trim();
+  // Try exact match first
+  if (countryFlags[normalized]) return countryFlags[normalized];
+  // Try partial matches
+  for (const [key, flag] of Object.entries(countryFlags)) {
+    if (normalized.includes(key) || key.includes(normalized)) {
+      return flag;
+    }
+  }
+  return "";
+}
+
 async function initWorldCupTables() {
   try {
     await pool.query(`
@@ -287,8 +323,66 @@ router.post('/admin/sync', authenticateToken, ensureAdmin, async (req, res) => {
     for (const m of data.matches) {
       const homeTeam = m.homeTeam?.name || 'TBD';
       const awayTeam = m.awayTeam?.name || 'TBD';
+      const homeFlag = getFlag(homeTeam);
+      const awayFlag = getFlag(awayTeam);
       const matchDate = m.utcDate || null;
       const round = m.stage || m.group || '';
+      const apiId = String(m.id || '');
+      const homeScore = m.score?.fullTime?.home ?? null;
+      const awayScore = m.score?.fullTime?.away ?? null;
+      const status = m.status === 'FINISHED' ? 'finished' : m.status === 'IN_PLAY' || m.status === 'PAUSED' ? 'live' : 'upcoming';
+
+      const existing = await pool.query('SELECT id, home_flag, away_flag FROM worldcup_matches WHERE api_match_id = $1', [apiId]);
+      if (existing.rows.length) {
+        await pool.query(
+          'UPDATE worldcup_matches SET home_score = $1, away_score = $2, status = $3, home_flag = COALESCE($4, home_flag), away_flag = COALESCE($5, away_flag) WHERE api_match_id = $6',
+          [homeScore, awayScore, status, homeFlag, awayFlag, apiId]
+        );
+      } else {
+        const id = crypto.randomUUID();
+        await pool.query(
+          'INSERT INTO worldcup_matches (id, home_team, away_team, home_flag, away_flag, match_date, round, status, api_match_id, home_score, away_score) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)',
+          [id, homeTeam, awayTeam, homeFlag, awayFlag, matchDate, round, status, apiId, homeScore, awayScore]
+        );
+        inserted++;
+      }
+    }
+
+    res.json({ success: true, message: `تمت المزامنة — ${inserted} مباريات جديدة`, total: data.matches.length });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+router.post('/admin/refresh-scores', authenticateToken, ensureAdmin, async (req, res) => {
+  const apiKey = process.env.FOOTBALL_DATA_API_KEY;
+  if (!apiKey) {
+    return res.status(400).json({ message: 'مفتاح API غير مضبوط. أضف FOOTBALL_DATA_API_KEY في إعدادات البيئة.' });
+  }
+
+  try {
+    const data = await new Promise((resolve, reject) => {
+      const options = {
+        hostname: 'api.football-data.org',
+        path: '/v4/competitions/WC/matches',
+        headers: { 'X-Auth-Token': apiKey }
+      };
+      https.get(options, (apiRes) => {
+        let body = '';
+        apiRes.on('data', chunk => body += chunk);
+        apiRes.on('end', () => {
+          try { resolve(JSON.parse(body)); }
+          catch { reject(new Error('فشل تحليل البيانات')); }
+        });
+      }).on('error', reject);
+    });
+
+    if (!data.matches) {
+      return res.status(500).json({ message: 'لم يتم استلام مباريات من API' });
+    }
+
+    let updated = 0;
+    for (const m of data.matches) {
       const apiId = String(m.id || '');
       const homeScore = m.score?.fullTime?.home ?? null;
       const awayScore = m.score?.fullTime?.away ?? null;
@@ -297,21 +391,22 @@ router.post('/admin/sync', authenticateToken, ensureAdmin, async (req, res) => {
       const existing = await pool.query('SELECT id FROM worldcup_matches WHERE api_match_id = $1', [apiId]);
       if (existing.rows.length) {
         await pool.query(
-          `UPDATE worldcup_matches SET home_score = $1, away_score = $2, status = $3 WHERE api_match_id = $4`,
+          'UPDATE worldcup_matches SET home_score = $1, away_score = $2, status = $3 WHERE api_match_id = $4',
           [homeScore, awayScore, status, apiId]
         );
-      } else {
-        const id = crypto.randomUUID();
-        await pool.query(
-          `INSERT INTO worldcup_matches (id, home_team, away_team, match_date, round, status, api_match_id, home_score, away_score)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
-          [id, homeTeam, awayTeam, matchDate, round, status, apiId, homeScore, awayScore]
-        );
-        inserted++;
+        
+        // If match is finished, update predictions correctness
+        if (status === 'finished' && homeScore !== null && awayScore !== null) {
+          await pool.query(
+            'UPDATE worldcup_predictions SET is_correct = (home_score_pred = $1 AND away_score_pred = $2) WHERE match_id = $3',
+            [homeScore, awayScore, existing.rows[0].id]
+          );
+        }
+        updated++;
       }
     }
 
-    res.json({ success: true, message: `تمت المزامنة — ${inserted} مباريات جديدة`, total: data.matches.length });
+    res.json({ success: true, message: `تم تحديث ${updated} مباراة`, total: data.matches.length });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
