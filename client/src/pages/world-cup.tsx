@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Header } from "@/components/header";
 import { SEO } from "@/components/SEO";
+import { CircleFlag } from "react-circle-flags";
 
 /* ─── Flag Mapping ─── */
 const FLAG_MAP: Record<string, string> = {
@@ -244,6 +245,91 @@ function formatMatchDate(dateStr: string, lang: Lang): string {
   } catch { return dateStr; }
 }
 
+/* ─── Country Code Mapping ─── */
+const COUNTRY_CODE_MAP: Record<string, string> = {
+  "Argentina": "ar",
+  "Australia": "au",
+  "Austria": "at",
+  "Belgium": "be",
+  "BE": "be",
+  "Brazil": "br",
+  "Cameroon": "cm",
+  "Canada": "ca",
+  "Chile": "cl",
+  "Colombia": "co",
+  "Costa Rica": "cr",
+  "Croatia": "hr",
+  "Denmark": "dk",
+  "Ecuador": "ec",
+  "Egypt": "eg",
+  "EG": "eg",
+  "England": "gb-eng",
+  "France": "fr",
+  "Germany": "de",
+  "Ghana": "gh",
+  "Greece": "gr",
+  "Iran": "ir",
+  "Italy": "it",
+  "Japan": "jp",
+  "Mexico": "mx",
+  "Morocco": "ma",
+  "Netherlands": "nl",
+  "Nigeria": "ng",
+  "Norway": "no",
+  "Paraguay": "py",
+  "Peru": "pe",
+  "Poland": "pl",
+  "Portugal": "pt",
+  "Qatar": "qa",
+  "Russia": "ru",
+  "Saudi Arabia": "sa",
+  "Scotland": "gb-sct",
+  "Senegal": "sn",
+  "Serbia": "rs",
+  "South Korea": "kr",
+  "Spain": "es",
+  "Sweden": "se",
+  "Switzerland": "ch",
+  "Tunisia": "tn",
+  "Turkey": "tr",
+  "Ukraine": "ua",
+  "Uruguay": "uy",
+  "USA": "us",
+  "United States": "us",
+  "Venezuela": "ve",
+  "Wales": "gb-wls",
+};
+
+function getCountryCode(teamName: string): string {
+  const normalized = teamName.trim();
+  if (COUNTRY_CODE_MAP[normalized]) return COUNTRY_CODE_MAP[normalized];
+  const lowerName = normalized.toLowerCase();
+  for (const [name, code] of Object.entries(COUNTRY_CODE_MAP)) {
+    if (name.toLowerCase() === lowerName) return code;
+  }
+  for (const [name, code] of Object.entries(COUNTRY_CODE_MAP)) {
+    if (lowerName.includes(name.toLowerCase()) || name.toLowerCase().includes(lowerName)) {
+      return code;
+    }
+  }
+  const shortCodeMap: Record<string, string> = {
+    'BE': 'be', 'be': 'be',
+    'EG': 'eg', 'eg': 'eg',
+    'BR': 'br', 'br': 'br',
+    'FR': 'fr', 'fr': 'fr',
+    'DE': 'de', 'de': 'de',
+    'ES': 'es', 'es': 'es',
+    'IT': 'it', 'it': 'it',
+    'PT': 'pt', 'pt': 'pt',
+    'AR': 'ar', 'ar': 'ar',
+    'GB': 'gb-eng', 'gb': 'gb-eng',
+    'US': 'us', 'us': 'us',
+    'MX': 'mx', 'mx': 'mx',
+  };
+  if (shortCodeMap[normalized]) return shortCodeMap[normalized];
+  return "us";
+}
+
 function MatchCard({
   match, prediction, onPredict, isSubmitting, lang,
 }: {
@@ -312,7 +398,9 @@ function MatchCard({
       {/* Teams */}
       <div className="flex items-center justify-between gap-4 my-3">
         <div className="flex-1 text-center">
-          <div className="text-5xl mb-2 drop-shadow-lg">{getFlag(match.home_team, match.home_flag)}</div>
+          <div className="flex justify-center mb-2">
+            <CircleFlag countryCode={getCountryCode(match.home_team)} height={64} width={64} className="rounded-full drop-shadow-lg" />
+          </div>
           <div className="text-white font-bold text-sm leading-tight">{match.home_team}</div>
         </div>
 
@@ -334,7 +422,9 @@ function MatchCard({
         </div>
 
         <div className="flex-1 text-center">
-          <div className="text-5xl mb-2 drop-shadow-lg">{getFlag(match.away_team, match.away_flag)}</div>
+          <div className="flex justify-center mb-2">
+            <CircleFlag countryCode={getCountryCode(match.away_team)} height={64} width={64} className="rounded-full drop-shadow-lg" />
+          </div>
           <div className="text-white font-bold text-sm leading-tight">{match.away_team}</div>
         </div>
       </div>
