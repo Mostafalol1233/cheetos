@@ -76,8 +76,9 @@ function getFlag(teamName: string, existingFlag?: string): string {
   }
   // Check partial match (case insensitive)
   for (const [name, flag] of Object.entries(FLAG_MAP)) {
-    if (lowerName.includes(name.toLowerCase()) || 
-        name.toLowerCase().includes(lowerName)) {
+    const lowerTeam = lowerName;
+    const lowerFlagName = name.toLowerCase();
+    if (lowerTeam.includes(lowerFlagName) || lowerFlagName.includes(lowerTeam)) {
       return flag;
     }
   }
@@ -647,7 +648,6 @@ export default function WorldCupPage() {
                     onError={() => setShowAnthemVideo(false)}
                   >
                     <source src="https://res.cloudinary.com/ddzbutb12/video/upload/v1781447401/gamecart/worldcup/worldcup-anthem.mp4" type="video/mp4" />
-                    <source src="/media/cfs-event.mp4" type="video/mp4" />
                   </video>
                 <div className="absolute top-3 right-3 bg-black/60 border border-[#c9a84c]/30 backdrop-blur-sm rounded-full px-3 py-1">
                   <span className="text-[10px] text-[#c9a84c] font-bold uppercase tracking-widest">
