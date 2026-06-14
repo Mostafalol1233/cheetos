@@ -341,6 +341,8 @@ export default function WorldCupPage() {
   const { isAuthenticated, isLoading: authLoading } = useUserAuth();
   const { toast } = useToast();
   const [submittingMatchId, setSubmittingMatchId] = useState<string | null>(null);
+  const [showHeroVideo, setShowHeroVideo] = useState(true);
+  const [showAnthemVideo, setShowAnthemVideo] = useState(true);
 
   // Language: default Arabic, remember preference
   const [lang, setLang] = useState<Lang>(() => {
@@ -438,20 +440,23 @@ export default function WorldCupPage() {
         keywords={["world cup 2026", "كأس العالم 2026", "توقع المباريات", "diaa store", "متجر ضياء", "world cup prediction"]}
         url={typeof window !== "undefined" ? window.location.href : "https://diaasadek.com/world-cup"}
       />
-      {/* ── CINEMATIC VIDEO HERO ── */}
+      {/* ─── CINEMATIC VIDEO HERO ── */}
       <div className="relative overflow-hidden bg-black" style={{ minHeight: "600px" }}>
-        {/* Background video — muted autoplay loop */}
-        <video
-          autoPlay
-          muted
-          loop
-          playsInline
-          preload="metadata"
-          className="absolute inset-0 w-full h-full object-cover opacity-35"
-          style={{ objectPosition: "center 20%" }}
-        >
-          <source src="/media/worldcup-anthem.mp4" type="video/mp4" />
-        </video>
+        {/* Background video — muted autoplay loop (fallback to image if video missing) */}
+        {showHeroVideo && (
+          <video
+            autoPlay
+            muted
+            loop
+            playsInline
+            preload="metadata"
+            className="absolute inset-0 w-full h-full object-cover opacity-35"
+            style={{ objectPosition: "center 20%" }}
+            onError={() => setShowHeroVideo(false)}
+          >
+            <source src="/media/cfs-event.mp4" type="video/mp4" />
+          </video>
+        )}
 
         {/* Dark cinematic gradient overlay */}
         <div
@@ -537,31 +542,31 @@ export default function WorldCupPage() {
           <div className="pb-24 px-4 max-w-3xl mx-auto">
 
             {/* ── OFFICIAL ANTHEM VIDEO PLAYER ── */}
-            <div className="mt-10 mb-14">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-0.5 h-5 bg-[#c9a84c] rounded-full" />
-                <span className="text-sm font-bold text-white/70 tracking-wide uppercase">
-                  {lang === "ar" ? "النشيد الرسمي · Shakira ft. Burna Boy — Dai Dai" : "Official Anthem · Shakira ft. Burna Boy — Dai Dai"}
-                </span>
-              </div>
-              <div className="relative rounded-2xl overflow-hidden border border-[#c9a84c]/15 shadow-2xl bg-black">
-                <video
-                  controls
-                  autoPlay
-                  muted
-                  preload="auto"
-                  className="w-full"
-                  style={{ maxHeight: "420px" }}
-                >
-                  <source src="/media/worldcup-anthem.mp4" type="video/mp4" />
-                </video>
+            {showAnthemVideo && (
+              <div className="mt-10 mb-14">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-0.5 h-5 bg-[#c9a84c] rounded-full" />
+                  <span className="text-sm font-bold text-white/70 tracking-wide uppercase">
+                    {lang === "ar" ? "فيديو الكأس" : "World Cup Video"}
+                  </span>
+                </div>
+                <div className="relative rounded-2xl overflow-hidden border border-[#c9a84c]/15 shadow-2xl bg-black">
+                  <video
+                    controls
+                    preload="auto"
+                    className="w-full"
+                    style={{ maxHeight: "420px" }}
+                    onError={() => setShowAnthemVideo(false)}
+                  >
+                    <source src="/media/cfs-event.mp4" type="video/mp4" />
+                  </video>
                 <div className="absolute top-3 right-3 bg-black/60 border border-[#c9a84c]/30 backdrop-blur-sm rounded-full px-3 py-1">
                   <span className="text-[10px] text-[#c9a84c] font-bold uppercase tracking-widest">
                     {lang === "ar" ? "النشيد الرسمي" : "FIFA WC 2026"}
                   </span>
                 </div>
               </div>
-            </div>
+            )}
 
             {/* ── YouTube embed (from admin settings) ── */}
             {embedUrl && (
