@@ -9,6 +9,7 @@
     "npm": ">=10.x"
   },
   "scripts": {
+    "preinstall": "npm cache clean --force || true",
     "dev": "tsx server/index.ts",
     "build": "vite build",
     "start": "cross-env NODE_ENV=production node backend/index.js",
