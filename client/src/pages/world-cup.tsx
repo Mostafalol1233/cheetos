@@ -66,15 +66,37 @@ const FLAG_MAP: Record<string, string> = {
 
 function getFlag(teamName: string, existingFlag?: string): string {
   if (existingFlag) return existingFlag;
-  // Check exact match
-  if (FLAG_MAP[teamName]) return FLAG_MAP[teamName];
+  const normalized = teamName.trim();
+  // Check exact match first
+  if (FLAG_MAP[normalized]) return FLAG_MAP[normalized];
+  // Check case-insensitive exact match
+  const lowerName = normalized.toLowerCase();
+  for (const [name, flag] of Object.entries(FLAG_MAP)) {
+    if (name.toLowerCase() === lowerName) return flag;
+  }
   // Check partial match (case insensitive)
   for (const [name, flag] of Object.entries(FLAG_MAP)) {
-    if (teamName.toLowerCase().includes(name.toLowerCase()) || 
-        name.toLowerCase().includes(teamName.toLowerCase())) {
+    if (lowerName.includes(name.toLowerCase()) || 
+        name.toLowerCase().includes(lowerName)) {
       return flag;
     }
   }
+  // Special cases for short codes (like BE, EG)
+  const codeMap: Record<string, string> = {
+    'BE': '🇧🇪', 'be': '🇧🇪',
+    'EG': '🇪🇬', 'eg': '🇪🇬',
+    'BR': '🇧🇷', 'br': '🇧🇷',
+    'FR': '🇫🇷', 'fr': '🇫🇷',
+    'DE': '🇩🇪', 'de': '🇩🇪',
+    'ES': '🇪🇸', 'es': '🇪🇸',
+    'IT': '🇮🇹', 'it': '🇮🇹',
+    'PT': '🇵🇹', 'pt': '🇵🇹',
+    'AR': '🇦🇷', 'ar': '🇦🇷',
+    'GB': '🏴', 'gb': '🏴',
+    'US': '🇺🇸', 'us': '🇺🇸',
+    'MX': '🇲🇽', 'mx': '🇲🇽',
+  };
+  if (codeMap[normalized]) return codeMap[normalized];
   // Fallback to generic flag emoji
   return "🏳️";
 }
@@ -521,7 +543,6 @@ export default function WorldCupPage() {
             onError={() => setShowHeroVideo(false)}
           >
             <source src="https://res.cloudinary.com/ddzbutb12/video/upload/v1781447401/gamecart/worldcup/worldcup-anthem.mp4" type="video/mp4" />
-            <source src="/media/cfs-event.mp4" type="video/mp4" />
           </video>
         )}
 
