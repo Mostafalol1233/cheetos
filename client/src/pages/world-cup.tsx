@@ -649,10 +649,11 @@ export default function WorldCupPage() {
                   >
                     <source src="https://res.cloudinary.com/ddzbutb12/video/upload/v1781447401/gamecart/worldcup/worldcup-anthem.mp4" type="video/mp4" />
                   </video>
-                <div className="absolute top-3 right-3 bg-black/60 border border-[#c9a84c]/30 backdrop-blur-sm rounded-full px-3 py-1">
-                  <span className="text-[10px] text-[#c9a84c] font-bold uppercase tracking-widest">
-                    {lang === "ar" ? "النشيد الرسمي" : "FIFA WC 2026"}
-                  </span>
+                  <div className="absolute top-3 right-3 bg-black/60 border border-[#c9a84c]/30 backdrop-blur-sm rounded-full px-3 py-1">
+                    <span className="text-[10px] text-[#c9a84c] font-bold uppercase tracking-widest">
+                      {lang === "ar" ? "النشيد الرسمي" : "FIFA WC 2026"}
+                    </span>
+                  </div>
                 </div>
               </div>
             )}
