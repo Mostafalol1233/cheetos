@@ -5,8 +5,8 @@
   "license": "MIT",
   "packageManager": "npm@11.12.1",
   "engines": {
-    "node": ">=20.x <25.x",
-    "npm": ">=10.x"
+    "node": "20.x",
+    "npm": "10.x"
   },
   "scripts": {
     "dev": "tsx server/index.ts",
