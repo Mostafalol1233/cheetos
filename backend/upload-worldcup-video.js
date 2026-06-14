@@ -16,7 +16,7 @@ cloudinary.config({
 });
 
 async function uploadVideo() {
-  const videoPath = path.join(__dirname, '..', 'client', 'public', 'media', 'cfs-event.mp4');
+  const videoPath = path.join(__dirname, '..', 'AQP4ke6E6vQPb_Q-CSt1eTrB2vwpN2JGrrWwWNx0uSavlMgbvAv3ekSznyFvK-u80btJUmxqhup63XJUrTuw4fNMBbZnahex8GpCY-gLSw.mp4');
 
   if (!fs.existsSync(videoPath)) {
     console.error('Video file not found at:', videoPath);
@@ -28,7 +28,7 @@ async function uploadVideo() {
     const result = await cloudinary.uploader.upload(videoPath, {
       resource_type: 'video',
       folder: 'gamecart/worldcup',
-      public_id: 'cfs-event',
+      public_id: 'worldcup-anthem',
       overwrite: true,
     });
 

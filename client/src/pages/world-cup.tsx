@@ -454,7 +454,7 @@ export default function WorldCupPage() {
             style={{ objectPosition: "center 20%" }}
             onError={() => setShowHeroVideo(false)}
           >
-            <source src="https://res.cloudinary.com/ddzbutb12/video/upload/v1781446995/gamecart/worldcup/cfs-event.mp4" type="video/mp4" />
+            <source src="https://res.cloudinary.com/ddzbutb12/video/upload/v1781447401/gamecart/worldcup/worldcup-anthem.mp4" type="video/mp4" />
             <source src="/media/cfs-event.mp4" type="video/mp4" />
           </video>
         )}
@@ -548,7 +548,7 @@ export default function WorldCupPage() {
                 <div className="flex items-center gap-3 mb-4">
                   <div className="w-0.5 h-5 bg-[#c9a84c] rounded-full" />
                   <span className="text-sm font-bold text-white/70 tracking-wide uppercase">
-                    {lang === "ar" ? "فيديو الكأس" : "World Cup Video"}
+                    {lang === "ar" ? "النشيد الرسمي" : "Official Anthem"}
                   </span>
                 </div>
                 <div className="relative rounded-2xl overflow-hidden border border-[#c9a84c]/15 shadow-2xl bg-black">
@@ -559,7 +559,7 @@ export default function WorldCupPage() {
                     style={{ maxHeight: "420px" }}
                     onError={() => setShowAnthemVideo(false)}
                   >
-                    <source src="https://res.cloudinary.com/ddzbutb12/video/upload/v1781446995/gamecart/worldcup/cfs-event.mp4" type="video/mp4" />
+                    <source src="https://res.cloudinary.com/ddzbutb12/video/upload/v1781447401/gamecart/worldcup/worldcup-anthem.mp4" type="video/mp4" />
                     <source src="/media/cfs-event.mp4" type="video/mp4" />
                   </video>
                 <div className="absolute top-3 right-3 bg-black/60 border border-[#c9a84c]/30 backdrop-blur-sm rounded-full px-3 py-1">
