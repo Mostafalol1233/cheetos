@@ -60,12 +60,8 @@ import {
 } from './utils/localization.js';
 // Optional image processor (module may not exist in some deployments)
 let initImageProcessor = null;
-try {
-  const mod = await import('./image-processor.js');
-  initImageProcessor = mod?.initImageProcessor || null;
-} catch {
-  initImageProcessor = null;
-}
+// We'll initialize this in an async IIFE to avoid top-level await
+
 
 // Global error handlers to prevent server crashes from WhatsApp errors
 process.on('uncaughtException', (error) => {

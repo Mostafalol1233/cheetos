@@ -217,6 +217,7 @@ function formatMatchDate(dateStr: string, lang: Lang): string {
     return d.toLocaleDateString(lang === "ar" ? "ar-EG" : "en-US", {
       weekday: "short", day: "numeric", month: "short",
       hour: "2-digit", minute: "2-digit",
+      timeZone: "Africa/Cairo",
     });
   } catch { return dateStr; }
 }

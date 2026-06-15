@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
@@ -44,6 +44,36 @@ interface Prediction {
   round: string;
 }
 
+interface PredictionChange {
+  id: string;
+  user_id: string;
+  match_id: string;
+  old_home_score_pred: number | null;
+  old_away_score_pred: number | null;
+  new_home_score_pred: number;
+  new_away_score_pred: number;
+  changed_at: string;
+  user_name: string;
+  user_email: string;
+  user_phone: string;
+  home_team: string;
+  away_team: string;
+  match_date: string;
+}
+
+interface Loser {
+  id: string;
+  user_id: string;
+  match_id: string;
+  eliminated_at: string;
+  user_name: string;
+  user_email: string;
+  user_phone: string;
+  home_team: string;
+  away_team: string;
+  match_date: string;
+}
+
 interface Settings {
   title: string;
   subtitle: string;
@@ -61,7 +91,7 @@ const adminHeaders = () => {
 function formatMatchDate(dateStr: string) {
   if (!dateStr) return "";
   try {
-    return new Date(dateStr).toLocaleString("ar-EG");
+    return new Date(dateStr).toLocaleString("ar-EG", { timeZone: "Africa/Cairo" });
   } catch { return dateStr; }
 }
 
@@ -356,7 +386,10 @@ function MatchesPanel() {
 
       <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
         <DialogContent className="bg-[#111] border-white/10 text-white" dir="rtl">
-          <DialogHeader><DialogTitle>إضافة مباراة جديدة</DialogTitle></DialogHeader>
+          <DialogHeader>
+            <DialogTitle>إضافة مباراة جديدة</DialogTitle>
+            <DialogDescription>أضف تفاصيل المباراة الجديدة هنا.</DialogDescription>
+          </DialogHeader>
           <div className="space-y-3">
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
@@ -406,7 +439,10 @@ function MatchesPanel() {
       {editMatch && (
         <Dialog open={!!editMatch} onOpenChange={() => setEditMatch(null)}>
           <DialogContent className="bg-[#111] border-white/10 text-white" dir="rtl">
-            <DialogHeader><DialogTitle>تعديل المباراة — {editMatch.home_team} vs {editMatch.away_team}</DialogTitle></DialogHeader>
+            <DialogHeader>
+              <DialogTitle>تعديل المباراة — {editMatch.home_team} vs {editMatch.away_team}</DialogTitle>
+              <DialogDescription>قم بتعديل حالة المباراة أو نتيجتها هنا.</DialogDescription>
+            </DialogHeader>
             <div className="space-y-3">
               <div className="space-y-1">
                 <Label>الحالة</Label>
@@ -576,6 +612,211 @@ function PredictionsPanel() {
   );
 }
 
+function PredictionChangesPanel() {
+  const { toast } = useToast();
+  const [filterMatch, setFilterMatch] = useState<string>("all");
+  const [filterUser, setFilterUser] = useState<string>("all");
+
+  const { data: matches = [] } = useQuery<Match[]>({
+    queryKey: ["/api/worldcup/matches/admin"],
+    queryFn: async () => {
+      const res = await fetch(apiPath("/api/worldcup/admin/matches"), { headers: adminHeaders() });
+      if (!res.ok) throw new Error("Failed");
+      return res.json();
+    },
+  });
+
+  const { data: changes = [], isLoading, refetch } = useQuery<any[]>({
+    queryKey: ["/api/worldcup/admin/prediction-history", filterMatch],
+    queryFn: async () => {
+      let url = apiPath("/api/worldcup/admin/prediction-history");
+      const params = new URLSearchParams();
+      if (filterMatch !== "all") params.append("match_id", filterMatch);
+      if (params.toString()) url += `?${params.toString()}`;
+      const res = await fetch(url, { headers: adminHeaders() });
+      if (!res.ok) throw new Error("Failed");
+      return res.json();
+    },
+  });
+
+  const revertMutation = useMutation({
+    mutationFn: async (changeId: string) => {
+      const res = await fetch(apiPath("/api/worldcup/admin/revert-prediction"), {
+        method: "POST",
+        headers: adminHeaders(),
+        body: JSON.stringify({ change_id: changeId }),
+      });
+      if (!res.ok) throw new Error("Failed");
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({ title: "نجاح", description: "تم الرجوع الى التوقع السابق بنجاح" });
+      refetch();
+      queryClient.invalidateQueries({ queryKey: ["/api/worldcup/admin/predictions"] });
+    },
+    onError: (err: any) => toast({ title: "خطأ", description: err.message, variant: "destructive" }),
+  });
+
+  // Helper function to format date in Egypt time (UTC+3)
+  function formatEgyptTime(dateStr: string) {
+    if (!dateStr) return "";
+    try {
+      return new Date(dateStr).toLocaleString("ar-EG", { timeZone: "Africa/Cairo" });
+    } catch { return dateStr; }
+  }
+
+  return (
+    <div className="space-y-4" dir="rtl">
+      <div className="flex flex-wrap gap-3 items-center justify-between">
+        <div className="flex gap-2 flex-wrap">
+          <Select value={filterMatch} onValueChange={setFilterMatch}>
+            <SelectTrigger className="w-48 bg-background border-white/10 text-white text-sm">
+              <SelectValue placeholder="كل المباريات" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">كل المباريات</SelectItem>
+              {matches.map((m) => (
+                <SelectItem key={m.id} value={m.id}>{m.home_team} vs {m.away_team}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="text-xs text-white/40">
+          {changes.length} تعديل
+        </div>
+      </div>
+
+      {isLoading ? (
+        <div className="text-white/40 text-sm py-8 text-center">جارٍ التحميل...</div>
+      ) : changes.length === 0 ? (
+        <div className="text-white/30 text-sm text-center py-10">لا توجد تعديلات على التوقعات</div>
+      ) : (
+        <div className="space-y-2">
+          {changes.map((change) => (
+            <div
+              key={change.id}
+              className="bg-card/50 border border-white/8 rounded-lg p-4"
+            >
+              <div className="flex items-center justify-between gap-4 flex-wrap">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-white font-medium text-sm">{change.user_name}</span>
+                    <span className="text-yellow-400/60 text-xs">تعديل توقع</span>
+                  </div>
+                  <div className="text-white/30 text-xs mt-0.5">{change.user_email}</div>
+                  <div className="text-white/50 text-xs mt-1">
+                    <span className="text-white/60 font-medium">{change.home_team} vs {change.away_team}</span>
+                  </div>
+                  <div className="mt-2 flex items-center gap-4 flex-wrap">
+                    <div className="bg-red-500/10 border border-red-500/20 rounded px-3 py-1">
+                      <span className="text-red-400/80 text-xs font-medium">قبل:</span>
+                      <span className="text-white text-xs ml-2">
+                        {change.old_home_score_pred !== null ? `${change.old_home_score_pred} - ${change.old_away_score_pred}` : "لم يكن هناك توقع"}
+                      </span>
+                    </div>
+                    <div className="text-white/30 text-sm">→</div>
+                    <div className="bg-emerald-500/10 border border-emerald-500/20 rounded px-3 py-1">
+                      <span className="text-emerald-400/80 text-xs font-medium">بعد:</span>
+                      <span className="text-white text-xs ml-2">
+                        {change.new_home_score_pred} - {change.new_away_score_pred}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="text-white/20 text-xs mt-2">{formatEgyptTime(change.changed_at)}</div>
+                </div>
+                {/* Only show revert button if there was a previous prediction */}
+                {change.old_home_score_pred !== null && change.old_away_score_pred !== null && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => revertMutation.mutate(change.id)}
+                    disabled={revertMutation.isPending}
+                    className="border-blue-500/30 text-blue-400 hover:bg-blue-500/10 text-xs h-8"
+                  >
+                    رجوع
+                  </Button>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function LosersPanel() {
+  const { toast } = useToast();
+
+  const { data: losers = [], isLoading, refetch } = useQuery<any[]>({
+    queryKey: ["/api/worldcup/admin/losers"],
+    queryFn: async () => {
+      const res = await fetch(apiPath("/api/worldcup/admin/losers"), { headers: adminHeaders() });
+      if (!res.ok) throw new Error("Failed");
+      return res.json();
+    },
+  });
+
+  const clearLosersMutation = useMutation({
+    mutationFn: async () => {
+      const res = await fetch(apiPath("/api/worldcup/admin/clear-losers"), {
+        method: "POST",
+        headers: adminHeaders(),
+      });
+      if (!res.ok) throw new Error("Failed");
+      return res.json();
+    },
+    onSuccess: (data) => {
+      refetch();
+      queryClient.invalidateQueries({ queryKey: ["/api/worldcup/admin/losers"] });
+      toast({ title: "تم المسح", description: data.message });
+    },
+    onError: (err: any) => toast({ title: "خطأ", description: err.message, variant: "destructive" }),
+  });
+
+  return (
+    <div className="space-y-4" dir="rtl">
+      <div className="flex flex-wrap gap-3 items-center justify-between">
+        <h3 className="font-semibold text-white">المستخدمين المُستبعدين ({losers.length})</h3>
+        <Button 
+          onClick={() => clearLosersMutation.mutate()} 
+          disabled={clearLosersMutation.isPending}
+          className="bg-red-600 hover:bg-red-700 text-white text-sm font-semibold"
+        >
+          {clearLosersMutation.isPending ? "جارٍ المسح..." : "مسح القائمة"}
+        </Button>
+      </div>
+
+      {isLoading ? (
+        <div className="text-white/40 text-sm py-8 text-center">جارٍ التحميل...</div>
+      ) : losers.length === 0 ? (
+        <div className="text-white/30 text-sm text-center py-10">لا توجد مستخدمين مستبعدين بعد</div>
+      ) : (
+        <div className="space-y-2">
+          {losers.map((loser) => (
+            <div
+              key={loser.id}
+              className="bg-red-500/5 border border-red-500/20 rounded-lg p-4 flex items-center justify-between gap-4"
+            >
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-white font-medium text-sm">{loser.user_name}</span>
+                  <span className="text-xs bg-red-500/15 text-red-400 px-2 py-0.5 rounded-full">مستبعد</span>
+                </div>
+                <div className="text-white/30 text-xs mt-0.5">{loser.user_email}</div>
+                <div className="text-white/50 text-xs mt-1">
+                  <span className="text-white/60 font-medium">استبعد في مباراة: {loser.home_team} vs {loser.away_team}</span>
+                </div>
+                <div className="text-white/20 text-xs mt-0.5">{formatMatchDate(loser.eliminated_at)}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function WorldCupAdminPanel() {
   return (
     <div className="space-y-6">
@@ -596,6 +837,12 @@ export function WorldCupAdminPanel() {
           <TabsTrigger value="predictions" className="data-[state=active]:bg-transparent data-[state=active]:text-yellow-400 data-[state=active]:border-b-2 data-[state=active]:border-yellow-400 border-b-2 border-transparent rounded-none px-4 py-2 text-sm text-white/50 hover:text-white/70">
             التوقعات
           </TabsTrigger>
+          <TabsTrigger value="prediction-changes" className="data-[state=active]:bg-transparent data-[state=active]:text-yellow-400 data-[state=active]:border-b-2 data-[state=active]:border-yellow-400 border-b-2 border-transparent rounded-none px-4 py-2 text-sm text-white/50 hover:text-white/70">
+            التعديلات على التوقعات
+          </TabsTrigger>
+          <TabsTrigger value="losers" className="data-[state=active]:bg-transparent data-[state=active]:text-yellow-400 data-[state=active]:border-b-2 data-[state=active]:border-yellow-400 border-b-2 border-transparent rounded-none px-4 py-2 text-sm text-white/50 hover:text-white/70">
+            المستبعدين
+          </TabsTrigger>
           <TabsTrigger value="matches" className="data-[state=active]:bg-transparent data-[state=active]:text-yellow-400 data-[state=active]:border-b-2 data-[state=active]:border-yellow-400 border-b-2 border-transparent rounded-none px-4 py-2 text-sm text-white/50 hover:text-white/70">
             المباريات
           </TabsTrigger>
@@ -604,6 +851,8 @@ export function WorldCupAdminPanel() {
           </TabsTrigger>
         </TabsList>
         <TabsContent value="predictions"><PredictionsPanel /></TabsContent>
+        <TabsContent value="prediction-changes"><PredictionChangesPanel /></TabsContent>
+        <TabsContent value="losers"><LosersPanel /></TabsContent>
         <TabsContent value="matches"><MatchesPanel /></TabsContent>
         <TabsContent value="settings"><SettingsPanel /></TabsContent>
       </Tabs>

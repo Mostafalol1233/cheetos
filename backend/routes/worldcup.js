@@ -71,6 +71,25 @@ async function initWorldCupTables() {
         UNIQUE(user_id, match_id)
       );
 
+      CREATE TABLE IF NOT EXISTS worldcup_prediction_changes (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        match_id TEXT NOT NULL,
+        old_home_score_pred INTEGER,
+        old_away_score_pred INTEGER,
+        new_home_score_pred INTEGER NOT NULL,
+        new_away_score_pred INTEGER NOT NULL,
+        changed_at TIMESTAMP DEFAULT NOW()
+      );
+
+      CREATE TABLE IF NOT EXISTS worldcup_losers (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        match_id TEXT NOT NULL,
+        eliminated_at TIMESTAMP DEFAULT NOW(),
+        UNIQUE(user_id)
+      );
+
       CREATE TABLE IF NOT EXISTS worldcup_settings (
         id INTEGER PRIMARY KEY DEFAULT 1,
         title TEXT DEFAULT 'كأس العالم 2026',
@@ -144,8 +163,22 @@ router.post('/predict', authenticateToken, async (req, res) => {
     }
 
     const match = matchResult.rows[0];
-    if (match.status === 'finished') {
-      return res.status(400).json({ message: 'انتهت المباراة، لا يمكن التوقع' });
+    if (match.status === 'finished' || match.status === 'live') {
+      return res.status(400).json({ message: 'انتهت أو بدأت المباراة، لا يمكن التوقع' });
+    }
+    // Check if match date has passed
+    if (match.match_date) {
+      const matchTime = new Date(match.match_date);
+      const now = new Date();
+      if (now >= matchTime) {
+        return res.status(400).json({ message: 'بدأت المباراة، لا يمكن التوقع' });
+      }
+    }
+
+    // Check if user is already a loser
+    const loserResult = await pool.query('SELECT * FROM worldcup_losers WHERE user_id = $1', [userId]);
+    if (loserResult.rows.length) {
+      return res.status(400).json({ message: 'لقد تم استبعادك من المسابقة' });
     }
 
     const homeScore = parseInt(home_score_pred);
@@ -154,6 +187,12 @@ router.post('/predict', authenticateToken, async (req, res) => {
       return res.status(400).json({ message: 'نتيجة غير صالحة' });
     }
 
+    // Get existing prediction to log change
+    const existingPredResult = await pool.query(
+      'SELECT * FROM worldcup_predictions WHERE user_id = $1 AND match_id = $2',
+      [userId, match_id]
+    );
+
     const id = crypto.randomUUID();
     await pool.query(
       `INSERT INTO worldcup_predictions (id, user_id, match_id, home_score_pred, away_score_pred)
@@ -161,6 +200,16 @@ router.post('/predict', authenticateToken, async (req, res) => {
        ON CONFLICT (user_id, match_id) DO UPDATE
        SET home_score_pred = $4, away_score_pred = $5, created_at = NOW()`,
       [id, userId, match_id, homeScore, awayScore]
+    );
+
+    // Log the change
+    const changeId = crypto.randomUUID();
+    const oldHome = existingPredResult.rows.length ? existingPredResult.rows[0].home_score_pred : null;
+    const oldAway = existingPredResult.rows.length ? existingPredResult.rows[0].away_score_pred : null;
+    await pool.query(
+      `INSERT INTO worldcup_prediction_changes (id, user_id, match_id, old_home_score_pred, old_away_score_pred, new_home_score_pred, new_away_score_pred)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+      [changeId, userId, match_id, oldHome, oldAway, homeScore, awayScore]
     );
 
     res.json({ success: true, message: 'تم حفظ توقعك بنجاح' });
@@ -229,6 +278,8 @@ router.put('/admin/matches/:id', authenticateToken, ensureAdmin, async (req, res
     const { home_team, away_team, home_flag, away_flag, match_date, round, home_score, away_score, status } = req.body;
     const { id } = req.params;
 
+    console.log('🔄 Updating match:', { id, home_team, away_team, home_flag, away_flag, match_date, round, home_score, away_score, status });
+
     const result = await pool.query(
       `UPDATE worldcup_matches SET
         home_team = COALESCE($1, home_team),
@@ -250,15 +301,28 @@ router.put('/admin/matches/:id', authenticateToken, ensureAdmin, async (req, res
     if (!result.rows.length) return res.status(404).json({ message: 'مباراة غير موجودة' });
 
     if (status === 'finished' && home_score !== undefined && away_score !== undefined) {
+      console.log('✅ Match marked as finished, updating predictions and losers...');
       await pool.query(
         `UPDATE worldcup_predictions SET is_correct = (home_score_pred = $1 AND away_score_pred = $2)
          WHERE match_id = $3`,
         [parseInt(home_score), parseInt(away_score), id]
       );
+
+      // Add users who got it wrong to losers (if not already there)
+      await pool.query(`
+        INSERT INTO worldcup_losers (id, user_id, match_id)
+        SELECT $1, p.user_id, $2
+        FROM worldcup_predictions p
+        WHERE p.match_id = $2
+          AND p.is_correct = FALSE
+          AND p.user_id NOT IN (SELECT user_id FROM worldcup_losers)
+      `, [crypto.randomUUID(), id]);
     }
 
+    console.log('✅ Match updated successfully!');
     res.json(result.rows[0]);
   } catch (err) {
+    console.error('❌ Error updating match:', err);
     res.status(500).json({ message: err.message });
   }
 });
@@ -292,6 +356,138 @@ router.put('/admin/settings', authenticateToken, ensureAdmin, async (req, res) =
   }
 });
 
+router.get('/admin/prediction-changes', authenticateToken, ensureAdmin, async (req, res) => {
+  try {
+    const { match_id, user_id } = req.query;
+    let query = `
+      SELECT pc.*, 
+             u.name as user_name, u.email as user_email, u.phone as user_phone,
+             m.home_team, m.away_team, m.match_date
+      FROM worldcup_prediction_changes pc
+      JOIN users u ON pc.user_id = u.id
+      JOIN worldcup_matches m ON pc.match_id = m.id
+    `;
+    const params = [];
+    if (match_id) {
+      query += ' WHERE pc.match_id = $1';
+      params.push(match_id);
+      if (user_id) {
+        query += ' AND pc.user_id = $2';
+        params.push(user_id);
+      }
+    } else if (user_id) {
+      query += ' WHERE pc.user_id = $1';
+      params.push(user_id);
+    }
+    query += ' ORDER BY pc.changed_at DESC';
+
+    const result = await pool.query(query, params);
+    res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+router.get('/admin/losers', authenticateToken, ensureAdmin, async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT l.*, 
+             u.name as user_name, u.email as user_email, u.phone as user_phone,
+             m.home_team, m.away_team, m.match_date
+      FROM worldcup_losers l
+      JOIN users u ON l.user_id = u.id
+      JOIN worldcup_matches m ON l.match_id = m.id
+      ORDER BY l.eliminated_at DESC
+    `);
+    res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+router.post('/admin/clear-losers', authenticateToken, ensureAdmin, async (req, res) => {
+  try {
+    await pool.query('DELETE FROM worldcup_losers');
+    res.json({ success: true, message: 'تم مسح قائمة الخاسرين' });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// Endpoint to get prediction history for a user or match
+router.get('/admin/prediction-history', authenticateToken, ensureAdmin, async (req, res) => {
+  try {
+    const { user_id, match_id } = req.query;
+    let query = `
+      SELECT 
+        pc.*,
+        u.name as user_name, u.email as user_email, u.phone as user_phone,
+        m.home_team, m.away_team
+      FROM worldcup_prediction_changes pc
+      JOIN users u ON pc.user_id = u.id
+      JOIN worldcup_matches m ON pc.match_id = m.id
+    `;
+    const params = [];
+    const conditions = [];
+    if (user_id) {
+      conditions.push('pc.user_id = $' + (params.length + 1));
+      params.push(user_id);
+    }
+    if (match_id) {
+      conditions.push('pc.match_id = $' + (params.length + 1));
+      params.push(match_id);
+    }
+    if (conditions.length > 0) {
+      query += ' WHERE ' + conditions.join(' AND ');
+    }
+    query += ' ORDER BY pc.changed_at DESC';
+    const result = await pool.query(query, params);
+    res.json(result.rows);
+  } catch (err) {
+    console.error('❌ Prediction history error:', err);
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// Endpoint to revert a prediction to a previous version
+router.post('/admin/revert-prediction', authenticateToken, ensureAdmin, async (req, res) => {
+  try {
+    const { change_id } = req.body;
+    if (!change_id) {
+      return res.status(400).json({ message: 'يرجى تحديد التغيير المراد الرجوع اليه' });
+    }
+    // Get the change details
+    const changeResult = await pool.query('SELECT * FROM worldcup_prediction_changes WHERE id = $1', [change_id]);
+    if (!changeResult.rows.length) {
+      return res.status(404).json({ message: 'التغيير غير موجود' });
+    }
+    const change = changeResult.rows[0];
+    // If this is the first prediction (old values are null), we can't revert further
+    if (change.old_home_score_pred === null && change.old_away_score_pred === null) {
+      return res.status(400).json({ message: 'لا يمكن الرجوع اكثر من ذلك، هذه هي اول توقعات للمستخدم' });
+    }
+    // Revert the prediction
+    await pool.query(
+      `UPDATE worldcup_predictions 
+       SET home_score_pred = $1, away_score_pred = $2, created_at = NOW()
+       WHERE user_id = $3 AND match_id = $4`,
+      [change.old_home_score_pred, change.old_away_score_pred, change.user_id, change.match_id]
+    );
+    // Log this revert as a new change for history
+    const newChangeId = crypto.randomUUID();
+    await pool.query(
+      `INSERT INTO worldcup_prediction_changes 
+       (id, user_id, match_id, old_home_score_pred, old_away_score_pred, new_home_score_pred, new_away_score_pred)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+      [newChangeId, change.user_id, change.match_id, change.new_home_score_pred, change.new_away_score_pred, change.old_home_score_pred, change.old_away_score_pred]
+    );
+    res.json({ success: true, message: 'تم الرجوع الى التوقع السابق بنجاح' });
+  } catch (err) {
+    console.error('❌ Revert prediction error:', err);
+    res.status(500).json({ message: err.message });
+  }
+});
+
 router.post('/admin/sync', authenticateToken, ensureAdmin, async (req, res) => {
   const apiKey = process.env.FOOTBALL_DATA_API_KEY;
   if (!apiKey) {
@@ -299,6 +495,7 @@ router.post('/admin/sync', authenticateToken, ensureAdmin, async (req, res) => {
   }
 
   try {
+    console.log('📡 Syncing with football-data.org API...');
     const data = await new Promise((resolve, reject) => {
       const options = {
         hostname: 'api.football-data.org',
@@ -309,13 +506,24 @@ router.post('/admin/sync', authenticateToken, ensureAdmin, async (req, res) => {
         let body = '';
         apiRes.on('data', chunk => body += chunk);
         apiRes.on('end', () => {
-          try { resolve(JSON.parse(body)); }
-          catch { reject(new Error('فشل تحليل البيانات')); }
+          console.log('📥 API Response Status:', apiRes.statusCode);
+          console.log('📦 API Response Body (first 500 chars):', body.substring(0, 500));
+          try { 
+            const parsed = JSON.parse(body);
+            resolve(parsed); 
+          } catch (err) { 
+            console.error('❌ JSON Parse Error:', err);
+            reject(new Error('فشل تحليل البيانات')); 
+          }
         });
-      }).on('error', reject);
+      }).on('error', (err) => {
+        console.error('❌ API Request Error:', err);
+        reject(err);
+      });
     });
 
     if (!data.matches) {
+      console.error('❌ API response missing matches:', data);
       return res.status(500).json({ message: 'لم يتم استلام مباريات من API' });
     }
 
@@ -338,6 +546,25 @@ router.post('/admin/sync', authenticateToken, ensureAdmin, async (req, res) => {
           'UPDATE worldcup_matches SET home_score = $1, away_score = $2, status = $3, home_flag = COALESCE($4, home_flag), away_flag = COALESCE($5, away_flag) WHERE api_match_id = $6',
           [homeScore, awayScore, status, homeFlag, awayFlag, apiId]
         );
+        
+        // If match is finished, update predictions correctness and add losers
+        if (status === 'finished' && homeScore !== null && awayScore !== null) {
+          const matchId = existing.rows[0].id;
+          await pool.query(
+            'UPDATE worldcup_predictions SET is_correct = (home_score_pred = $1 AND away_score_pred = $2) WHERE match_id = $3',
+            [homeScore, awayScore, matchId]
+          );
+          
+          // Add users who got it wrong to losers
+          await pool.query(`
+            INSERT INTO worldcup_losers (id, user_id, match_id)
+            SELECT $1, p.user_id, $2
+            FROM worldcup_predictions p
+            WHERE p.match_id = $2
+              AND p.is_correct = FALSE
+              AND p.user_id NOT IN (SELECT user_id FROM worldcup_losers)
+          `, [crypto.randomUUID(), matchId]);
+        }
       } else {
         const id = crypto.randomUUID();
         await pool.query(
@@ -348,8 +575,10 @@ router.post('/admin/sync', authenticateToken, ensureAdmin, async (req, res) => {
       }
     }
 
+    console.log(`✅ Sync complete! ${inserted} new matches added.`);
     res.json({ success: true, message: `تمت المزامنة — ${inserted} مباريات جديدة`, total: data.matches.length });
   } catch (err) {
+    console.error('❌ Sync error:', err);
     res.status(500).json({ message: err.message });
   }
 });
@@ -361,6 +590,7 @@ router.post('/admin/refresh-scores', authenticateToken, ensureAdmin, async (req,
   }
 
   try {
+    console.log('🔄 Refreshing scores from football-data.org API...');
     const data = await new Promise((resolve, reject) => {
       const options = {
         hostname: 'api.football-data.org',
@@ -371,13 +601,24 @@ router.post('/admin/refresh-scores', authenticateToken, ensureAdmin, async (req,
         let body = '';
         apiRes.on('data', chunk => body += chunk);
         apiRes.on('end', () => {
-          try { resolve(JSON.parse(body)); }
-          catch { reject(new Error('فشل تحليل البيانات')); }
+          console.log('📥 API Response Status:', apiRes.statusCode);
+          console.log('📦 API Response Body (first 500 chars):', body.substring(0, 500));
+          try { 
+            const parsed = JSON.parse(body);
+            resolve(parsed); 
+          } catch (err) { 
+            console.error('❌ JSON Parse Error:', err);
+            reject(new Error('فشل تحليل البيانات')); 
+          }
         });
-      }).on('error', reject);
+      }).on('error', (err) => {
+        console.error('❌ API Request Error:', err);
+        reject(err);
+      });
     });
 
     if (!data.matches) {
+      console.error('❌ API response missing matches:', data);
       return res.status(500).json({ message: 'لم يتم استلام مباريات من API' });
     }
 
@@ -395,19 +636,32 @@ router.post('/admin/refresh-scores', authenticateToken, ensureAdmin, async (req,
           [homeScore, awayScore, status, apiId]
         );
         
-        // If match is finished, update predictions correctness
+        // If match is finished, update predictions correctness and add losers
         if (status === 'finished' && homeScore !== null && awayScore !== null) {
+          const matchId = existing.rows[0].id;
           await pool.query(
             'UPDATE worldcup_predictions SET is_correct = (home_score_pred = $1 AND away_score_pred = $2) WHERE match_id = $3',
-            [homeScore, awayScore, existing.rows[0].id]
+            [homeScore, awayScore, matchId]
           );
+          
+          // Add users who got it wrong to losers
+          await pool.query(`
+            INSERT INTO worldcup_losers (id, user_id, match_id)
+            SELECT $1, p.user_id, $2
+            FROM worldcup_predictions p
+            WHERE p.match_id = $2
+              AND p.is_correct = FALSE
+              AND p.user_id NOT IN (SELECT user_id FROM worldcup_losers)
+          `, [crypto.randomUUID(), matchId]);
         }
         updated++;
       }
     }
 
+    console.log(`✅ Refresh complete! ${updated} matches updated.`);
     res.json({ success: true, message: `تم تحديث ${updated} مباراة`, total: data.matches.length });
   } catch (err) {
+    console.error('❌ Refresh error:', err);
     res.status(500).json({ message: err.message });
   }
 });
