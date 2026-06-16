@@ -280,6 +280,10 @@ router.put('/admin/matches/:id', authenticateToken, ensureAdmin, async (req, res
 
     console.log('🔄 Updating match:', { id, home_team, away_team, home_flag, away_flag, match_date, round, home_score, away_score, status });
 
+    // Fix: Make sure we handle null properly, don't call parseInt on null!
+    const processedHomeScore = (home_score === null || home_score === undefined) ? null : (Number.isInteger(home_score) ? home_score : parseInt(home_score));
+    const processedAwayScore = (away_score === null || away_score === undefined) ? null : (Number.isInteger(away_score) ? away_score : parseInt(away_score));
+
     const result = await pool.query(
       `UPDATE worldcup_matches SET
         home_team = COALESCE($1, home_team),
@@ -293,19 +297,19 @@ router.put('/admin/matches/:id', authenticateToken, ensureAdmin, async (req, res
         status = COALESCE($9, status)
        WHERE id = $10 RETURNING *`,
       [home_team, away_team, home_flag, away_flag, match_date, round,
-       home_score !== undefined ? parseInt(home_score) : null,
-       away_score !== undefined ? parseInt(away_score) : null,
+       processedHomeScore,
+       processedAwayScore,
        status, id]
     );
 
     if (!result.rows.length) return res.status(404).json({ message: 'مباراة غير موجودة' });
 
-    if (status === 'finished' && home_score !== undefined && away_score !== undefined) {
+    if (status === 'finished' && processedHomeScore !== null && processedAwayScore !== null) {
       console.log('✅ Match marked as finished, updating predictions and losers...');
       await pool.query(
         `UPDATE worldcup_predictions SET is_correct = (home_score_pred = $1 AND away_score_pred = $2)
          WHERE match_id = $3`,
-        [parseInt(home_score), parseInt(away_score), id]
+        [processedHomeScore, processedAwayScore, id]
       );
 
       // Add users who got it wrong to losers (if not already there)

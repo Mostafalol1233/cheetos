@@ -477,14 +477,23 @@ function MatchesPanel() {
             <DialogFooter className="gap-2">
               <Button variant="outline" onClick={() => setEditMatch(null)} className="border-white/15 text-white">إلغاء</Button>
               <Button
-                onClick={() => updateMutation.mutate({
-                  id: editMatch.id,
-                  data: {
-                    status: scoreForm.status,
-                    home_score: scoreForm.home_score !== "" ? parseInt(scoreForm.home_score) : null,
-                    away_score: scoreForm.away_score !== "" ? parseInt(scoreForm.away_score) : null,
+                onClick={() => {
+                  // Validate: if status is finished, both scores must be provided!
+                  if (scoreForm.status === "finished") {
+                    if (scoreForm.home_score === "" || scoreForm.away_score === "") {
+                      toast({ title: "خطأ", description: "يجب إدخال نتيجة الفريقين عندما تكون المباراة منتهية!", variant: "destructive" });
+                      return;
+                    }
                   }
-                })}
+                  updateMutation.mutate({
+                    id: editMatch.id,
+                    data: {
+                      status: scoreForm.status,
+                      home_score: scoreForm.home_score !== "" ? parseInt(scoreForm.home_score) : null,
+                      away_score: scoreForm.away_score !== "" ? parseInt(scoreForm.away_score) : null,
+                    }
+                  })
+                }}
                 disabled={updateMutation.isPending}
                 className="bg-yellow-500 hover:bg-yellow-600 text-black font-semibold">
                 {updateMutation.isPending ? "جارٍ الحفظ..." : "حفظ"}
