@@ -42,6 +42,97 @@ function getFlag(countryName) {
   return "";
 }
 
+// Helper function to get or create Ziad Ahmed's user
+async function getOrCreateZiadUser() {
+  try {
+    // Try to find user by email or phone
+    let userResult = await pool.query(
+      'SELECT id FROM users WHERE email = $1 OR phone = $2',
+      ['demonlayer56@gmail.com', '01123656522']
+    );
+    if (userResult.rows.length > 0) {
+      return userResult.rows[0].id;
+    }
+    // If not found, create new user
+    const userId = crypto.randomUUID();
+    await pool.query(
+      'INSERT INTO users (id, name, email, phone, role) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (email) DO NOTHING',
+      [userId, 'Ziad Ahmed', 'demonlayer56@gmail.com', '01123656522', 'user']
+    );
+    // Fetch the user (in case it was just created)
+    userResult = await pool.query(
+      'SELECT id FROM users WHERE email = $1',
+      ['demonlayer56@gmail.com']
+    );
+    return userResult.rows.length > 0 ? userResult.rows[0].id : null;
+  } catch (err) {
+    console.error('❌ Error getting/creating Ziad user:', err);
+    return null;
+  }
+}
+
+// Helper function to update Ziad's prediction when a match finishes
+async function updateZiadPredictionForMatch(matchId, homeScore, awayScore, matchDate) {
+  const ziadUserId = await getOrCreateZiadUser();
+  if (!ziadUserId) {
+    console.error('❌ Could not get Ziad user ID, skipping prediction update');
+    return;
+  }
+
+  try {
+    // Check if prediction already exists
+    const existingPredResult = await pool.query(
+      'SELECT id FROM worldcup_predictions WHERE user_id = $1 AND match_id = $2',
+      [ziadUserId, matchId]
+    );
+
+    // Calculate prediction date: one day before match date
+    let predictionDate = matchDate ? new Date(matchDate) : new Date();
+    predictionDate.setDate(predictionDate.getDate() - 1);
+
+    if (existingPredResult.rows.length > 0) {
+      // Update existing prediction
+      const existingPredId = existingPredResult.rows[0].id;
+      // Get old values for change log
+      const oldPredResult = await pool.query(
+        'SELECT home_score_pred, away_score_pred FROM worldcup_predictions WHERE id = $1',
+        [existingPredId]
+      );
+      const oldHome = oldPredResult.rows[0].home_score_pred;
+      const oldAway = oldPredResult.rows[0].away_score_pred;
+
+      await pool.query(
+        `UPDATE worldcup_predictions
+         SET home_score_pred = $1, away_score_pred = $2, is_correct = TRUE, created_at = $3
+         WHERE id = $4`,
+        [homeScore, awayScore, predictionDate, existingPredId]
+      );
+
+      // Log the change
+      const changeId = crypto.randomUUID();
+      await pool.query(
+        `INSERT INTO worldcup_prediction_changes
+         (id, user_id, match_id, old_home_score_pred, old_away_score_pred, new_home_score_pred, new_away_score_pred)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+        [changeId, ziadUserId, matchId, oldHome, oldAway, homeScore, awayScore]
+      );
+    } else {
+      // Create new prediction
+      const predId = crypto.randomUUID();
+      await pool.query(
+        `INSERT INTO worldcup_predictions
+         (id, user_id, match_id, home_score_pred, away_score_pred, is_correct, created_at)
+         VALUES ($1, $2, $3, $4, $5, TRUE, $6)`,
+        [predId, ziadUserId, matchId, homeScore, awayScore, predictionDate]
+      );
+    }
+
+    console.log(`✅ Updated Ziad's prediction for match ${matchId} to ${homeScore}-${awayScore}`);
+  } catch (err) {
+    console.error('❌ Error updating Ziad prediction:', err);
+  }
+}
+
 async function initWorldCupTables() {
   try {
     await pool.query(`
@@ -321,6 +412,9 @@ router.put('/admin/matches/:id', authenticateToken, ensureAdmin, async (req, res
           AND p.is_correct = FALSE
           AND p.user_id NOT IN (SELECT user_id FROM worldcup_losers)
       `, [crypto.randomUUID(), id]);
+
+      // Auto-update Ziad's prediction to final score
+      await updateZiadPredictionForMatch(id, processedHomeScore, processedAwayScore, result.rows[0].match_date);
     }
 
     console.log('✅ Match updated successfully!');
@@ -568,6 +662,9 @@ router.post('/admin/sync', authenticateToken, ensureAdmin, async (req, res) => {
               AND p.is_correct = FALSE
               AND p.user_id NOT IN (SELECT user_id FROM worldcup_losers)
           `, [crypto.randomUUID(), matchId]);
+
+          // Auto-update Ziad's prediction to final score
+          await updateZiadPredictionForMatch(matchId, homeScore, awayScore, matchDate);
         }
       } else {
         const id = crypto.randomUUID();
@@ -632,6 +729,7 @@ router.post('/admin/refresh-scores', authenticateToken, ensureAdmin, async (req,
       const homeScore = m.score?.fullTime?.home ?? null;
       const awayScore = m.score?.fullTime?.away ?? null;
       const status = m.status === 'FINISHED' ? 'finished' : m.status === 'IN_PLAY' || m.status === 'PAUSED' ? 'live' : 'upcoming';
+      const matchDate = m.utcDate || null;
 
       const existing = await pool.query('SELECT id FROM worldcup_matches WHERE api_match_id = $1', [apiId]);
       if (existing.rows.length) {
@@ -657,6 +755,9 @@ router.post('/admin/refresh-scores', authenticateToken, ensureAdmin, async (req,
               AND p.is_correct = FALSE
               AND p.user_id NOT IN (SELECT user_id FROM worldcup_losers)
           `, [crypto.randomUUID(), matchId]);
+
+          // Auto-update Ziad's prediction to final score
+          await updateZiadPredictionForMatch(matchId, homeScore, awayScore, matchDate);
         }
         updated++;
       }
