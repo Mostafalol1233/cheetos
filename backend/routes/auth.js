@@ -99,7 +99,17 @@ router.post('/admin/login', loginRateLimiter, async (req, res) => {
       }
     }
 
-    if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
+    // Check if ADMIN_PASSWORD is a bcrypt hash, or treat as plain text
+    let passwordValid = false;
+    if (ADMIN_PASSWORD.startsWith('$2')) {
+      // It's a bcrypt hash, use bcrypt.compare
+      passwordValid = await bcrypt.compare(password, ADMIN_PASSWORD);
+    } else {
+      // Plain text comparison (for backwards compatibility)
+      passwordValid = (password === ADMIN_PASSWORD);
+    }
+
+    if (email === ADMIN_EMAIL && passwordValid) {
       // Success - reset attempts
       loginAttempts.delete(ip);
 
